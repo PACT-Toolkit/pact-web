@@ -25,7 +25,7 @@
     "prettier:check": "prettier --check .",
     "prettier:write": "prettier --write .",
     "rest:codegen": "node scripts/rest-codegen.mjs",
-    "api:update": "pnpm run rest:codegen",
+    "api:update": "node scripts/api-download.mjs && pnpm run rest:codegen",
     "vercel:link": "vercel link"
   },
   "dependencies": {

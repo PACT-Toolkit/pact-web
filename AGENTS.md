@@ -116,10 +116,25 @@ src/app/{feature}/
 
 ### Adding a new REST service
 
-1. Create `schema/{service}/services.config.yaml` and `schema/{service}/swagger.yaml`.
-2. Run `pnpm api:update` to fetch the spec and generate hooks in `src/__codegen__/rest/{service}/`.
+1. Create `schema/{service}/services.config.json`:
+
+   ```json
+   {
+     "repo": "{github-repo-name}",
+     "path": "/api/swagger.yaml",
+     "branch": "main"
+   }
+   ```
+
+   Where `repo` is the repo name in the [PACT-Toolkit](https://github.com/PACT-Toolkit) GitHub org.
+
+2. Run `pnpm api:update` — downloads `swagger.yaml` from GitHub and generates hooks in `src/__codegen__/rest/{service}/`.
+
+**Requires** `GITHUB_TOKEN` (or `GIT_TOKEN`) in env with read access to the PACT-Toolkit GitHub org.
 
 **Schema folder naming:** The folder name is used verbatim as the proxy path segment — `/api/pact/{folder-name}/...` — so it must match the **backend URL path**. Confirm the correct name via the swagger `basePath` or a real network request.
+
+**Generated files are committed** — after running `api:update`, commit both `schema/{service}/swagger.yaml` and the updated `src/__codegen__/rest/{service}/`.
 
 ---
 
@@ -127,12 +142,12 @@ src/app/{feature}/
 
 ### Naming
 
-| Type         | Convention                     | Example                   |
-| ------------ | ------------------------------ | ------------------------- |
-| Components   | PascalCase with feature prefix | `PolicyDetailSideSheet`   |
-| Hook files   | snake_case with `use_` prefix  | `use_get_policy.ts`       |
-| Hook exports | camelCase                      | `useGetPolicy`            |
-| Test files   | snake_case with `.spec.ts`     | `policy_detail.spec.ts`   |
+| Type         | Convention                     | Example                 |
+| ------------ | ------------------------------ | ----------------------- |
+| Components   | PascalCase with feature prefix | `PolicyDetailSideSheet` |
+| Hook files   | snake*case with `use*` prefix  | `use_get_policy.ts`     |
+| Hook exports | camelCase                      | `useGetPolicy`          |
+| Test files   | snake_case with `.spec.ts`     | `policy_detail.spec.ts` |
 
 Use `uuidv4()` from the `uuid` package for all UUID generation. Import as: `import { v4 as uuidv4 } from 'uuid'`.
 

@@ -229,7 +229,20 @@ async function main() {
 
   await Promise.all([cleanDir(TEMP_DIR), cleanDir(OUTPUT_DIR)]);
 
-  const entries = await readdir(SCHEMA_DIR, { withFileTypes: true });
+  let entries;
+  try {
+    entries = await readdir(SCHEMA_DIR, { withFileTypes: true });
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log(
+        'No schema/ directory found. Create schema/{service}/services.config.json to add a service.'
+      );
+
+      return;
+    }
+    throw err;
+  }
+
   const services = entries
     .filter(
       (e) =>
