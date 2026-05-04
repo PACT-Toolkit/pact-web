@@ -1,3 +1,5 @@
 #!/bin/bash
 
-echo "Postinstall complete."
+npx msw init ./public --no-save
+
+echo "✅ Postinstall complete."

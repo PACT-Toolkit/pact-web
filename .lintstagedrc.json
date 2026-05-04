@@ -1,4 +1,4 @@
 {
-  "*.{ts,tsx}": "eslint --cache",
-  "*": "prettier --write --cache"
+  "*.{ts,tsx}": "pnpm run lint:eslint:staged",
+  "*": "prettier --write"
 }

@@ -28,8 +28,8 @@
   },
   "include": [
     "app/",
-    "next-env.d.ts",
     "next.config.ts",
+    "middleware.ts",
     "src/",
     "mocks/",
     ".next/types/**/*.ts",

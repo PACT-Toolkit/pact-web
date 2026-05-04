@@ -43,6 +43,7 @@
 !AGENTS.md
 !CLAUDE.md
 !auth.ts
+!CODEOWNERS
 !components.json
 !middleware.ts
 !next.config.ts
@@ -54,6 +55,7 @@
 !README.md
 !renovate.json
 !tsconfig.json
+!vercel-build-ignore.sh
 !vercel.json
 !vitest.config.ts
 !vitest.setup.ts

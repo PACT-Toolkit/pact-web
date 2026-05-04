@@ -20,7 +20,7 @@ import {
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
-import { signIn } from '@/src/lib/auth-client';
+import { signIn } from '@/src/framework/auth/client';
 
 export const LoginForm = () => {
   const router = useRouter();

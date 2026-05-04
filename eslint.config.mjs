@@ -159,17 +159,6 @@ const config = [
     },
   },
   {
-    files: ['src/framework/helpers/environment.js'],
-    ...tseslint.configs.disableTypeChecked,
-    languageOptions: {
-      ...tseslint.configs.disableTypeChecked.languageOptions,
-      globals: { ...globals.node },
-    },
-    rules: {
-      ...tseslint.configs.disableTypeChecked.rules,
-    },
-  },
-  {
     files: ['eslint.config.mjs'],
     ...tseslint.configs.disableTypeChecked,
   },
