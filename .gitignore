@@ -42,8 +42,9 @@
 !.tool-versions
 !AGENTS.md
 !CLAUDE.md
+!auth.ts
 !components.json
-!next-env.d.ts
+!middleware.ts
 !next.config.ts
 !orval.config.ts
 !package.json

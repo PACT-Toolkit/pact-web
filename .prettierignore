@@ -1,6 +1,5 @@
 .husky/
 .next/
-next-env.d.ts
 .gitignore
 .prettierignore
 .tool-versions
