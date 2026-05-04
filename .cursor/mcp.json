@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "matter-web-storybook": {
+      "url": "https://matter-web.lunar.tech/mcp",
+      "auth": {
+        "CLIENT_ID": "cdf3737dff9d485485968e50b63fd8b4"
+      }
+    }
+  }
+}
