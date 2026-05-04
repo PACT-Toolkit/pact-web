@@ -17,7 +17,7 @@ E2E tests are the load-bearing safety net that lets future AI agents ship featur
 - **Future-agent test:** ask _"if a future agent refactors the implementation and accidentally breaks the user-visible flow, would this spec fail loudly?"_ If "maybe" or "only on URL change," strengthen the assertions (see the testid-vs-content rule below — the canonical example).
 - **No flake.** No `setTimeout` waits — Playwright's auto-waiting + explicit assertions only. No order-dependent state. Pin any date / time inputs. Each spec independent.
 - **A11y per distinct view.** One `makeAxeBuilder(page).analyze()` per route. Treat violations as blocking, not informational.
-- **No transport assertions.** Never assert on GraphQL / REST requests — see "Key Rules" below.
+- **No transport assertions.** Never assert on REST requests — see "Key Rules" below.
 
 ## File location
 
@@ -43,7 +43,7 @@ await expect(page.getByTestId('benefit-detail-name')).toContainText('Expected Na
 
 ### Selector rules
 
-- `getByTestId()` is primary — this app has i18n (da/en/no/sv) so text selectors break across locales.
+- `getByTestId()` is primary — prefer stable test IDs over text which can change.
 - `getByText()` — ONLY for select-dropdown option text, never for finding page elements.
 
 ## `data-testid` naming
@@ -51,9 +51,9 @@ await expect(page.getByTestId('benefit-detail-name')).toContainText('Expected Na
 `kebab-case`, feature-prefixed: `{feature}-{component}-{element}`.
 
 ```
-✅ direct-debit-overview-add-mandate-button
-✅ benefits-list
-❌ addMandateBtn
+✅ policy-detail-approve-button
+✅ classifier-results-list
+❌ approveBtn
 ❌ list
 ```
 
@@ -65,11 +65,9 @@ await expect(page.getByTestId('benefit-detail-name')).toContainText('Expected Na
 import { expect, test } from '@playwright/test';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
-import { setMockUserType } from '../../../../playwright/helpers';
 
 test.describe('Feature', () => {
   test.beforeEach(async ({ page }) => {
-    await setMockUserType(page, 'dk-business');
     await page.goto('/feature');
     await expect(page.getByTestId('feature-view')).toBeVisible();
   });
@@ -85,25 +83,9 @@ test.describe('Feature', () => {
 });
 ```
 
-## Mock user type
+## Mock setup
 
-```ts
-import { setMockUserType } from '../../../../playwright/helpers';
-
-test.beforeEach(async ({ page }) => {
-  await setMockUserType(page, 'dk-business'); // also sets welcoming-hint=false
-});
-```
-
-Types: `'dk-business'` | `'se-business'` | `'no-business'`.
-
-For feature toggles, add cookies directly:
-
-```ts
-await page.context().addCookies([
-  { name: 'ENABLE_FEATURE', value: 'true', url: 'http://localhost:3000' },
-]);
-```
+Use MSW handlers in `src/app/{feature}/mock/handlers/` to control API responses per test. Import mock fixtures from `src/app/{feature}/mock/data/` for consistent test data.
 
 ## What to assert on (priority order)
 
@@ -122,7 +104,7 @@ await expect(card).toContainText('Conditions');
 
 ## Key rules
 
-- **No network assertions.** Never intercept/assert on GraphQL/REST requests; tests must not know the transport layer.
+- **No network assertions.** Never intercept/assert on REST requests; tests must not know the transport layer.
 - **Test both dismiss and confirm paths** for dialogs.
 - **Respect existing component structure** — see `data-testid` naming above.
 
@@ -133,7 +115,7 @@ These references stay out of the agent's context until the relevant trigger appe
 | Read this | When |
 | --------- | ---- |
 | [`references/accessibility.md`](references/accessibility.md) | Adding `makeAxeBuilder` tests, debugging axe violations, or covering multiple views with a11y. |
-| [`references/aria-gotchas.md`](references/aria-gotchas.md) | Asserting on ARIA state attributes (`aria-disabled`, `aria-pressed`, `aria-invalid`, `aria-checked`), or working with matter-web `Choice` / Radix primitives. |
+| [`references/aria-gotchas.md`](references/aria-gotchas.md) | Asserting on ARIA state attributes (`aria-disabled`, `aria-pressed`, `aria-invalid`, `aria-checked`), or working with shadcn/ui / Radix primitives. |
 | [`references/fake-clock.md`](references/fake-clock.md) | Reaching for `page.clock.runFor` / `fastForward`, or testing a polling loop that mixes `await` calls with sleep timers. |
 | [`references/mocks.md`](references/mocks.md) | Wiring a spec against MSW mocks, importing mock IDs / enums, or considering a per-test mock override. |
 | [`references/recipes.md`](references/recipes.md) | Form-validation errors (`aria-errormessage`), date pickers (`rdp-day_button`), file uploads, or extracting dynamic IDs from `data-testid` prefixes. |

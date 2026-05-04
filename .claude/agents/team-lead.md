@@ -71,7 +71,7 @@ Once per session, read whichever exist: `AGENTS.md` / `CLAUDE.md`, `README.md`, 
 
 - **Ticket reference** → use Linear MCP, summarize scope back in one paragraph, confirm.
 - **Free-form** → restate the goal in 1–2 sentences. Ask at most 1–3 sharp clarifying questions (only ones that change the approach).
-- **Check git state.** Run `git status` and `git branch --show-current`. Default branch is `master`. If on `master`, branch first. If unrelated uncommitted changes, ask before stomping.
+- **Check git state.** Run `git status` and `git branch --show-current`. Default branch is `main`. If on `main`, branch first. If unrelated uncommitted changes, ask before stomping.
 
 ## 3. Plan
 

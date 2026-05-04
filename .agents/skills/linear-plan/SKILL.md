@@ -11,7 +11,7 @@ description: Scope and break down a feature into Linear tasks. Use when asked to
 
 ## Step 1: Scope the Feature
 
-Before creating anything, understand the full scope. If the user provided a Figma URL, analyze it now — list every screen, state, and interactive element. Check `matter-web-storybook` MCP for reusable components. If Figma is provided but inaccessible, **STOP** — never invent design details.
+Before creating anything, understand the full scope. If the user provided a Figma URL, analyze it now — list every screen, state, and interactive element. Check `src/components/ui/` for available shadcn/ui components. If Figma is provided but inaccessible, **STOP** — never invent design details.
 
 1. **Map screens → API operations** — flag missing operations as blockers.
 2. **Find reference features** — search the codebase for 1–3 features with similar patterns (check `src/app/`, shared components, hooks, `src/lib/`). Note _why_ they match. If none exist, say so.

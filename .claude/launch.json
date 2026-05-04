@@ -2,19 +2,13 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "terra-mock",
+      "name": "pact-mock",
       "runtimeExecutable": "env",
       "runtimeArgs": ["PORTLESS=0", "pnpm", "run", "dev:mock"],
       "port": 3000
     },
     {
-      "name": "terra-demo",
-      "runtimeExecutable": "env",
-      "runtimeArgs": ["PORTLESS=0", "pnpm", "run", "dev:demo"],
-      "port": 3000
-    },
-    {
-      "name": "terra-dev",
+      "name": "pact-dev",
       "runtimeExecutable": "env",
       "runtimeArgs": ["PORTLESS=0", "pnpm", "run", "dev"],
       "port": 3000

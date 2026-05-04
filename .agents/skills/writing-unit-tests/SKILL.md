@@ -296,5 +296,5 @@ These references stay out of the agent's context until the relevant trigger appe
 
 | Read this | When |
 | --------- | ---- |
-| [`references/component-imports.md`](references/component-imports.md) | Importing a module under test fails with `styled is not a function` / `matter-web` errors because the module mixes pure logic with React component imports. |
+| [`references/component-imports.md`](references/component-imports.md) | Importing a module under test fails with Tailwind / shadcn/ui errors because the module mixes pure logic with React component imports. |
 

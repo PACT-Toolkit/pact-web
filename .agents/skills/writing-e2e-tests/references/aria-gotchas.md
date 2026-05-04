@@ -17,12 +17,12 @@ await expect(locator).toHaveAttribute('aria-disabled', 'true');
 - `aria-pressed` — toggle chips and toggle buttons.
 - `aria-invalid` — form fields in error state.
 
-## matter-web `Choice` (single `ChoiceGroup`)
+## shadcn/ui `RadioGroup` (single item)
 
 Renders as a Radix radio button. The Radix `data-state` value is `"on"` / `"off"` — **not** `"checked"` / `"unchecked"` (those belong to Checkbox / Switch). Use `aria-checked` to assert selection state — it's the stable semantic attribute and survives Radix internal renames:
 
 ```ts
-await expect(page.getByTestId('my-choice-reason')).toHaveAttribute('aria-checked', 'true');
+await expect(page.getByTestId('my-radio-option')).toHaveAttribute('aria-checked', 'true');
 ```
 
 ## Radix Checkbox / Switch
