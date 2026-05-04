@@ -39,7 +39,7 @@ const convertToOpenApi = (serviceName) => {
   const openApiPath = join(TEMP_DIR, `${serviceName}.openapi.yaml`);
 
   run(
-    `pnpm exec swagger2openapi "${swaggerPath}" -o "${openApiPath}" --yaml --patch`,
+    `pnpm exec swagger2openapi "${swaggerPath}" -o "${openApiPath}" --yaml --patch`
   );
 
   return openApiPath;
@@ -65,7 +65,7 @@ const normalizeSubPropertyRefs = async (openApiPath) => {
   const lines = content.split('\n');
   const resolvedLines = lines.map((line) => {
     const match = line.match(
-      /^(\s*)\$ref:\s*["']#\/components\/schemas\/([^/]+)\/properties\/([^"'\s]+)["']\s*$/,
+      /^(\s*)\$ref:\s*["']#\/components\/schemas\/([^/]+)\/properties\/([^"'\s]+)["']\s*$/
     );
     if (!match) return line;
 
@@ -233,12 +233,13 @@ async function main() {
   const services = entries
     .filter(
       (e) =>
-        e.isDirectory() && existsSync(join(SCHEMA_DIR, e.name, 'swagger.yaml')),
+        e.isDirectory() && existsSync(join(SCHEMA_DIR, e.name, 'swagger.yaml'))
     )
     .map((e) => e.name);
 
   if (services.length === 0) {
     console.log('No services found with swagger.yaml files.');
+
     return;
   }
 

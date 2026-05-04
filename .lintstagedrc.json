@@ -1,4 +1,4 @@
 {
-  "*.{ts,tsx}": "node --max-old-space-size=2048 ./node_modules/eslint/bin/eslint.js --cache",
-  "*.{ts,tsx,js,mjs,cjs,json,css,md,mdx,yaml,yml}": "prettier --write --cache"
+  "*.{ts,tsx}": "eslint --cache",
+  "*": "prettier --write --cache"
 }

@@ -118,6 +118,7 @@ export const splitHooksFile = async (serviceName, outputDir) => {
 
   const countChar = (str, char) => {
     const matches = str.match(new RegExp(`\\${char}`, 'g'));
+
     return matches ? matches.length : 0;
   };
 
@@ -125,6 +126,7 @@ export const splitHooksFile = async (serviceName, outputDir) => {
     if (trimmed.startsWith('/**') && !inBlock) {
       pendingComment = [line];
       commentComplete = trimmed.endsWith('*/') && trimmed !== '/**';
+
       return;
     }
 
@@ -133,6 +135,7 @@ export const splitHooksFile = async (serviceName, outputDir) => {
       if (trimmed.includes('*/')) {
         commentComplete = true;
       }
+
       return;
     }
 
@@ -192,25 +195,25 @@ export const splitHooksFile = async (serviceName, outputDir) => {
   }
 
   const hookBlocks = exportBlocks.filter((block) =>
-    /export\s+const\s+use[A-Z]/.test(block),
+    /export\s+const\s+use[A-Z]/.test(block)
   );
   const fetcherBlocks = exportBlocks.filter(
-    (block) => !/export\s+const\s+use[A-Z]/.test(block),
+    (block) => !/export\s+const\s+use[A-Z]/.test(block)
   );
 
   const fetcherExports = fetcherBlocks.flatMap((block) => {
     const constMatches = [...block.matchAll(/export\s+const\s+(\w+)/g)].map(
-      (m) => m[1],
+      (m) => m[1]
     );
     const typeMatches = [...block.matchAll(/export\s+type\s+(\w+)/g)].map(
-      (m) => m[1],
+      (m) => m[1]
     );
 
     return [...constMatches, ...typeMatches];
   });
 
   const hasAxiosTypeImport = axiosImports.some(
-    (imp) => imp.includes('import type') && imp.includes('from'),
+    (imp) => imp.includes('import type') && imp.includes('from')
   );
   const axiosTypeImport = hasAxiosTypeImport
     ? ''

@@ -13,6 +13,7 @@ async function proxy(req: NextRequest, { params }: RouteContext) {
     headers: req.headers,
     ...(hasBody && { body: req.body, duplex: 'half' }),
   } as RequestInit);
+
   return new NextResponse(upstream.body, {
     status: upstream.status,
     headers: upstream.headers,

@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
       issuer: /\.tsx?$/,
       use: [{ loader: '@svgr/webpack', options: { typescript: true } }],
     });
+
     return config;
   },
   headers: async () => [

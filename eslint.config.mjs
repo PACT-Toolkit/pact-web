@@ -1,5 +1,6 @@
 import coreWebVitals from 'eslint-config-next/core-web-vitals';
 import nextTypescript from 'eslint-config-next/typescript';
+import prettier from 'eslint-config-prettier';
 import boundaries from 'eslint-plugin-boundaries';
 import importX from 'eslint-plugin-import-x';
 import globals from 'globals';
@@ -25,6 +26,7 @@ const config = [
       'import-x': importX,
     },
     settings: {
+      'import-x/internal-regex': '^@/',
       'import-x/resolver': {
         typescript: {
           alwaysTryTypes: true,
@@ -114,14 +116,37 @@ const config = [
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+        },
+      ],
 
       // ── React ────────────────────────────────────────────────────────
       'react/self-closing-comp': 'error',
+      'react/jsx-key': 'error',
+      'react/function-component-definition': [
+        'error',
+        {
+          namedComponents: 'arrow-function',
+          unnamedComponents: 'arrow-function',
+        },
+      ],
 
       // ── General ──────────────────────────────────────────────────────
       'no-console': 'error',
+      'padding-line-between-statements': [
+        'error',
+        { blankLine: 'always', prev: '*', next: 'return' },
+      ],
     },
   },
+  prettier,
   {
     files: ['mocks/**/*', 'src/**/mock/**/*'],
     languageOptions: {

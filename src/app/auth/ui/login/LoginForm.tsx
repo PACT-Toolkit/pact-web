@@ -22,7 +22,7 @@ import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
 import { signIn } from '@/src/lib/auth-client';
 
-export function LoginForm() {
+export const LoginForm = () => {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
@@ -43,8 +43,9 @@ export function LoginForm() {
     });
     if (result.error) {
       setServerError(
-        result.error.message ?? 'Sign in failed. Please try again.',
+        result.error.message ?? 'Sign in failed. Please try again.'
       );
+
       return;
     }
     router.push('/dashboard');
@@ -140,4 +141,4 @@ export function LoginForm() {
       </CardContent>
     </Card>
   );
-}
+};
