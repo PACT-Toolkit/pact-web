@@ -1,36 +1,71 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Ignore everything
+*
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+# Include these folders
+!.github/
+!.github/**/*
+!src/
+!src/**/*
+!app/
+!app/**/*
+!public/
+!public/**/*
+!schema/
+!schema/**/*
+!mocks/
+!mocks/**/*
+!.husky/
+!.husky/**/*
+!playwright/
+!playwright/**/*
+!.cursor/
+!.cursor/**/*
+!.amp/
+!.amp/**/*
+!.agents/
+!.agents/**/*
+!.claude/
+!.claude/**/*
+!scripts/
+!scripts/**/*
+!env/
+!env/**/*
 
-# testing
-/coverage
+# Include these files
+!.editorconfig
+!eslint.config.mjs
+!.gitignore
+!.lintstagedrc.json
+!.npmrc
+!.prettierignore
+!.prettierrc.json
+!.tool-versions
+!AGENTS.md
+!CLAUDE.md
+!components.json
+!next-env.d.ts
+!next.config.ts
+!orval.config.ts
+!package.json
+!playwright.config.ts
+!postcss.config.mjs
+!pnpm-lock.yaml
+!README.md
+!renovate.json
+!tsconfig.json
+!vercel.json
+!vitest.config.ts
+!vitest.setup.ts
+!.mcp.json
 
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
+# Exclude these files
 .DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
 .env*.local
-.env
 
-# vercel
+# Vercel
 .vercel
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# Playwright
+playwright/.cache/
+.claude/settings.local.json
+.claude/worktrees/

@@ -8,16 +8,16 @@ Built with Next.js 16, React 18, Tailwind CSS, and shadcn/ui.
 
 ## Backend Services
 
-| Service | Repo | Role |
-|---|---|---|
-| pact-gateway | [PACT-Toolkit/pact-gateway](https://github.com/PACT-Toolkit/pact-gateway) | API gateway — single entry point for all pact-web requests |
-| pact-classifier | [PACT-Toolkit/pact-classifier](https://github.com/PACT-Toolkit/pact-classifier) | Classifies data for sensitivity and category |
-| pact-policy | [PACT-Toolkit/pact-policy](https://github.com/PACT-Toolkit/pact-policy) | Policy management and evaluation |
-| pact-redactor | [PACT-Toolkit/pact-redactor](https://github.com/PACT-Toolkit/pact-redactor) | Redacts sensitive data from content |
-| pact-filter | [PACT-Toolkit/pact-filter](https://github.com/PACT-Toolkit/pact-filter) | Filters data against policy rules |
-| pact-audit | [PACT-Toolkit/pact-audit](https://github.com/PACT-Toolkit/pact-audit) | Audit trail and event logging |
-| pact-consensus | [PACT-Toolkit/pact-consensus](https://github.com/PACT-Toolkit/pact-consensus) | Consent and approval flows |
-| pact-benchmark | [PACT-Toolkit/pact-benchmark](https://github.com/PACT-Toolkit/pact-benchmark) | Performance benchmarking |
+| Service         | Repo                                                                            | Role                                                       |
+| --------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| pact-gateway    | [PACT-Toolkit/pact-gateway](https://github.com/PACT-Toolkit/pact-gateway)       | API gateway — single entry point for all pact-web requests |
+| pact-classifier | [PACT-Toolkit/pact-classifier](https://github.com/PACT-Toolkit/pact-classifier) | Classifies data for sensitivity and category               |
+| pact-policy     | [PACT-Toolkit/pact-policy](https://github.com/PACT-Toolkit/pact-policy)         | Policy management and evaluation                           |
+| pact-redactor   | [PACT-Toolkit/pact-redactor](https://github.com/PACT-Toolkit/pact-redactor)     | Redacts sensitive data from content                        |
+| pact-filter     | [PACT-Toolkit/pact-filter](https://github.com/PACT-Toolkit/pact-filter)         | Filters data against policy rules                          |
+| pact-audit      | [PACT-Toolkit/pact-audit](https://github.com/PACT-Toolkit/pact-audit)           | Audit trail and event logging                              |
+| pact-consensus  | [PACT-Toolkit/pact-consensus](https://github.com/PACT-Toolkit/pact-consensus)   | Consent and approval flows                                 |
+| pact-benchmark  | [PACT-Toolkit/pact-benchmark](https://github.com/PACT-Toolkit/pact-benchmark)   | Performance benchmarking                                   |
 
 ---
 
@@ -48,16 +48,16 @@ The app runs at [http://localhost:3000](http://localhost:3000).
 
 ## Tech Stack
 
-| Layer | Tool |
-|---|---|
-| Framework | Next.js 16 (App Router) |
-| UI library | React 18 |
-| Styling | Tailwind CSS |
-| Components | shadcn/ui + Radix primitives |
-| Data fetching | SWR + Orval-generated REST hooks |
-| API mocking | MSW |
-| Testing | Vitest (unit) · Playwright (E2E) |
-| Package manager | pnpm |
+| Layer           | Tool                             |
+| --------------- | -------------------------------- |
+| Framework       | Next.js 16 (App Router)          |
+| UI library      | React 18                         |
+| Styling         | Tailwind CSS                     |
+| Components      | shadcn/ui + Radix primitives     |
+| Data fetching   | SWR + Orval-generated REST hooks |
+| API mocking     | MSW                              |
+| Testing         | Vitest (unit) · Playwright (E2E) |
+| Package manager | pnpm                             |
 
 ---
 
@@ -74,7 +74,8 @@ src/
 schema/             # Swagger specs per backend service
 ```
 
-See [AGENTS.md](AGENTS.md) for detailed architecture, conventions, and agent guidance.
+See [AGENTS.md](AGENTS.md) for agent and AI-assistant guidance.
+See [docs/architecture.md](docs/architecture.md) for full architecture, patterns, and principles.
 
 ---
 
