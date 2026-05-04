@@ -1,6 +1,7 @@
 import { type Metadata } from 'next';
 
 import { MSWProvider } from '@/src/framework/msw/msw_provider';
+import { SWRProvider } from '@/src/framework/swr/swr_provider';
 
 import './globals.css';
 
@@ -13,7 +14,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => (
   <html lang="en">
     <body>
       <MSWProvider />
-      {children}
+      <SWRProvider>{children}</SWRProvider>
     </body>
   </html>
 );

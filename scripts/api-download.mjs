@@ -9,8 +9,8 @@
  * Requires GITHUB_TOKEN (or GIT_TOKEN) in env with read access to the PACT-Toolkit org.
  */
 
-import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
+import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
