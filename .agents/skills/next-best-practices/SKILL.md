@@ -125,6 +125,38 @@ See [hydration-error.md](./hydration-error.md) for:
 - Debugging with error overlay
 - Fixes for each cause
 
+Add `suppressHydrationWarning` to `<body>` to suppress hydration mismatches caused by browser extensions injecting attributes into the DOM.
+
+## Root Layout Provider Pattern
+
+Keep `app/layout.tsx` as a thin RSC — extract all client-side providers into a dedicated `app/Providers.tsx` client component:
+
+```tsx
+// app/Providers.tsx
+'use client';
+import { type ReactNode } from 'react';
+import { MSWProvider } from '@/src/framework/msw/msw_provider';
+import { SWRProvider } from '@/src/framework/swr/swr_provider';
+
+export const Providers = ({ children }: { children: ReactNode }) => (
+  <>
+    <MSWProvider />
+    <SWRProvider>{children}</SWRProvider>
+  </>
+);
+
+// app/layout.tsx
+import { Providers } from './Providers';
+
+const RootLayout = ({ children }: { children: React.ReactNode }) => (
+  <html lang="en">
+    <body suppressHydrationWarning>
+      <Providers>{children}</Providers>
+    </body>
+  </html>
+);
+```
+
 ## Suspense Boundaries
 
 See [suspense-boundaries.md](./suspense-boundaries.md) for:

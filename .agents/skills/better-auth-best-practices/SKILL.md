@@ -28,6 +28,10 @@ description: Configure Better Auth server and client, set up database adapters, 
 
 Only define `baseURL`/`secret` in config if env vars are NOT set.
 
+**Must set `BETTER_AUTH_SECRET` for every Vercel environment** (Development, Preview, Production) — sessions break silently if missing in Preview/Production.
+
+**`BETTER_AUTH_URL` must match the deployed URL per environment** — do not use `localhost` for Preview or Production.
+
 ### File Location
 CLI looks for `auth.ts` in: `./`, `./lib`, `./utils`, or under `./src`. Use `--config` for custom path.
 
@@ -152,6 +156,55 @@ Key methods: `signUp.email()`, `signIn.email()`, `signIn.social()`, `signOut()`,
 Infer types: `typeof auth.$Infer.Session`, `typeof auth.$Infer.Session.user`.
 
 For separate client/server projects: `createAuthClient<typeof auth>()`.
+
+---
+
+## MSW Mocking (dev:mock mode)
+
+Mock the session endpoint so `useSession()` returns an authenticated user without a real backend:
+
+```ts
+// src/app/auth/mock/handlers/index.ts
+import { http, HttpResponse } from 'msw';
+import { v4 as uuidv4 } from 'uuid';
+
+const mockUser = {
+  id: uuidv4(),
+  email: 'dev@example.local',
+  name: 'Dev User',
+  emailVerified: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  image: null,
+};
+
+const mockSession = {
+  id: uuidv4(),
+  userId: mockUser.id,
+  expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  token: uuidv4(),
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+export const handlers = [
+  http.get('*/api/auth/get-session', () =>
+    HttpResponse.json({ user: mockUser, session: mockSession })
+  ),
+  http.post('*/api/auth/sign-out', () => HttpResponse.json({ success: true })),
+];
+```
+
+Also bypass auth middleware in mock mode:
+
+```ts
+// middleware.ts
+if (process.env.NEXT_PUBLIC_API_MOCKING === 'enabled') {
+  return NextResponse.next();
+}
+```
+
+Session cookie name: `better-auth.session_token`
 
 ---
 
