@@ -28,6 +28,32 @@ const nextConfig: NextConfig = {
         { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
         { key: 'X-Content-Type-Options', value: 'nosniff' },
         { key: 'X-Frame-Options', value: 'DENY' },
+        {
+          key: 'Permissions-Policy',
+          value: [
+            'accelerometer=()',
+            'ambient-light-sensor=()',
+            'autoplay=()',
+            'battery=()',
+            'camera=()',
+            'display-capture=()',
+            'document-domain=()',
+            'encrypted-media=()',
+            'fullscreen=()',
+            'geolocation=()',
+            'gyroscope=()',
+            'magnetometer=()',
+            'microphone=()',
+            'midi=()',
+            'payment=()',
+            'picture-in-picture=()',
+            'publickey-credentials-get=()',
+            'screen-wake-lock=()',
+            'usb=()',
+            'web-share=()',
+            'xr-spatial-tracking=()',
+          ].join(', '),
+        },
         ...(!isMock()
           ? [
               {
