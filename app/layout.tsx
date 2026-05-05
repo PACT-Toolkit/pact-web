@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => (
   <html lang="en">
-    <body>
+    <body suppressHydrationWarning>
       <MSWProvider />
       <SWRProvider>{children}</SWRProvider>
     </body>
