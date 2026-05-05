@@ -5,7 +5,6 @@ export async function init() {
       onUnhandledRequest:
         process.env.NEXT_PUBLIC_MSW_DEBUG === 'true' ? 'warn' : 'bypass',
       quiet: process.env.NEXT_PUBLIC_MSW_DEBUG !== 'true',
-      waitUntilReady: true,
     });
     if (process.env.NEXT_PUBLIC_MSW_DEBUG === 'true') {
       // @ts-expect-error -- exposing worker on window for MSW debug
