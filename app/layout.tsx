@@ -1,7 +1,6 @@
 import { type Metadata } from 'next';
 
-import { MSWProvider } from '@/src/framework/msw/msw_provider';
-import { SWRProvider } from '@/src/framework/swr/swr_provider';
+import { Providers } from './Providers';
 
 import './globals.css';
 
@@ -13,8 +12,7 @@ export const metadata: Metadata = {
 const RootLayout = ({ children }: { children: React.ReactNode }) => (
   <html lang="en">
     <body suppressHydrationWarning>
-      <MSWProvider />
-      <SWRProvider>{children}</SWRProvider>
+      <Providers>{children}</Providers>
     </body>
   </html>
 );
