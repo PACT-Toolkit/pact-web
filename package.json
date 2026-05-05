@@ -8,7 +8,7 @@
     "build": "next build",
     "build:mock": "env-cmd -f ./env/local.env next build",
     "build:local": "pnpm run build:mock && pnpm run start:mock",
-    "dev": "vercel env pull && env-cmd -f ./.env.local next dev --turbopack",
+    "dev": "vercel env pull --token=$VERCEL_TOKEN && env-cmd -f ./.env.local next dev --turbopack",
     "dev:mock": "env-cmd -f ./env/local.env next dev --turbopack",
     "start:mock": "env-cmd -f ./env/local.env next start",
     "start": "pnpm run dev:mock",
