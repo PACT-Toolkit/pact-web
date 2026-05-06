@@ -1,0 +1,72 @@
+swagger: "2.0"
+info:
+  title: Feature Service
+  description: Feature flag management for PACT
+  version: "1.0.0"
+host: localhost:8082
+basePath: /api/pact/feature
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /features:
+    get:
+      summary: List all feature flags
+      operationId: getFeatures
+      tags:
+        - features
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Feature"
+  /features/{id}:
+    put:
+      summary: Update a feature flag's enabled state
+      operationId: updateFeature
+      tags:
+        - features
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateFeatureRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Feature"
+        "404":
+          description: Feature not found
+definitions:
+  Feature:
+    type: object
+    required:
+      - id
+      - title
+      - isEnabled
+    properties:
+      id:
+        type: string
+        example: pact-benchmark-comparison
+      title:
+        type: string
+        example: Benchmark Comparison
+      isEnabled:
+        type: boolean
+        example: false
+  UpdateFeatureRequest:
+    type: object
+    required:
+      - isEnabled
+    properties:
+      isEnabled:
+        type: boolean
