@@ -1,28 +1,11 @@
-import { http, HttpResponse } from 'msw';
-import { v4 as uuidv4 } from 'uuid';
+// Auth mocking now lives server-side. /api/auth/* route handlers in
+// app/api/auth/ are real code that talks to pact-auth via gRPC; MSW only
+// intercepts client-side fetches, so there's nothing to mock here.
+//
+// The empty export keeps mocks/handlers.ts's spread structure consistent
+// with the other feature modules, so adding handlers later (e.g. for a
+// passwordless / magic-link client flow) doesn't need an import dance.
 
-const mockUser = {
-  id: uuidv4(),
-  email: 'dev@pact.local',
-  name: 'Dev User',
-  emailVerified: true,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  image: null,
-};
+import { type RequestHandler } from 'msw';
 
-const mockSession = {
-  id: uuidv4(),
-  userId: mockUser.id,
-  expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-  token: uuidv4(),
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-};
-
-export const handlers = [
-  http.get('*/api/auth/get-session', () =>
-    HttpResponse.json({ user: mockUser, session: mockSession })
-  ),
-  http.post('*/api/auth/sign-out', () => HttpResponse.json({ success: true })),
-];
+export const handlers: RequestHandler[] = [];

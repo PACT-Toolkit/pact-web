@@ -46,6 +46,8 @@
 !CODEOWNERS
 !components.json
 !middleware.ts
+!proxy.ts
+!buf.gen.yaml
 !next.config.ts
 !orval.config.ts
 !package.json

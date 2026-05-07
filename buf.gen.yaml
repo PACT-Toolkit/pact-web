@@ -1,0 +1,17 @@
+# Generates TypeScript stubs from pact-auth's proto into src/__codegen__/proto.
+#
+# Run: pnpm run proto:gen
+#
+# Inputs reference ../pact-auth/proto — the same sibling-checkout layout
+# pact-gateway uses. Once pact-auth's proto is published to BSR, switch
+# `inputs` to a `module:` reference and drop the relative path.
+
+version: v2
+clean: true
+inputs:
+  - directory: ../pact-auth/proto
+plugins:
+  - local: ./node_modules/.bin/protoc-gen-es
+    out: src/__codegen__/proto
+    opt:
+      - target=ts
