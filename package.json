@@ -67,7 +67,7 @@
     "@types/react": "18.3.28",
     "@vitejs/plugin-react": "6.0.1",
     "env-cmd": "11.0.0",
-    "eslint": "9.39.4",
+    "eslint": "10.3.0",
     "eslint-config-next": "16.2.6",
     "eslint-config-prettier": "10.1.8",
     "eslint-import-resolver-typescript": "4.4.4",
