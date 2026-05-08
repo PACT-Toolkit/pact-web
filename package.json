@@ -78,7 +78,7 @@
     "globals": "17.6.0",
     "husky": "9.1.7",
     "jsdom": "28.1.0",
-    "lint-staged": "15.4.3",
+    "lint-staged": "15.5.2",
     "msw": "2.14.3",
     "openapi-typescript": "7.13.0",
     "orval": "7.17.2",
