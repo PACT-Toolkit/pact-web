@@ -37,6 +37,7 @@
     "@connectrpc/connect-node": "2.1.1",
     "@hookform/resolvers": "5.2.2",
     "@radix-ui/react-slot": "1.2.4",
+    "@vercel/analytics": "^2.0.1",
     "axios": "1.16.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
