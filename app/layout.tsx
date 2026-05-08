@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/next';
 import { type Metadata } from 'next';
 
 import { Providers } from './Providers';
@@ -13,6 +14,7 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => (
   <html lang="en">
     <body suppressHydrationWarning>
       <Providers>{children}</Providers>
+      <Analytics />
     </body>
   </html>
 );

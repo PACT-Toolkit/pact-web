@@ -54,6 +54,7 @@
 !playwright.config.ts
 !postcss.config.mjs
 !pnpm-lock.yaml
+!pnpm-workspace.yaml
 !README.md
 !renovate.json
 !tsconfig.json
