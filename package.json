@@ -81,7 +81,7 @@
     "lint-staged": "15.4.3",
     "msw": "2.14.5",
     "openapi-typescript": "7.13.0",
-    "orval": "7.17.2",
+    "orval": "7.21.0",
     "prettier": "3.8.3",
     "swagger2openapi": "7.0.8",
     "tailwindcss": "^4.0.0",
