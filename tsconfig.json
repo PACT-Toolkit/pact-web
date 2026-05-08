@@ -12,9 +12,7 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "downlevelIteration": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
     "types": [],
     "paths": {
       "@/*": ["./*"]
