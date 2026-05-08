@@ -1,7 +1,8 @@
 'use client';
 
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -10,22 +11,32 @@ import {
   loginSchema,
   type LoginFormData,
 } from '@/src/app/auth/domain/auth_validation_schema';
+import { OAUTH_PROVIDERS } from '@/src/app/auth/ui/login/oauth_providers';
 import { Button } from '@/src/components/ui/button';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/src/components/ui/card';
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldSeparator,
+} from '@/src/components/ui/field';
 import { Input } from '@/src/components/ui/input';
-import { Label } from '@/src/components/ui/label';
-import { signIn } from '@/src/framework/auth/client';
+import { cn } from '@/src/lib/utils';
 
-export const LoginForm = () => {
+type LoginFormProps = React.ComponentProps<'div'> & {
+  initialError?: string | null;
+};
+
+export const LoginForm = ({
+  initialError,
+  className,
+  ...props
+}: LoginFormProps) => {
   const router = useRouter();
-  const [showPassword, setShowPassword] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(
+    initialError ?? null
+  );
 
   const {
     register,
@@ -35,110 +46,125 @@ export const LoginForm = () => {
     resolver: yupResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async ({ email, password }: LoginFormData) => {
     setServerError(null);
-    const result = await signIn.email({
-      email: data.email,
-      password: data.password,
-    });
-    if (result.error) {
-      setServerError(
-        result.error.message ?? 'Sign in failed. Please try again.'
-      );
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!res.ok) {
+        const payload = (await res.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        setServerError(payload?.error ?? 'Sign in failed. Please try again.');
 
-      return;
+        return;
+      }
+      router.push('/dashboard');
+    } catch {
+      setServerError('Network error. Please try again.');
     }
-    router.push('/dashboard');
   };
 
   return (
-    <Card className="w-full max-w-sm shadow-lg">
-      <CardHeader className="text-center pb-2">
-        <CardTitle className="text-2xl font-bold tracking-tight">
-          PACT
-        </CardTitle>
-        <CardDescription>Sign in to your account</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          noValidate
-          className="flex flex-col gap-4"
-        >
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
+    <div className={cn('flex flex-col gap-6', className)} {...props}>
+      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        <FieldGroup>
+          <div className="flex flex-col items-center gap-2 text-center">
+            <h1 className="text-xl font-bold">Welcome back to PACT</h1>
+            <FieldDescription>
+              Don&apos;t have an account? <Link href="/register">Sign up</Link>
+            </FieldDescription>
+          </div>
+
+          <Field data-invalid={!!errors.email}>
+            <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input
               id="email"
               type="email"
               autoComplete="email"
               placeholder="you@example.com"
               aria-invalid={!!errors.email}
-              aria-describedby={errors.email ? 'email-error' : undefined}
               {...register('email')}
             />
-            {errors.email && (
-              <p
-                id="email-error"
-                role="alert"
-                className="text-sm text-destructive"
-              >
-                {errors.email.message}
-              </p>
-            )}
-          </div>
+            {errors.email && <FieldError>{errors.email.message}</FieldError>}
+          </Field>
 
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                placeholder="••••••••"
-                aria-invalid={!!errors.password}
-                aria-describedby={
-                  errors.password ? 'password-error' : undefined
-                }
-                {...register('password')}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+          <Field data-invalid={!!errors.password}>
+            <div className="flex items-center justify-between">
+              <FieldLabel htmlFor="password">Password</FieldLabel>
+              <Link
+                href="/forgot-password"
+                className="text-sm text-muted-foreground underline-offset-4 hover:underline"
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
+                Forgot password?
+              </Link>
             </div>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              placeholder="••••••••"
+              aria-invalid={!!errors.password}
+              {...register('password')}
+            />
             {errors.password && (
-              <p
-                id="password-error"
-                role="alert"
-                className="text-sm text-destructive"
-              >
-                {errors.password.message}
-              </p>
+              <FieldError>{errors.password.message}</FieldError>
             )}
-          </div>
+          </Field>
 
           {serverError && (
-            <p role="alert" className="text-sm text-destructive text-center">
+            <FieldError role="alert" className="text-center">
               {serverError}
-            </p>
+            </FieldError>
           )}
 
-          <Button type="submit" disabled={isSubmitting} className="w-full mt-1">
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
-                Signing in…
-              </>
-            ) : (
-              'Sign in'
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+          <Field>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                  Signing in…
+                </>
+              ) : (
+                'Sign in'
+              )}
+            </Button>
+          </Field>
+
+          <FieldSeparator>Or</FieldSeparator>
+
+          <Field className="grid grid-cols-3 gap-3">
+            {OAUTH_PROVIDERS.map(({ id, name, iconPath }) => (
+              <Button
+                key={id}
+                variant="outline"
+                asChild
+                className="flex h-auto flex-col gap-1.5 py-3"
+              >
+                <a href={`/api/auth/oauth/start?provider=${id}`}>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="size-5"
+                    aria-hidden
+                  >
+                    <path d={iconPath} fill="currentColor" />
+                  </svg>
+                  <span className="text-sm">{name}</span>
+                </a>
+              </Button>
+            ))}
+          </Field>
+        </FieldGroup>
+      </form>
+
+      <FieldDescription className="px-6 text-center">
+        By signing in you agree to our <a href="#">Terms of Service</a> and{' '}
+        <a href="#">Privacy Policy</a>.
+      </FieldDescription>
+    </div>
   );
 };

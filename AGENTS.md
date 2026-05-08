@@ -39,17 +39,19 @@ When creating new skills, **always create them in `.agents/skills/{skill-name}/S
 
 Available skills:
 
-- `shadcn` — add, fix, style, and compose shadcn/ui components; project context and usage examples
-- `tailwind-design-system` — build scalable design systems with Tailwind CSS v4, design tokens, component libraries
-- `typescript-advanced-types` — generics, conditional types, mapped types, template literals, utility types
-- `playwright-best-practices` — Playwright E2E: flaky test fixes, POM, CI/CD, mocking, a11y, security, performance
-- `better-auth-best-practices` — auth patterns and best practices using Better Auth
+- `gitmoji` — pick the right gitmoji for a commit and write the subject in this repo's style (emoji + lowercase imperative); use when crafting commit messages
+- `grill-me` — interview the user about an upcoming task until the spec is unambiguous; produces a confirmed plan, then stops (does not implement). Trigger with `/grill-me`
 - `linear-plan` — scope and break down a feature into Linear tasks (planning, ticket creation, project setup)
-- `next-best-practices` — Next.js conventions: file/route layout, RSC boundaries, async APIs, metadata, route handlers, image/font optimization
-- `vercel-react-best-practices` — React/Next.js performance guidelines from Vercel Engineering (write/review/refactor)
+- `next-best-practices` — Next.js conventions: file/route layout, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling
+- `playwright-best-practices` — Playwright testing across E2E, component, API, visual, a11y, security, perf, Electron, and extensions; flaky-fix, POM, CI/CD, mocking, auth, tags
+- `shadcn` — add, search, fix, style, and compose shadcn/ui components; registries, presets, project context, usage examples
+- `swr-best-practices` — SWR for data fetching, mutations, revalidation, error handling, caching, subscriptions, middleware, Next.js integration
+- `tailwind-design-system` — build scalable design systems with Tailwind CSS v4: design tokens, component libraries, responsive patterns
+- `typescript-advanced-types` — generics, conditional types, mapped types, template literals, utility types
+- `vercel-react-best-practices` — React/Next.js performance guidelines from Vercel Engineering: components, data fetching, bundle optimization
 - `web-design-guidelines` — review UI code against the Web Interface Guidelines (a11y, UX, design polish)
-- `writing-e2e-tests` — write Playwright E2E tests using standard APIs (no custom helpers)
-- `writing-unit-tests` — write Vitest unit tests using standard APIs (no custom helpers)
+- `writing-e2e-tests` — write Playwright E2E tests using standard APIs (no custom helpers); for `*.spec.ts` files
+- `writing-unit-tests` — write Vitest unit tests using standard APIs (no custom helpers); for `*.test.ts` files
 
 > Skills are kept in sync across tools by symlinking — `.cursor/skills` and `.claude/skills` both point at `.agents/skills`. To list what is actually installed locally, run `ls .agents/skills`.
 

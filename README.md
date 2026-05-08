@@ -8,16 +8,18 @@ Built with Next.js 16, React 18, Tailwind CSS, and shadcn/ui.
 
 ## Backend Services
 
-| Service         | Repo                                                                            | Role                                                       |
-| --------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| pact-gateway    | [PACT-Toolkit/pact-gateway](https://github.com/PACT-Toolkit/pact-gateway)       | API gateway — single entry point for all pact-web requests |
-| pact-classifier | [PACT-Toolkit/pact-classifier](https://github.com/PACT-Toolkit/pact-classifier) | Classifies data for sensitivity and category               |
-| pact-policy     | [PACT-Toolkit/pact-policy](https://github.com/PACT-Toolkit/pact-policy)         | Policy management and evaluation                           |
-| pact-redactor   | [PACT-Toolkit/pact-redactor](https://github.com/PACT-Toolkit/pact-redactor)     | Redacts sensitive data from content                        |
-| pact-filter     | [PACT-Toolkit/pact-filter](https://github.com/PACT-Toolkit/pact-filter)         | Filters data against policy rules                          |
-| pact-audit      | [PACT-Toolkit/pact-audit](https://github.com/PACT-Toolkit/pact-audit)           | Audit trail and event logging                              |
-| pact-consensus  | [PACT-Toolkit/pact-consensus](https://github.com/PACT-Toolkit/pact-consensus)   | Consent and approval flows                                 |
-| pact-benchmark  | [PACT-Toolkit/pact-benchmark](https://github.com/PACT-Toolkit/pact-benchmark)   | Performance benchmarking                                   |
+| Service         | Role                                                                        |
+| --------------- | --------------------------------------------------------------------------- |
+| pact-gateway    | API gateway — single entry point; enforces rate limits and quotas           |
+| pact-classifier | Classifies data for sensitivity, category, and prompt injection patterns    |
+| pact-policy     | Policy management, evaluation, and agent scope/permission definitions       |
+| pact-redactor   | Redacts sensitive data and system prompt patterns from inputs and outputs   |
+| pact-filter     | Filters content against policy rules, bidirectionally on inputs and outputs |
+| pact-audit      | Audit trail and event logging                                               |
+| pact-consensus  | Consent and approval flows                                                  |
+| pact-benchmark  | Performance benchmarking and consumption quota tracking                     |
+
+> Service repositories are private. Contact the maintainers for access.
 
 ---
 
