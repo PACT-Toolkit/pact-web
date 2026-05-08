@@ -142,8 +142,8 @@ importers:
         specifier: 28.1.0
         version: 28.1.0
       lint-staged:
-        specifier: 15.4.3
-        version: 15.4.3
+        specifier: 15.5.2
+        version: 15.5.2
       msw:
         specifier: 2.14.5
         version: 2.14.5(@types/node@22.17.1)(typescript@5.9.3)
@@ -5503,8 +5503,8 @@ packages:
   linkify-it@5.0.0:
     resolution: {integrity: sha512-5aHCbzQRADcdP+ATqnDuhhJ/MRIqDkZX5pyjFHRRysS8vZ5AbqGEoFIb6pYHPZ+L/OC2Lc+xT8uHVVR5CAK/wQ==}
 
-  lint-staged@15.4.3:
-    resolution: {integrity: sha512-FoH1vOeouNh1pw+90S+cnuoFwRfUD9ijY2GKy5h7HS3OR7JVir2N2xrsa0+Twc1B7cW72L+88geG5cW4wIhn7g==}
+  lint-staged@15.5.2:
+    resolution: {integrity: sha512-YUSOLq9VeRNAo/CTaVmhGDKG+LBtA8KF1X4K5+ykMSwWST1vDxJRB2kv2COgLb1fvpCo+A/y9A0G0znNVmdx4w==}
     engines: {node: '>=18.12.0'}
     hasBin: true
 
@@ -12682,7 +12682,7 @@ snapshots:
     dependencies:
       uc.micro: 2.1.0
 
-  lint-staged@15.4.3:
+  lint-staged@15.5.2:
     dependencies:
       chalk: 5.6.2
       commander: 13.1.0
