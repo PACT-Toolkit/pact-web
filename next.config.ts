@@ -1,9 +1,37 @@
+import { networkInterfaces } from 'os';
+
 import { type NextConfig } from 'next';
 
 import { isMock } from './src/framework/helpers/environment';
 
+// Dev-only: allow the dev server to accept requests on the host's LAN IP
+// (e.g. http://192.168.x.x:3000) in addition to localhost, so a phone on
+// the same WiFi can hit the verify-email link in `make dev-lan` flows.
+// Next.js requires exact hosts here (no CIDR), so we enumerate every
+// non-loopback IPv4 the host currently has and feed them in. Production
+// never reads this — `allowedDevOrigins` is ignored when NODE_ENV !==
+// 'development'.
+const detectLanHosts = (): string[] => {
+  const ifaces = networkInterfaces();
+  const out = new Set<string>();
+  for (const list of Object.values(ifaces)) {
+    if (!list) continue;
+    for (const iface of list) {
+      if (iface.family !== 'IPv4') continue;
+      if (iface.internal) continue;
+      out.add(iface.address);
+    }
+  }
+
+  return [...out];
+};
+
+const allowedDevOrigins =
+  process.env.NODE_ENV === 'development' ? detectLanHosts() : undefined;
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  ...(allowedDevOrigins ? { allowedDevOrigins } : {}),
   turbopack: {
     rules: {
       '*.svg': {

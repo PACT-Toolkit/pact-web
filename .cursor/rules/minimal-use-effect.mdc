@@ -1,0 +1,85 @@
+---
+description: Avoid useEffect — prefer render-time derivations, event handlers, useSyncExternalStore, and SWR
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Minimal `useEffect`
+
+`useEffect` is a last resort, not a first reach. Almost every common use is better handled by something else. Default to **no** effect; reach for one only when synchronizing with an external system that has lifecycle (subscribe / unsubscribe).
+
+Reference: [React docs — You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect).
+
+## ❌ Don't use `useEffect` for…
+
+### Derived state — compute during render or memoize
+
+```tsx
+// ❌ BAD: extra render + state for something that's just a function of props
+useEffect(() => setFullName(`${first} ${last}`), [first, last]);
+
+// ✅ GOOD
+const fullName = `${first} ${last}`;
+const expensive = useMemo(() => parse(input), [input]);
+```
+
+### Responding to user actions — use the event handler
+
+```tsx
+// ❌ BAD: routes a click through state + effect
+useEffect(() => { if (submitted) postOrder(); }, [submitted]);
+
+// ✅ GOOD: do it where the click happens
+const onSubmit = () => postOrder();
+```
+
+### Resetting state when a prop changes — use the `key` prop
+
+```tsx
+// ❌ BAD
+useEffect(() => setDraft(''), [userId]);
+
+// ✅ GOOD: remount the component with a fresh state instead
+<Profile key={userId} userId={userId} />
+```
+
+### Reading browser capability / mount state — use `useSyncExternalStore`
+
+```tsx
+// ❌ BAD: causes a hydration mismatch and an extra render pass
+const [mounted, setMounted] = useState(false);
+useEffect(() => setMounted(true), []);
+
+// ✅ GOOD
+const mounted = useHasMounted();
+const passkeySupported = useWebAuthnSupported();
+```
+
+(See `src/app/auth/domain/use_has_mounted.ts` and `use_webauthn_supported.ts`.)
+
+### Data fetching — use SWR
+
+```tsx
+// ❌ BAD
+useEffect(() => { fetch('/api/me').then(setUser); }, []);
+
+// ✅ GOOD: see `.cursor/rules/use-swr.mdc`
+const { data: user } = useUser();
+```
+
+## ✅ Legitimate `useEffect`
+
+Reach for it only when **all** of these are true:
+1. The work is a side effect on the *outside world* (browser APIs, websockets, third-party libs, manual subscriptions, imperative focus / scroll).
+2. The lifecycle matters (start on mount, stop on unmount or dep change).
+3. There's no first-class hook for it (`useSyncExternalStore`, SWR, a custom hook).
+
+Existing examples in this codebase:
+- `MSWProvider` — dynamic import + register MSW worker on mount.
+- `LoginForm` — WebAuthn conditional-mediation ceremony: starts on mount, aborts on unmount via an `AbortController`.
+
+If you write a new effect, the body must include cleanup (`return () => …`) or have a comment explaining why none is needed.
+
+## Lint guard
+
+The repo lints `react-hooks/set-state-in-effect`. If you find yourself fighting it, that's the signal you're using an effect for the wrong job — re-read this rule.

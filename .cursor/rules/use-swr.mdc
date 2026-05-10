@@ -1,0 +1,60 @@
+---
+description: Always use SWR for client-side data fetching and remote mutations
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Use SWR for Client Data
+
+Client components must use **SWR** (already a dep, configured at `src/framework/swr/swr_provider.tsx`) for any read or remote mutation. Raw `fetch` / `axios` calls inside `'use client'` components are not allowed.
+
+## Reads → `useSWR`
+
+```typescript
+// ❌ BAD: bare fetch in a client component
+'use client';
+useEffect(() => { fetch('/api/me').then(setUser); }, []);
+
+// ✅ GOOD
+'use client';
+const { data: user, error, isLoading } = useUser();
+```
+
+Wrap each resource in a custom hook so the key + fetcher live in one place (see `src/__codegen__/rest/feature/hooks.ts` for the canonical shape).
+
+## Writes → `useSWRMutation`
+
+Never use `mutate(key, fetcher())` for writes — it conflates "POST to server" with "update cache" and surfaces the wrong loading flag. Use `useSWRMutation`:
+
+```typescript
+'use client';
+
+import useSWRMutation from 'swr/mutation';
+
+const { trigger, isMutating, error } = useSWRMutation(
+  '/api/auth/passkey/rename',
+  (url, { arg }: { arg: { passkeyId: string; label: string } }) =>
+    postJson(url, arg),
+  { onSuccess: refresh }
+);
+
+const onRename = (passkeyId: string, label: string) =>
+  trigger({ passkeyId, label });
+```
+
+- Side effects (close dialog, navigate, toast, RSC `router.refresh()`) belong in `onSuccess` / `onError`, not the awaited path.
+- Use `isMutating` for submit-button disabled state. **Not** `isValidating` (background revalidate) or `isLoading` (first paint).
+
+## Fetchers throw on non-2xx
+
+SWR populates `error` only when the fetcher throws. The shared `postJson`/`getJson` helpers under `src/framework/auth/pact_auth/web_mutations.ts` already throw an `ApiError` that carries `status` and `info`.
+
+## Server Components: do **not** use SWR hooks
+
+`useSWR` / `useSWRMutation` require `'use client'`. Server Components fetch data directly (RSC + `fetch`) and pass it down as props. After a client mutation, call `router.refresh()` from `onSuccess` to re-render the RSC.
+
+`SWRConfig` and `unstable_serialize` are RSC-safe and exist for handing fallback data down — use them, not the hooks.
+
+## When in doubt
+
+The full conventions live under `.agents/skills/swr-best-practices/rules/` — read the relevant `*.md` before introducing a new pattern (caching, pagination, prefetch, optimistic update, suspense, websockets).

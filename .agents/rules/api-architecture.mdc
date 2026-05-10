@@ -1,0 +1,45 @@
+---
+description: How pact-web talks to backend services — pact-auth via gRPC BFF, everything else through pact-gateway
+globs: **/*.{ts,tsx,yaml,proto}
+alwaysApply: false
+---
+
+# API Architecture
+
+Two transport patterns, picked by **trust boundary**, not by personal preference.
+
+## The split
+
+| Service | Transport | Where the call lives |
+|---|---|---|
+| **pact-auth** (sessions, passkeys, OAuth, MFA) | gRPC over h2c via `@connectrpc/connect-node` | **Server-only.** `getPactAuthClient()` from `src/framework/auth/pact_auth/client.ts` is `import 'server-only'` — never reach for it from a Client Component. |
+| **pact-gateway** (`/v1/check`) and all other public REST services (feature, future admin/config surfaces) | HTTP/JSON, OpenAPI-described | **Browser-side via SWR.** Hits `/api/pact/*` → catch-all proxy in `app/api/pact/[...path]/route.ts` → gateway. |
+
+The gateway is the bearer-auth boundary for the *data plane* — it's hit the same way by external integrators as by our own browser. pact-auth is the *token issuer* and lives behind the BFF.
+
+## Adding a new pact-auth RPC
+
+1. Edit `../pact-auth/proto/auth.proto`, run `make proto` there.
+2. `pnpm run proto:gen` here.
+3. Add a proxy route under `app/api/auth/<rpc>/route.ts` that reads the `pact_session` cookie, calls `getPactAuthClient().<rpc>(...)`, returns JSON.
+4. Add a fetcher to `src/framework/auth/pact_auth/web_mutations.ts` and consume via `useSWRMutation` (see `.cursor/rules/use-swr.mdc`).
+
+## Adding a new public REST service
+
+1. Write `schema/<service>/swagger.yaml` (OpenAPI 3, even though the file is named `swagger`).
+2. Register the service with the gateway (see `pact-gateway` README → "Adding a downstream pipeline service").
+3. Orval generates SWR hooks under `src/__codegen__/rest/<service>/`.
+4. Use the hooks directly in Client Components — `proxy.ts` and the catch-all already handle bearer-token forwarding.
+
+No new Next.js API routes needed for step 4. If you find yourself writing `app/api/<service>/...`, you've taken the wrong path.
+
+## ❌ Don't do this
+
+- **Don't expose pact-auth to the browser** via `@connectrpc/connect-web`. Cookie-bound proxy routes give us HttpOnly sessions and a single CSRF surface; deeper TS types aren't worth the security regression.
+- **Don't route `/api/auth/*` through the gateway.** Auth bootstraps a session — the gateway requires one to authenticate. The arrows go the wrong way.
+- **Don't mirror pact-auth as OpenAPI.** Source of truth is `auth.proto`. A second spec is a maintenance burden with no consumer.
+- **Don't make Next.js a fat BFF for non-auth services.** Any RPC an external integrator could legitimately hit goes through the gateway.
+
+## When in doubt
+
+Ask: "could a third-party app holding a valid session token legitimately call this?" → **gateway**. Otherwise (token-issuance, account internals) → **pact-auth BFF**.

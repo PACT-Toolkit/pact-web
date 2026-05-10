@@ -4,14 +4,14 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { Loader2, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import {
   resetPasswordSchema,
   type ResetPasswordFormData,
 } from '@/src/app/auth/domain/auth_validation_schema';
-import { checkBreach } from '@/src/app/auth/domain/check_breach';
+import { usePasswordBreachWarning } from '@/src/app/auth/domain/use_password_breach_warning';
 import { Button } from '@/src/components/ui/button';
 import {
   Field,
@@ -30,8 +30,7 @@ type Props = React.ComponentProps<'div'> & {
 export const ResetPasswordForm = ({ token, className, ...props }: Props) => {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
-  const [breachWarning, setBreachWarning] = useState(false);
-  const breachAbort = useRef<AbortController | null>(null);
+  const { warning: breachWarning, onPasswordBlur } = usePasswordBreachWarning();
 
   const {
     register,
@@ -42,21 +41,6 @@ export const ResetPasswordForm = ({ token, className, ...props }: Props) => {
   });
 
   const passwordRegister = register('password');
-
-  const onPasswordBlur = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      const pw = e.target.value;
-      setBreachWarning(false);
-      breachAbort.current?.abort();
-      if (pw.length < 15) return;
-      const ctrl = new AbortController();
-      breachAbort.current = ctrl;
-      checkBreach(pw, ctrl.signal).then((hit) => {
-        if (!ctrl.signal.aborted) setBreachWarning(hit);
-      });
-    },
-    []
-  );
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     setServerError(null);
@@ -133,7 +117,7 @@ export const ResetPasswordForm = ({ token, className, ...props }: Props) => {
               <FieldError>{errors.password.message}</FieldError>
             )}
             {breachWarning && !errors.password && (
-              <p className="flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400">
+              <p className="flex items-center gap-1.5 text-sm text-warning">
                 <TriangleAlert size={14} aria-hidden />
                 This password has appeared in a data breach. Consider choosing a
                 different one.

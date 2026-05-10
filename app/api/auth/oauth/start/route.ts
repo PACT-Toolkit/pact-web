@@ -2,6 +2,7 @@ import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import { defaultReturnTo } from '@/src/framework/auth/pact_auth/return_to';
 
 export const runtime = 'nodejs';
 
@@ -27,10 +28,7 @@ export const GET = async (req: NextRequest) => {
   }
 
   const returnToParam = req.nextUrl.searchParams.get('return_to');
-  const defaultReturnTo =
-    process.env.PACT_AUTH_DEFAULT_RETURN_TO ??
-    'http://localhost:3000/dashboard';
-  const returnTo = returnToParam ?? defaultReturnTo;
+  const returnTo = returnToParam ?? defaultReturnTo(req);
 
   let resp: Awaited<
     ReturnType<ReturnType<typeof getPactAuthClient>['startLogin']>

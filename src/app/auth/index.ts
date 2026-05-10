@@ -1,5 +1,9 @@
 export { ForgotPasswordForm } from './ui/forgot-password/ForgotPasswordForm';
 export { LoginForm } from './ui/login/LoginForm';
 export { LogoutButton } from './ui/logout/LogoutButton';
+export { AddPasskeyButton } from './ui/passkey/AddPasskeyButton';
+export { DashboardPasskeyCTA } from './ui/passkey/DashboardPasskeyCTA';
+export { PasskeyEnrollmentBanner } from './ui/passkey/PasskeyEnrollmentBanner';
 export { RegisterForm } from './ui/register/RegisterForm';
 export { ResetPasswordForm } from './ui/reset-password/ResetPasswordForm';
+export { SignInMethodsPanel } from './ui/settings/SignInMethodsPanel';

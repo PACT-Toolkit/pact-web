@@ -2,6 +2,7 @@ import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import { defaultReturnTo } from '@/src/framework/auth/pact_auth/return_to';
 
 export const runtime = 'nodejs';
 
@@ -29,14 +30,11 @@ export const POST = async (req: NextRequest) => {
   // /api/auth/reset-password with the new password. Whatever return_to we
   // pass here is what pact-auth echoes back to the UI — we just want a
   // post-success destination.
-  const defaultReturnTo =
-    process.env.PACT_AUTH_DEFAULT_RETURN_TO ??
-    'http://localhost:3000/dashboard';
-
   try {
     await getPactAuthClient().requestPasswordReset({
       email,
-      returnTo: isString(returnTo) && returnTo ? returnTo : defaultReturnTo,
+      returnTo:
+        isString(returnTo) && returnTo ? returnTo : defaultReturnTo(req),
     });
   } catch (err) {
     if (err instanceof ConnectError && err.code === Code.InvalidArgument) {

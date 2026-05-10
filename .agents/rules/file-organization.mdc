@@ -1,0 +1,63 @@
+---
+description: One module per file — helpers and components live separately
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# File Organization
+
+Keep each file focused on a single concern.
+
+## UI components: one component per file
+
+A `.tsx` file exports **one** UI component (plus its `Props` type). Sub-pieces that exist only as render helpers live in their own file under the same folder.
+
+```
+src/app/auth/ui/settings/
+  SignInMethodsPanel.tsx        # the panel
+  PasskeyRow.tsx                # extracted row, not inlined
+  ConnectedIdentityRow.tsx      # ditto
+```
+
+- ❌ Don't define `const PasskeyRow = (...) => <li>...</li>` inside `SignInMethodsPanel.tsx` to "save a file".
+- ✅ Do extract once a sub-element has its own state, more than ~30 lines of JSX, or is reused by a sibling.
+
+## Helpers: not in component files
+
+Pure functions, formatters, type guards, and constants must not live in a component file. Move them to a sibling helper module so they're testable and importable.
+
+```
+src/app/auth/ui/settings/
+  SignInMethodsPanel.tsx
+  format.ts                     # formatLastUsed, dateFormatter
+  providers.ts                  # providerMeta(id)
+```
+
+```typescript
+// ❌ BAD: helpers in the component file
+// src/app/auth/ui/settings/SignInMethodsPanel.tsx
+const formatLastUsed = (when: Date | null): string => { /* ... */ };
+const providerMeta = (id: string) => OAUTH_PROVIDERS.find(...) ?? { ... };
+
+export const SignInMethodsPanel = (...) => { ... };
+```
+
+```typescript
+// ✅ GOOD: helpers in a sibling file
+// src/app/auth/ui/settings/format.ts
+export const formatLastUsed = (when: Date | null): string => { /* ... */ };
+
+// src/app/auth/ui/settings/SignInMethodsPanel.tsx
+import { formatLastUsed } from './format';
+```
+
+## Where helpers belong
+
+- **Pure logic / domain rules** → `src/app/<feature>/domain/` (e.g. `webauthn.ts`)
+- **Server-only data fetchers** → `src/framework/<area>/` (mark with `import 'server-only'`)
+- **Cross-feature utilities** → `src/lib/`
+- **Feature-local UI helpers (formatters, icon pickers)** → sibling file in the same `ui/` folder
+
+## Custom hooks
+
+Each `useXxx` hook lives in its own file under `src/app/<feature>/domain/` or a `hooks/` folder — never inlined above a component.

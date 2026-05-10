@@ -8,6 +8,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@/': `${path.resolve(__dirname)}/`,
+      // `server-only` is a Next.js sentinel that throws if imported on the
+      // client. Tests run in a node-ish env, so stub it out.
+      'server-only': path.resolve(__dirname, 'src/test/server-only.stub.ts'),
     },
   },
   test: {

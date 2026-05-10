@@ -3,14 +3,16 @@
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Eye, EyeOff, Loader2, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { subscribeToVerified } from '@/src/app/auth/domain/auth_broadcast';
 import {
   registerSchema,
   type RegisterFormData,
 } from '@/src/app/auth/domain/auth_validation_schema';
-import { checkBreach } from '@/src/app/auth/domain/check_breach';
+import { usePasswordBreachWarning } from '@/src/app/auth/domain/use_password_breach_warning';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -22,12 +24,35 @@ import {
 import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
 
+// Stable error codes the API route may emit alongside a human message.
+// Keeping these as a string union (not an enum) so the form can switch on
+// code without coupling to a separate constants module.
+type RegisterErrorCode = 'email_already_registered';
+
+type RegisterError = {
+  code?: RegisterErrorCode;
+  message: string;
+};
+
 export const RegisterForm = () => {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<RegisterError | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [breachWarning, setBreachWarning] = useState(false);
-  const breachAbort = useRef<AbortController | null>(null);
+  const { warning: breachWarning, onPasswordBlur } = usePasswordBreachWarning();
+
+  // While the "Check your email" screen is up, listen for the verify
+  // tab's broadcast and self-navigate to the app. The session cookie
+  // is already set on this same browser by `/api/auth/verify-email`,
+  // so by the time we hit /dashboard the (app) layout's session check
+  // succeeds without a round-trip back to the login page.
+  useEffect(() => {
+    if (!submitted) return;
+
+    return subscribeToVerified(() => {
+      router.replace('/dashboard');
+    });
+  }, [submitted, router]);
 
   const {
     register,
@@ -38,21 +63,6 @@ export const RegisterForm = () => {
   });
 
   const passwordRegister = register('password');
-
-  const onPasswordBlur = useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      const pw = e.target.value;
-      setBreachWarning(false);
-      breachAbort.current?.abort();
-      if (pw.length < 15) return;
-      const ctrl = new AbortController();
-      breachAbort.current = ctrl;
-      checkBreach(pw, ctrl.signal).then((hit) => {
-        if (!ctrl.signal.aborted) setBreachWarning(hit);
-      });
-    },
-    []
-  );
 
   const onSubmit = async (data: RegisterFormData) => {
     setServerError(null);
@@ -68,17 +78,19 @@ export const RegisterForm = () => {
         }),
       });
     } catch {
-      setServerError('Network error. Please try again.');
+      setServerError({ message: 'Network error. Please try again.' });
 
       return;
     }
     if (!res.ok) {
       const payload = (await res.json().catch(() => null)) as {
+        code?: RegisterErrorCode;
         error?: string;
       } | null;
-      setServerError(
-        payload?.error ?? 'Registration failed. Please try again.'
-      );
+      setServerError({
+        code: payload?.code,
+        message: payload?.error ?? 'Registration failed. Please try again.',
+      });
 
       return;
     }
@@ -97,9 +109,13 @@ export const RegisterForm = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center text-sm text-muted-foreground">
-          <p className="mb-4">
+          <p className="mb-2">
             Click the link to finish creating your account. The link expires in
             an hour.
+          </p>
+          <p className="mb-4">
+            Keep this tab open. Once you verify, we&apos;ll bring you straight
+            in.
           </p>
           <Link href="/login" className="underline">
             Back to sign in
@@ -204,7 +220,7 @@ export const RegisterForm = () => {
               </p>
             )}
             {breachWarning && !errors.password && (
-              <p className="flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400">
+              <p className="flex items-center gap-1.5 text-sm text-warning">
                 <TriangleAlert size={14} aria-hidden />
                 This password has appeared in a data breach. Consider choosing a
                 different one.
@@ -236,11 +252,33 @@ export const RegisterForm = () => {
             )}
           </div>
 
-          {serverError && (
-            <p role="alert" className="text-sm text-destructive text-center">
-              {serverError}
-            </p>
-          )}
+          {serverError &&
+            (serverError.code === 'email_already_registered' ? (
+              <div
+                role="alert"
+                className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
+              >
+                <p className="font-medium">{serverError.message}</p>
+                <p className="mt-1 text-destructive/90">
+                  Please{' '}
+                  <Link href="/login" className="underline underline-offset-4">
+                    sign in
+                  </Link>
+                  , or use{' '}
+                  <Link
+                    href="/forgot-password"
+                    className="underline underline-offset-4"
+                  >
+                    forgot password
+                  </Link>{' '}
+                  if you can&apos;t remember it.
+                </p>
+              </div>
+            ) : (
+              <p role="alert" className="text-sm text-destructive text-center">
+                {serverError.message}
+              </p>
+            ))}
 
           <Button type="submit" disabled={isSubmitting} className="w-full mt-1">
             {isSubmitting ? (

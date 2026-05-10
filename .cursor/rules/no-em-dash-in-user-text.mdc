@@ -1,0 +1,67 @@
+---
+description: Never use em-dashes (U+2014) in any text a user can see — UI copy, error messages, email bodies, validation strings.
+alwaysApply: true
+---
+
+# No em-dashes in user-facing text
+
+Em-dashes (`—`, U+2014) read as AI-generated, render unpredictably in
+email clients and assistive tech, and break visually on small screens.
+Use period, comma, semicolon, or colon instead, depending on the
+sentence shape.
+
+## Where this rule applies
+
+- JSX / TSX text inside components and pages
+- Form validation messages and yup / zod schemas
+- Toast, banner, dialog, and inline error copy
+- API route response bodies — anything in `error`, `message`,
+  `description`, etc.
+- Email templates (subject, plain-text, HTML) — `pact-notify/internal/templates/files/*`
+- Backend error strings that bubble to the UI — e.g. `status.Error`,
+  `status.Errorf`, `errors.New` returned by gRPC handlers when the
+  Connect code is `InvalidArgument` (pact-web surfaces these via
+  `err.rawMessage`)
+- Any string an end user can read
+
+## Where it does NOT apply
+
+- Code comments
+- Test names, `t.Skip` / `t.Errorf` messages
+- Makefile and shell-script echoes
+- CI annotation strings (`::error::…`)
+- Generated code (`__codegen__`, `*.pb.go`)
+- Internal docs (`.cursor/rules/`, `.claude/`, `.agents/`, `AGENTS.md`,
+  this file's own description / examples)
+
+## Replacement guide
+
+| Pattern | Replace with | Why |
+|---|---|---|
+| Sentence break: `A — B.` | `A. B.` (capitalize B) | Two thoughts → two sentences |
+| Tight aside: `X, Y — Z` | `X, Y, Z` (comma) | Aside is light enough |
+| Apposition: `name — definition` | `name: definition` | Colon introduces a definition |
+| Recovery instruction: `bad state — do X` | `bad state; do X` or `bad state. Do X.` | Semicolon for tight pairs |
+
+## Examples (from this codebase)
+
+```diff
+- Save these now — we'll only show them once.
++ Save these now. We'll only show them once.
+
+- this is your only sign-in method — add a passkey before disconnecting
++ this is your only sign-in method; add a passkey before disconnecting
+
+- password has appeared in a data breach — please choose a different one
++ password has appeared in a data breach. Please choose a different one
+
+- If you didn't request a reset, ignore this message — your password hasn't changed.
++ If you didn't request a reset, ignore this message. Your password hasn't changed.
+```
+
+## Quick check before merging
+
+```bash
+# Inside any user-text file, this should return nothing:
+rg '"[^"]*\u2014[^"]*"|>[^<]*\u2014[^<]*<' src/ app/
+```

@@ -2,6 +2,7 @@ import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import { rebaseReturnTo } from '@/src/framework/auth/pact_auth/return_to';
 
 export const runtime = 'nodejs';
 
@@ -76,15 +77,12 @@ export const GET = async (
   }
 
   // pact-auth echoes back the same return_to it canonicalized at StartLogin
-  // and validated against the allowlist. Treat as opaque-but-trusted.
+  // and validated against the allowlist. Rebase the host onto the inbound
+  // origin so the redirect always lands on a URL the user's current device
+  // can reach (preserves the path so /settings/billing-style deep links
+  // still work).
   const returnTo = resp.returnTo || FALLBACK_RETURN_TO;
-  const target = (() => {
-    try {
-      return new URL(returnTo);
-    } catch {
-      return new URL(returnTo, req.url);
-    }
-  })();
+  const target = rebaseReturnTo(req, returnTo);
 
   const expiresAt = new Date(Number(resp.expiresAtUnix) * 1000);
   const res = NextResponse.redirect(target);
