@@ -1,16 +1,17 @@
 'use client';
 
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Loader2 } from 'lucide-react';
+import { Loader2, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import {
   resetPasswordSchema,
   type ResetPasswordFormData,
 } from '@/src/app/auth/domain/auth_validation_schema';
+import { checkBreach } from '@/src/app/auth/domain/check_breach';
 import { Button } from '@/src/components/ui/button';
 import {
   Field,
@@ -29,6 +30,8 @@ type Props = React.ComponentProps<'div'> & {
 export const ResetPasswordForm = ({ token, className, ...props }: Props) => {
   const router = useRouter();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [breachWarning, setBreachWarning] = useState(false);
+  const breachAbort = useRef<AbortController | null>(null);
 
   const {
     register,
@@ -37,6 +40,23 @@ export const ResetPasswordForm = ({ token, className, ...props }: Props) => {
   } = useForm<ResetPasswordFormData>({
     resolver: yupResolver(resetPasswordSchema),
   });
+
+  const passwordRegister = register('password');
+
+  const onPasswordBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      const pw = e.target.value;
+      setBreachWarning(false);
+      breachAbort.current?.abort();
+      if (pw.length < 15) return;
+      const ctrl = new AbortController();
+      breachAbort.current = ctrl;
+      checkBreach(pw, ctrl.signal).then((hit) => {
+        if (!ctrl.signal.aborted) setBreachWarning(hit);
+      });
+    },
+    []
+  );
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     setServerError(null);
@@ -90,7 +110,7 @@ export const ResetPasswordForm = ({ token, className, ...props }: Props) => {
           <div className="flex flex-col items-center gap-2 text-center">
             <h1 className="text-xl font-bold">Choose a new password</h1>
             <FieldDescription>
-              At least 8 characters. We&apos;ll sign you in once you&apos;re
+              At least 15 characters. We&apos;ll sign you in once you&apos;re
               done.
             </FieldDescription>
           </div>
@@ -103,10 +123,21 @@ export const ResetPasswordForm = ({ token, className, ...props }: Props) => {
               autoComplete="new-password"
               placeholder="••••••••"
               aria-invalid={!!errors.password}
-              {...register('password')}
+              {...passwordRegister}
+              onBlur={(e) => {
+                void passwordRegister.onBlur(e);
+                onPasswordBlur(e);
+              }}
             />
             {errors.password && (
               <FieldError>{errors.password.message}</FieldError>
+            )}
+            {breachWarning && !errors.password && (
+              <p className="flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400">
+                <TriangleAlert size={14} aria-hidden />
+                This password has appeared in a data breach. Consider choosing a
+                different one.
+              </p>
             )}
           </Field>
 

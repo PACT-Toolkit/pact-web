@@ -20,7 +20,7 @@ import type { Message } from '@bufbuild/protobuf';
 export const file_auth: GenFile =
   /*@__PURE__*/
   fileDesc(
-    'CgphdXRoLnByb3RvEgxwYWN0LmF1dGgudjEiOAoRU3RhcnRMb2dpblJlcXVlc3QSEAoIcHJvdmlkZXIYASABKAkSEQoJcmV0dXJuX3RvGAIgASgJIj4KElN0YXJ0TG9naW5SZXNwb25zZRIZChFhdXRob3JpemF0aW9uX3VybBgBIAEoCRINCgVzdGF0ZRgCIAEoCSJcChVIYW5kbGVDYWxsYmFja1JlcXVlc3QSEAoIcHJvdmlkZXIYASABKAkSDAoEY29kZRgCIAEoCRINCgVzdGF0ZRgDIAEoCRIUCgxzaWduZWRfc3RhdGUYBCABKAkibAoWSGFuZGxlQ2FsbGJhY2tSZXNwb25zZRIVCg1zZXNzaW9uX3Rva2VuGAEgASgJEg8KB3VzZXJfaWQYAiABKAkSFwoPZXhwaXJlc19hdF91bml4GAMgASgDEhEKCXJldHVybl90bxgEIAEoCSIvChZWYWxpZGF0ZVNlc3Npb25SZXF1ZXN0EhUKDXNlc3Npb25fdG9rZW4YASABKAkiUgoXVmFsaWRhdGVTZXNzaW9uUmVzcG9uc2USDQoFdmFsaWQYASABKAgSDwoHdXNlcl9pZBgCIAEoCRIXCg9leHBpcmVzX2F0X3VuaXgYAyABKAMiLQoUUmV2b2tlU2Vzc2lvblJlcXVlc3QSFQoNc2Vzc2lvbl90b2tlbhgBIAEoCSIXChVSZXZva2VTZXNzaW9uUmVzcG9uc2UiRQoPUmVnaXN0ZXJSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJEhEKCXJldHVybl90bxgDIAEoCSISChBSZWdpc3RlclJlc3BvbnNlIiMKElZlcmlmeUVtYWlsUmVxdWVzdBINCgV0b2tlbhgBIAEoCSJpChNWZXJpZnlFbWFpbFJlc3BvbnNlEhUKDXNlc3Npb25fdG9rZW4YASABKAkSDwoHdXNlcl9pZBgCIAEoCRIXCg9leHBpcmVzX2F0X3VuaXgYAyABKAMSEQoJcmV0dXJuX3RvGAQgASgJIj0KGVJlc2VuZFZlcmlmaWNhdGlvblJlcXVlc3QSDQoFZW1haWwYASABKAkSEQoJcmV0dXJuX3RvGAIgASgJIhwKGlJlc2VuZFZlcmlmaWNhdGlvblJlc3BvbnNlIi8KDExvZ2luUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSJQCg1Mb2dpblJlc3BvbnNlEhUKDXNlc3Npb25fdG9rZW4YASABKAkSDwoHdXNlcl9pZBgCIAEoCRIXCg9leHBpcmVzX2F0X3VuaXgYAyABKAMiPwobUmVxdWVzdFBhc3N3b3JkUmVzZXRSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhEKCXJldHVybl90bxgCIAEoCSIeChxSZXF1ZXN0UGFzc3dvcmRSZXNldFJlc3BvbnNlIkIKG0NvbmZpcm1QYXNzd29yZFJlc2V0UmVxdWVzdBINCgV0b2tlbhgBIAEoCRIUCgxuZXdfcGFzc3dvcmQYAiABKAkiXwocQ29uZmlybVBhc3N3b3JkUmVzZXRSZXNwb25zZRIVCg1zZXNzaW9uX3Rva2VuGAEgASgJEg8KB3VzZXJfaWQYAiABKAkSFwoPZXhwaXJlc19hdF91bml4GAMgASgDIl4KFUNoYW5nZVBhc3N3b3JkUmVxdWVzdBIVCg1zZXNzaW9uX3Rva2VuGAEgASgJEhgKEGN1cnJlbnRfcGFzc3dvcmQYAiABKAkSFAoMbmV3X3Bhc3N3b3JkGAMgASgJIhgKFkNoYW5nZVBhc3N3b3JkUmVzcG9uc2Uy+gcKC0F1dGhTZXJ2aWNlEk8KClN0YXJ0TG9naW4SHy5wYWN0LmF1dGgudjEuU3RhcnRMb2dpblJlcXVlc3QaIC5wYWN0LmF1dGgudjEuU3RhcnRMb2dpblJlc3BvbnNlElsKDkhhbmRsZUNhbGxiYWNrEiMucGFjdC5hdXRoLnYxLkhhbmRsZUNhbGxiYWNrUmVxdWVzdBokLnBhY3QuYXV0aC52MS5IYW5kbGVDYWxsYmFja1Jlc3BvbnNlEl4KD1ZhbGlkYXRlU2Vzc2lvbhIkLnBhY3QuYXV0aC52MS5WYWxpZGF0ZVNlc3Npb25SZXF1ZXN0GiUucGFjdC5hdXRoLnYxLlZhbGlkYXRlU2Vzc2lvblJlc3BvbnNlElgKDVJldm9rZVNlc3Npb24SIi5wYWN0LmF1dGgudjEuUmV2b2tlU2Vzc2lvblJlcXVlc3QaIy5wYWN0LmF1dGgudjEuUmV2b2tlU2Vzc2lvblJlc3BvbnNlEkkKCFJlZ2lzdGVyEh0ucGFjdC5hdXRoLnYxLlJlZ2lzdGVyUmVxdWVzdBoeLnBhY3QuYXV0aC52MS5SZWdpc3RlclJlc3BvbnNlElIKC1ZlcmlmeUVtYWlsEiAucGFjdC5hdXRoLnYxLlZlcmlmeUVtYWlsUmVxdWVzdBohLnBhY3QuYXV0aC52MS5WZXJpZnlFbWFpbFJlc3BvbnNlEmcKElJlc2VuZFZlcmlmaWNhdGlvbhInLnBhY3QuYXV0aC52MS5SZXNlbmRWZXJpZmljYXRpb25SZXF1ZXN0GigucGFjdC5hdXRoLnYxLlJlc2VuZFZlcmlmaWNhdGlvblJlc3BvbnNlEkAKBUxvZ2luEhoucGFjdC5hdXRoLnYxLkxvZ2luUmVxdWVzdBobLnBhY3QuYXV0aC52MS5Mb2dpblJlc3BvbnNlEm0KFFJlcXVlc3RQYXNzd29yZFJlc2V0EikucGFjdC5hdXRoLnYxLlJlcXVlc3RQYXNzd29yZFJlc2V0UmVxdWVzdBoqLnBhY3QuYXV0aC52MS5SZXF1ZXN0UGFzc3dvcmRSZXNldFJlc3BvbnNlEm0KFENvbmZpcm1QYXNzd29yZFJlc2V0EikucGFjdC5hdXRoLnYxLkNvbmZpcm1QYXNzd29yZFJlc2V0UmVxdWVzdBoqLnBhY3QuYXV0aC52MS5Db25maXJtUGFzc3dvcmRSZXNldFJlc3BvbnNlElsKDkNoYW5nZVBhc3N3b3JkEiMucGFjdC5hdXRoLnYxLkNoYW5nZVBhc3N3b3JkUmVxdWVzdBokLnBhY3QuYXV0aC52MS5DaGFuZ2VQYXNzd29yZFJlc3BvbnNlQjBaLmdpdGh1Yi5jb20vUEFDVC1Ub29sa2l0L3BhY3QtYXV0aC9wcm90bzthdXRocGJiBnByb3RvMw'
+    'CgphdXRoLnByb3RvEgxwYWN0LmF1dGgudjEiOAoRU3RhcnRMb2dpblJlcXVlc3QSEAoIcHJvdmlkZXIYASABKAkSEQoJcmV0dXJuX3RvGAIgASgJIj4KElN0YXJ0TG9naW5SZXNwb25zZRIZChFhdXRob3JpemF0aW9uX3VybBgBIAEoCRINCgVzdGF0ZRgCIAEoCSJcChVIYW5kbGVDYWxsYmFja1JlcXVlc3QSEAoIcHJvdmlkZXIYASABKAkSDAoEY29kZRgCIAEoCRINCgVzdGF0ZRgDIAEoCRIUCgxzaWduZWRfc3RhdGUYBCABKAkigwEKFkhhbmRsZUNhbGxiYWNrUmVzcG9uc2USFQoNc2Vzc2lvbl90b2tlbhgBIAEoCRIPCgd1c2VyX2lkGAIgASgJEhcKD2V4cGlyZXNfYXRfdW5peBgDIAEoAxIRCglyZXR1cm5fdG8YBCABKAkSFQoNcmVmcmVzaF90b2tlbhgFIAEoCSIvChZWYWxpZGF0ZVNlc3Npb25SZXF1ZXN0EhUKDXNlc3Npb25fdG9rZW4YASABKAkiUgoXVmFsaWRhdGVTZXNzaW9uUmVzcG9uc2USDQoFdmFsaWQYASABKAgSDwoHdXNlcl9pZBgCIAEoCRIXCg9leHBpcmVzX2F0X3VuaXgYAyABKAMiLQoUUmV2b2tlU2Vzc2lvblJlcXVlc3QSFQoNc2Vzc2lvbl90b2tlbhgBIAEoCSIXChVSZXZva2VTZXNzaW9uUmVzcG9uc2UiSgoYUmV2b2tlQWxsU2Vzc2lvbnNSZXF1ZXN0EhUKDXNlc3Npb25fdG9rZW4YASABKAkSFwoPZXhjbHVkZV9jdXJyZW50GAIgASgIIiwKGVJldm9rZUFsbFNlc3Npb25zUmVzcG9uc2USDwoHcmV2b2tlZBgBIAEoDSIuChVSZWZyZXNoU2Vzc2lvblJlcXVlc3QSFQoNcmVmcmVzaF90b2tlbhgBIAEoCSJwChZSZWZyZXNoU2Vzc2lvblJlc3BvbnNlEhUKDXNlc3Npb25fdG9rZW4YASABKAkSFQoNcmVmcmVzaF90b2tlbhgCIAEoCRIPCgd1c2VyX2lkGAMgASgJEhcKD2V4cGlyZXNfYXRfdW5peBgEIAEoAyJbCg9SZWdpc3RlclJlcXVlc3QSDQoFZW1haWwYASABKAkSEAoIcGFzc3dvcmQYAiABKAkSEQoJcmV0dXJuX3RvGAMgASgJEhQKDGRpc3BsYXlfbmFtZRgEIAEoCSISChBSZWdpc3RlclJlc3BvbnNlIiMKElZlcmlmeUVtYWlsUmVxdWVzdBINCgV0b2tlbhgBIAEoCSKAAQoTVmVyaWZ5RW1haWxSZXNwb25zZRIVCg1zZXNzaW9uX3Rva2VuGAEgASgJEg8KB3VzZXJfaWQYAiABKAkSFwoPZXhwaXJlc19hdF91bml4GAMgASgDEhEKCXJldHVybl90bxgEIAEoCRIVCg1yZWZyZXNoX3Rva2VuGAUgASgJIj0KGVJlc2VuZFZlcmlmaWNhdGlvblJlcXVlc3QSDQoFZW1haWwYASABKAkSEQoJcmV0dXJuX3RvGAIgASgJIhwKGlJlc2VuZFZlcmlmaWNhdGlvblJlc3BvbnNlIi8KDExvZ2luUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSKQAQoNTG9naW5SZXNwb25zZRIVCg1zZXNzaW9uX3Rva2VuGAEgASgJEg8KB3VzZXJfaWQYAiABKAkSFwoPZXhwaXJlc19hdF91bml4GAMgASgDEhUKDXJlZnJlc2hfdG9rZW4YBCABKAkSFAoMbWZhX3JlcXVpcmVkGAUgASgIEhEKCW1mYV90b2tlbhgGIAEoCSI/ChtSZXF1ZXN0UGFzc3dvcmRSZXNldFJlcXVlc3QSDQoFZW1haWwYASABKAkSEQoJcmV0dXJuX3RvGAIgASgJIh4KHFJlcXVlc3RQYXNzd29yZFJlc2V0UmVzcG9uc2UiQgobQ29uZmlybVBhc3N3b3JkUmVzZXRSZXF1ZXN0Eg0KBXRva2VuGAEgASgJEhQKDG5ld19wYXNzd29yZBgCIAEoCSJ2ChxDb25maXJtUGFzc3dvcmRSZXNldFJlc3BvbnNlEhUKDXNlc3Npb25fdG9rZW4YASABKAkSDwoHdXNlcl9pZBgCIAEoCRIXCg9leHBpcmVzX2F0X3VuaXgYAyABKAMSFQoNcmVmcmVzaF90b2tlbhgEIAEoCSJeChVDaGFuZ2VQYXNzd29yZFJlcXVlc3QSFQoNc2Vzc2lvbl90b2tlbhgBIAEoCRIYChBjdXJyZW50X3Bhc3N3b3JkGAIgASgJEhQKDG5ld19wYXNzd29yZBgDIAEoCSIYChZDaGFuZ2VQYXNzd29yZFJlc3BvbnNlIjMKGkJlZ2luVE9UUEVucm9sbG1lbnRSZXF1ZXN0EhUKDXNlc3Npb25fdG9rZW4YASABKAkiVQobQmVnaW5UT1RQRW5yb2xsbWVudFJlc3BvbnNlEhEKCWZhY3Rvcl9pZBgBIAEoCRIOCgZzZWNyZXQYAiABKAkSEwoLb3RwYXV0aF91cmwYAyABKAkiVgocQ29uZmlybVRPVFBFbnJvbGxtZW50UmVxdWVzdBIVCg1zZXNzaW9uX3Rva2VuGAEgASgJEhEKCWZhY3Rvcl9pZBgCIAEoCRIMCgRjb2RlGAMgASgJIjcKHUNvbmZpcm1UT1RQRW5yb2xsbWVudFJlc3BvbnNlEhYKDnJlY292ZXJ5X2NvZGVzGAEgAygJIkgKEFZlcmlmeU1mYVJlcXVlc3QSEQoJbWZhX3Rva2VuGAEgASgJEgwKBGNvZGUYAiABKAkSEwoLaXNfcmVjb3ZlcnkYAyABKAgiawoRVmVyaWZ5TWZhUmVzcG9uc2USFQoNc2Vzc2lvbl90b2tlbhgBIAEoCRIPCgd1c2VyX2lkGAIgASgJEhcKD2V4cGlyZXNfYXRfdW5peBgDIAEoAxIVCg1yZWZyZXNoX3Rva2VuGAQgASgJIi4KFUxpc3RNZmFGYWN0b3JzUmVxdWVzdBIVCg1zZXNzaW9uX3Rva2VuGAEgASgJIkIKFkxpc3RNZmFGYWN0b3JzUmVzcG9uc2USKAoHZmFjdG9ycxgBIAMoCzIXLnBhY3QuYXV0aC52MS5NZmFGYWN0b3IiZgoJTWZhRmFjdG9yEhEKCWZhY3Rvcl9pZBgBIAEoCRIMCgR0eXBlGAIgASgJEg0KBWxhYmVsGAMgASgJEhAKCHZlcmlmaWVkGAQgASgIEhcKD2NyZWF0ZWRfYXRfdW5peBgFIAEoAyJCChZSZXZva2VNZmFGYWN0b3JSZXF1ZXN0EhUKDXNlc3Npb25fdG9rZW4YASABKAkSEQoJZmFjdG9yX2lkGAIgASgJIhkKF1Jldm9rZU1mYUZhY3RvclJlc3BvbnNlIjcKHlJlZ2VuZXJhdGVSZWNvdmVyeUNvZGVzUmVxdWVzdBIVCg1zZXNzaW9uX3Rva2VuGAEgASgJIjkKH1JlZ2VuZXJhdGVSZWNvdmVyeUNvZGVzUmVzcG9uc2USFgoOcmVjb3ZlcnlfY29kZXMYASADKAkiRwofQmVnaW5QYXNza2V5UmVnaXN0cmF0aW9uUmVxdWVzdBIVCg1zZXNzaW9uX3Rva2VuGAEgASgJEg0KBWxhYmVsGAIgASgJIk0KIEJlZ2luUGFzc2tleVJlZ2lzdHJhdGlvblJlc3BvbnNlEhMKC2NlcmVtb255X2lkGAEgASgJEhQKDG9wdGlvbnNfanNvbhgCIAEoDCJoCiBGaW5pc2hQYXNza2V5UmVnaXN0cmF0aW9uUmVxdWVzdBIVCg1zZXNzaW9uX3Rva2VuGAEgASgJEhMKC2NlcmVtb255X2lkGAIgASgJEhgKEGF0dGVzdGF0aW9uX2pzb24YAyABKAwiOgohRmluaXNoUGFzc2tleVJlZ2lzdHJhdGlvblJlc3BvbnNlEhUKDWNyZWRlbnRpYWxfaWQYASABKAkiKQoYQmVnaW5QYXNza2V5TG9naW5SZXF1ZXN0Eg0KBWVtYWlsGAEgASgJIkYKGUJlZ2luUGFzc2tleUxvZ2luUmVzcG9uc2USEwoLY2VyZW1vbnlfaWQYASABKAkSFAoMb3B0aW9uc19qc29uGAIgASgMIkgKGUZpbmlzaFBhc3NrZXlMb2dpblJlcXVlc3QSEwoLY2VyZW1vbnlfaWQYASABKAkSFgoOYXNzZXJ0aW9uX2pzb24YAiABKAwidAoaRmluaXNoUGFzc2tleUxvZ2luUmVzcG9uc2USFQoNc2Vzc2lvbl90b2tlbhgBIAEoCRIPCgd1c2VyX2lkGAIgASgJEhcKD2V4cGlyZXNfYXRfdW5peBgDIAEoAxIVCg1yZWZyZXNoX3Rva2VuGAQgASgJMuYRCgtBdXRoU2VydmljZRJPCgpTdGFydExvZ2luEh8ucGFjdC5hdXRoLnYxLlN0YXJ0TG9naW5SZXF1ZXN0GiAucGFjdC5hdXRoLnYxLlN0YXJ0TG9naW5SZXNwb25zZRJbCg5IYW5kbGVDYWxsYmFjaxIjLnBhY3QuYXV0aC52MS5IYW5kbGVDYWxsYmFja1JlcXVlc3QaJC5wYWN0LmF1dGgudjEuSGFuZGxlQ2FsbGJhY2tSZXNwb25zZRJeCg9WYWxpZGF0ZVNlc3Npb24SJC5wYWN0LmF1dGgudjEuVmFsaWRhdGVTZXNzaW9uUmVxdWVzdBolLnBhY3QuYXV0aC52MS5WYWxpZGF0ZVNlc3Npb25SZXNwb25zZRJYCg1SZXZva2VTZXNzaW9uEiIucGFjdC5hdXRoLnYxLlJldm9rZVNlc3Npb25SZXF1ZXN0GiMucGFjdC5hdXRoLnYxLlJldm9rZVNlc3Npb25SZXNwb25zZRJkChFSZXZva2VBbGxTZXNzaW9ucxImLnBhY3QuYXV0aC52MS5SZXZva2VBbGxTZXNzaW9uc1JlcXVlc3QaJy5wYWN0LmF1dGgudjEuUmV2b2tlQWxsU2Vzc2lvbnNSZXNwb25zZRJbCg5SZWZyZXNoU2Vzc2lvbhIjLnBhY3QuYXV0aC52MS5SZWZyZXNoU2Vzc2lvblJlcXVlc3QaJC5wYWN0LmF1dGgudjEuUmVmcmVzaFNlc3Npb25SZXNwb25zZRJJCghSZWdpc3RlchIdLnBhY3QuYXV0aC52MS5SZWdpc3RlclJlcXVlc3QaHi5wYWN0LmF1dGgudjEuUmVnaXN0ZXJSZXNwb25zZRJSCgtWZXJpZnlFbWFpbBIgLnBhY3QuYXV0aC52MS5WZXJpZnlFbWFpbFJlcXVlc3QaIS5wYWN0LmF1dGgudjEuVmVyaWZ5RW1haWxSZXNwb25zZRJnChJSZXNlbmRWZXJpZmljYXRpb24SJy5wYWN0LmF1dGgudjEuUmVzZW5kVmVyaWZpY2F0aW9uUmVxdWVzdBooLnBhY3QuYXV0aC52MS5SZXNlbmRWZXJpZmljYXRpb25SZXNwb25zZRJACgVMb2dpbhIaLnBhY3QuYXV0aC52MS5Mb2dpblJlcXVlc3QaGy5wYWN0LmF1dGgudjEuTG9naW5SZXNwb25zZRJtChRSZXF1ZXN0UGFzc3dvcmRSZXNldBIpLnBhY3QuYXV0aC52MS5SZXF1ZXN0UGFzc3dvcmRSZXNldFJlcXVlc3QaKi5wYWN0LmF1dGgudjEuUmVxdWVzdFBhc3N3b3JkUmVzZXRSZXNwb25zZRJtChRDb25maXJtUGFzc3dvcmRSZXNldBIpLnBhY3QuYXV0aC52MS5Db25maXJtUGFzc3dvcmRSZXNldFJlcXVlc3QaKi5wYWN0LmF1dGgudjEuQ29uZmlybVBhc3N3b3JkUmVzZXRSZXNwb25zZRJbCg5DaGFuZ2VQYXNzd29yZBIjLnBhY3QuYXV0aC52MS5DaGFuZ2VQYXNzd29yZFJlcXVlc3QaJC5wYWN0LmF1dGgudjEuQ2hhbmdlUGFzc3dvcmRSZXNwb25zZRJqChNCZWdpblRPVFBFbnJvbGxtZW50EigucGFjdC5hdXRoLnYxLkJlZ2luVE9UUEVucm9sbG1lbnRSZXF1ZXN0GikucGFjdC5hdXRoLnYxLkJlZ2luVE9UUEVucm9sbG1lbnRSZXNwb25zZRJwChVDb25maXJtVE9UUEVucm9sbG1lbnQSKi5wYWN0LmF1dGgudjEuQ29uZmlybVRPVFBFbnJvbGxtZW50UmVxdWVzdBorLnBhY3QuYXV0aC52MS5Db25maXJtVE9UUEVucm9sbG1lbnRSZXNwb25zZRJMCglWZXJpZnlNZmESHi5wYWN0LmF1dGgudjEuVmVyaWZ5TWZhUmVxdWVzdBofLnBhY3QuYXV0aC52MS5WZXJpZnlNZmFSZXNwb25zZRJbCg5MaXN0TWZhRmFjdG9ycxIjLnBhY3QuYXV0aC52MS5MaXN0TWZhRmFjdG9yc1JlcXVlc3QaJC5wYWN0LmF1dGgudjEuTGlzdE1mYUZhY3RvcnNSZXNwb25zZRJeCg9SZXZva2VNZmFGYWN0b3ISJC5wYWN0LmF1dGgudjEuUmV2b2tlTWZhRmFjdG9yUmVxdWVzdBolLnBhY3QuYXV0aC52MS5SZXZva2VNZmFGYWN0b3JSZXNwb25zZRJ2ChdSZWdlbmVyYXRlUmVjb3ZlcnlDb2RlcxIsLnBhY3QuYXV0aC52MS5SZWdlbmVyYXRlUmVjb3ZlcnlDb2Rlc1JlcXVlc3QaLS5wYWN0LmF1dGgudjEuUmVnZW5lcmF0ZVJlY292ZXJ5Q29kZXNSZXNwb25zZRJ5ChhCZWdpblBhc3NrZXlSZWdpc3RyYXRpb24SLS5wYWN0LmF1dGgudjEuQmVnaW5QYXNza2V5UmVnaXN0cmF0aW9uUmVxdWVzdBouLnBhY3QuYXV0aC52MS5CZWdpblBhc3NrZXlSZWdpc3RyYXRpb25SZXNwb25zZRJ8ChlGaW5pc2hQYXNza2V5UmVnaXN0cmF0aW9uEi4ucGFjdC5hdXRoLnYxLkZpbmlzaFBhc3NrZXlSZWdpc3RyYXRpb25SZXF1ZXN0Gi8ucGFjdC5hdXRoLnYxLkZpbmlzaFBhc3NrZXlSZWdpc3RyYXRpb25SZXNwb25zZRJkChFCZWdpblBhc3NrZXlMb2dpbhImLnBhY3QuYXV0aC52MS5CZWdpblBhc3NrZXlMb2dpblJlcXVlc3QaJy5wYWN0LmF1dGgudjEuQmVnaW5QYXNza2V5TG9naW5SZXNwb25zZRJnChJGaW5pc2hQYXNza2V5TG9naW4SJy5wYWN0LmF1dGgudjEuRmluaXNoUGFzc2tleUxvZ2luUmVxdWVzdBooLnBhY3QuYXV0aC52MS5GaW5pc2hQYXNza2V5TG9naW5SZXNwb25zZUIwWi5naXRodWIuY29tL1BBQ1QtVG9vbGtpdC9wYWN0LWF1dGgvcHJvdG87YXV0aHBiYgZwcm90bzM'
   );
 
 /**
@@ -137,6 +137,15 @@ export type HandleCallbackResponse =
      * @generated from field: string return_to = 4;
      */
     returnTo: string;
+
+    /**
+     * Single-use refresh token. Clients (typically pact-gateway) store this
+     * alongside the session token and present it on RefreshSession when the
+     * session is near expiry. See the RefreshSession RPC for rotation rules.
+     *
+     * @generated from field: string refresh_token = 5;
+     */
+    refreshToken: string;
   };
 
 /**
@@ -229,6 +238,115 @@ export const RevokeSessionResponseSchema: GenMessage<RevokeSessionResponse> =
   messageDesc(file_auth, 7);
 
 /**
+ * Mass-revoke ("sign out everywhere"). Authenticated by the caller's own
+ * session token; revokes every active session for that user. When
+ * exclude_current is true, the calling session itself is preserved so the
+ * caller stays logged in on the device that initiated the request.
+ *
+ * @generated from message pact.auth.v1.RevokeAllSessionsRequest
+ */
+export type RevokeAllSessionsRequest =
+  Message<'pact.auth.v1.RevokeAllSessionsRequest'> & {
+    /**
+     * @generated from field: string session_token = 1;
+     */
+    sessionToken: string;
+
+    /**
+     * @generated from field: bool exclude_current = 2;
+     */
+    excludeCurrent: boolean;
+  };
+
+/**
+ * Describes the message pact.auth.v1.RevokeAllSessionsRequest.
+ * Use `create(RevokeAllSessionsRequestSchema)` to create a new message.
+ */
+export const RevokeAllSessionsRequestSchema: GenMessage<RevokeAllSessionsRequest> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 8);
+
+/**
+ * @generated from message pact.auth.v1.RevokeAllSessionsResponse
+ */
+export type RevokeAllSessionsResponse =
+  Message<'pact.auth.v1.RevokeAllSessionsResponse'> & {
+    /**
+     * @generated from field: uint32 revoked = 1;
+     */
+    revoked: number;
+  };
+
+/**
+ * Describes the message pact.auth.v1.RevokeAllSessionsResponse.
+ * Use `create(RevokeAllSessionsResponseSchema)` to create a new message.
+ */
+export const RevokeAllSessionsResponseSchema: GenMessage<RevokeAllSessionsResponse> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 9);
+
+/**
+ * Refresh-token use flow per OAuth 2.1 / OWASP RTR. The presented refresh
+ * token is single-use: a successful call consumes it and returns a new
+ * (session_token, refresh_token) pair in the same family. Reuse of a
+ * previously-consumed refresh token is treated as evidence of theft and
+ * revokes the entire family — every session and refresh token sharing
+ * the original family_id. Callers should treat any error here as
+ * "session no longer valid" and force re-authentication.
+ *
+ * @generated from message pact.auth.v1.RefreshSessionRequest
+ */
+export type RefreshSessionRequest =
+  Message<'pact.auth.v1.RefreshSessionRequest'> & {
+    /**
+     * @generated from field: string refresh_token = 1;
+     */
+    refreshToken: string;
+  };
+
+/**
+ * Describes the message pact.auth.v1.RefreshSessionRequest.
+ * Use `create(RefreshSessionRequestSchema)` to create a new message.
+ */
+export const RefreshSessionRequestSchema: GenMessage<RefreshSessionRequest> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 10);
+
+/**
+ * @generated from message pact.auth.v1.RefreshSessionResponse
+ */
+export type RefreshSessionResponse =
+  Message<'pact.auth.v1.RefreshSessionResponse'> & {
+    /**
+     * @generated from field: string session_token = 1;
+     */
+    sessionToken: string;
+
+    /**
+     * @generated from field: string refresh_token = 2;
+     */
+    refreshToken: string;
+
+    /**
+     * @generated from field: string user_id = 3;
+     */
+    userId: string;
+
+    /**
+     * @generated from field: int64 expires_at_unix = 4;
+     */
+    expiresAtUnix: bigint;
+  };
+
+/**
+ * Describes the message pact.auth.v1.RefreshSessionResponse.
+ * Use `create(RefreshSessionResponseSchema)` to create a new message.
+ */
+export const RefreshSessionResponseSchema: GenMessage<RefreshSessionResponse> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 11);
+
+/**
  * @generated from message pact.auth.v1.RegisterRequest
  */
 export type RegisterRequest = Message<'pact.auth.v1.RegisterRequest'> & {
@@ -246,6 +364,11 @@ export type RegisterRequest = Message<'pact.auth.v1.RegisterRequest'> & {
    * @generated from field: string return_to = 3;
    */
   returnTo: string;
+
+  /**
+   * @generated from field: string display_name = 4;
+   */
+  displayName: string;
 };
 
 /**
@@ -254,7 +377,7 @@ export type RegisterRequest = Message<'pact.auth.v1.RegisterRequest'> & {
  */
 export const RegisterRequestSchema: GenMessage<RegisterRequest> =
   /*@__PURE__*/
-  messageDesc(file_auth, 8);
+  messageDesc(file_auth, 12);
 
 /**
  * @generated from message pact.auth.v1.RegisterResponse
@@ -267,7 +390,7 @@ export type RegisterResponse = Message<'pact.auth.v1.RegisterResponse'> & {};
  */
 export const RegisterResponseSchema: GenMessage<RegisterResponse> =
   /*@__PURE__*/
-  messageDesc(file_auth, 9);
+  messageDesc(file_auth, 13);
 
 /**
  * @generated from message pact.auth.v1.VerifyEmailRequest
@@ -285,7 +408,7 @@ export type VerifyEmailRequest = Message<'pact.auth.v1.VerifyEmailRequest'> & {
  */
 export const VerifyEmailRequestSchema: GenMessage<VerifyEmailRequest> =
   /*@__PURE__*/
-  messageDesc(file_auth, 10);
+  messageDesc(file_auth, 14);
 
 /**
  * @generated from message pact.auth.v1.VerifyEmailResponse
@@ -311,6 +434,11 @@ export type VerifyEmailResponse =
      * @generated from field: string return_to = 4;
      */
     returnTo: string;
+
+    /**
+     * @generated from field: string refresh_token = 5;
+     */
+    refreshToken: string;
   };
 
 /**
@@ -319,7 +447,7 @@ export type VerifyEmailResponse =
  */
 export const VerifyEmailResponseSchema: GenMessage<VerifyEmailResponse> =
   /*@__PURE__*/
-  messageDesc(file_auth, 11);
+  messageDesc(file_auth, 15);
 
 /**
  * @generated from message pact.auth.v1.ResendVerificationRequest
@@ -343,7 +471,7 @@ export type ResendVerificationRequest =
  */
 export const ResendVerificationRequestSchema: GenMessage<ResendVerificationRequest> =
   /*@__PURE__*/
-  messageDesc(file_auth, 12);
+  messageDesc(file_auth, 16);
 
 /**
  * @generated from message pact.auth.v1.ResendVerificationResponse
@@ -357,7 +485,7 @@ export type ResendVerificationResponse =
  */
 export const ResendVerificationResponseSchema: GenMessage<ResendVerificationResponse> =
   /*@__PURE__*/
-  messageDesc(file_auth, 13);
+  messageDesc(file_auth, 17);
 
 /**
  * @generated from message pact.auth.v1.LoginRequest
@@ -380,7 +508,7 @@ export type LoginRequest = Message<'pact.auth.v1.LoginRequest'> & {
  */
 export const LoginRequestSchema: GenMessage<LoginRequest> =
   /*@__PURE__*/
-  messageDesc(file_auth, 14);
+  messageDesc(file_auth, 18);
 
 /**
  * @generated from message pact.auth.v1.LoginResponse
@@ -400,6 +528,25 @@ export type LoginResponse = Message<'pact.auth.v1.LoginResponse'> & {
    * @generated from field: int64 expires_at_unix = 3;
    */
   expiresAtUnix: bigint;
+
+  /**
+   * @generated from field: string refresh_token = 4;
+   */
+  refreshToken: string;
+
+  /**
+   * When MFA is required, session_token and refresh_token are empty.
+   * The client must present the mfa_token alongside a TOTP code (or
+   * recovery code) via VerifyMfa to obtain the real session.
+   *
+   * @generated from field: bool mfa_required = 5;
+   */
+  mfaRequired: boolean;
+
+  /**
+   * @generated from field: string mfa_token = 6;
+   */
+  mfaToken: string;
 };
 
 /**
@@ -408,7 +555,7 @@ export type LoginResponse = Message<'pact.auth.v1.LoginResponse'> & {
  */
 export const LoginResponseSchema: GenMessage<LoginResponse> =
   /*@__PURE__*/
-  messageDesc(file_auth, 15);
+  messageDesc(file_auth, 19);
 
 /**
  * @generated from message pact.auth.v1.RequestPasswordResetRequest
@@ -432,7 +579,7 @@ export type RequestPasswordResetRequest =
  */
 export const RequestPasswordResetRequestSchema: GenMessage<RequestPasswordResetRequest> =
   /*@__PURE__*/
-  messageDesc(file_auth, 16);
+  messageDesc(file_auth, 20);
 
 /**
  * @generated from message pact.auth.v1.RequestPasswordResetResponse
@@ -446,7 +593,7 @@ export type RequestPasswordResetResponse =
  */
 export const RequestPasswordResetResponseSchema: GenMessage<RequestPasswordResetResponse> =
   /*@__PURE__*/
-  messageDesc(file_auth, 17);
+  messageDesc(file_auth, 21);
 
 /**
  * @generated from message pact.auth.v1.ConfirmPasswordResetRequest
@@ -470,7 +617,7 @@ export type ConfirmPasswordResetRequest =
  */
 export const ConfirmPasswordResetRequestSchema: GenMessage<ConfirmPasswordResetRequest> =
   /*@__PURE__*/
-  messageDesc(file_auth, 18);
+  messageDesc(file_auth, 22);
 
 /**
  * @generated from message pact.auth.v1.ConfirmPasswordResetResponse
@@ -491,6 +638,11 @@ export type ConfirmPasswordResetResponse =
      * @generated from field: int64 expires_at_unix = 3;
      */
     expiresAtUnix: bigint;
+
+    /**
+     * @generated from field: string refresh_token = 4;
+     */
+    refreshToken: string;
   };
 
 /**
@@ -499,7 +651,7 @@ export type ConfirmPasswordResetResponse =
  */
 export const ConfirmPasswordResetResponseSchema: GenMessage<ConfirmPasswordResetResponse> =
   /*@__PURE__*/
-  messageDesc(file_auth, 19);
+  messageDesc(file_auth, 23);
 
 /**
  * @generated from message pact.auth.v1.ChangePasswordRequest
@@ -528,7 +680,7 @@ export type ChangePasswordRequest =
  */
 export const ChangePasswordRequestSchema: GenMessage<ChangePasswordRequest> =
   /*@__PURE__*/
-  messageDesc(file_auth, 20);
+  messageDesc(file_auth, 24);
 
 /**
  * @generated from message pact.auth.v1.ChangePasswordResponse
@@ -542,7 +694,540 @@ export type ChangePasswordResponse =
  */
 export const ChangePasswordResponseSchema: GenMessage<ChangePasswordResponse> =
   /*@__PURE__*/
-  messageDesc(file_auth, 21);
+  messageDesc(file_auth, 25);
+
+/**
+ * @generated from message pact.auth.v1.BeginTOTPEnrollmentRequest
+ */
+export type BeginTOTPEnrollmentRequest =
+  Message<'pact.auth.v1.BeginTOTPEnrollmentRequest'> & {
+    /**
+     * @generated from field: string session_token = 1;
+     */
+    sessionToken: string;
+  };
+
+/**
+ * Describes the message pact.auth.v1.BeginTOTPEnrollmentRequest.
+ * Use `create(BeginTOTPEnrollmentRequestSchema)` to create a new message.
+ */
+export const BeginTOTPEnrollmentRequestSchema: GenMessage<BeginTOTPEnrollmentRequest> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 26);
+
+/**
+ * @generated from message pact.auth.v1.BeginTOTPEnrollmentResponse
+ */
+export type BeginTOTPEnrollmentResponse =
+  Message<'pact.auth.v1.BeginTOTPEnrollmentResponse'> & {
+    /**
+     * @generated from field: string factor_id = 1;
+     */
+    factorId: string;
+
+    /**
+     * base32 for manual entry
+     *
+     * @generated from field: string secret = 2;
+     */
+    secret: string;
+
+    /**
+     * otpauth:// URI for QR code
+     *
+     * @generated from field: string otpauth_url = 3;
+     */
+    otpauthUrl: string;
+  };
+
+/**
+ * Describes the message pact.auth.v1.BeginTOTPEnrollmentResponse.
+ * Use `create(BeginTOTPEnrollmentResponseSchema)` to create a new message.
+ */
+export const BeginTOTPEnrollmentResponseSchema: GenMessage<BeginTOTPEnrollmentResponse> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 27);
+
+/**
+ * @generated from message pact.auth.v1.ConfirmTOTPEnrollmentRequest
+ */
+export type ConfirmTOTPEnrollmentRequest =
+  Message<'pact.auth.v1.ConfirmTOTPEnrollmentRequest'> & {
+    /**
+     * @generated from field: string session_token = 1;
+     */
+    sessionToken: string;
+
+    /**
+     * @generated from field: string factor_id = 2;
+     */
+    factorId: string;
+
+    /**
+     * 6-digit TOTP code
+     *
+     * @generated from field: string code = 3;
+     */
+    code: string;
+  };
+
+/**
+ * Describes the message pact.auth.v1.ConfirmTOTPEnrollmentRequest.
+ * Use `create(ConfirmTOTPEnrollmentRequestSchema)` to create a new message.
+ */
+export const ConfirmTOTPEnrollmentRequestSchema: GenMessage<ConfirmTOTPEnrollmentRequest> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 28);
+
+/**
+ * @generated from message pact.auth.v1.ConfirmTOTPEnrollmentResponse
+ */
+export type ConfirmTOTPEnrollmentResponse =
+  Message<'pact.auth.v1.ConfirmTOTPEnrollmentResponse'> & {
+    /**
+     * @generated from field: repeated string recovery_codes = 1;
+     */
+    recoveryCodes: string[];
+  };
+
+/**
+ * Describes the message pact.auth.v1.ConfirmTOTPEnrollmentResponse.
+ * Use `create(ConfirmTOTPEnrollmentResponseSchema)` to create a new message.
+ */
+export const ConfirmTOTPEnrollmentResponseSchema: GenMessage<ConfirmTOTPEnrollmentResponse> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 29);
+
+/**
+ * @generated from message pact.auth.v1.VerifyMfaRequest
+ */
+export type VerifyMfaRequest = Message<'pact.auth.v1.VerifyMfaRequest'> & {
+  /**
+   * @generated from field: string mfa_token = 1;
+   */
+  mfaToken: string;
+
+  /**
+   * TOTP code or recovery code
+   *
+   * @generated from field: string code = 2;
+   */
+  code: string;
+
+  /**
+   * true when code is a recovery code
+   *
+   * @generated from field: bool is_recovery = 3;
+   */
+  isRecovery: boolean;
+};
+
+/**
+ * Describes the message pact.auth.v1.VerifyMfaRequest.
+ * Use `create(VerifyMfaRequestSchema)` to create a new message.
+ */
+export const VerifyMfaRequestSchema: GenMessage<VerifyMfaRequest> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 30);
+
+/**
+ * @generated from message pact.auth.v1.VerifyMfaResponse
+ */
+export type VerifyMfaResponse = Message<'pact.auth.v1.VerifyMfaResponse'> & {
+  /**
+   * @generated from field: string session_token = 1;
+   */
+  sessionToken: string;
+
+  /**
+   * @generated from field: string user_id = 2;
+   */
+  userId: string;
+
+  /**
+   * @generated from field: int64 expires_at_unix = 3;
+   */
+  expiresAtUnix: bigint;
+
+  /**
+   * @generated from field: string refresh_token = 4;
+   */
+  refreshToken: string;
+};
+
+/**
+ * Describes the message pact.auth.v1.VerifyMfaResponse.
+ * Use `create(VerifyMfaResponseSchema)` to create a new message.
+ */
+export const VerifyMfaResponseSchema: GenMessage<VerifyMfaResponse> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 31);
+
+/**
+ * @generated from message pact.auth.v1.ListMfaFactorsRequest
+ */
+export type ListMfaFactorsRequest =
+  Message<'pact.auth.v1.ListMfaFactorsRequest'> & {
+    /**
+     * @generated from field: string session_token = 1;
+     */
+    sessionToken: string;
+  };
+
+/**
+ * Describes the message pact.auth.v1.ListMfaFactorsRequest.
+ * Use `create(ListMfaFactorsRequestSchema)` to create a new message.
+ */
+export const ListMfaFactorsRequestSchema: GenMessage<ListMfaFactorsRequest> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 32);
+
+/**
+ * @generated from message pact.auth.v1.ListMfaFactorsResponse
+ */
+export type ListMfaFactorsResponse =
+  Message<'pact.auth.v1.ListMfaFactorsResponse'> & {
+    /**
+     * @generated from field: repeated pact.auth.v1.MfaFactor factors = 1;
+     */
+    factors: MfaFactor[];
+  };
+
+/**
+ * Describes the message pact.auth.v1.ListMfaFactorsResponse.
+ * Use `create(ListMfaFactorsResponseSchema)` to create a new message.
+ */
+export const ListMfaFactorsResponseSchema: GenMessage<ListMfaFactorsResponse> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 33);
+
+/**
+ * @generated from message pact.auth.v1.MfaFactor
+ */
+export type MfaFactor = Message<'pact.auth.v1.MfaFactor'> & {
+  /**
+   * @generated from field: string factor_id = 1;
+   */
+  factorId: string;
+
+  /**
+   * @generated from field: string type = 2;
+   */
+  type: string;
+
+  /**
+   * @generated from field: string label = 3;
+   */
+  label: string;
+
+  /**
+   * @generated from field: bool verified = 4;
+   */
+  verified: boolean;
+
+  /**
+   * @generated from field: int64 created_at_unix = 5;
+   */
+  createdAtUnix: bigint;
+};
+
+/**
+ * Describes the message pact.auth.v1.MfaFactor.
+ * Use `create(MfaFactorSchema)` to create a new message.
+ */
+export const MfaFactorSchema: GenMessage<MfaFactor> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 34);
+
+/**
+ * @generated from message pact.auth.v1.RevokeMfaFactorRequest
+ */
+export type RevokeMfaFactorRequest =
+  Message<'pact.auth.v1.RevokeMfaFactorRequest'> & {
+    /**
+     * @generated from field: string session_token = 1;
+     */
+    sessionToken: string;
+
+    /**
+     * @generated from field: string factor_id = 2;
+     */
+    factorId: string;
+  };
+
+/**
+ * Describes the message pact.auth.v1.RevokeMfaFactorRequest.
+ * Use `create(RevokeMfaFactorRequestSchema)` to create a new message.
+ */
+export const RevokeMfaFactorRequestSchema: GenMessage<RevokeMfaFactorRequest> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 35);
+
+/**
+ * @generated from message pact.auth.v1.RevokeMfaFactorResponse
+ */
+export type RevokeMfaFactorResponse =
+  Message<'pact.auth.v1.RevokeMfaFactorResponse'> & {};
+
+/**
+ * Describes the message pact.auth.v1.RevokeMfaFactorResponse.
+ * Use `create(RevokeMfaFactorResponseSchema)` to create a new message.
+ */
+export const RevokeMfaFactorResponseSchema: GenMessage<RevokeMfaFactorResponse> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 36);
+
+/**
+ * @generated from message pact.auth.v1.RegenerateRecoveryCodesRequest
+ */
+export type RegenerateRecoveryCodesRequest =
+  Message<'pact.auth.v1.RegenerateRecoveryCodesRequest'> & {
+    /**
+     * @generated from field: string session_token = 1;
+     */
+    sessionToken: string;
+  };
+
+/**
+ * Describes the message pact.auth.v1.RegenerateRecoveryCodesRequest.
+ * Use `create(RegenerateRecoveryCodesRequestSchema)` to create a new message.
+ */
+export const RegenerateRecoveryCodesRequestSchema: GenMessage<RegenerateRecoveryCodesRequest> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 37);
+
+/**
+ * @generated from message pact.auth.v1.RegenerateRecoveryCodesResponse
+ */
+export type RegenerateRecoveryCodesResponse =
+  Message<'pact.auth.v1.RegenerateRecoveryCodesResponse'> & {
+    /**
+     * @generated from field: repeated string recovery_codes = 1;
+     */
+    recoveryCodes: string[];
+  };
+
+/**
+ * Describes the message pact.auth.v1.RegenerateRecoveryCodesResponse.
+ * Use `create(RegenerateRecoveryCodesResponseSchema)` to create a new message.
+ */
+export const RegenerateRecoveryCodesResponseSchema: GenMessage<RegenerateRecoveryCodesResponse> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 38);
+
+/**
+ * @generated from message pact.auth.v1.BeginPasskeyRegistrationRequest
+ */
+export type BeginPasskeyRegistrationRequest =
+  Message<'pact.auth.v1.BeginPasskeyRegistrationRequest'> & {
+    /**
+     * @generated from field: string session_token = 1;
+     */
+    sessionToken: string;
+
+    /**
+     * user-chosen name for the passkey, e.g. "MacBook Touch ID"
+     *
+     * @generated from field: string label = 2;
+     */
+    label: string;
+  };
+
+/**
+ * Describes the message pact.auth.v1.BeginPasskeyRegistrationRequest.
+ * Use `create(BeginPasskeyRegistrationRequestSchema)` to create a new message.
+ */
+export const BeginPasskeyRegistrationRequestSchema: GenMessage<BeginPasskeyRegistrationRequest> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 39);
+
+/**
+ * @generated from message pact.auth.v1.BeginPasskeyRegistrationResponse
+ */
+export type BeginPasskeyRegistrationResponse =
+  Message<'pact.auth.v1.BeginPasskeyRegistrationResponse'> & {
+    /**
+     * @generated from field: string ceremony_id = 1;
+     */
+    ceremonyId: string;
+
+    /**
+     * JSON-encoded PublicKeyCredentialCreationOptions for navigator.credentials.create()
+     *
+     * @generated from field: bytes options_json = 2;
+     */
+    optionsJson: Uint8Array;
+  };
+
+/**
+ * Describes the message pact.auth.v1.BeginPasskeyRegistrationResponse.
+ * Use `create(BeginPasskeyRegistrationResponseSchema)` to create a new message.
+ */
+export const BeginPasskeyRegistrationResponseSchema: GenMessage<BeginPasskeyRegistrationResponse> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 40);
+
+/**
+ * @generated from message pact.auth.v1.FinishPasskeyRegistrationRequest
+ */
+export type FinishPasskeyRegistrationRequest =
+  Message<'pact.auth.v1.FinishPasskeyRegistrationRequest'> & {
+    /**
+     * @generated from field: string session_token = 1;
+     */
+    sessionToken: string;
+
+    /**
+     * @generated from field: string ceremony_id = 2;
+     */
+    ceremonyId: string;
+
+    /**
+     * JSON-encoded AuthenticatorAttestationResponse from the browser
+     *
+     * @generated from field: bytes attestation_json = 3;
+     */
+    attestationJson: Uint8Array;
+  };
+
+/**
+ * Describes the message pact.auth.v1.FinishPasskeyRegistrationRequest.
+ * Use `create(FinishPasskeyRegistrationRequestSchema)` to create a new message.
+ */
+export const FinishPasskeyRegistrationRequestSchema: GenMessage<FinishPasskeyRegistrationRequest> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 41);
+
+/**
+ * @generated from message pact.auth.v1.FinishPasskeyRegistrationResponse
+ */
+export type FinishPasskeyRegistrationResponse =
+  Message<'pact.auth.v1.FinishPasskeyRegistrationResponse'> & {
+    /**
+     * @generated from field: string credential_id = 1;
+     */
+    credentialId: string;
+  };
+
+/**
+ * Describes the message pact.auth.v1.FinishPasskeyRegistrationResponse.
+ * Use `create(FinishPasskeyRegistrationResponseSchema)` to create a new message.
+ */
+export const FinishPasskeyRegistrationResponseSchema: GenMessage<FinishPasskeyRegistrationResponse> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 42);
+
+/**
+ * Passwordless login — Step 1: get assertion options
+ *
+ * @generated from message pact.auth.v1.BeginPasskeyLoginRequest
+ */
+export type BeginPasskeyLoginRequest =
+  Message<'pact.auth.v1.BeginPasskeyLoginRequest'> & {
+    /**
+     * Optional: if provided the challenge is scoped to this user's credentials.
+     * Omit for discoverable-credential (resident-key) flows.
+     *
+     * @generated from field: string email = 1;
+     */
+    email: string;
+  };
+
+/**
+ * Describes the message pact.auth.v1.BeginPasskeyLoginRequest.
+ * Use `create(BeginPasskeyLoginRequestSchema)` to create a new message.
+ */
+export const BeginPasskeyLoginRequestSchema: GenMessage<BeginPasskeyLoginRequest> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 43);
+
+/**
+ * @generated from message pact.auth.v1.BeginPasskeyLoginResponse
+ */
+export type BeginPasskeyLoginResponse =
+  Message<'pact.auth.v1.BeginPasskeyLoginResponse'> & {
+    /**
+     * @generated from field: string ceremony_id = 1;
+     */
+    ceremonyId: string;
+
+    /**
+     * JSON-encoded PublicKeyCredentialRequestOptions for navigator.credentials.get()
+     *
+     * @generated from field: bytes options_json = 2;
+     */
+    optionsJson: Uint8Array;
+  };
+
+/**
+ * Describes the message pact.auth.v1.BeginPasskeyLoginResponse.
+ * Use `create(BeginPasskeyLoginResponseSchema)` to create a new message.
+ */
+export const BeginPasskeyLoginResponseSchema: GenMessage<BeginPasskeyLoginResponse> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 44);
+
+/**
+ * Passwordless login — Step 2: validate assertion
+ *
+ * @generated from message pact.auth.v1.FinishPasskeyLoginRequest
+ */
+export type FinishPasskeyLoginRequest =
+  Message<'pact.auth.v1.FinishPasskeyLoginRequest'> & {
+    /**
+     * @generated from field: string ceremony_id = 1;
+     */
+    ceremonyId: string;
+
+    /**
+     * JSON-encoded AuthenticatorAssertionResponse from the browser
+     *
+     * @generated from field: bytes assertion_json = 2;
+     */
+    assertionJson: Uint8Array;
+  };
+
+/**
+ * Describes the message pact.auth.v1.FinishPasskeyLoginRequest.
+ * Use `create(FinishPasskeyLoginRequestSchema)` to create a new message.
+ */
+export const FinishPasskeyLoginRequestSchema: GenMessage<FinishPasskeyLoginRequest> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 45);
+
+/**
+ * @generated from message pact.auth.v1.FinishPasskeyLoginResponse
+ */
+export type FinishPasskeyLoginResponse =
+  Message<'pact.auth.v1.FinishPasskeyLoginResponse'> & {
+    /**
+     * @generated from field: string session_token = 1;
+     */
+    sessionToken: string;
+
+    /**
+     * @generated from field: string user_id = 2;
+     */
+    userId: string;
+
+    /**
+     * @generated from field: int64 expires_at_unix = 3;
+     */
+    expiresAtUnix: bigint;
+
+    /**
+     * @generated from field: string refresh_token = 4;
+     */
+    refreshToken: string;
+  };
+
+/**
+ * Describes the message pact.auth.v1.FinishPasskeyLoginResponse.
+ * Use `create(FinishPasskeyLoginResponseSchema)` to create a new message.
+ */
+export const FinishPasskeyLoginResponseSchema: GenMessage<FinishPasskeyLoginResponse> =
+  /*@__PURE__*/
+  messageDesc(file_auth, 46);
 
 /**
  * @generated from service pact.auth.v1.AuthService
@@ -583,6 +1268,22 @@ export const AuthService: GenService<{
     methodKind: 'unary';
     input: typeof RevokeSessionRequestSchema;
     output: typeof RevokeSessionResponseSchema;
+  };
+  /**
+   * @generated from rpc pact.auth.v1.AuthService.RevokeAllSessions
+   */
+  revokeAllSessions: {
+    methodKind: 'unary';
+    input: typeof RevokeAllSessionsRequestSchema;
+    output: typeof RevokeAllSessionsResponseSchema;
+  };
+  /**
+   * @generated from rpc pact.auth.v1.AuthService.RefreshSession
+   */
+  refreshSession: {
+    methodKind: 'unary';
+    input: typeof RefreshSessionRequestSchema;
+    output: typeof RefreshSessionResponseSchema;
   };
   /**
    * Email + password flow
@@ -641,5 +1342,89 @@ export const AuthService: GenService<{
     methodKind: 'unary';
     input: typeof ChangePasswordRequestSchema;
     output: typeof ChangePasswordResponseSchema;
+  };
+  /**
+   * MFA
+   *
+   * @generated from rpc pact.auth.v1.AuthService.BeginTOTPEnrollment
+   */
+  beginTOTPEnrollment: {
+    methodKind: 'unary';
+    input: typeof BeginTOTPEnrollmentRequestSchema;
+    output: typeof BeginTOTPEnrollmentResponseSchema;
+  };
+  /**
+   * @generated from rpc pact.auth.v1.AuthService.ConfirmTOTPEnrollment
+   */
+  confirmTOTPEnrollment: {
+    methodKind: 'unary';
+    input: typeof ConfirmTOTPEnrollmentRequestSchema;
+    output: typeof ConfirmTOTPEnrollmentResponseSchema;
+  };
+  /**
+   * @generated from rpc pact.auth.v1.AuthService.VerifyMfa
+   */
+  verifyMfa: {
+    methodKind: 'unary';
+    input: typeof VerifyMfaRequestSchema;
+    output: typeof VerifyMfaResponseSchema;
+  };
+  /**
+   * @generated from rpc pact.auth.v1.AuthService.ListMfaFactors
+   */
+  listMfaFactors: {
+    methodKind: 'unary';
+    input: typeof ListMfaFactorsRequestSchema;
+    output: typeof ListMfaFactorsResponseSchema;
+  };
+  /**
+   * @generated from rpc pact.auth.v1.AuthService.RevokeMfaFactor
+   */
+  revokeMfaFactor: {
+    methodKind: 'unary';
+    input: typeof RevokeMfaFactorRequestSchema;
+    output: typeof RevokeMfaFactorResponseSchema;
+  };
+  /**
+   * @generated from rpc pact.auth.v1.AuthService.RegenerateRecoveryCodes
+   */
+  regenerateRecoveryCodes: {
+    methodKind: 'unary';
+    input: typeof RegenerateRecoveryCodesRequestSchema;
+    output: typeof RegenerateRecoveryCodesResponseSchema;
+  };
+  /**
+   * Passkeys (WebAuthn)
+   *
+   * @generated from rpc pact.auth.v1.AuthService.BeginPasskeyRegistration
+   */
+  beginPasskeyRegistration: {
+    methodKind: 'unary';
+    input: typeof BeginPasskeyRegistrationRequestSchema;
+    output: typeof BeginPasskeyRegistrationResponseSchema;
+  };
+  /**
+   * @generated from rpc pact.auth.v1.AuthService.FinishPasskeyRegistration
+   */
+  finishPasskeyRegistration: {
+    methodKind: 'unary';
+    input: typeof FinishPasskeyRegistrationRequestSchema;
+    output: typeof FinishPasskeyRegistrationResponseSchema;
+  };
+  /**
+   * @generated from rpc pact.auth.v1.AuthService.BeginPasskeyLogin
+   */
+  beginPasskeyLogin: {
+    methodKind: 'unary';
+    input: typeof BeginPasskeyLoginRequestSchema;
+    output: typeof BeginPasskeyLoginResponseSchema;
+  };
+  /**
+   * @generated from rpc pact.auth.v1.AuthService.FinishPasskeyLogin
+   */
+  finishPasskeyLogin: {
+    methodKind: 'unary';
+    input: typeof FinishPasskeyLoginRequestSchema;
+    output: typeof FinishPasskeyLoginResponseSchema;
   };
 }> = /*@__PURE__*/ serviceDesc(file_auth, 0);

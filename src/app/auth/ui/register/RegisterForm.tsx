@@ -1,15 +1,16 @@
 'use client';
 
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import {
   registerSchema,
   type RegisterFormData,
 } from '@/src/app/auth/domain/auth_validation_schema';
+import { checkBreach } from '@/src/app/auth/domain/check_breach';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -25,6 +26,8 @@ export const RegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [breachWarning, setBreachWarning] = useState(false);
+  const breachAbort = useRef<AbortController | null>(null);
 
   const {
     register,
@@ -34,6 +37,23 @@ export const RegisterForm = () => {
     resolver: yupResolver(registerSchema),
   });
 
+  const passwordRegister = register('password');
+
+  const onPasswordBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      const pw = e.target.value;
+      setBreachWarning(false);
+      breachAbort.current?.abort();
+      if (pw.length < 15) return;
+      const ctrl = new AbortController();
+      breachAbort.current = ctrl;
+      checkBreach(pw, ctrl.signal).then((hit) => {
+        if (!ctrl.signal.aborted) setBreachWarning(hit);
+      });
+    },
+    []
+  );
+
   const onSubmit = async (data: RegisterFormData) => {
     setServerError(null);
     let res: Response;
@@ -41,7 +61,11 @@ export const RegisterForm = () => {
       res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: data.email, password: data.password }),
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+          display_name: data.displayName,
+        }),
       });
     } catch {
       setServerError('Network error. Please try again.');
@@ -100,6 +124,28 @@ export const RegisterForm = () => {
           className="flex flex-col gap-4"
         >
           <div className="flex flex-col gap-1.5">
+            <Label htmlFor="displayName">Name</Label>
+            <Input
+              id="displayName"
+              type="text"
+              autoComplete="name"
+              placeholder="Your name"
+              aria-invalid={!!errors.displayName}
+              aria-describedby={errors.displayName ? 'name-error' : undefined}
+              {...register('displayName')}
+            />
+            {errors.displayName && (
+              <p
+                id="name-error"
+                role="alert"
+                className="text-sm text-destructive"
+              >
+                {errors.displayName.message}
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
@@ -128,12 +174,16 @@ export const RegisterForm = () => {
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="new-password"
-                placeholder="At least 8 characters"
+                placeholder="At least 15 characters"
                 aria-invalid={!!errors.password}
                 aria-describedby={
                   errors.password ? 'password-error' : undefined
                 }
-                {...register('password')}
+                {...passwordRegister}
+                onBlur={(e) => {
+                  void passwordRegister.onBlur(e);
+                  onPasswordBlur(e);
+                }}
               />
               <button
                 type="button"
@@ -151,6 +201,37 @@ export const RegisterForm = () => {
                 className="text-sm text-destructive"
               >
                 {errors.password.message}
+              </p>
+            )}
+            {breachWarning && !errors.password && (
+              <p className="flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400">
+                <TriangleAlert size={14} aria-hidden />
+                This password has appeared in a data breach. Consider choosing a
+                different one.
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="confirmPassword">Confirm password</Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              placeholder="Repeat your password"
+              aria-invalid={!!errors.confirmPassword}
+              aria-describedby={
+                errors.confirmPassword ? 'confirm-password-error' : undefined
+              }
+              {...register('confirmPassword')}
+            />
+            {errors.confirmPassword && (
+              <p
+                id="confirm-password-error"
+                role="alert"
+                className="text-sm text-destructive"
+              >
+                {errors.confirmPassword.message}
               </p>
             )}
           </div>
