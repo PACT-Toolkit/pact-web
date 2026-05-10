@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+# Cursor sometimes appends "Co-authored-by: Cursor <cursoragent@cursor.com>"
+# to commit messages. That shows Cursor as a commit author on GitHub. Strip
+# those lines before the message is finalized (runs for every commit).
+msg_file="${1:?missing commit message file path}"
+[ -f "$msg_file" ] || exit 0
+# macOS/BSD sed in-place
+sed -i '' '/^Co-authored-by: Cursor/d' "$msg_file"
