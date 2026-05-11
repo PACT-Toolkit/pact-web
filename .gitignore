@@ -18,6 +18,8 @@
 !.husky/**/*
 !playwright/
 !playwright/**/*
+!e2e/
+!e2e/**/*
 !.cursor/
 !.cursor/**/*
 !.amp/
@@ -52,6 +54,7 @@
 !orval.config.ts
 !package.json
 !playwright.config.ts
+!playwright.e2e.config.ts
 !postcss.config.mjs
 !pnpm-lock.yaml
 !pnpm-workspace.yaml

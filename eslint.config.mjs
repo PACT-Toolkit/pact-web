@@ -159,6 +159,19 @@ const config = [
     },
   },
   {
+    // The Playwright e2e suite runs in Node, talks to pact-auth + Postgres
+    // directly, and is free to import devDependencies (pg, otpauth,
+    // @playwright/test). Treat it like the mock layer above.
+    files: ['e2e/**/*', 'playwright.e2e.config.ts'],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+    rules: {
+      'import-x/no-extraneous-dependencies': 'off',
+      'no-console': 'off',
+    },
+  },
+  {
     files: ['eslint.config.mjs'],
     ...tseslint.configs.disableTypeChecked,
   },

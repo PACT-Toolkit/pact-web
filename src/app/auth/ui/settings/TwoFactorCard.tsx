@@ -1,9 +1,10 @@
 'use client';
 
-import { Smartphone } from 'lucide-react';
+import { Plus, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 import useSWRMutation from 'swr/mutation';
 
+import { Button } from '@/src/components/ui/button';
 import {
   Card,
   CardContent,
@@ -17,6 +18,7 @@ import {
   revokeFactorFetcher,
 } from '@/src/framework/auth/pact_auth/web_mutations';
 
+import { TotpEnrollPanel } from './TotpEnrollPanel';
 import { TotpFactorRow } from './TotpFactorRow';
 import { type MfaFactor } from './types';
 
@@ -28,6 +30,7 @@ type Props = {
 export const TwoFactorCard = ({ factors, onChanged }: Props) => {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [enrolling, setEnrolling] = useState(false);
 
   const revokeMutation = useSWRMutation(
     AUTH_KEYS.mfaRevoke,
@@ -53,6 +56,14 @@ export const TwoFactorCard = ({ factors, onChanged }: Props) => {
       setBusyId(null);
     }
   };
+
+  // Only one verified TOTP factor is supported per user (matches
+  // pact-auth's BeginTOTPEnrollment FailedPrecondition). Hide the "Add"
+  // button when one is already enrolled so the UI doesn't promise
+  // something the backend will reject.
+  const hasVerifiedTotp = factors.some(
+    (f) => f.type.toLowerCase() === 'totp' && f.verified
+  );
 
   return (
     <Card>
@@ -88,6 +99,33 @@ export const TwoFactorCard = ({ factors, onChanged }: Props) => {
           <p role="alert" className="text-sm text-destructive">
             {error}
           </p>
+        )}
+
+        {enrolling ? (
+          <TotpEnrollPanel
+            onCancel={() => setEnrolling(false)}
+            onComplete={() => {
+              setEnrolling(false);
+              onChanged();
+            }}
+          />
+        ) : (
+          !hasVerifiedTotp && (
+            <div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setError(null);
+                  setEnrolling(true);
+                }}
+                data-testid="totp-add"
+              >
+                <Plus className="mr-2 h-4 w-4" aria-hidden />
+                Add authenticator app
+              </Button>
+            </div>
+          )
         )}
       </CardContent>
     </Card>

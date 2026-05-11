@@ -12,6 +12,11 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
   access_denied: 'You declined the sign-in request.',
   email_already_linked:
     'That email is already linked to a different sign-in method. Sign in with the original provider, then connect this one from your account settings.',
+  // Surfaced when /login/mfa is reached without a fresh challenge token
+  // (or it expired mid-flow). The MFA form redirects here so the user
+  // re-enters their password and gets a new mfa_token.
+  challenge_expired:
+    'Your two-factor verification timed out. Enter your password again.',
 };
 
 const LoginPage = async ({

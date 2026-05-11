@@ -1,25 +1,49 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { notifyVerified } from '@/src/app/auth/domain/auth_broadcast';
 
-// One-shot client component that broadcasts "the user just verified
-// their email" to other same-origin tabs. The register tab's
-// "Check your email" screen subscribes and self-navigates to
-// /dashboard when this fires, so the user doesn't have to flip back to
-// the original tab manually.
+// How long to leave the "Email verified" confirmation visible before
+// navigating away. Long enough that the user perceives the success
+// state (and so screen readers announce the aria-live region), short
+// enough that the wait doesn't feel like a stall.
+const AUTO_REDIRECT_DELAY_MS = 1500;
+
+interface Props {
+  next: string;
+  delayMs?: number;
+}
+
+// One-shot client component that runs after a successful email verify.
+// Two side effects on mount:
 //
-// Lives in its own file so the verify-email/success page can stay a
-// server component — only this small piece needs to be client-side.
+//   1. Broadcasts "verified" so any same-origin tab still parked on
+//      /register's "Check your email" screen self-navigates to the
+//      dashboard. This handles the same-browser-two-tabs flow.
 //
-// `useEffect` is the right tool here: a fire-and-forget side effect
-// that runs once after mount, with no DOM rendering. The empty
-// dependency array makes that intent explicit.
-export const VerifyEmailNotifier = () => {
+//   2. Schedules a router.replace(next) after a short beat so this tab
+//      itself auto-forwards to the dashboard too. This handles the
+//      different-device flow (laptop register, phone verify): without
+//      it the phone would sit on the success page waiting for the user
+//      to tap "Continue here". The button stays as a fallback for
+//      no-JS / failed timer cases and as a "skip the wait" affordance.
+export const VerifyEmailNotifier = ({
+  next,
+  delayMs = AUTO_REDIRECT_DELAY_MS,
+}: Props) => {
+  const router = useRouter();
+
   useEffect(() => {
     notifyVerified();
-  }, []);
+
+    const timeoutId = window.setTimeout(() => {
+      router.replace(next);
+    }, delayMs);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [router, next, delayMs]);
 
   return null;
 };

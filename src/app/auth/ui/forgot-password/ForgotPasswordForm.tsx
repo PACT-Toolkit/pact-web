@@ -3,13 +3,16 @@
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { subscribeToPasswordResetCompleted } from '@/src/app/auth/domain/auth_broadcast';
 import {
   forgotPasswordSchema,
   type ForgotPasswordFormData,
 } from '@/src/app/auth/domain/auth_validation_schema';
+import { AuthErrorNotice } from '@/src/app/auth/ui/AuthErrorNotice';
 import { Button } from '@/src/components/ui/button';
 import {
   Field,
@@ -23,9 +26,25 @@ import { cn } from '@/src/lib/utils';
 
 type Props = React.ComponentProps<'div'>;
 
+type ServerError = { code: string | null; message: string };
+
 export const ForgotPasswordForm = ({ className, ...props }: Props) => {
-  const [serverError, setServerError] = useState<string | null>(null);
+  const router = useRouter();
+  const [serverError, setServerError] = useState<ServerError | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  // While the "Check your email" screen is up, listen for the reset
+  // tab's broadcast and self-navigate to the app. The session cookie
+  // is set on this same browser by `/api/auth/reset-password`, so the
+  // (app) layout's session check succeeds without a round-trip back
+  // to login. Mirrors the verify-email handoff in `RegisterForm`.
+  useEffect(() => {
+    if (!submitted) return;
+
+    return subscribeToPasswordResetCompleted(() => {
+      router.replace('/dashboard');
+    });
+  }, [submitted, router]);
 
   const {
     register,
@@ -45,15 +64,22 @@ export const ForgotPasswordForm = ({ className, ...props }: Props) => {
         body: JSON.stringify({ email: data.email }),
       });
     } catch {
-      setServerError('Network error. Please try again.');
+      setServerError({
+        code: null,
+        message: 'Network error. Please try again.',
+      });
 
       return;
     }
     if (!res.ok) {
       const payload = (await res.json().catch(() => null)) as {
+        code?: string;
         error?: string;
       } | null;
-      setServerError(payload?.error ?? 'Request failed. Please try again.');
+      setServerError({
+        code: payload?.code ?? null,
+        message: payload?.error ?? 'Request failed. Please try again.',
+      });
 
       return;
     }
@@ -106,9 +132,10 @@ export const ForgotPasswordForm = ({ className, ...props }: Props) => {
           </Field>
 
           {serverError && (
-            <FieldError role="alert" className="text-center">
-              {serverError}
-            </FieldError>
+            <AuthErrorNotice
+              code={serverError.code}
+              message={serverError.message}
+            />
           )}
 
           <Field>

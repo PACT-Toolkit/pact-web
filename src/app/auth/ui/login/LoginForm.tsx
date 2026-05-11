@@ -20,6 +20,7 @@ import {
   markPasskeyEnrolledLocally,
   signInWithPasskey,
 } from '@/src/app/auth/domain/webauthn';
+import { AuthErrorNotice } from '@/src/app/auth/ui/AuthErrorNotice';
 import { OAUTH_PROVIDERS } from '@/src/app/auth/ui/login/oauth_providers';
 import { Button } from '@/src/components/ui/button';
 import {
@@ -42,14 +43,16 @@ type LoginFormProps = React.ComponentProps<'div'> & {
   initialError?: string | null;
 };
 
+type ServerError = { code: string | null; message: string };
+
 export const LoginForm = ({
   initialError,
   className,
   ...props
 }: LoginFormProps) => {
   const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(
-    initialError ?? null
+  const [serverError, setServerError] = useState<ServerError | null>(
+    initialError ? { code: null, message: initialError } : null
   );
   const passkeySupported = useWebAuthnSupported();
   const [pending, setPending] = useState(false);
@@ -68,14 +71,32 @@ export const LoginForm = ({
   // WebAuthn ceremony with its own AbortController; wrapping that in a
   // mutation hook would obscure the lifecycle without buying anything.
   const loginMutation = useSWRMutation(AUTH_KEYS.login, loginFetcher, {
-    onSuccess: () => router.push('/dashboard'),
-    onError: (err: unknown) => {
-      if (err instanceof ApiError) {
-        setServerError(err.message);
+    onSuccess: (data) => {
+      // Password auth succeeded but the account has a verified TOTP
+      // factor — pact-auth revoked the preliminary session and the
+      // /api/auth/login route stashed the challenge token in an
+      // httpOnly cookie. We hand off to /login/mfa to collect the
+      // 6-digit code (or a recovery code).
+      if (data?.mfaRequired) {
+        router.push('/login/mfa');
 
         return;
       }
-      setServerError('Network error. Please try again.');
+      router.push('/dashboard');
+    },
+    onError: (err: unknown) => {
+      if (err instanceof ApiError) {
+        setServerError({
+          code: err.info?.code ?? null,
+          message: err.message,
+        });
+
+        return;
+      }
+      setServerError({
+        code: null,
+        message: 'Network error. Please try again.',
+      });
     },
   });
 
@@ -103,7 +124,7 @@ export const LoginForm = ({
         if (err instanceof PasskeyError && err.code !== 'cancelled') {
           // Anything other than "user picked a different option" is worth
           // surfacing — don't block the password path on it though.
-          setServerError(err.message);
+          setServerError({ code: null, message: err.message });
         }
       }
     })();
@@ -126,11 +147,14 @@ export const LoginForm = ({
       setPending(false);
       if (err instanceof PasskeyError) {
         if (err.code === 'cancelled') return;
-        setServerError(err.message);
+        setServerError({ code: null, message: err.message });
 
         return;
       }
-      setServerError('Passkey sign-in failed. Please try again.');
+      setServerError({
+        code: null,
+        message: 'Passkey sign-in failed. Please try again.',
+      });
     }
   };
 
@@ -253,9 +277,10 @@ export const LoginForm = ({
             </Field>
 
             {serverError && (
-              <FieldError role="alert" className="text-center">
-                {serverError}
-              </FieldError>
+              <AuthErrorNotice
+                code={serverError.code}
+                message={serverError.message}
+              />
             )}
 
             <Field>

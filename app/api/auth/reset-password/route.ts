@@ -2,6 +2,10 @@ import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import {
+  AUTH_ERROR_CODES,
+  mapPactAuthError,
+} from '@/src/framework/auth/pact_auth/errors';
 
 export const runtime = 'nodejs';
 
@@ -41,26 +45,23 @@ export const POST = async (req: NextRequest) => {
       newPassword: password,
     });
   } catch (err) {
-    if (err instanceof ConnectError) {
-      switch (err.code) {
-        case Code.Unauthenticated:
-          return NextResponse.json(
-            { error: 'reset link is invalid or has expired' },
-            { status: 401 }
-          );
-        case Code.InvalidArgument:
-          return NextResponse.json({ error: err.rawMessage }, { status: 400 });
-        case Code.ResourceExhausted:
-          return NextResponse.json(
-            { error: 'too many attempts, try again later' },
-            { status: 429 }
-          );
-        default:
-          return NextResponse.json({ error: 'reset failed' }, { status: 500 });
-      }
+    // Unauthenticated on reset means "the token doesn't match a live
+    // reset request" — surfaced with a domain-specific code so the form
+    // can offer a "request a new link" CTA. Other codes go through the
+    // shared mapper.
+    if (err instanceof ConnectError && err.code === Code.Unauthenticated) {
+      return NextResponse.json(
+        {
+          code: AUTH_ERROR_CODES.unauthorized,
+          error:
+            'This reset link is invalid or has expired. Request a new one to continue.',
+        },
+        { status: 401 }
+      );
     }
+    const { status, body } = mapPactAuthError(err);
 
-    return NextResponse.json({ error: 'reset failed' }, { status: 500 });
+    return NextResponse.json(body, { status });
   }
 
   const expiresAt = new Date(Number(resp.expiresAtUnix) * 1000);

@@ -7,11 +7,13 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 
+import { notifyPasswordResetCompleted } from '@/src/app/auth/domain/auth_broadcast';
 import {
   resetPasswordSchema,
   type ResetPasswordFormData,
 } from '@/src/app/auth/domain/auth_validation_schema';
 import { usePasswordBreachWarning } from '@/src/app/auth/domain/use_password_breach_warning';
+import { AuthErrorNotice } from '@/src/app/auth/ui/AuthErrorNotice';
 import { Button } from '@/src/components/ui/button';
 import {
   Field,
@@ -27,9 +29,11 @@ type Props = React.ComponentProps<'div'> & {
   token: string;
 };
 
+type ServerError = { code: string | null; message: string };
+
 export const ResetPasswordForm = ({ token, className, ...props }: Props) => {
   const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<ServerError | null>(null);
   const { warning: breachWarning, onPasswordBlur } = usePasswordBreachWarning();
 
   const {
@@ -52,18 +56,31 @@ export const ResetPasswordForm = ({ token, className, ...props }: Props) => {
         body: JSON.stringify({ token, password: data.password }),
       });
     } catch {
-      setServerError('Network error. Please try again.');
+      setServerError({
+        code: null,
+        message: 'Network error. Please try again.',
+      });
 
       return;
     }
     if (!res.ok) {
       const payload = (await res.json().catch(() => null)) as {
+        code?: string;
         error?: string;
       } | null;
-      setServerError(payload?.error ?? 'Reset failed. Please try again.');
+      setServerError({
+        code: payload?.code ?? null,
+        message: payload?.error ?? 'Reset failed. Please try again.',
+      });
 
       return;
     }
+    // Cross-tab nudge: if the user requested the reset in another tab
+    // (still showing the /forgot-password "Check your email" screen),
+    // that tab subscribes and self-navigates to /dashboard. Fire it
+    // before the local router.push so the broadcast happens while this
+    // tab is still alive on the same origin.
+    notifyPasswordResetCompleted();
     router.push('/dashboard');
   };
 
@@ -141,9 +158,10 @@ export const ResetPasswordForm = ({ token, className, ...props }: Props) => {
           </Field>
 
           {serverError && (
-            <FieldError role="alert" className="text-center">
-              {serverError}
-            </FieldError>
+            <AuthErrorNotice
+              code={serverError.code}
+              message={serverError.message}
+            />
           )}
 
           <Field>

@@ -12,18 +12,19 @@ type SearchParams = { next?: string | string[] };
 //
 // Reached after /api/auth/verify-email exchanges a verification token
 // for a session — the cookie has already been set by that handler, so
-// this page is just a confirmation beat. Two flows land here:
+// this page is purely a confirmation beat. Two flows land here:
 //
 //  - Same-browser, two tabs: user opened the link in a new tab next to
 //    the still-open `/register` "Check your email" screen.
 //    `VerifyEmailNotifier` posts on the auth BroadcastChannel; the
-//    register tab self-navigates to /dashboard. The user can close
-//    *this* tab.
+//    register tab self-navigates to /dashboard immediately. This tab
+//    also auto-forwards to the dashboard after a short beat.
 //
-//  - Single tab (or different device): nobody is listening to the
-//    broadcast, so the visible "Continue here" button is the path
-//    forward. The session cookie is already set, so clicking it goes
-//    straight into the app.
+//  - Different device (e.g. laptop register, phone verify): no other
+//    tab is listening to the broadcast, but this tab still auto-
+//    forwards after the same short beat so the phone isn't left on a
+//    confirmation screen with no obvious next action. The visible
+//    button is the no-JS / "skip the wait" fallback.
 const VerifyEmailSuccessPage = async ({
   searchParams,
 }: {
@@ -44,16 +45,15 @@ const VerifyEmailSuccessPage = async ({
         </div>
         <h1 className="text-xl font-bold">Email verified</h1>
         <FieldDescription>
-          You&apos;re signed in. Return to the tab where you started. You can
-          close this one, or continue here if you don&apos;t have it open.
+          You&apos;re signed in. Taking you to your dashboard&hellip;
         </FieldDescription>
         <Button asChild size="lg" className="w-full">
           <Link href={target} replace prefetch={false}>
-            Continue here
+            Continue now
           </Link>
         </Button>
       </div>
-      <VerifyEmailNotifier />
+      <VerifyEmailNotifier next={target} />
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { Eye, EyeOff, Loader2, TriangleAlert } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { subscribeToVerified } from '@/src/app/auth/domain/auth_broadcast';
@@ -13,6 +13,7 @@ import {
   type RegisterFormData,
 } from '@/src/app/auth/domain/auth_validation_schema';
 import { usePasswordBreachWarning } from '@/src/app/auth/domain/use_password_breach_warning';
+import { AuthErrorNotice } from '@/src/app/auth/ui/AuthErrorNotice';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -34,11 +35,28 @@ type RegisterError = {
   message: string;
 };
 
+// Client-side cooldown after a successful resend. pact-auth's per-IP rate
+// limit is the source of truth — this just disables the button so the
+// user doesn't immediately spam click and trigger a 429. The number is
+// deliberately short; the limiter on the backend is the real ceiling.
+const RESEND_COOLDOWN_SECONDS = 30;
+
+type ResendState =
+  | { status: 'idle' }
+  | { status: 'sending' }
+  | { status: 'sent'; cooldownSecondsLeft: number }
+  | { status: 'error'; code: string | null; message: string };
+
 export const RegisterForm = () => {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState<RegisterError | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
+  const [resendState, setResendState] = useState<ResendState>({
+    status: 'idle',
+  });
+  const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { warning: breachWarning, onPasswordBlur } = usePasswordBreachWarning();
 
   // While the "Check your email" screen is up, listen for the verify
@@ -53,6 +71,74 @@ export const RegisterForm = () => {
       router.replace('/dashboard');
     });
   }, [submitted, router]);
+
+  // Cooldown teardown: the interval is started inline in handleResend
+  // and stored in a ref; this effect just makes sure we never leak a
+  // running timer if the user navigates away.
+  useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+    };
+  }, []);
+
+  const startCooldown = () => {
+    if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);
+    setResendState({
+      status: 'sent',
+      cooldownSecondsLeft: RESEND_COOLDOWN_SECONDS,
+    });
+    cooldownTimerRef.current = setInterval(() => {
+      setResendState((s) => {
+        if (s.status !== 'sent') return s;
+        const next = s.cooldownSecondsLeft - 1;
+        if (next <= 0) {
+          if (cooldownTimerRef.current) {
+            clearInterval(cooldownTimerRef.current);
+            cooldownTimerRef.current = null;
+          }
+
+          return { status: 'idle' };
+        }
+
+        return { status: 'sent', cooldownSecondsLeft: next };
+      });
+    }, 1000);
+  };
+
+  const handleResend = async () => {
+    if (!registeredEmail) return;
+    setResendState({ status: 'sending' });
+    let res: Response;
+    try {
+      res = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: registeredEmail }),
+      });
+    } catch {
+      setResendState({
+        status: 'error',
+        code: null,
+        message: 'Network error. Please try again.',
+      });
+
+      return;
+    }
+    if (!res.ok) {
+      const payload = (await res.json().catch(() => null)) as {
+        code?: string;
+        error?: string;
+      } | null;
+      setResendState({
+        status: 'error',
+        code: payload?.code ?? null,
+        message: payload?.error ?? "Couldn't resend. Please try again later.",
+      });
+
+      return;
+    }
+    startCooldown();
+  };
 
   const {
     register,
@@ -94,6 +180,7 @@ export const RegisterForm = () => {
 
       return;
     }
+    setRegisteredEmail(data.email);
     setSubmitted(true);
   };
 
@@ -105,7 +192,11 @@ export const RegisterForm = () => {
             Check your email
           </CardTitle>
           <CardDescription>
-            We sent a verification link to your inbox.
+            We sent a verification link to{' '}
+            <span className="font-medium text-foreground">
+              {registeredEmail}
+            </span>
+            .
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center text-sm text-muted-foreground">
@@ -117,6 +208,43 @@ export const RegisterForm = () => {
             Keep this tab open. Once you verify, we&apos;ll bring you straight
             in.
           </p>
+
+          <div className="mb-4 flex flex-col items-center gap-1.5">
+            <p className="text-xs text-muted-foreground">
+              Didn&apos;t get it? Check spam, or resend.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleResend}
+              disabled={
+                resendState.status === 'sending' ||
+                resendState.status === 'sent'
+              }
+              aria-live="polite"
+            >
+              {resendState.status === 'sending' && (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                  Resending…
+                </>
+              )}
+              {resendState.status === 'sent' &&
+                `Sent. Resend in ${resendState.cooldownSecondsLeft}s`}
+              {(resendState.status === 'idle' ||
+                resendState.status === 'error') &&
+                'Resend verification email'}
+            </Button>
+            {resendState.status === 'error' && (
+              <AuthErrorNotice
+                code={resendState.code}
+                message={resendState.message}
+                className="mt-1 w-full text-left"
+              />
+            )}
+          </div>
+
           <Link href="/login" className="underline">
             Back to sign in
           </Link>

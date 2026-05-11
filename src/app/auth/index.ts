@@ -1,5 +1,6 @@
 export { ForgotPasswordForm } from './ui/forgot-password/ForgotPasswordForm';
 export { LoginForm } from './ui/login/LoginForm';
+export { MfaChallengeForm } from './ui/login/MfaChallengeForm';
 export { LogoutButton } from './ui/logout/LogoutButton';
 export { AddPasskeyButton } from './ui/passkey/AddPasskeyButton';
 export { DashboardPasskeyCTA } from './ui/passkey/DashboardPasskeyCTA';

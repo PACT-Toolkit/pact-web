@@ -2,6 +2,7 @@ import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import { mapPactAuthError } from '@/src/framework/auth/pact_auth/errors';
 import { defaultReturnTo } from '@/src/framework/auth/pact_auth/return_to';
 
 export const runtime = 'nodejs';
@@ -72,6 +73,11 @@ export const POST = async (req: NextRequest) => {
         isString(returnTo) && returnTo ? returnTo : defaultReturnTo(req),
     });
   } catch (err) {
+    // Register's AlreadyExists carries product-specific copy and a
+    // distinct code so the form can render the sign-in / forgot-password
+    // links inline instead of the generic error treatment. All other
+    // codes (validation, rate-limit, unknown) flow through the shared
+    // mapper for a consistent shape.
     if (err instanceof ConnectError && err.code === Code.AlreadyExists) {
       return NextResponse.json(
         {
@@ -81,17 +87,9 @@ export const POST = async (req: NextRequest) => {
         { status: 409 }
       );
     }
-    if (err instanceof ConnectError && err.code === Code.InvalidArgument) {
-      return NextResponse.json({ error: err.rawMessage }, { status: 400 });
-    }
-    if (err instanceof ConnectError && err.code === Code.ResourceExhausted) {
-      return NextResponse.json(
-        { error: 'too many attempts, try again later' },
-        { status: 429 }
-      );
-    }
+    const { status, body } = mapPactAuthError(err);
 
-    return NextResponse.json({ error: 'register failed' }, { status: 500 });
+    return NextResponse.json(body, { status });
   }
 
   return NextResponse.json({ ok: true });

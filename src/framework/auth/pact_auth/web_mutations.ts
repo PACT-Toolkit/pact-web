@@ -64,13 +64,28 @@ export const AUTH_KEYS = {
   oauthUnlink: '/api/auth/oauth/unlink',
   mfaRevoke: '/api/auth/mfa/revoke',
   mfaRecoveryCodes: '/api/auth/mfa/recovery-codes',
+  mfaEnrollBegin: '/api/auth/mfa/enroll/begin',
+  mfaEnrollConfirm: '/api/auth/mfa/enroll/confirm',
+  mfaVerify: '/api/auth/mfa/verify',
 } as const;
 
 // -- Mutation fetchers -----------------------------------------------------
 
 export type LoginArg = { email: string; password: string };
-export const loginFetcher = (url: string, { arg }: { arg: LoginArg }) =>
-  postJson<LoginArg>(url, arg, 'Sign in failed. Please try again.');
+// When the user has a verified TOTP factor, pact-auth refuses to return a
+// session and instead asks us to bounce through /login/mfa. The route
+// sets pact_mfa_token as an httpOnly cookie and returns mfaRequired=true
+// in the body so the form knows to navigate instead of routing to /dashboard.
+export type LoginResult = { mfaRequired?: boolean; userId?: string };
+export const loginFetcher = (
+  url: string,
+  { arg }: { arg: LoginArg }
+): Promise<LoginResult> =>
+  postJson<LoginArg, LoginResult>(
+    url,
+    arg,
+    'Sign in failed. Please try again.'
+  );
 
 export type RenamePasskeyArg = { passkeyId: string; label: string };
 export const renamePasskeyFetcher = (
@@ -106,4 +121,44 @@ export const regenerateRecoveryCodesFetcher = (
     url,
     undefined,
     'Could not generate recovery codes.'
+  );
+
+// /api/auth/mfa/enroll/begin — provision a pending TOTP factor. No body;
+// reads the session cookie server-side. Returns the secret + otpauth URL
+// the UI displays for QR-code / manual entry into an authenticator app.
+export type BeginTotpEnrollmentResult = {
+  factorId: string;
+  secret: string;
+  otpauthUrl: string;
+};
+export const beginTotpEnrollmentFetcher = (
+  url: string
+): Promise<BeginTotpEnrollmentResult> =>
+  postJson<undefined, BeginTotpEnrollmentResult>(
+    url,
+    undefined,
+    'Could not start authenticator enrollment.'
+  );
+
+// /api/auth/mfa/verify — completes the password+TOTP login flow. The
+// route picks the challenge token off the pact_mfa_token cookie, so the
+// only thing the client needs to send is the code itself (TOTP or
+// recovery). On success the response sets pact_session and the form
+// navigates to /dashboard.
+export type VerifyMfaArg = { code: string; isRecovery?: boolean };
+export const verifyMfaFetcher = (url: string, { arg }: { arg: VerifyMfaArg }) =>
+  postJson<VerifyMfaArg>(url, arg, 'Could not verify the code.');
+
+// /api/auth/mfa/enroll/confirm — verify the 6-digit code, flip the
+// factor to verified, and return a fresh batch of recovery codes.
+export type ConfirmTotpEnrollmentArg = { factorId: string; code: string };
+export type ConfirmTotpEnrollmentResult = { recoveryCodes: string[] };
+export const confirmTotpEnrollmentFetcher = (
+  url: string,
+  { arg }: { arg: ConfirmTotpEnrollmentArg }
+): Promise<ConfirmTotpEnrollmentResult> =>
+  postJson<ConfirmTotpEnrollmentArg, ConfirmTotpEnrollmentResult>(
+    url,
+    arg,
+    'Could not confirm authenticator code.'
   );

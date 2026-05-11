@@ -2,10 +2,20 @@ import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import {
+  AUTH_ERROR_CODES,
+  mapPactAuthError,
+} from '@/src/framework/auth/pact_auth/errors';
 
 export const runtime = 'nodejs';
 
 const SESSION_COOKIE = 'pact_session';
+const MFA_TOKEN_COOKIE = 'pact_mfa_token';
+// pact-auth issues challenge tokens with a 5-minute TTL (see
+// internal/mfa/service.go::challengeTTL). We cap the cookie to the same
+// window so a stale browser tab can't sit forever on the step-up form
+// holding a token that's already invalid server-side.
+const MFA_TOKEN_TTL_SECONDS = 5 * 60;
 
 type LoginBody = { email?: unknown; password?: unknown };
 
@@ -34,6 +44,39 @@ export const POST = async (req: NextRequest) => {
     return loginErrorResponse(err);
   }
 
+  // MFA branch: pact-auth has revoked the preliminary session and handed
+  // us a short-lived mfa_token. We stash it in an httpOnly cookie so the
+  // step-up page (and only that page) can present it back via
+  // /api/auth/mfa/verify. Keeping it out of the response body and out of
+  // JS-readable storage means a hostile script on a different tab can't
+  // hijack the half-finished login.
+  if (resp.mfaRequired) {
+    if (!resp.mfaToken) {
+      // Defensive: pact-auth never returns mfa_required without a token,
+      // but if it ever did we'd otherwise quietly issue an unusable cookie.
+      return NextResponse.json(
+        { error: 'sign-in service returned an unusable response' },
+        { status: 502 }
+      );
+    }
+    const res = NextResponse.json({
+      ok: true,
+      mfaRequired: true,
+      userId: resp.userId,
+    });
+    res.cookies.set({
+      name: MFA_TOKEN_COOKIE,
+      value: resp.mfaToken,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: MFA_TOKEN_TTL_SECONDS,
+    });
+
+    return res;
+  }
+
   const expiresAt = new Date(Number(resp.expiresAtUnix) * 1000);
   const res = NextResponse.json({ ok: true, userId: resp.userId });
   res.cookies.set({
@@ -49,29 +92,38 @@ export const POST = async (req: NextRequest) => {
   return res;
 };
 
+// Login has two domain-specific outcomes that the generic mapper would
+// otherwise blur together with the rest of the gRPC codes:
+//   Unauthenticated → "invalid credentials" (we deliberately don't
+//     leak which factor failed; pact-auth is constant-time on the
+//     not-found path).
+//   FailedPrecondition → "email not verified" — surfaced as a distinct
+//     code so the form can render a "resend verification" affordance
+//     instead of the generic error treatment.
+// Everything else delegates to mapPactAuthError for the standard shape.
 const loginErrorResponse = (err: unknown): NextResponse => {
-  if (!(err instanceof ConnectError)) {
-    return NextResponse.json({ error: 'login failed' }, { status: 500 });
-  }
-  switch (err.code) {
-    case Code.Unauthenticated:
+  if (err instanceof ConnectError) {
+    if (err.code === Code.Unauthenticated) {
       return NextResponse.json(
-        { error: 'invalid credentials' },
+        {
+          code: AUTH_ERROR_CODES.unauthorized,
+          error: 'Invalid email or password.',
+        },
         { status: 401 }
       );
-    case Code.FailedPrecondition:
+    }
+    if (err.code === Code.FailedPrecondition) {
       return NextResponse.json(
-        { error: 'email not verified' },
+        {
+          code: 'email_not_verified',
+          error:
+            'Please verify your email before signing in. Check your inbox for the verification link.',
+        },
         { status: 403 }
       );
-    case Code.InvalidArgument:
-      return NextResponse.json({ error: err.rawMessage }, { status: 400 });
-    case Code.ResourceExhausted:
-      return NextResponse.json(
-        { error: 'too many attempts, try again later' },
-        { status: 429 }
-      );
-    default:
-      return NextResponse.json({ error: 'login failed' }, { status: 500 });
+    }
   }
+  const { status, body } = mapPactAuthError(err);
+
+  return NextResponse.json(body, { status });
 };
