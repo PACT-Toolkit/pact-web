@@ -1,31 +1,18 @@
 'use client';
 
 import { LogOut } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 import { Button } from '@/src/components/ui/button';
+import { useSignOut } from '@/src/framework/auth/pact_auth/sign_out';
 
 export const LogoutButton = () => {
-  const router = useRouter();
-  const [pending, setPending] = useState(false);
-
-  const onClick = async () => {
-    setPending(true);
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch {
-      // server-side cookie was cleared regardless; just continue
-    }
-    router.push('/login');
-    router.refresh();
-  };
+  const { signOut, pending } = useSignOut();
 
   return (
     <Button
       variant="ghost"
       size="sm"
-      onClick={onClick}
+      onClick={signOut}
       disabled={pending}
       aria-label="Sign out"
     >

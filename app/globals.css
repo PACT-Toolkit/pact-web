@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:is(.dark *));
+
 /*
  * Theme tokens — based on the "Zerefez" tweakcn theme
  * (https://tweakcn.com/r/themes/cmozkbc9r000204ifhfvaa5yd), a stark

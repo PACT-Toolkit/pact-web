@@ -6,9 +6,6 @@ import { Providers } from './Providers';
 
 import './globals.css';
 
-// Self-hosted via next/font so the page stays renderable when Google Fonts
-// is unreachable. Variables here line up with --font-sans / --font-mono in
-// app/globals.css's @theme block.
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
@@ -24,11 +21,31 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'PACT',
   description: 'Privacy and Compliance Toolkit',
+  icons: {
+    icon: [
+      {
+        url: '/assets/images/pact-favicon.png',
+        type: 'image/png',
+        sizes: '512x512',
+      },
+    ],
+    apple: [
+      {
+        url: '/assets/images/pact-apple-icon.png',
+        type: 'image/png',
+        sizes: '180x180',
+      },
+    ],
+  },
 };
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => (
-  <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable}`}>
-    <body className="font-sans antialiased" suppressHydrationWarning>
+  <html
+    lang="en"
+    className={`${inter.variable} ${jetbrainsMono.variable}`}
+    suppressHydrationWarning
+  >
+    <body className="font-sans antialiased">
       <Providers>{children}</Providers>
       <Analytics />
     </body>
