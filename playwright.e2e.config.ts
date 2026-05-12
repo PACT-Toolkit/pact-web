@@ -10,7 +10,7 @@
 //   1. pact-auth services up:
 //        cd ../pact-auth && make compose-up && make dev
 //   2. (optional) pact-notify in log mode so emails land on disk:
-//        cd ../pact-notify && doppler run -p pact-notify -c dev_log -- make dev
+//        cd ../pact-notify && make dev DOPPLER_CONFIG=dev_log
 //
 // This config starts its own pact-web (dev:real) so PACT_AUTH_GRPC_ADDR
 // is wired correctly. If a dev server is already listening on $port,

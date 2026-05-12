@@ -21,7 +21,7 @@ const globalSetup = async (): Promise<void> => {
         '  cd ../pact-auth && make compose-up && make dev',
         '',
         'And — if you want emails captured to disk instead of Brevo — also:',
-        '  cd ../pact-notify && doppler run -p pact-notify -c dev_log -- make dev',
+        '  cd ../pact-notify && make dev DOPPLER_CONFIG=dev_log',
         '',
         `Seed identity: ${TEST_USER.email}`,
       ].join('\n')
