@@ -1,4 +1,7 @@
+import { redirect } from 'next/navigation';
+
 import { LoginForm } from '@/src/app/auth';
+import { validateSessionFromCookies } from '@/src/framework/auth/pact_auth/session';
 
 type SearchParams = { oauth_error?: string | string[] };
 
@@ -24,6 +27,11 @@ const LoginPage = async ({
 }: {
   searchParams: Promise<SearchParams>;
 }) => {
+  const session = await validateSessionFromCookies();
+  if (session) {
+    redirect('/dashboard');
+  }
+
   const { oauth_error } = await searchParams;
   const errKey = Array.isArray(oauth_error) ? oauth_error[0] : oauth_error;
   const oauthError = errKey
