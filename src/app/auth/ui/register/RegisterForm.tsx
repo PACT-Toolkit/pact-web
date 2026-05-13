@@ -25,9 +25,6 @@ import {
 import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
 
-// Stable error codes the API route may emit alongside a human message.
-// Keeping these as a string union (not an enum) so the form can switch on
-// code without coupling to a separate constants module.
 type RegisterErrorCode = 'email_already_registered';
 
 type RegisterError = {
@@ -35,10 +32,6 @@ type RegisterError = {
   message: string;
 };
 
-// Client-side cooldown after a successful resend. pact-auth's per-IP rate
-// limit is the source of truth — this just disables the button so the
-// user doesn't immediately spam click and trigger a 429. The number is
-// deliberately short; the limiter on the backend is the real ceiling.
 const RESEND_COOLDOWN_SECONDS = 30;
 
 type ResendState =
@@ -59,11 +52,6 @@ export const RegisterForm = () => {
   const cooldownTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const { warning: breachWarning, onPasswordBlur } = usePasswordBreachWarning();
 
-  // While the "Check your email" screen is up, listen for the verify
-  // tab's broadcast and self-navigate to the app. The session cookie
-  // is already set on this same browser by `/api/auth/verify-email`,
-  // so by the time we hit /dashboard the (app) layout's session check
-  // succeeds without a round-trip back to the login page.
   useEffect(() => {
     if (!submitted) return;
 
@@ -72,9 +60,6 @@ export const RegisterForm = () => {
     });
   }, [submitted, router]);
 
-  // Cooldown teardown: the interval is started inline in handleResend
-  // and stored in a ref; this effect just makes sure we never leak a
-  // running timer if the user navigates away.
   useEffect(() => {
     return () => {
       if (cooldownTimerRef.current) clearInterval(cooldownTimerRef.current);

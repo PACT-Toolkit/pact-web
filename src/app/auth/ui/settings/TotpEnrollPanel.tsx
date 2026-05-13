@@ -17,26 +17,12 @@ import {
 import { cn } from '@/src/lib/utils';
 
 type Props = {
-  // Called once the user finishes the flow ("Done" on the recovery-codes
-  // screen) so the parent panel can refresh the factor list. The dialog
-  // closes itself first to avoid clobbering the recovery codes mid-render.
   onComplete: () => void;
   onCancel: () => void;
 };
 
 type Stage = 'begin' | 'verify' | 'recovery';
 
-// Renders the three-step TOTP enrollment flow inline. We intentionally
-// avoid a modal: the recovery-codes screen needs to stay readable while
-// the user copies, and shadcn's dialog primitive isn't on this project.
-//
-// Stages:
-//   1. begin     — kicks off /api/auth/mfa/enroll/begin on mount, shows
-//                  the secret + otpauth URL so the user can scan or type
-//                  into their authenticator app.
-//   2. verify    — six-digit input; on success we advance to "recovery".
-//   3. recovery  — one-time view of the recovery codes; the parent's
-//                  onComplete fires when the user dismisses this screen.
 export const TotpEnrollPanel = ({ onComplete, onCancel }: Props) => {
   const [stage, setStage] = useState<Stage>('begin');
   const [enrollment, setEnrollment] =
@@ -88,7 +74,7 @@ export const TotpEnrollPanel = ({ onComplete, onCancel }: Props) => {
     try {
       await beginMutation.trigger();
     } catch {
-      // onError populated `error`
+      // no-op
     }
   };
 
@@ -102,7 +88,7 @@ export const TotpEnrollPanel = ({ onComplete, onCancel }: Props) => {
         code: code.trim(),
       });
     } catch {
-      // onError populated `error`
+      // no-op
     }
   };
 
@@ -126,8 +112,6 @@ export const TotpEnrollPanel = ({ onComplete, onCancel }: Props) => {
     }
   };
 
-  // Stage 1: the "Begin setup" trigger lives here so the parent stays
-  // dumb (it just toggles the panel open/closed).
   if (stage === 'begin') {
     return (
       <div
@@ -168,8 +152,6 @@ export const TotpEnrollPanel = ({ onComplete, onCancel }: Props) => {
     );
   }
 
-  // Stage 2: secret + code input. enrollment is guaranteed to be set by
-  // the time we land here (begin's onSuccess advances the stage).
   if (stage === 'verify' && enrollment) {
     return (
       <form
@@ -265,8 +247,6 @@ export const TotpEnrollPanel = ({ onComplete, onCancel }: Props) => {
     );
   }
 
-  // Stage 3: one-time recovery-codes view. "Done" fires onComplete so the
-  // parent can refresh the factor list.
   return (
     <div
       data-testid="totp-enroll-panel"

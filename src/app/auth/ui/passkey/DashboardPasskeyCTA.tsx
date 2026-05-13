@@ -7,10 +7,6 @@ import { dismissPasskeyPrompt } from '@/src/app/auth/domain/webauthn';
 import { AddPasskeyButton } from '@/src/app/auth/ui/passkey/AddPasskeyButton';
 import { Button } from '@/src/components/ui/button';
 
-// Louder "post-registration" passkey nudge that lives on /dashboard.
-// Visibility is shared with PasskeyEnrollmentBanner via
-// `usePasskeyPromptHidden` — dismissing here also hides the banner,
-// and vice versa, with no remount required.
 export const DashboardPasskeyCTA = () => {
   const hidden = usePasskeyPromptHidden();
 

@@ -6,9 +6,6 @@ import {
 } from '@/src/framework/auth/pact_auth/factors';
 
 const SecuritySettingsPage = async () => {
-  // Fetch in parallel — each call is independent and the page is a single
-  // server-render boundary, so this halves the latency vs. awaiting them
-  // sequentially.
   const [factors, passkeys, identities] = await Promise.all([
     listMfaFactors(),
     listPasskeys(),

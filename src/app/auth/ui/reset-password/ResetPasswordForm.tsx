@@ -75,11 +75,6 @@ export const ResetPasswordForm = ({ token, className, ...props }: Props) => {
 
       return;
     }
-    // Cross-tab nudge: if the user requested the reset in another tab
-    // (still showing the /forgot-password "Check your email" screen),
-    // that tab subscribes and self-navigates to /dashboard. Fire it
-    // before the local router.push so the broadcast happens while this
-    // tab is still alive on the same origin.
     notifyPasswordResetCompleted();
     router.push('/dashboard');
   };

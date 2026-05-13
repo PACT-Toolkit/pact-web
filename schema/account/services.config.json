@@ -1,0 +1,6 @@
+{
+  "repo": "pact-account",
+  "path": "/api/swagger.yaml",
+  "branch": "main",
+  "baseUrl": "/v1/account"
+}

@@ -33,11 +33,6 @@ export const ForgotPasswordForm = ({ className, ...props }: Props) => {
   const [serverError, setServerError] = useState<ServerError | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  // While the "Check your email" screen is up, listen for the reset
-  // tab's broadcast and self-navigate to the app. The session cookie
-  // is set on this same browser by `/api/auth/reset-password`, so the
-  // (app) layout's session check succeeds without a round-trip back
-  // to login. Mirrors the verify-email handoff in `RegisterForm`.
   useEffect(() => {
     if (!submitted) return;
 

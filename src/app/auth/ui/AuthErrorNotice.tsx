@@ -4,15 +4,6 @@ import { Clock3, TriangleAlert } from 'lucide-react';
 
 import { cn } from '@/src/lib/utils';
 
-// Auth-form error block with a small visual treatment per error code.
-// Rate-limit gets a clock icon and a softer copy nudge; everything else
-// gets the standard destructive treatment. The component intentionally
-// reads `code` AND `message` from the parent so the parent owns both
-// (some routes layer extra copy on top of the mapped message).
-//
-// Pass `code='rate_limited'` from the /api/auth route's response body
-// to opt into the friendly treatment. Pass `null` from the parent to
-// hide it entirely.
 type Props = {
   code: string | null | undefined;
   message: string | null | undefined;

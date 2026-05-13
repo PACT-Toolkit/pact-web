@@ -1,0 +1,298 @@
+swagger: "2.0"
+info:
+  title: Account Service
+  description: |
+    Profile, preferences, consents, and GDPR data-rights surface for the
+    signed-in user. Mounted on pact-gateway at /v1/account/*; the
+    gateway resolves the user_id from the session cookie before
+    proxying to pact-account over gRPC. The HTTP body never carries a
+    userId -- the gateway is the only authority on which user is
+    being acted on.
+  version: "0.1.0"
+host: localhost:8080
+basePath: /v1/account
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /profile:
+    get:
+      summary: Get the signed-in user's profile
+      operationId: getAccountProfile
+      tags: [profile]
+      responses:
+        "200":
+          description: OK
+          schema: { $ref: "#/definitions/Profile" }
+        "401": { $ref: "#/responses/Unauthorized" }
+    put:
+      summary: Patch the signed-in user's profile
+      description: |
+        Patch semantics. updateMask lists the field names the caller
+        intends to write; unlisted fields keep their stored value.
+        Mask names are the proto field names (display_name, avatar_url,
+        locale, timezone, bio). Unknown mask entries fail with 400.
+      operationId: updateAccountProfile
+      tags: [profile]
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema: { $ref: "#/definitions/UpdateProfileRequest" }
+      responses:
+        "200":
+          description: OK
+          schema: { $ref: "#/definitions/Profile" }
+        "400": { $ref: "#/responses/BadRequest" }
+        "401": { $ref: "#/responses/Unauthorized" }
+
+  /preferences:
+    get:
+      summary: Get notification preferences
+      operationId: getAccountPreferences
+      tags: [preferences]
+      responses:
+        "200":
+          description: OK
+          schema: { $ref: "#/definitions/Preferences" }
+        "401": { $ref: "#/responses/Unauthorized" }
+    put:
+      summary: Patch notification preferences
+      description: |
+        Patch semantics, same shape as updateProfile. Mask names:
+        marketing_email, product_email.
+      operationId: updateAccountPreferences
+      tags: [preferences]
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema: { $ref: "#/definitions/UpdatePreferencesRequest" }
+      responses:
+        "200":
+          description: OK
+          schema: { $ref: "#/definitions/Preferences" }
+        "400": { $ref: "#/responses/BadRequest" }
+        "401": { $ref: "#/responses/Unauthorized" }
+
+  /consents:
+    get:
+      summary: List the latest consent decision per document
+      description: |
+        Returns one entry per document (e.g. terms_of_service,
+        privacy_policy, marketing_email). Older versions remain in the
+        consents table as Art. 7 evidence but aren't surfaced here.
+      operationId: getAccountConsents
+      tags: [consents]
+      responses:
+        "200":
+          description: OK
+          schema: { $ref: "#/definitions/ConsentList" }
+        "401": { $ref: "#/responses/Unauthorized" }
+    post:
+      summary: Record a consent decision
+      description: |
+        The (document, version) pair is the legal claim of what the
+        user agreed to. The IP and User-Agent evidence (Art. 7(1))
+        come from the inbound HTTP request and are stored verbatim on
+        the gateway side -- the SPA must not include them in the body.
+      operationId: recordAccountConsent
+      tags: [consents]
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema: { $ref: "#/definitions/RecordConsentRequest" }
+      responses:
+        "201":
+          description: Created
+          schema: { $ref: "#/definitions/Consent" }
+        "400": { $ref: "#/responses/BadRequest" }
+        "401": { $ref: "#/responses/Unauthorized" }
+
+  /export:
+    get:
+      summary: Export pact-account-owned data for the signed-in user (GDPR Art. 15)
+      description: |
+        v0 returns the JSON payload inline. The roadmap calls out an
+        async "request export -> email a link" flow for v0.1; this
+        endpoint will keep working as the synchronous fallback while
+        the async path lands at a separate POST endpoint, so callers
+        don't need to be migrated.
+      operationId: exportAccountData
+      tags: [compliance]
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+            description: |
+              Free-form JSON payload of pact-account-owned data.
+              Schema is intentionally open-ended -- treat unknown keys
+              as forward-compatible additions.
+        "401": { $ref: "#/responses/Unauthorized" }
+
+  /erasure:
+    post:
+      summary: Request erasure of the signed-in user's data (GDPR Art. 17)
+      description: |
+        Records the request, deletes pact-account-owned rows, and
+        emits a pact.account.user_erasure_requested Kafka event so
+        downstream services can run their own cascade. Returns 202 --
+        cross-service completion is async and not orchestrated in v0.
+      operationId: requestAccountErasure
+      tags: [compliance]
+      responses:
+        "202":
+          description: Accepted
+          schema: { $ref: "#/definitions/ErasureAcknowledgement" }
+        "401": { $ref: "#/responses/Unauthorized" }
+
+definitions:
+  Profile:
+    type: object
+    required:
+      - userId
+      - displayName
+      - avatarUrl
+      - locale
+      - timezone
+      - bio
+      - createdAt
+      - updatedAt
+    properties:
+      userId:
+        type: string
+        format: uuid
+        example: "8f5c4d12-1d50-4c18-8ad3-2f4f64a4f111"
+      displayName:
+        type: string
+        example: "Ada Lovelace"
+      avatarUrl:
+        type: string
+        example: "https://cdn.example/avatars/ada.png"
+      locale:
+        type: string
+        description: BCP 47 locale tag, e.g. "en-US".
+        example: "en-US"
+      timezone:
+        type: string
+        description: IANA timezone name, e.g. "Europe/Copenhagen".
+        example: "Europe/Copenhagen"
+      bio:
+        type: string
+        example: ""
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+
+  UpdateProfileRequest:
+    type: object
+    required: [updateMask]
+    properties:
+      displayName: { type: string }
+      avatarUrl:   { type: string }
+      locale:      { type: string }
+      timezone:    { type: string }
+      bio:         { type: string }
+      updateMask:
+        type: array
+        description: |
+          Field names the caller intends to write. Unlisted fields keep
+          their stored value. Allowed: display_name, avatar_url,
+          locale, timezone, bio.
+        items: { type: string }
+        example: ["display_name", "bio"]
+
+  Preferences:
+    type: object
+    required: [userId, marketingEmail, productEmail, updatedAt]
+    properties:
+      userId:         { type: string, format: uuid }
+      marketingEmail:
+        type: boolean
+        description: |
+          Operational toggle for marketing emails. The legal evidence
+          for this consent lives in the consents collection
+          (RecordConsent with document="marketing_email").
+      productEmail:
+        type: boolean
+        description: Operational toggle for product/changelog emails.
+      updatedAt:      { type: string, format: date-time }
+
+  UpdatePreferencesRequest:
+    type: object
+    required: [updateMask]
+    properties:
+      marketingEmail: { type: boolean }
+      productEmail:   { type: boolean }
+      updateMask:
+        type: array
+        items: { type: string }
+        example: ["marketing_email"]
+
+  Consent:
+    type: object
+    required: [document, version, granted, recordedAt]
+    properties:
+      document:
+        type: string
+        description: |
+          Free-form so future documents can be added without a schema
+          change. Canonical set today: terms_of_service,
+          privacy_policy, marketing_email.
+        example: "terms_of_service"
+      version:
+        type: string
+        description: |
+          Document version, e.g. "tos-2026-05-13". The (document,
+          version) pair is the legal claim.
+        example: "tos-2026-05-13"
+      granted:    { type: boolean }
+      recordedAt: { type: string, format: date-time }
+
+  ConsentList:
+    type: object
+    required: [consents]
+    properties:
+      consents:
+        type: array
+        items: { $ref: "#/definitions/Consent" }
+
+  RecordConsentRequest:
+    type: object
+    required: [document, version, granted]
+    properties:
+      document: { type: string, example: "terms_of_service" }
+      version:  { type: string, example: "tos-2026-05-13" }
+      granted:  { type: boolean }
+
+  ErasureAcknowledgement:
+    type: object
+    required: [requestedAt]
+    properties:
+      requestedAt:
+        type: string
+        format: date-time
+        description: |
+          When the gateway accepted the request. Downstream services
+          run the cascade asynchronously; the SPA shows this timestamp
+          to the user as confirmation.
+
+  Error:
+    type: object
+    required: [error]
+    properties:
+      error: { type: string }
+
+responses:
+  BadRequest:
+    description: Invalid request
+    schema: { $ref: "#/definitions/Error" }
+  Unauthorized:
+    description: Missing or invalid session
+    schema: { $ref: "#/definitions/Error" }

@@ -19,9 +19,6 @@ import {
 } from '@/src/framework/auth/pact_auth/web_mutations';
 
 type Props = {
-  // True when the user has at least one TOTP factor on file. Without one,
-  // recovery codes don't recover anything — we render a hint instead of
-  // letting the user generate codes that would do nothing.
   hasTotp: boolean;
 };
 
@@ -53,7 +50,7 @@ export const RecoveryCodesCard = ({ hasTotp }: Props) => {
     try {
       await generate.trigger();
     } catch {
-      // onError populated `error`
+      // no-op
     }
   };
 

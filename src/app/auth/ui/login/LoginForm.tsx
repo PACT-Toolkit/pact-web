@@ -66,17 +66,8 @@ export const LoginForm = ({
     resolver: yupResolver(loginSchema),
   });
 
-  // Password sign-in is a remote write — owned by useSWRMutation. The
-  // passkey flow stays imperative because it orchestrates a multi-step
-  // WebAuthn ceremony with its own AbortController; wrapping that in a
-  // mutation hook would obscure the lifecycle without buying anything.
   const loginMutation = useSWRMutation(AUTH_KEYS.login, loginFetcher, {
     onSuccess: (data) => {
-      // Password auth succeeded but the account has a verified TOTP
-      // factor — pact-auth revoked the preliminary session and the
-      // /api/auth/login route stashed the challenge token in an
-      // httpOnly cookie. We hand off to /login/mfa to collect the
-      // 6-digit code (or a recovery code).
       if (data?.mfaRequired) {
         router.push('/login/mfa');
 
@@ -119,11 +110,7 @@ export const LoginForm = ({
         markPasskeyEnrolledLocally();
         router.push('/dashboard');
       } catch (err) {
-        // Conditional UI silently aborts on any mishap (including the user
-        // typing a password instead). We never surface those as errors.
         if (err instanceof PasskeyError && err.code !== 'cancelled') {
-          // Anything other than "user picked a different option" is worth
-          // surfacing — don't block the password path on it though.
           setServerError({ code: null, message: err.message });
         }
       }
@@ -163,7 +150,7 @@ export const LoginForm = ({
     try {
       await loginMutation.trigger({ email, password });
     } catch {
-      // onError populated `serverError`. Swallow the rethrow.
+      // no-op
     }
   };
 

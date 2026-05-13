@@ -8,23 +8,6 @@ import { FieldDescription } from '@/src/components/ui/field';
 
 type SearchParams = { next?: string | string[] };
 
-// /verify-email/success
-//
-// Reached after /api/auth/verify-email exchanges a verification token
-// for a session — the cookie has already been set by that handler, so
-// this page is purely a confirmation beat. Two flows land here:
-//
-//  - Same-browser, two tabs: user opened the link in a new tab next to
-//    the still-open `/register` "Check your email" screen.
-//    `VerifyEmailNotifier` posts on the auth BroadcastChannel; the
-//    register tab self-navigates to /dashboard immediately. This tab
-//    also auto-forwards to the dashboard after a short beat.
-//
-//  - Different device (e.g. laptop register, phone verify): no other
-//    tab is listening to the broadcast, but this tab still auto-
-//    forwards after the same short beat so the phone isn't left on a
-//    confirmation screen with no obvious next action. The visible
-//    button is the no-JS / "skip the wait" fallback.
 const VerifyEmailSuccessPage = async ({
   searchParams,
 }: {

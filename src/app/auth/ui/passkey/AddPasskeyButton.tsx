@@ -22,12 +22,6 @@ type AddPasskeyButtonProps = {
   className?: string;
 };
 
-// Single-button passkey enrollment with optional inline label input. Used in
-// three spots: post-registration CTA, dashboard nudge banner, and the
-// /settings/security page. The variant prop covers the visual range we need.
-//
-// We deliberately don't render anything when WebAuthn is unsupported — the
-// caller decides whether to show a fallback explainer.
 export const AddPasskeyButton = ({
   onEnrolled,
   variant = 'default',

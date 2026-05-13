@@ -51,16 +51,12 @@ export const TwoFactorCard = ({ factors, onChanged }: Props) => {
     try {
       await revokeMutation.trigger({ factorId });
     } catch {
-      // onError populated `error`
+      // no-op
     } finally {
       setBusyId(null);
     }
   };
 
-  // Only one verified TOTP factor is supported per user (matches
-  // pact-auth's BeginTOTPEnrollment FailedPrecondition). Hide the "Add"
-  // button when one is already enrolled so the UI doesn't promise
-  // something the backend will reject.
   const hasVerifiedTotp = factors.some(
     (f) => f.type.toLowerCase() === 'totp' && f.verified
   );

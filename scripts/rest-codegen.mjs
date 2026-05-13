@@ -143,13 +143,34 @@ const findPropertySchema = (lines, schemaName, propName) => {
 };
 
 /**
+ * Read the optional services.config.json next to a service's swagger
+ * for codegen overrides. Today the only override that matters is
+ * baseUrl -- some services live behind /api/pact/{name} (matches the
+ * default Next.js proxy) and some at /{name-prefix} on the gateway
+ * directly (e.g. account at /v1/account, matching the existing
+ * /v1/check pattern). When absent we keep the historical default
+ * `/api/pact/{name}` so existing services keep working.
+ */
+const readServiceOverrides = async (serviceName) => {
+  const configPath = join(SCHEMA_DIR, serviceName, 'services.config.json');
+  if (!existsSync(configPath)) return {};
+  try {
+    return JSON.parse(await readFile(configPath, 'utf-8'));
+  } catch {
+    return {};
+  }
+};
+
+/**
  * Generate Orval config dynamically for discovered services
  */
 const generateOrvalConfig = async (services) => {
+  const overrides = await Promise.all(services.map(readServiceOverrides));
   const configs = services
-    .map((name) => {
+    .map((name, i) => {
       const inputPath = `.rest-codegen-temp/${name}.openapi.yaml`;
       const outputDir = `src/__codegen__/rest/${name}`;
+      const baseUrl = overrides[i].baseUrl ?? `/api/pact/${name}`;
 
       return `  '${name}': {
     input: '${inputPath}',
@@ -158,7 +179,7 @@ const generateOrvalConfig = async (services) => {
       target: '${outputDir}/hooks.ts',
       schemas: '${outputDir}/types',
       client: 'swr',
-      baseUrl: '/api/pact/${name}',
+      baseUrl: '${baseUrl}',
       override: {
         query: {
           useQuery: true,

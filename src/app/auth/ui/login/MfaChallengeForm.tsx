@@ -24,18 +24,6 @@ import {
 
 type ServerError = { code: string | null; message: string };
 
-// Stage 2 of the password+TOTP login flow. The mfa_token lives in an
-// httpOnly cookie set by /api/auth/login, so this form doesn't need to
-// know anything about it — it just submits the user-supplied code and
-// lets /api/auth/mfa/verify swap the challenge cookie for a real session
-// cookie.
-//
-// We support two input modes:
-//   - TOTP (default): 6-digit numeric code from the authenticator app.
-//   - Recovery code: the 8-character backup string shown once at
-//     enrolment. We loosen validation since users typically copy-paste
-//     them with embedded dashes / spaces and pact-auth normalizes
-//     server-side.
 export const MfaChallengeForm = () => {
   const router = useRouter();
   const [mode, setMode] = useState<'totp' | 'recovery'>('totp');
@@ -51,9 +39,6 @@ export const MfaChallengeForm = () => {
           err.info?.code === 'challenge_expired' ||
           err.info?.code === 'no_challenge'
         ) {
-          // The mfa_token cookie is gone (TTL hit, already consumed, or
-          // user landed here without a fresh login). Bounce them back to
-          // the password screen with the relevant message.
           router.replace(
             `/login?oauth_error=${encodeURIComponent('challenge_expired')}`
           );
@@ -94,7 +79,7 @@ export const MfaChallengeForm = () => {
     try {
       await verify.trigger({ code: trimmed, isRecovery: mode === 'recovery' });
     } catch {
-      // onError populated `serverError`. Swallow the rethrow.
+      // no-op
     }
   };
 

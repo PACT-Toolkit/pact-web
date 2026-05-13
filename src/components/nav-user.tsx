@@ -8,6 +8,7 @@ import {
   LogOut,
   Sparkles,
 } from 'lucide-react';
+import Link from 'next/link';
 
 import {
   Avatar,
@@ -29,17 +30,18 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/src/components/ui/sidebar';
+import { Skeleton } from '@/src/components/ui/skeleton';
 import { useSignOut } from '@/src/framework/auth/pact_auth/sign_out';
 
-export const NavUser = ({
-  user,
-}: {
-  user: {
-    name: string;
-    email: string;
-    avatar: string;
-  };
-}) => {
+export type NavUserData = {
+  displayName: string;
+  secondary?: string;
+  avatarUrl?: string;
+  initials: string;
+  loading?: boolean;
+};
+
+export const NavUser = ({ user }: { user: NavUserData }) => {
   const { isMobile } = useSidebar();
   const { signOut, pending } = useSignOut();
 
@@ -52,14 +54,8 @@ export const NavUser = ({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatar} alt={user.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
-              </div>
+              <NavUserAvatar user={user} />
+              <NavUserText user={user} />
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
@@ -71,44 +67,39 @@ export const NavUser = ({
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-                </Avatar>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
-                </div>
+                <NavUserAvatar user={user} />
+                <NavUserText user={user} />
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem disabled>
                 <Sparkles />
                 Upgrade to Pro
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
+              <DropdownMenuItem asChild>
+                <Link href="/settings/account">
+                  <BadgeCheck />
+                  Account
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem disabled>
                 <CreditCard />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
+              <DropdownMenuItem asChild>
+                <Link href="/settings/account/preferences">
+                  <Bell />
+                  Notifications
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               disabled={pending}
-              // onSelect (vs onClick) is the radix-recommended hook for menu
-              // items: it fires on both click and keyboard activation, and
-              // the menu auto-closes once the handler returns.
               onSelect={(event) => {
                 event.preventDefault();
                 void signOut();
@@ -121,5 +112,42 @@ export const NavUser = ({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
+  );
+};
+
+const NavUserAvatar = ({ user }: { user: NavUserData }) => {
+  if (user.loading) {
+    return <Skeleton className="size-8 rounded-lg" />;
+  }
+
+  return (
+    <Avatar className="h-8 w-8 rounded-lg">
+      {user.avatarUrl && (
+        <AvatarImage src={user.avatarUrl} alt={user.displayName} />
+      )}
+      <AvatarFallback className="rounded-lg">{user.initials}</AvatarFallback>
+    </Avatar>
+  );
+};
+
+const NavUserText = ({ user }: { user: NavUserData }) => {
+  if (user.loading) {
+    return (
+      <div className="grid flex-1 gap-1.5">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-2.5 w-16" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid flex-1 text-left text-sm leading-tight">
+      <span className="truncate font-medium">{user.displayName}</span>
+      {user.secondary && (
+        <span className="truncate text-xs text-muted-foreground">
+          {user.secondary}
+        </span>
+      )}
+    </div>
   );
 };

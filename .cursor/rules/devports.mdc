@@ -1,0 +1,57 @@
+---
+description: Canonical dev port + Kafka broker URL allocations for PACT. ALWAYS read .github-private/doc/DEVPORTS.md before assigning a host port, editing docker-compose.yml, setting an envconfig "default:" tag, editing a Dockerfile EXPOSE, or running `doppler secrets set` for PACT_HTTP_ADDR / PACT_GRPC_ADDR / PACT_INTERNAL_ADDR / PACT_KAFKA_BROKERS / PACT_DATABASE_URL / PACT_OTEL_EXPORTER_OTLP_ENDPOINT.
+globs: **/docker-compose*.yml,**/Dockerfile*,**/.env*,**/Makefile,**/internal/app/config.go,**/env/local-real.env,**/env/local.env
+alwaysApply: false
+---
+
+# Dev port allocations are centralised
+
+Before assigning, hardcoding, or changing **any** host port (HTTP,
+gRPC, internal, Postgres, Redpanda, Jaeger, OTLP) in this repo, **read
+`.github-private/doc/DEVPORTS.md`**. It is the only source of truth.
+
+This rule also fires when you are about to:
+
+- Edit `docker-compose.yml` or a service's `Dockerfile EXPOSE`.
+- Set an envconfig `default:":NNNN"` tag in `internal/app/config.go`.
+- Change values in `.env.example` for any `PACT_*_ADDR` /
+  `PACT_*_URL` / `PACT_KAFKA_BROKERS` / `PACT_DATABASE_URL` /
+  `PACT_OTEL_EXPORTER_OTLP_ENDPOINT`.
+- Run `doppler secrets set` (any config: `dev`, `dev_personal`,
+  `stg`, `prd`) for the same set of keys.
+- Wire `PACT_AUTH_GRPC_ADDR` / `PACT_GATEWAY_URL` in pact-web env
+  files.
+
+## Quick reminders (full table lives in DEVPORTS.md)
+
+- **Kafka is shared, not shifted.** Every service uses
+  `PACT_KAFKA_BROKERS=localhost:9092` in dev. pact-auth's compose
+  Redpanda is the canonical broker; service-owned Redpandas live
+  behind a `standalone` Docker Compose profile that advertises on
+  the same `:9092`.
+- **HTTP / gRPC / Postgres / Jaeger get a per-service slot offset.**
+  pact-auth = slot 0 (`:8080` / `:9090` / `:9091` / `:5432` /
+  `:16686`). pact-account = slot 1 (`:8090` / `:9190` / `:9193` /
+  `:5433` / `:16687`). pact-notify = slot 2 (worker, no public HTTP
+  or gRPC today -- slot reserves `:8100` / `:9290`; internal lives
+  historically on `:9093`). pact-gateway = slot 3 (HTTP `:8110` and
+  internal `:9393` reserved -- migration queued; today collides
+  with pact-auth on `:8080` / `:9090`). Full table + the slot formula
+  (`HTTP = 8080 + N*10`, `gRPC = 9090 + N*100`, ...) lives in
+  DEVPORTS.md.
+
+## What to do if your edit changes a port
+
+You must update **all of**:
+
+1. `internal/app/config.go` `default:` tag
+2. `.env.example`
+3. `docker-compose.yml` (host:container map + Redpanda advertise URL
+   if applicable)
+4. `Dockerfile` `EXPOSE`
+5. `README.md` configuration table
+6. Doppler `dev` config: `doppler secrets set PACT_..._ADDR=:NNNN`
+7. `.github-private/doc/DEVPORTS.md` (the central map)
+
+If only one or two of these change you have drift, and the next
+contributor (or CI) will hit it.

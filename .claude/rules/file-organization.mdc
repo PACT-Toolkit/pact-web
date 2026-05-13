@@ -1,63 +1,110 @@
 ---
-description: One module per file — helpers and components live separately
+description: File layout conventions for pact-web — components, helpers, tests, comments
 globs: **/*.{ts,tsx}
 alwaysApply: false
 ---
 
 # File Organization
 
-Keep each file focused on a single concern.
+## One component per file
 
-## UI components: one component per file
+A `.tsx` file exports **one** public UI component (plus its `Props` type).
 
-A `.tsx` file exports **one** UI component (plus its `Props` type). Sub-pieces that exist only as render helpers live in their own file under the same folder.
-
-```
-src/app/auth/ui/settings/
-  SignInMethodsPanel.tsx        # the panel
-  PasskeyRow.tsx                # extracted row, not inlined
-  ConnectedIdentityRow.tsx      # ditto
-```
-
-- ❌ Don't define `const PasskeyRow = (...) => <li>...</li>` inside `SignInMethodsPanel.tsx` to "save a file".
-- ✅ Do extract once a sub-element has its own state, more than ~30 lines of JSX, or is reused by a sibling.
-
-## Helpers: not in component files
-
-Pure functions, formatters, type guards, and constants must not live in a component file. Move them to a sibling helper module so they're testable and importable.
+Extract a sub-component to its own file when it:
+- has its own local state, or
+- exceeds ~30 lines of JSX, or
+- is referenced by more than one sibling.
 
 ```
 src/app/auth/ui/settings/
-  SignInMethodsPanel.tsx
-  format.ts                     # formatLastUsed, dateFormatter
-  providers.ts                  # providerMeta(id)
+  PasskeysCard.tsx      ✅ main card
+  PasskeyRow.tsx        ✅ extracted row, not inlined
 ```
+
+```tsx
+// ❌ BAD — two components in one file
+export const PasskeyRow = (...) => <li>…</li>;
+export const PasskeysCard = (...) => <ul>…</ul>;
+
+// ✅ GOOD — one file each
+// PasskeyRow.tsx
+export const PasskeyRow = (...) => <li>…</li>;
+```
+
+## Helpers out of component files
+
+Pure functions, formatters, constants, and type guards must **not** live in a `.tsx` file. Move them to:
+
+| Concern | Where |
+|---|---|
+| Domain logic / validation / hooks | `src/app/<feature>/domain/` |
+| UI-local formatters / icon pickers | sibling `helpers.ts` in the same `ui/` folder |
+| Server-only data fetchers | `src/framework/<area>/` (with `import 'server-only'`) |
+| Cross-feature utilities | `src/lib/` |
 
 ```typescript
-// ❌ BAD: helpers in the component file
-// src/app/auth/ui/settings/SignInMethodsPanel.tsx
-const formatLastUsed = (when: Date | null): string => { /* ... */ };
-const providerMeta = (id: string) => OAUTH_PROVIDERS.find(...) ?? { ... };
+// ❌ BAD — helper in the component file
+// ConsentsList.tsx
+const titleCase = (slug: string) => slug.split('_').map(…).join(' ');
+export const ConsentsList = () => { … };
 
-export const SignInMethodsPanel = (...) => { ... };
+// ✅ GOOD — helper in a sibling file
+// helpers.ts
+export const titleCase = (slug: string) => slug.split('_').map(…).join(' ');
+
+// ConsentsList.tsx
+import { titleCase } from './helpers';
 ```
 
-```typescript
-// ✅ GOOD: helpers in a sibling file
-// src/app/auth/ui/settings/format.ts
-export const formatLastUsed = (when: Date | null): string => { /* ... */ };
+## No comments in component files
 
-// src/app/auth/ui/settings/SignInMethodsPanel.tsx
-import { formatLastUsed } from './format';
+Component files (`*.tsx`) must contain **zero** prose comments — no `//` or `/* */` lines.
+
+- Explaining *what* a block does → the code itself should make it obvious; if it can't, refactor.
+- Explaining *why* a non-obvious trade-off was made → put it in the `domain/` or helper file where the logic lives.
+- TODOs → open a Linear issue instead.
+
+```tsx
+// ❌ BAD — comments in a component file
+export const ProfileForm = () => {
+  // Reset form once the profile loads
+  useEffect(() => { form.reset(…); }, [profile]);
+
+  // Compute the minimal updateMask from dirtyFields
+  const dirty = form.formState.dirtyFields;
+  …
+};
+
+// ✅ GOOD — self-describing code, comments only in domain/
+// domain/use_account_profile.ts (non-obvious session invariant — comment is fine here)
+// Reset is gated on `profile` (a stable reference per SWR fetch) so
+// the user's in-flight edits aren't clobbered on every revalidation.
 ```
 
-## Where helpers belong
+This rule applies to `.tsx` files only. Comments **are** allowed in `.ts` files (domain logic, helpers, tests, server routes) where explaining invariants and trade-offs is valuable.
 
-- **Pure logic / domain rules** → `src/app/<feature>/domain/` (e.g. `webauthn.ts`)
-- **Server-only data fetchers** → `src/framework/<area>/` (mark with `import 'server-only'`)
-- **Cross-feature utilities** → `src/lib/`
-- **Feature-local UI helpers (formatters, icon pickers)** → sibling file in the same `ui/` folder
+## Test files in `__tests__/`
 
-## Custom hooks
+Test files go in a `__tests__/` folder **sibling to the directory under test** — not colocated alongside the source file.
 
-Each `useXxx` hook lives in its own file under `src/app/<feature>/domain/` or a `hooks/` folder — never inlined above a component.
+```
+src/app/account/
+  domain/
+    initials.ts
+    account_validation_schema.ts
+  __tests__/
+    initials.test.ts
+    account_validation_schema.test.ts
+```
+
+```
+// ❌ BAD
+src/app/account/domain/initials.ts
+src/app/account/domain/initials.test.ts   ← colocated
+
+// ✅ GOOD
+src/app/account/domain/initials.ts
+src/app/account/__tests__/initials.test.ts
+```
+
+The vitest config already picks up `**/__tests__/**/*.test.ts` so no config change is needed.

@@ -30,10 +30,6 @@ type Props = {
 
 export const PasskeysCard = ({ passkeys, onChanged }: Props) => {
   const supported = useWebAuthnSupported();
-  // Track which passkey is currently being mutated so the row can show
-  // a per-row spinner. `useSWRMutation` only knows "a mutation is in
-  // flight" globally for this hook — fine when we're firing one at a
-  // time but the row needs to know whether *its* button is busy.
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,9 +64,7 @@ export const PasskeysCard = ({ passkeys, onChanged }: Props) => {
     try {
       await renameMutation.trigger({ passkeyId, label });
     } catch {
-      // onError already populated `error`. Swallow so the unhandled
-      // rejection doesn't surface as a runtime warning — `useSWRMutation`
-      // re-throws by default.
+      // no-op
     } finally {
       setBusyId(null);
     }
@@ -82,7 +76,7 @@ export const PasskeysCard = ({ passkeys, onChanged }: Props) => {
     try {
       await deleteMutation.trigger({ passkeyId });
     } catch {
-      // see comment above
+      // no-op
     } finally {
       setBusyId(null);
     }

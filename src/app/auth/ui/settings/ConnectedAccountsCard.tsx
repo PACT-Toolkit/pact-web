@@ -58,7 +58,7 @@ export const ConnectedAccountsCard = ({ identities, onChanged }: Props) => {
     try {
       await unlinkMutation.trigger({ provider });
     } catch {
-      // onError populated `error`
+      // no-op
     } finally {
       setBusyProvider(null);
     }

@@ -16,8 +16,6 @@ type Props = {
   onDelete: () => Promise<void> | void;
 };
 
-// Single passkey row. Editing state is local — the parent only owns the
-// "which passkey is being mutated" busy flag and the global error banner.
 export const PasskeyRow = ({ passkey, busy, onRename, onDelete }: Props) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(passkey.label);

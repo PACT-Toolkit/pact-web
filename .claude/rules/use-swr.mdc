@@ -55,6 +55,34 @@ SWR populates `error` only when the fetcher throws. The shared `postJson`/`getJs
 
 `SWRConfig` and `unstable_serialize` are RSC-safe and exist for handing fallback data down — use them, not the hooks.
 
+## Orval-generated hooks: use directly, don't wrap
+
+`src/__codegen__/rest/<feature>/` already exports typed SWR hooks. Use them **directly** in components — do not create wrapper hooks just to flatten the response envelope.
+
+```typescript
+// ❌ BAD — pointless wrapper in domain/
+export const useAccountProfile = () => {
+  const query = useGetAccountProfile();
+  const profile = query.data?.status === 200 ? (query.data.data as Profile) : undefined;
+  return { profile, isLoading: query.isLoading, error: query.error };
+};
+
+// ✅ GOOD — inline the envelope-flattening in the component
+const query = useGetAccountProfile();
+const profile = query.data?.status === 200 ? (query.data.data as Profile) : undefined;
+```
+
+For mutations, pass `onSuccess` cache-invalidation inline via the `swr` option:
+
+```typescript
+const { mutate } = useSWRConfig();
+const update = useUpdateAccountProfile({
+  swr: { onSuccess: () => void mutate(getGetAccountProfileKey()) },
+});
+```
+
+Domain files (`domain/`) are for genuine logic: validation schemas, WebAuthn ceremony helpers, breach-check hooks with AbortController, `useSyncExternalStore` hydration guards, etc. Not for re-exporting generated hooks with a flattened return shape.
+
 ## When in doubt
 
 The full conventions live under `.agents/skills/swr-best-practices/rules/` — read the relevant `*.md` before introducing a new pattern (caching, pagination, prefetch, optimistic update, suspense, websockets).

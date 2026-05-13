@@ -19,10 +19,6 @@ type Props = {
   identities: OAuthIdentitySummary[];
 };
 
-// Composition root for the security settings page. Each card owns its own
-// mutation state; the panel only translates "something changed" into a
-// `router.refresh()` so the cards re-render with fresh server data
-// instead of fighting with a local cache.
 export const SignInMethodsPanel = ({
   factors,
   passkeys,

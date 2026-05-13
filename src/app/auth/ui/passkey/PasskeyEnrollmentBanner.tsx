@@ -8,16 +8,7 @@ import { dismissPasskeyPrompt } from '@/src/app/auth/domain/webauthn';
 import { AddPasskeyButton } from '@/src/app/auth/ui/passkey/AddPasskeyButton';
 import { Button } from '@/src/components/ui/button';
 
-// Soft nudge that appears at the top of the authenticated app until the user
-// either (a) enrolls a passkey, (b) enrolls a WebAuthn MFA factor, or
-// (c) dismisses it. Visibility is owned by the shared
-// `usePasskeyPromptHidden` hook, so dismissing this banner *or* the
-// dashboard CTA (or enrolling a passkey from anywhere) hides both at
-// once without remounting.
 type Props = {
-  // True when the server has confirmed at least one WebAuthn-class factor
-  // exists for the user (either a passkey or a WebAuthn MFA device). Lets
-  // the banner stay hidden across devices once the account is set up.
   hasPasskeyOrWebauthnMfa?: boolean;
 };
 
