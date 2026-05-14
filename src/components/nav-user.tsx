@@ -6,6 +6,7 @@ import {
   ChevronsUpDown,
   CreditCard,
   LogOut,
+  ScrollText,
   Sparkles,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -94,6 +95,12 @@ export const NavUser = ({ user }: { user: NavUserData }) => {
                 <Link href="/settings/account/preferences">
                   <Bell />
                   Notifications
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/audit">
+                  <ScrollText />
+                  Activity
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>

@@ -1,0 +1,156 @@
+swagger: "2.0"
+info:
+  title: Audit Service
+  description: |
+    Read window into the append-only audit log for the signed-in
+    user. Mounted on pact-gateway at /v1/audit/*; the gateway resolves
+    user_id from the session cookie and forwards it to pact-audit as a
+    hard filter, so a regular caller can only see their own rows.
+
+    pact-audit has no notion of identity: whoever holds a connection
+    to the gRPC :9590 listener reads anything they ask for. The gateway
+    is the only gate between the SPA and unfiltered access. There is
+    no admin override today; cross-user reads will land once sessions
+    carry an admin claim.
+
+    The payloadJson field is the raw JSONB column from audit_events.
+    Schema is per-topic and evolves over time; decode lazily and
+    tolerate unknown fields.
+  version: "0.1.0"
+host: localhost:8110
+basePath: /v1/audit
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /events:
+    get:
+      summary: List the caller's audit events, newest first
+      description: |
+        Paginated, newest-first view of the immutable audit log
+        belonging to the caller. limit is clamped server-side
+        (default 50, max 200). offset is stable as long as no new
+        rows land between calls -- since the Kafka consumer is
+        always writing, the SPA should refetch from offset=0 when
+        a filter changes or new rows are expected.
+      operationId: queryAuditEvents
+      tags: [audit]
+      parameters:
+        - name: topic
+          in: query
+          required: false
+          type: string
+          description: Exact match on the topic column (e.g. pact.auth, pact.files).
+        - name: requestId
+          in: query
+          required: false
+          type: string
+          description: |
+            Exact match on the gateway request-id; useful for
+            following one browser action across multiple topics
+            (login -> session created -> profile fetched).
+        - name: sinceUnix
+          in: query
+          required: false
+          type: integer
+          format: int64
+          minimum: 0
+          description: Inclusive lower bound on createdAt, unix seconds UTC.
+        - name: untilUnix
+          in: query
+          required: false
+          type: integer
+          format: int64
+          minimum: 0
+          description: Exclusive upper bound on createdAt, unix seconds UTC.
+        - name: limit
+          in: query
+          required: false
+          type: integer
+          minimum: 0
+          maximum: 200
+          default: 50
+        - name: offset
+          in: query
+          required: false
+          type: integer
+          minimum: 0
+          default: 0
+      responses:
+        "200":
+          description: OK
+          schema: { $ref: "#/definitions/QueryAuditEventsResponse" }
+        "400": { $ref: "#/responses/BadRequest" }
+        "401": { $ref: "#/responses/Unauthorized" }
+        "429": { $ref: "#/responses/TooManyRequests" }
+
+definitions:
+  AuditEvent:
+    type: object
+    required:
+      - id
+      - topic
+      - eventId
+      - payloadJson
+      - createdAt
+    properties:
+      id:         { type: string, format: uuid }
+      topic:
+        type: string
+        description: |
+          Kafka topic the underlying record came from. Stable values
+          today: pact.auth, pact.account, pact.files, pact.decisions.
+        example: "pact.auth"
+      eventId:
+        type: string
+        description: |
+          Producer-assigned event type (e.g. "user.logged_in"). May
+          be empty for legacy rows that pre-date the field.
+        example: "user.logged_in"
+      userId:
+        type: string
+        format: uuid
+        description: Omitted when the underlying row has user_id IS NULL.
+      requestId:
+        type: string
+        description: Gateway-assigned correlation id; may be empty.
+      payloadJson:
+        type: string
+        description: |
+          Raw JSONB payload from audit_events. Schema is per-topic
+          and evolves over time; clients should decode lazily and
+          tolerate unknown fields.
+      createdAt: { type: string, format: date-time }
+
+  QueryAuditEventsResponse:
+    type: object
+    required: [events, total]
+    properties:
+      events:
+        type: array
+        items: { $ref: "#/definitions/AuditEvent" }
+        description: Page of AuditEvents for the caller, newest first.
+      total:
+        type: integer
+        description: |
+          Caller's matching row count (independent of len(events),
+          which is the requested page). Lets the SPA render
+          "page x of y" without a follow-up count call.
+
+  Error:
+    type: object
+    required: [error]
+    properties:
+      error: { type: string }
+
+responses:
+  BadRequest:
+    description: Invalid request
+    schema: { $ref: "#/definitions/Error" }
+  Unauthorized:
+    description: Missing or invalid session
+    schema: { $ref: "#/definitions/Error" }
+  TooManyRequests:
+    description: Per-IP rate limit exceeded
+    schema: { $ref: "#/definitions/Error" }

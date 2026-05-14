@@ -1,0 +1,6 @@
+{
+  "repo": "pact-files",
+  "path": "/api/swagger.yaml",
+  "branch": "main",
+  "baseUrl": "/v1/files"
+}

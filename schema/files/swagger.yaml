@@ -1,0 +1,270 @@
+swagger: "2.0"
+info:
+  title: Files Service
+  description: |
+    Object-storage lifecycle for the signed-in user. Mounted on
+    pact-gateway at /v1/files/*; the gateway resolves the user_id
+    from the session cookie before proxying to pact-files over gRPC.
+    The HTTP body never carries a userId -- the gateway is the only
+    authority on which user is being acted on.
+
+    **File bytes never traverse the gateway.** The browser PUTs and
+    GETs them directly against object storage using short-lived
+    presigned URLs. The /v1/files/* surface carries only metadata
+    and the URLs themselves.
+  version: "0.1.0"
+host: localhost:8080
+basePath: /v1/files
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /:
+    get:
+      summary: List the caller's files, newest first
+      description: |
+        Returns a paginated page of FileRecords owned by the caller,
+        ordered by created_at descending. Soft-deleted rows are
+        excluded. The `total` field is the caller's non-deleted row
+        count so the SPA can render "page x of y" without a
+        follow-up count call. Download URLs are NOT included on
+        list rows -- call GET /v1/files/{id} after the user picks
+        a row.
+      operationId: listFiles
+      tags: [files]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          type: integer
+          minimum: 1
+          maximum: 200
+          default: 50
+        - name: offset
+          in: query
+          required: false
+          type: integer
+          minimum: 0
+          default: 0
+      responses:
+        "200":
+          description: OK
+          schema: { $ref: "#/definitions/ListFilesResponse" }
+        "400": { $ref: "#/responses/BadRequest" }
+        "401": { $ref: "#/responses/Unauthorized" }
+    post:
+      summary: Request a presigned upload URL
+      description: |
+        Creates a pending FileRecord and returns a short-lived
+        presigned PUT URL the browser uses to upload the bytes
+        directly to object storage. Follow up with
+        POST /v1/files/{id}/confirm once the PUT succeeds.
+      operationId: requestFileUpload
+      tags: [files]
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema: { $ref: "#/definitions/RequestUploadRequest" }
+      responses:
+        "201":
+          description: Created
+          schema: { $ref: "#/definitions/RequestUploadResponse" }
+        "400": { $ref: "#/responses/BadRequest" }
+        "401": { $ref: "#/responses/Unauthorized" }
+        "429": { $ref: "#/responses/TooManyRequests" }
+
+  /{id}/confirm:
+    post:
+      summary: Confirm a completed upload and kick off validation
+      description: |
+        Moves the record from "pending" -> "processing". pact-files
+        cross-checks the actual object against the declared MIME and
+        size, runs ClamAV, and generates a thumbnail for images.
+        Status flips to "ready" or "rejected" asynchronously -- the
+        SPA polls GET /v1/files/{id} until the terminal state.
+      operationId: confirmFileUpload
+      tags: [files]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK -- record is now processing
+          schema: { $ref: "#/definitions/FileRecord" }
+        "401": { $ref: "#/responses/Unauthorized" }
+        "404": { $ref: "#/responses/NotFound" }
+
+  /{id}:
+    get:
+      summary: Get file metadata, plus a presigned download URL when ready
+      operationId: getFile
+      tags: [files]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+          format: uuid
+      responses:
+        "200":
+          description: OK
+          schema: { $ref: "#/definitions/GetFileResponse" }
+        "401": { $ref: "#/responses/Unauthorized" }
+        "404": { $ref: "#/responses/NotFound" }
+    delete:
+      summary: Soft-delete a file (idempotent)
+      description: |
+        Marks the record "deleted" and schedules removal of the
+        object and any thumbnail from storage. Subsequent DELETE
+        calls succeed without error.
+      operationId: deleteFile
+      tags: [files]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+          format: uuid
+      responses:
+        "204":
+          description: Deleted
+        "401": { $ref: "#/responses/Unauthorized" }
+        "404": { $ref: "#/responses/NotFound" }
+
+definitions:
+  FileRecord:
+    type: object
+    required:
+      - id
+      - userId
+      - filename
+      - contentType
+      - sizeBytes
+      - purpose
+      - status
+      - storageKey
+      - thumbnailKey
+      - createdAt
+      - updatedAt
+    properties:
+      id:           { type: string, format: uuid }
+      userId:       { type: string, format: uuid }
+      filename:     { type: string, example: "avatar.jpg" }
+      contentType:
+        type: string
+        description: IANA media type.
+        example: "image/jpeg"
+      sizeBytes:    { type: integer, format: int64, example: 102400 }
+      purpose:
+        type: string
+        description: |
+          Caller-supplied tag. Canonical values today: avatar,
+          document, attachment. Free-form so new purposes can be
+          added without a schema change.
+        example: "avatar"
+      status:
+        type: string
+        enum: [pending, processing, ready, rejected, deleted]
+        description: |
+          Lifecycle:
+          - pending    -> RequestUpload returned a presigned PUT URL; awaiting the browser to upload.
+          - processing -> ConfirmUpload accepted the upload; MIME / virus / thumbnail pipeline running.
+          - ready      -> Pipeline completed; download URLs may be issued.
+          - rejected   -> MIME mismatch, virus hit, or other validation failure.
+          - deleted    -> Soft-deleted by the user; storage cleanup is async.
+      storageKey:
+        type: string
+        description: Opaque object key. Not directly addressable.
+      thumbnailKey:
+        type: string
+        description: |
+          Present only for image uploads after thumbnail generation
+          completes. Empty for non-images and during processing.
+      createdAt: { type: string, format: date-time }
+      updatedAt: { type: string, format: date-time }
+
+  RequestUploadRequest:
+    type: object
+    required: [filename, contentType, sizeBytes]
+    properties:
+      filename:    { type: string, example: "avatar.jpg" }
+      contentType: { type: string, example: "image/jpeg" }
+      sizeBytes:   { type: integer, format: int64, minimum: 1, example: 102400 }
+      purpose:     { type: string, example: "avatar" }
+
+  RequestUploadResponse:
+    type: object
+    required: [fileId, uploadUrl, uploadUrlExpiresAt]
+    properties:
+      fileId: { type: string, format: uuid }
+      uploadUrl:
+        type: string
+        description: |
+          Presigned PUT URL. The browser uploads file bytes here
+          directly. Use the same Content-Type and sizeBytes that
+          were declared in the request; pact-files cross-checks
+          both during ConfirmUpload and rejects mismatches.
+      uploadUrlExpiresAt:
+        type: string
+        format: date-time
+        description: Absolute deadline for the PUT, computed from the upstream TTL.
+
+  GetFileResponse:
+    type: object
+    required: [file]
+    properties:
+      file: { $ref: "#/definitions/FileRecord" }
+      downloadUrl:
+        type: string
+        description: |
+          Presigned GET URL. Present only when status="ready";
+          omitted otherwise so the SPA can branch on its presence
+          rather than render "click to download" pointing at the
+          empty string.
+      downloadUrlExpiresAt:
+        type: string
+        format: date-time
+        description: Absolute deadline for the GET. Omitted when downloadUrl is omitted.
+
+  ListFilesResponse:
+    type: object
+    required: [files, total]
+    properties:
+      files:
+        type: array
+        items: { $ref: "#/definitions/FileRecord" }
+        description: Page of FileRecords for the caller, newest first.
+      total:
+        type: integer
+        description: |
+          Caller's non-deleted row count (independent of len(files),
+          which is the requested page). Lets the SPA render
+          "page x of y" without a follow-up count call.
+
+  Error:
+    type: object
+    required: [error]
+    properties:
+      error: { type: string }
+
+responses:
+  BadRequest:
+    description: Invalid request
+    schema: { $ref: "#/definitions/Error" }
+  Unauthorized:
+    description: Missing or invalid session
+    schema: { $ref: "#/definitions/Error" }
+  NotFound:
+    description: |
+      Unknown file id, or cross-user access -- pact-files returns
+      NotFound for both so probes can't distinguish "exists" from
+      "doesn't exist". The gateway forwards verbatim.
+    schema: { $ref: "#/definitions/Error" }
+  TooManyRequests:
+    description: Per-IP rate limit exceeded
+    schema: { $ref: "#/definitions/Error" }
