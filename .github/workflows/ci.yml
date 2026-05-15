@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
   merge_group:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -14,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
+  ci:
+    name: Lint and test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -34,21 +35,6 @@ jobs:
 
       - name: ESLint
         run: pnpm run lint:eslint
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: pnpm/action-setup@v4
-      - uses: jdx/mise-action@v4
-      - uses: actions/setup-node@v4
-        with:
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
 
       - name: Run unit tests
         run: pnpm test
