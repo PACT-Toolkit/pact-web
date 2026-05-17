@@ -13,6 +13,7 @@ import {
   PieChart,
   ScrollText,
   Settings2,
+  ShieldCheck,
   SquareTerminal,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
@@ -67,6 +68,12 @@ const buildNavMain = (pathname: string): NavMainItem[] => [
     url: '/files',
     icon: Files,
     isActive: isRouteActive(pathname, '/files'),
+  },
+  {
+    title: 'Filter decisions',
+    url: '/filter',
+    icon: ShieldCheck,
+    isActive: isRouteActive(pathname, '/filter'),
   },
   {
     title: 'Activity',
