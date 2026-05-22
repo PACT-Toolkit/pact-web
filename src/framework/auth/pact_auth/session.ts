@@ -3,9 +3,15 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { isMock, MOCK_USER_ID } from '@/src/framework/helpers/environment';
+
 import { getPactAuthClient } from './client';
 
 const SESSION_COOKIE = 'pact_session';
+
+// One-year horizon, recomputed at module load. Far enough out that nothing
+// in the UI treats the session as "about to expire" during a dev:mock run.
+const MOCK_SESSION_EXPIRES_AT = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
 export type Session = {
   userId: string;
@@ -38,6 +44,12 @@ export const requireSession = async (): Promise<Session> => {
 // mutate cookies. Useful for layouts that want to render a logged-out view
 // vs. a logged-in view in the same component tree.
 export const validateSessionFromCookies = async (): Promise<Session | null> => {
+  if (isMock()) {
+    // Auto-login in `pnpm run dev:mock` — no cookie required, no pact-auth
+    // roundtrip. Mirrors lunar/terra-web's getTokenFromRequest mock path.
+    return { userId: MOCK_USER_ID, expiresAt: MOCK_SESSION_EXPIRES_AT };
+  }
+
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
