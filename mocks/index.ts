@@ -8,6 +8,13 @@ export async function init() {
       onUnhandledRequest:
         process.env.NEXT_PUBLIC_MSW_DEBUG === 'true' ? 'warn' : 'bypass',
       quiet: process.env.NEXT_PUBLIC_MSW_DEBUG !== 'true',
+      // Pin the service-worker file to the path Next.js serves it from
+      // (public/mockServiceWorker.js). Explicit is better than relying on
+      // MSW's default — moving the file later won't silently 404.
+      serviceWorker: { url: '/mockServiceWorker.js' },
+      // Block the first navigation until the worker has installed so the
+      // earliest fetches can't slip past MSW and hit the real backend.
+      waitUntilReady: true,
     });
     if (process.env.NEXT_PUBLIC_MSW_DEBUG === 'true') {
       // @ts-expect-error -- exposing worker on window for MSW debug
