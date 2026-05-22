@@ -319,7 +319,7 @@ const LayerDetail = ({
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-export const FilterTestWorkbench = () => {
+export const TestWorkbench = () => {
   const [inputText, setInputText] = useState('');
   const [attackType, setAttackType] = useState('custom');
   const [status, setStatus] = useState<RunStatus>('idle');
