@@ -9,8 +9,9 @@ import {
   type UpdatePreferencesRequest,
   type UpdateProfileRequest,
 } from '@/src/__codegen__/rest/account';
+import { getMockUserType } from '@/src/framework/helpers/mock_user_type';
 
-import { MOCK_USER_ID } from '../data/profile';
+import { MOCK_USER_ID, profilePersonaFor } from '../data/profile';
 
 // applyMask mirrors pact-account's update_mask semantics: only fields
 // listed in `mask` are written to `target`. Implemented here so the
@@ -54,7 +55,18 @@ const getProfile = (): Profile => db.accountProfile.findFirst(() => true)!;
 const getPreferences = (): Preferences => db.accountPreferences.findFirst(() => true)!;
 
 export const handlers = [
-  http.get('*/v1/account/profile', () => HttpResponse.json(getProfile())),
+  http.get('*/v1/account/profile', () => {
+    // Honor a mock-user-type cookie change without forcing a re-seed.
+    // The first GET after a switcher flip overwrites the persona fields
+    // in place; subsequent edits (PUT) on top of that persist normally.
+    const persona = profilePersonaFor(getMockUserType());
+    db.accountProfile.update(
+      () => true,
+      p => ({ ...p, displayName: persona.displayName, bio: persona.bio }),
+    );
+
+    return HttpResponse.json(getProfile());
+  }),
 
   http.put('*/v1/account/profile', async ({ request }) => {
     const body = (await request.json()) as UpdateProfileRequest;
