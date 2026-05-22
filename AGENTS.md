@@ -43,6 +43,8 @@ Available skills:
 - `grill-me` — interview the user about an upcoming task until the spec is unambiguous; produces a confirmed plan, then stops (does not implement). Trigger with `/grill-me`
 - `linear-plan` — scope and break down a feature into Linear tasks (planning, ticket creation, project setup)
 - `next-best-practices` — Next.js conventions: file/route layout, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling
+- `pact-dev-mock` — how `pnpm run dev` and `pnpm run dev:mock` are separated: `isMock()` helper, MSW browser + Node bootstrap (`instrumentation.ts`), auto-login short-circuit, persona switching, OAuth bypass, `getApiBaseUrl()`, handler hygiene test. Use when touching auth, server-side fetch, mock plumbing, or anything env-conditional.
+- `pact-mock-data` — per-feature mock layer conventions: `MockRepository<T>` + central `db`, `mock/data` vs `mock/handlers` split, instantiator + `createXMockData(db)` seeder, glob-only handler URL patterns. Use when scaffolding a new feature mock or wiring a new MSW endpoint.
 - `playwright-best-practices` — Playwright testing across E2E, component, API, visual, a11y, security, perf, Electron, and extensions; flaky-fix, POM, CI/CD, mocking, auth, tags
 - `shadcn` — add, search, fix, style, and compose shadcn/ui components; registries, presets, project context, usage examples
 - `swr-best-practices` — SWR for data fetching, mutations, revalidation, error handling, caching, subscriptions, middleware, Next.js integration
