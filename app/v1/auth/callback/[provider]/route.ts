@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
 import { rebaseReturnTo } from '@/src/framework/auth/pact_auth/return_to';
+import { isMock } from '@/src/framework/helpers/environment';
 
 export const runtime = 'nodejs';
 
@@ -45,6 +46,36 @@ export const GET = async (
   const signedState = req.cookies.get(STATE_COOKIE)?.value;
   if (!signedState) {
     return failed(req, 'missing_state_cookie');
+  }
+
+  if (isMock()) {
+    // Complete the dance without calling pact-auth. Set a synthetic
+    // session cookie — validateSessionFromCookies() short-circuits in
+    // mock mode so the value here is purely cosmetic — and redirect
+    // to the original return_to (the start handler put it on the URL).
+    const returnTo = req.nextUrl.searchParams.get('return_to') || FALLBACK_RETURN_TO;
+    const target = rebaseReturnTo(req, returnTo);
+    const res = NextResponse.redirect(target);
+    res.cookies.set({
+      name: SESSION_COOKIE,
+      value: 'mock-session-token',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+    });
+    res.cookies.set({
+      name: STATE_COOKIE,
+      value: '',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      path: '/',
+      maxAge: 0,
+    });
+
+    return res;
   }
 
   let resp: Awaited<
