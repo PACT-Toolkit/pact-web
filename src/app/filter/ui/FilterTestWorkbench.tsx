@@ -354,13 +354,6 @@ export const FilterTestWorkbench = () => {
 
       const startIdx = bypassLayers.includes('filter') ? 1 : 0;
       setActiveIdx(startIdx);
-
-      const apiPromise = fetch('/api/pact/gateway/v1/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: inputText, kind: 'input', _bypass_layers: bypassLayers }),
-      }).then(r => r.json() as Promise<CheckResponse>);
-
       await sleep(400);
       if (startIdx === 0) {
         setActiveIdx(1);
@@ -370,9 +363,15 @@ export const FilterTestWorkbench = () => {
 
       let data: CheckResponse;
       try {
-        data = await apiPromise;
+        const resp = await fetch('/api/pact/gateway/v1/check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: inputText, kind: 'input', _bypass_layers: bypassLayers }),
+        });
+        const text = await resp.text();
+        if (!text.trim()) throw new Error(`HTTP ${resp.status}: empty response`);
+        data = JSON.parse(text) as CheckResponse;
       } catch {
-        // Resolve any pending layers to skip so the pipeline doesn't hang
         setLayers(prev =>
           prev.map(l => (l.decision === 'pending' ? { ...l, decision: 'skip' as LayerDecision } : l)),
         );
