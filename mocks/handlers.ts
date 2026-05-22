@@ -10,6 +10,7 @@ import { handlers as featureHandlers } from '@/src/app/feature_toggle/mock/handl
 import { handlers as filterHandlers } from '@/src/app/filter/mock/handlers';
 import { handlers as policyHandlers } from '@/src/app/policy/mock/handlers';
 import { handlers as redactorHandlers } from '@/src/app/redactor/mock/handlers';
+import { handlers as testLabHandlers } from '@/src/app/test_lab/mock/handlers';
 
 export const handlers: RequestHandler[] = [
   ...authHandlers,
@@ -19,6 +20,7 @@ export const handlers: RequestHandler[] = [
   ...policyHandlers,
   ...redactorHandlers,
   ...filterHandlers,
+  ...testLabHandlers,
   ...auditHandlers,
   ...consensusHandlers,
   ...benchmarkHandlers,
