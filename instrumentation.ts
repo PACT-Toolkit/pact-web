@@ -3,8 +3,9 @@
 // browser worker handles client-side fetches. Without this, anything
 // running on the server bypasses MSW and hits the real backend.
 //
-// Mirrors lunar/terra-web's pattern: the `mocks/server.ts` module is the
-// same one vitest.setup.ts already uses for unit tests.
+// The `mocks/server.ts` module is the same one vitest.setup.ts already
+// uses for unit tests — one handler array powers browser, Node dev, and
+// tests.
 
 export async function register() {
   if (
