@@ -78,9 +78,9 @@ const buildNavMain = (pathname: string): NavMainItem[] => [
   },
   {
     title: 'Test lab',
-    url: '/filter/test',
+    url: '/test-lab',
     icon: FlaskConical,
-    isActive: isRouteActive(pathname, '/filter/test'),
+    isActive: isRouteActive(pathname, '/test-lab'),
   },
   {
     title: 'Activity',
