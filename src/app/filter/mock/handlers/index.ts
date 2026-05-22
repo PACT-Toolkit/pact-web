@@ -1,6 +1,6 @@
 import { http, HttpResponse, type RequestHandler } from 'msw';
 
-import { mockDecisionEvents } from '../data';
+import { db } from '@/mocks/data/dbFactory';
 
 export const handlers: RequestHandler[] = [
   http.get('*/v1/audit/events', ({ request }) => {
@@ -9,8 +9,9 @@ export const handlers: RequestHandler[] = [
 
     const limit = Math.min(Number(url.searchParams.get('limit') ?? '50'), 200);
     const offset = Number(url.searchParams.get('offset') ?? '0');
-    const page = mockDecisionEvents.slice(offset, offset + limit);
+    const all = db.decisions.getAll();
+    const page = all.slice(offset, offset + limit);
 
-    return HttpResponse.json({ events: page, total: mockDecisionEvents.length });
+    return HttpResponse.json({ events: page, total: all.length });
   }),
 ];
