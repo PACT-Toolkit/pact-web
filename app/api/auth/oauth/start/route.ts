@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
 import { defaultReturnTo } from '@/src/framework/auth/pact_auth/return_to';
+import { isMock } from '@/src/framework/helpers/environment';
 
 export const runtime = 'nodejs';
 
@@ -29,6 +30,30 @@ export const GET = async (req: NextRequest) => {
 
   const returnToParam = req.nextUrl.searchParams.get('return_to');
   const returnTo = returnToParam ?? defaultReturnTo(req);
+
+  if (isMock()) {
+    // Skip the provider round-trip entirely in dev:mock. Bounce straight
+    // to our own callback with synthetic code+state and a state cookie
+    // the callback handler will accept (it also bypasses the gRPC call
+    // in mock mode). Real OAuth UX is not exercised — the goal here is
+    // to keep the SSO buttons clickable without pact-auth running.
+    const cb = new URL(`/v1/auth/callback/${provider}`, req.nextUrl.origin);
+    cb.searchParams.set('code', 'mock-code');
+    cb.searchParams.set('state', 'mock-state');
+    cb.searchParams.set('return_to', returnTo);
+    const res = NextResponse.redirect(cb);
+    res.cookies.set({
+      name: STATE_COOKIE,
+      value: 'mock-state-envelope',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      path: '/',
+      maxAge: STATE_TTL_SECONDS,
+    });
+
+    return res;
+  }
 
   let resp: Awaited<
     ReturnType<ReturnType<typeof getPactAuthClient>['startLogin']>
