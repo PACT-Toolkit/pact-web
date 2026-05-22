@@ -1,27 +1,25 @@
 import { http, HttpResponse } from 'msw';
 
-import { type Feature } from '@/src/__codegen__/rest/feature/types';
-
-import { mockFeatures } from '../data/features';
-
-const featureStore: Feature[] = mockFeatures.map((f) => ({ ...f }));
+import { db } from '@/mocks/data/dbFactory';
 
 export const handlers = [
   http.get('*/api/pact/feature/features', () =>
-    HttpResponse.json(featureStore)
+    HttpResponse.json(db.features.getAll()),
   ),
 
   http.put('*/api/pact/feature/features/:id', async ({ params, request }) => {
     const { id } = params as { id: string };
     const body = (await request.json()) as { isEnabled: boolean };
-    const feature = featureStore.find((f) => f.id === id);
 
-    if (!feature) {
+    const updated = db.features.update(
+      f => f.id === id,
+      f => ({ ...f, isEnabled: body.isEnabled }),
+    );
+
+    if (!updated) {
       return HttpResponse.json({ error: 'feature not found' }, { status: 404 });
     }
 
-    feature.isEnabled = body.isEnabled;
-
-    return HttpResponse.json(feature);
+    return HttpResponse.json(updated);
   }),
 ];

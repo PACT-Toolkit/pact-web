@@ -1,3 +1,4 @@
+import { type DB } from '@/mocks/data/dbFactory';
 import {
   type Consent,
   type Preferences,
@@ -7,40 +8,45 @@ import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
 
 export { MOCK_USER_ID };
 
-export const mockProfile: Profile = {
+export const mockProfile = (overrides: Partial<Profile>): Profile => ({
   userId: MOCK_USER_ID,
   displayName: 'Ada Lovelace',
   avatarUrl: 'https://i.pravatar.cc/150?u=ada',
   locale: 'en-US',
   timezone: 'Europe/Copenhagen',
   bio: 'Designing analytical engines.',
-  // Frozen ISO timestamps so test snapshots are stable. Real responses
-  // come from pact-account and reflect the row's actual created_at.
   createdAt: '2025-01-01T08:00:00.000Z',
   updatedAt: '2026-05-13T17:00:00.000Z',
-};
+  ...overrides,
+});
 
-export const mockPreferences: Preferences = {
+export const mockPreferences = (overrides: Partial<Preferences>): Preferences => ({
   userId: MOCK_USER_ID,
-  // Default new accounts to opted-out of marketing email; the user
-  // has to flip both toggles in the settings UI to opt in. Mirrors
-  // pact-account's default-row shape.
   marketingEmail: false,
   productEmail: true,
   updatedAt: '2026-05-13T17:00:00.000Z',
-};
+  ...overrides,
+});
 
-export const mockConsents: Consent[] = [
-  {
+export const mockConsent = (overrides: Partial<Consent>): Consent => ({
+  document: '',
+  version: '',
+  granted: true,
+  recordedAt: '2025-01-01T08:00:00.000Z',
+  ...overrides,
+});
+
+export const createAccountMockData = (db: DB): void => {
+  db.accountProfile.create({});
+  db.accountPreferences.create({});
+  db.accountConsents.create({
     document: 'terms_of_service',
     version: 'tos-2026-05-13',
     granted: true,
-    recordedAt: '2025-01-01T08:00:00.000Z',
-  },
-  {
+  });
+  db.accountConsents.create({
     document: 'privacy_policy',
     version: 'pp-2026-05-13',
     granted: true,
-    recordedAt: '2025-01-01T08:00:00.000Z',
-  },
-];
+  });
+};
