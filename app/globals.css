@@ -172,6 +172,13 @@
   --sidebar-ring: oklch(0.9702 0 0);
 }
 
+@keyframes flowRight {
+  0% { left: -8px; opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { left: calc(100% + 4px); opacity: 0; }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
