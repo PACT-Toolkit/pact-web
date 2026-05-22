@@ -47,6 +47,7 @@
 !auth.ts
 !CODEOWNERS
 !components.json
+!instrumentation.ts
 !middleware.ts
 !proxy.ts
 !buf.gen.yaml
