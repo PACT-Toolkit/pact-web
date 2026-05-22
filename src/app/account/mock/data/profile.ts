@@ -3,12 +3,9 @@ import {
   type Preferences,
   type Profile,
 } from '@/src/__codegen__/rest/account';
+import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
 
-// One in-memory user for `pnpm run dev:mock`. The userId here is a
-// stable UUID so MSW handlers, fixtures, and Playwright seeds can
-// agree without a roundtrip; production never sees this value because
-// the gateway resolves user_id from the real session cookie.
-export const MOCK_USER_ID = '8f5c4d12-1d50-4c18-8ad3-2f4f64a4f111';
+export { MOCK_USER_ID };
 
 export const mockProfile: Profile = {
   userId: MOCK_USER_ID,
