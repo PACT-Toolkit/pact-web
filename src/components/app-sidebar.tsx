@@ -24,6 +24,7 @@ import {
   type Profile,
   useGetAccountProfile,
 } from '@/src/__codegen__/rest/account';
+import { MockUserTypeSwitcher } from '@/src/components/mock-user-type-switcher';
 import { NavMain, type NavMainItem } from '@/src/components/nav-main';
 import { NavProjects } from '@/src/components/nav-projects';
 import { NavUser } from '@/src/components/nav-user';
@@ -154,6 +155,7 @@ export const AppSidebar = ({ userId, ...props }: AppSidebarProps) => {
       <SidebarContent>
         <NavMain items={navMain} />
         <NavProjects projects={projects} />
+        <MockUserTypeSwitcher />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={buildNavUser(userId, profile, isLoading)} />
