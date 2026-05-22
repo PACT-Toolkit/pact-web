@@ -6,6 +6,7 @@ import {
   Bot,
   Command,
   Files,
+  FlaskConical,
   Frame,
   GalleryVerticalEnd,
   LayoutDashboard,
@@ -73,7 +74,13 @@ const buildNavMain = (pathname: string): NavMainItem[] => [
     title: 'Filter decisions',
     url: '/filter',
     icon: ShieldCheck,
-    isActive: isRouteActive(pathname, '/filter'),
+    isActive: pathname === '/filter',
+  },
+  {
+    title: 'Test lab',
+    url: '/filter/test',
+    icon: FlaskConical,
+    isActive: isRouteActive(pathname, '/filter/test'),
   },
   {
     title: 'Activity',
