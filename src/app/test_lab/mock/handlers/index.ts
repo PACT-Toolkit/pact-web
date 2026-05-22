@@ -1,9 +1,15 @@
 import { http, HttpResponse, type RequestHandler } from 'msw';
 import { v4 as uuidv4 } from 'uuid';
 
+import { db } from '@/mocks/data/dbFactory';
+
 import { runClassifier, runFilter } from '../data';
 
 export const handlers: RequestHandler[] = [
+  http.get('*/v1/benchmark/corpus/examples', () =>
+    HttpResponse.json(db.attackExamples.getAll()),
+  ),
+
   http.post('*/v1/check', async ({ request }) => {
     const body = (await request.json()) as {
       content?: string;
