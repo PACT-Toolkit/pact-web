@@ -22,6 +22,7 @@ interface DecisionPayload {
   request_id: string;
   decision: 'allow' | 'block';
   reason?: string;
+  filter_rule_id?: string;
   latency_ms: number;
 }
 
@@ -89,8 +90,9 @@ export const FilterDecisionsWorkbench = () => {
       if (payload.decision === 'block') {
         blocked++;
 
-        if (payload.reason) {
-          ruleCounts[payload.reason] = (ruleCounts[payload.reason] ?? 0) + 1;
+        const ruleKey = payload.filter_rule_id ?? payload.reason;
+        if (ruleKey) {
+          ruleCounts[ruleKey] = (ruleCounts[ruleKey] ?? 0) + 1;
         }
       }
     }
@@ -315,9 +317,9 @@ const DecisionRow = ({
           >
             {payload?.decision ?? '—'}
           </span>
-          {payload?.reason && (
+          {(payload?.filter_rule_id ?? payload?.reason) && (
             <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-              {payload.reason}
+              {payload?.filter_rule_id ?? payload?.reason}
             </span>
           )}
           <span className="truncate font-mono text-xs text-muted-foreground">
