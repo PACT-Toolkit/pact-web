@@ -1,1 +1,1 @@
-export { TestWorkbench } from './ui/TestWorkbench';
+export { TestLabWorkbench } from './ui/TestLabWorkbench';

@@ -1,12 +1,15 @@
 'use client';
 
-import { Flag, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
   type AuditEvent,
   useQueryAuditEvents,
 } from '@/src/__codegen__/rest/audit';
+import { PAGE_SIZE, parsePayload } from '@/src/app/filter/domain/filter_decision';
+import { FilterDecisionRow } from '@/src/app/filter/ui/FilterDecisionRow';
+import { FilterStatCard } from '@/src/app/filter/ui/FilterStatCard';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -15,40 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
-
-// pact.decisions payloadJson shape. Defined here because the gateway owns this
-// schema (kafka/producer.go) and there is no codegen for it today.
-interface DecisionPayload {
-  request_id: string;
-  decision: 'allow' | 'block';
-  reason?: string;
-  filter_rule_id?: string;
-  latency_ms: number;
-}
-
-const PAGE_SIZE = 25;
-
-const formatTimestamp = (iso: string) => {
-  const d = new Date(iso);
-
-  if (Number.isNaN(d.getTime())) return iso;
-
-  return d.toLocaleString(undefined, {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
-
-const parsePayload = (raw: string): DecisionPayload | null => {
-  try {
-    return JSON.parse(raw) as DecisionPayload;
-  } catch {
-    return null;
-  }
-};
 
 export const FilterDecisionsWorkbench = () => {
   const [localPage, setLocalPage] = useState(0);
@@ -84,12 +53,10 @@ export const FilterDecisionsWorkbench = () => {
 
     for (const evt of allEvents) {
       const payload = parsePayload(evt.payloadJson);
-
       if (!payload) continue;
 
       if (payload.decision === 'block') {
         blocked++;
-
         const ruleKey = payload.filter_rule_id ?? payload.reason;
         if (ruleKey) {
           ruleCounts[ruleKey] = (ruleCounts[ruleKey] ?? 0) + 1;
@@ -117,7 +84,6 @@ export const FilterDecisionsWorkbench = () => {
   const toggleFP = (eventId: string) => {
     setFlaggedFPs((prev) => {
       const next = new Set(prev);
-
       if (next.has(eventId)) {
         next.delete(eventId);
       } else {
@@ -130,23 +96,21 @@ export const FilterDecisionsWorkbench = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Summary stats */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Total decisions" value={stats.total} />
-        <StatCard
+        <FilterStatCard label="Total decisions" value={stats.total} />
+        <FilterStatCard
           label="Blocked"
           value={stats.blocked}
           valueClass="text-destructive"
         />
-        <StatCard label="Allowed" value={stats.allowed} />
-        <StatCard
+        <FilterStatCard label="Allowed" value={stats.allowed} />
+        <FilterStatCard
           label="Block rate"
           value={`${stats.blockRate.toFixed(1)}%`}
           valueClass={stats.blockRate > 10 ? 'text-destructive' : undefined}
         />
       </div>
 
-      {/* Top blocked rules */}
       {stats.topRules.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
@@ -180,7 +144,6 @@ export const FilterDecisionsWorkbench = () => {
         </Card>
       )}
 
-      {/* Decision list */}
       <Card>
         <CardHeader className="flex flex-col gap-1">
           <div className="flex items-start justify-between gap-4">
@@ -225,7 +188,7 @@ export const FilterDecisionsWorkbench = () => {
           {pageEvents.length > 0 && (
             <div className="flex flex-col divide-y rounded-md border">
               {pageEvents.map((evt) => (
-                <DecisionRow
+                <FilterDecisionRow
                   key={evt.id}
                   event={evt}
                   isFlagged={flaggedFPs.has(evt.id)}
@@ -265,98 +228,6 @@ export const FilterDecisionsWorkbench = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
-};
-
-const StatCard = ({
-  label,
-  value,
-  valueClass,
-}: {
-  label: string;
-  value: string | number;
-  valueClass?: string;
-}) => (
-  <Card>
-    <CardContent className="flex flex-col gap-1 p-4">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={`text-2xl font-semibold tabular-nums ${valueClass ?? ''}`}>
-        {value}
-      </p>
-    </CardContent>
-  </Card>
-);
-
-const DecisionRow = ({
-  event,
-  isFlagged,
-  onFlagFP,
-}: {
-  event: AuditEvent;
-  isFlagged: boolean;
-  onFlagFP: () => void;
-}) => {
-  const payload = useMemo(
-    () => parsePayload(event.payloadJson),
-    [event.payloadJson]
-  );
-
-  const isBlock = payload?.decision === 'block';
-
-  return (
-    <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span
-            className={`rounded px-1.5 py-0.5 font-mono text-xs font-medium ${
-              isBlock
-                ? 'bg-destructive/10 text-destructive'
-                : 'bg-green-500/10 text-green-600 dark:text-green-400'
-            }`}
-          >
-            {payload?.decision ?? '—'}
-          </span>
-          {(payload?.filter_rule_id ?? payload?.reason) && (
-            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-              {payload?.filter_rule_id ?? payload?.reason}
-            </span>
-          )}
-          <span className="truncate font-mono text-xs text-muted-foreground">
-            {event.requestId ?? payload?.request_id ?? '—'}
-          </span>
-        </div>
-        <span className="text-xs text-muted-foreground">
-          {formatTimestamp(event.createdAt)}
-          {payload?.latency_ms !== undefined
-            ? ` · ${payload.latency_ms} ms`
-            : ''}
-        </span>
-      </div>
-
-      {isBlock && (
-        <button
-          type="button"
-          onClick={onFlagFP}
-          title={
-            isFlagged ? 'Remove false-positive flag' : 'Flag as false positive'
-          }
-          aria-label={
-            isFlagged ? 'Remove false-positive flag' : 'Flag as false positive'
-          }
-          className={`shrink-0 rounded p-1 transition-colors hover:bg-muted ${
-            isFlagged
-              ? 'text-amber-500'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Flag
-            className="h-3.5 w-3.5"
-            fill={isFlagged ? 'currentColor' : 'none'}
-            aria-hidden
-          />
-        </button>
-      )}
     </div>
   );
 };

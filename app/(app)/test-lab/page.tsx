@@ -1,4 +1,4 @@
-import { TestWorkbench } from '@/src/app/test_lab';
+import { TestLabWorkbench } from '@/src/app/test_lab';
 
 const TestLabPage = () => (
   <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-8">
@@ -8,7 +8,7 @@ const TestLabPage = () => (
         Manually probe the filter pipeline with prompt payloads and embedded file attacks.
       </p>
     </header>
-    <TestWorkbench />
+    <TestLabWorkbench />
   </main>
 );
 

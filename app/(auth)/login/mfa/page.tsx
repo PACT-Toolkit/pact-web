@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-import { MfaChallengeForm } from '@/src/app/auth';
+import { AuthLoginMfaChallengeForm } from '@/src/app/auth';
 
 const MFA_TOKEN_COOKIE = 'pact_mfa_token';
 
@@ -14,7 +14,7 @@ const LoginMfaPage = async () => {
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
       <div className="w-full max-w-sm">
-        <MfaChallengeForm />
+        <AuthLoginMfaChallengeForm />
       </div>
     </div>
   );

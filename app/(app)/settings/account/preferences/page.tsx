@@ -1,7 +1,7 @@
-import { PreferencesForm } from '@/src/app/account/ui/settings/PreferencesForm';
+import { AccountSettingsPreferencesForm } from '@/src/app/account/ui/settings/AccountSettingsPreferencesForm';
 
 const AccountPreferencesPage = () => {
-  return <PreferencesForm />;
+  return <AccountSettingsPreferencesForm />;
 };
 
 export default AccountPreferencesPage;

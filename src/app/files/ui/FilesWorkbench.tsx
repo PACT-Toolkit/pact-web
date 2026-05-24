@@ -11,6 +11,13 @@ import {
   requestFileUpload,
   useListFiles,
 } from '@/src/__codegen__/rest/files';
+import {
+  humanSize,
+  isTerminal,
+  POLL_INTERVAL_MS,
+  type RowExtras,
+} from '@/src/app/files/domain/files_upload';
+import { FilesStatusBadge } from '@/src/app/files/ui/FilesStatusBadge';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -20,37 +27,7 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
-
-// Poll cadence for non-terminal records. Tight at first so the UI
-// feels snappy on the typical fast path (small image, no virus),
-// then bounded by attempt count so a stuck record doesn't hammer
-// the gateway forever. The pipeline usually finishes in <5s in dev.
-const POLL_INTERVAL_MS = 1500;
-const POLL_MAX_ATTEMPTS = 40; // ~60s before we stop polling that row
-
-const isTerminal = (status: string) =>
-  status === 'ready' || status === 'rejected' || status === 'deleted';
-
-const humanSize = (bytes: number) => {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
-
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MiB`;
-};
-
-// Local-only enrichment of the server list:
-//   - downloadUrl is minted per-row by calling GET /v1/files/{id}
-//     for any row whose server status is "ready" (ListFiles
-//     intentionally doesn't mint URLs to avoid presign storms).
-//   - pollAttempts caps the in-browser poll loop for non-terminal
-//     rows so a runaway upload doesn't pin the network.
-//   - error/busy are pure UI flags.
-type RowExtras = {
-  downloadUrl?: string;
-  pollAttempts: number;
-  error?: string;
-  busy?: boolean;
-};
+import { httpClient } from '@/src/framework/http';
 
 export const FilesWorkbench = () => {
   const [extras, setExtras] = useState<Record<string, RowExtras>>({});
@@ -58,32 +35,30 @@ export const FilesWorkbench = () => {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Server-side list is the source of truth. SWR's refreshInterval
-  // does the polling for us: short while anything is processing,
-  // off when every row is terminal. Upload/delete mutators force a
-  // refresh via the bound mutate.
   const {
     data,
     error: listError,
     isLoading,
     mutate,
-  } = useListFiles({ limit: 100, offset: 0 });
+  } = useListFiles(
+    { limit: 100, offset: 0 },
+    {
+      swr: {
+        refreshInterval: (latestData) => {
+          const files = latestData?.status === 200 ? latestData.data.files : [];
 
-  // useMemo so the array identity stays stable across renders that
-  // don't actually change the list; without this, every render
-  // would re-run the polling/url-mint effect.
+          return files.some((f) => !isTerminal(f.status)) ? POLL_INTERVAL_MS : 0;
+        },
+      },
+    }
+  );
+
   const serverFiles = useMemo<FileRecord[]>(
     () => (data?.status === 200 ? data.data.files : []),
     [data]
   );
   const serverTotal = data?.status === 200 ? data.data.total : 0;
 
-  // mintDownloadURL fetches a fresh presigned GET URL for a single
-  // row. Called when a row first appears in "ready" state (and the
-  // user hasn't been issued a URL yet) and when the user clicks
-  // Refresh. Keeping the URL local-only avoids stale URLs across
-  // re-renders -- presigned URLs are short-lived and the SPA
-  // controls when to refresh them.
   const mintDownloadURL = useCallback(
     async (id: string) => {
       try {
@@ -93,7 +68,7 @@ export const FilesWorkbench = () => {
           setExtras((prev) => ({
             ...prev,
             [id]: {
-              ...(prev[id] ?? { pollAttempts: 0 }),
+              ...(prev[id] ?? {}),
               downloadUrl: body.downloadUrl ?? undefined,
               error: undefined,
             },
@@ -102,8 +77,6 @@ export const FilesWorkbench = () => {
           return body.file.status;
         }
         if (res.status === 404) {
-          // Row was deleted out-of-band; the server list will catch
-          // up on the next mutate(). Clear local extras for that id.
           setExtras((prev) => {
             const next = { ...prev };
             delete next[id];
@@ -117,7 +90,7 @@ export const FilesWorkbench = () => {
         setExtras((prev) => ({
           ...prev,
           [id]: {
-            ...(prev[id] ?? { pollAttempts: 0 }),
+            ...(prev[id] ?? {}),
             error: 'lookup failed',
           },
         }));
@@ -127,7 +100,7 @@ export const FilesWorkbench = () => {
         setExtras((prev) => ({
           ...prev,
           [id]: {
-            ...(prev[id] ?? { pollAttempts: 0 }),
+            ...(prev[id] ?? {}),
             error: 'network error',
           },
         }));
@@ -138,49 +111,9 @@ export const FilesWorkbench = () => {
     [mutate]
   );
 
-  // Bag of ids whose status is still non-terminal and that haven't
-  // exceeded the per-row attempt budget. Recomputed every render
-  // from serverFiles+extras; cheap (<= ~100 rows).
-  const pollableIDs = useMemo(
-    () =>
-      serverFiles
-        .filter((f) => !isTerminal(f.status))
-        .map((f) => f.id)
-        .filter((id) => (extras[id]?.pollAttempts ?? 0) < POLL_MAX_ATTEMPTS),
-    [serverFiles, extras]
-  );
-
-  // Status-poll loop. Calls mutate() (no setState) every interval
-  // while at least one row is still processing. The set-state for
-  // pollAttempts happens inside the interval callback so the lint
-  // rule that forbids synchronous setState in effects is happy --
-  // setState in a timer callback is "outside" the effect body.
-  useEffect(() => {
-    if (pollableIDs.length === 0) return;
-
-    const handle = window.setInterval(() => {
-      setExtras((prev) => {
-        const next = { ...prev };
-        for (const id of pollableIDs) {
-          next[id] = {
-            ...(next[id] ?? { pollAttempts: 0 }),
-            pollAttempts: (next[id]?.pollAttempts ?? 0) + 1,
-          };
-        }
-
-        return next;
-      });
-      void mutate();
-    }, POLL_INTERVAL_MS);
-
-    return () => window.clearInterval(handle);
-  }, [pollableIDs, mutate]);
-
-  // URL-mint loop. Runs separately from status-poll because the
-  // mint happens once per row (not on a cadence) and would otherwise
-  // tangle the polling effect's deps. queueMicrotask defers the
-  // setState past the effect body so the React 19 "no setState in
-  // effects" lint stays happy.
+  // Mint download URLs for ready files that don't have one yet.
+  // Runs as an effect because it's a side-effectful fetch triggered by server
+  // data changes, not user action — an approved useEffect use in pact-react-patterns.
   useEffect(() => {
     const readyMissingURL = serverFiles
       .filter((f) => f.status === 'ready' && !extras[f.id]?.downloadUrl)
@@ -221,10 +154,6 @@ export const FilesWorkbench = () => {
       }
       const { fileId, uploadUrl } = presign.data;
 
-      // Browser-to-storage PUT. The bytes go straight to MinIO / S3
-      // / R2 -- pact-gateway never sees them. Content-Type must
-      // match what we declared above, otherwise pact-files will
-      // reject the record during ConfirmUpload.
       const put = await fetch(uploadUrl, {
         method: 'PUT',
         headers: { 'Content-Type': file.type || 'application/octet-stream' },
@@ -236,21 +165,7 @@ export const FilesWorkbench = () => {
         return;
       }
 
-      // Confirm kicks off the async pipeline. After this lands the
-      // record shows up in the server list with status=processing
-      // and the polling loop takes over.
-      const confirmRes = await fetch(`/v1/files/${fileId}/confirm`, {
-        method: 'POST',
-      });
-      if (!confirmRes.ok) {
-        setUploadError(
-          confirmRes.status === 404
-            ? 'Upload confirm failed — record not found.'
-            : `Confirm failed (HTTP ${confirmRes.status}).`
-        );
-
-        return;
-      }
+      await httpClient.post(`/v1/files/${fileId}/confirm`);
 
       await mutate();
     } catch (err) {
@@ -264,15 +179,12 @@ export const FilesWorkbench = () => {
   const handleDelete = async (id: string) => {
     setExtras((prev) => ({
       ...prev,
-      [id]: { ...(prev[id] ?? { pollAttempts: 0 }), busy: true },
+      [id]: { ...(prev[id] ?? {}), busy: true },
     }));
     try {
       await deleteFile(id);
     } catch {
-      // The DELETE endpoint is idempotent on the server side, so a
-      // transient network error doesn't leave the system in a
-      // confused state. Surface nothing to the user beyond the row
-      // disappearing on the next list refresh.
+      // DELETE is idempotent; transient errors resolve on next list refresh.
     }
     setExtras((prev) => {
       const next = { ...prev };
@@ -357,7 +269,7 @@ export const FilesWorkbench = () => {
           ) : (
             <ul className="flex flex-col gap-2">
               {serverFiles.map((r: FileRecord) => {
-                const x = extras[r.id] ?? { pollAttempts: 0 };
+                const x = extras[r.id] ?? {};
 
                 return (
                   <li
@@ -369,7 +281,7 @@ export const FilesWorkbench = () => {
                         {r.filename}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        <StatusBadge status={r.status} />
+                        <FilesStatusBadge status={r.status} />
                         {' • '}
                         <span>{r.contentType}</span>
                         {' • '}
@@ -411,26 +323,5 @@ export const FilesWorkbench = () => {
         </CardContent>
       </Card>
     </div>
-  );
-};
-
-// StatusBadge maps the five lifecycle states to color cues. Kept
-// inline -- five render variants don't justify a separate file.
-const StatusBadge = ({ status }: { status: string }) => {
-  const palette: Record<string, string> = {
-    pending: 'bg-muted text-muted-foreground',
-    processing: 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-200',
-    ready: 'bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-200',
-    rejected: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-200',
-    deleted: 'bg-muted text-muted-foreground line-through',
-  };
-  const cls = palette[status] ?? 'bg-muted text-muted-foreground';
-
-  return (
-    <span
-      className={`inline-block rounded-sm px-1.5 py-0.5 text-[10px] font-medium uppercase ${cls}`}
-    >
-      {status}
-    </span>
   );
 };

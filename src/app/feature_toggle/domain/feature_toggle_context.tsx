@@ -6,7 +6,7 @@ import { useGetFeatures } from '@/src/__codegen__/rest/feature';
 import { type Feature } from '@/src/__codegen__/rest/feature/types';
 import { isProduction } from '@/src/framework/helpers/environment';
 
-import { DevFeaturePanel } from '../ui/DevFeaturePanel';
+import { FeatureToggleDevFeaturePanel } from '../ui/FeatureToggleDevFeaturePanel';
 
 const FeatureContext = createContext<Feature[]>([]);
 
@@ -23,7 +23,7 @@ export const FeatureToggleProvider = ({
   return (
     <FeatureContext.Provider value={features}>
       {children}
-      {!isProduction() && <DevFeaturePanel />}
+      {!isProduction() && <FeatureToggleDevFeaturePanel />}
     </FeatureContext.Provider>
   );
 };

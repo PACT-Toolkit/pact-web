@@ -1,12 +1,10 @@
 'use client';
 
-import { ChevronDown, ChevronUp, RefreshCw, Search } from 'lucide-react';
+import { RefreshCw, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import {
-  type AuditEvent,
-  useQueryAuditEvents,
-} from '@/src/__codegen__/rest/audit';
+import { useQueryAuditEvents } from '@/src/__codegen__/rest/audit';
+import { AuditRow } from '@/src/app/audit/ui/AuditRow';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -32,37 +30,6 @@ const TOPIC_OPTIONS = [
   { value: 'pact.files', label: 'pact.files (upload lifecycle)' },
   { value: 'pact.decisions', label: 'pact.decisions (allow / block calls)' },
 ];
-
-const formatTimestamp = (iso: string) => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-
-  return d.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
-
-// Pretty-print the JSONB payload string. We don't trust the server
-// to have already formatted it (it's raw from the audit_events
-// column) so JSON.parse + JSON.stringify normalises it. If the
-// payload isn't valid JSON we fall back to the raw string -- a row
-// with a malformed payload is itself diagnostic and shouldn't crash
-// the viewer.
-const prettyPayload = (raw: string): string => {
-  if (!raw) return '';
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-
-    return JSON.stringify(parsed, null, 2);
-  } catch {
-    return raw;
-  }
-};
 
 export const AuditWorkbench = () => {
   const [topic, setTopic] = useState<string>('');
@@ -97,7 +64,7 @@ export const AuditWorkbench = () => {
     }
   );
 
-  const events: AuditEvent[] = data?.status === 200 ? data.data.events : [];
+  const events = data?.status === 200 ? data.data.events : [];
   const total = data?.status === 200 ? data.data.total : 0;
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -224,49 +191,5 @@ export const AuditWorkbench = () => {
         </div>
       </CardContent>
     </Card>
-  );
-};
-
-const AuditRow = ({ event }: { event: AuditEvent }) => {
-  const [open, setOpen] = useState(false);
-  const pretty = useMemo(
-    () => prettyPayload(event.payloadJson),
-    [event.payloadJson]
-  );
-
-  return (
-    <div className="flex flex-col gap-2 p-4 text-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-start justify-between gap-4 text-left"
-        aria-expanded={open}
-      >
-        <div className="flex min-w-0 flex-col gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-              {event.topic}
-            </span>
-            <span className="font-medium">
-              {event.eventId || '(no event id)'}
-            </span>
-          </div>
-          <span className="text-xs text-muted-foreground">
-            {formatTimestamp(event.createdAt)}
-            {event.requestId ? ` · request ${event.requestId}` : ''}
-          </span>
-        </div>
-        {open ? (
-          <ChevronUp className="h-4 w-4 text-muted-foreground" aria-hidden />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground" aria-hidden />
-        )}
-      </button>
-      {open && (
-        <pre className="max-h-72 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs">
-          {pretty || '(empty payload)'}
-        </pre>
-      )}
-    </div>
   );
 };

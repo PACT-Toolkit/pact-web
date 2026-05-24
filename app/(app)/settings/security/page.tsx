@@ -1,4 +1,4 @@
-import { SignInMethodsPanel } from '@/src/app/auth';
+import { AuthSettingsSignInMethodsPanel } from '@/src/app/auth';
 import {
   listIdentities,
   listMfaFactors,
@@ -23,7 +23,7 @@ const SecuritySettingsPage = async () => {
         </p>
       </header>
 
-      <SignInMethodsPanel
+      <AuthSettingsSignInMethodsPanel
         factors={factors}
         passkeys={passkeys}
         identities={identities}

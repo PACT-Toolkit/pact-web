@@ -43,11 +43,14 @@ Available skills:
 - `grill-me` — interview the user about an upcoming task until the spec is unambiguous; produces a confirmed plan, then stops (does not implement). Trigger with `/grill-me`
 - `linear-plan` — scope and break down a feature into Linear tasks (planning, ticket creation, project setup)
 - `next-best-practices` — Next.js conventions: file/route layout, RSC boundaries, data patterns, async APIs, metadata, error handling, route handlers, image/font optimization, bundling
+- `pact-component-naming` — one component per file, feature-prefix naming (`TestLab*`, `Audit*`, etc.), sub-folder prefix concatenation, file-name ↔ export-name parity. Use when creating or renaming any component in pact-web.
+- `pact-domain-layer` — what goes in `domain/` vs `ui/types.ts`: API payload types, business records, inference helpers, and domain constants belong in `domain/`; visual-state types stay in `ui/types.ts`. Use when adding any new type, helper, or constant to a feature.
 - `pact-dev-mock` — how `pnpm run dev` and `pnpm run dev:mock` are separated: `isMock()` helper, MSW browser + Node bootstrap (`instrumentation.ts`), auto-login short-circuit, persona switching, OAuth bypass, `getApiBaseUrl()`, handler hygiene test. Use when touching auth, server-side fetch, mock plumbing, or anything env-conditional.
 - `pact-mock-data` — per-feature mock layer conventions: `MockRepository<T>` + central `db`, `mock/data` vs `mock/handlers` split, instantiator + `createXMockData(db)` seeder, glob-only handler URL patterns. Use when scaffolding a new feature mock or wiring a new MSW endpoint.
 - `playwright-best-practices` — Playwright testing across E2E, component, API, visual, a11y, security, perf, Electron, and extensions; flaky-fix, POM, CI/CD, mocking, auth, tags
 - `shadcn` — add, search, fix, style, and compose shadcn/ui components; registries, presets, project context, usage examples
 - `swr-best-practices` — SWR for data fetching, mutations, revalidation, error handling, caching, subscriptions, middleware, Next.js integration
+- `pact-react-patterns` — SWR-first data fetching (never fetch in `useEffect`), optimistic updates via SWR, derived state over `useEffect` sync, polling via `refreshInterval`. Use when writing or reviewing any component that fetches data or has effects.
 - `tailwind-design-system` — build scalable design systems with Tailwind CSS v4: design tokens, component libraries, responsive patterns
 - `typescript-advanced-types` — generics, conditional types, mapped types, template literals, utility types
 - `vercel-react-best-practices` — React/Next.js performance guidelines from Vercel Engineering: components, data fetching, bundle optimization
@@ -126,11 +129,18 @@ src/app/{feature}/
    {
      "repo": "{github-repo-name}",
      "path": "/api/swagger.yaml",
-     "branch": "main"
+     "branch": "main",
+     "production": false
    }
    ```
 
    Where `repo` is the repo name in the [PACT-Toolkit](https://github.com/PACT-Toolkit) GitHub org.
+
+   **`production` flag** controls CI failure behaviour for `pnpm api:update`:
+   - `false` (default) — download failure prints a warning and continues. Safe while the backend service is still in early development or the schema isn't stable.
+   - `true` — download failure exits non-zero and breaks CI. Set this once the service is stable and schema drift must be caught immediately.
+
+   Flip to `true` when the service ships to production.
 
 2. Run `pnpm api:update` — downloads `swagger.yaml` from GitHub and generates hooks in `src/__codegen__/rest/{service}/`.
 

@@ -2,5 +2,6 @@
   "repo": "pact-audit",
   "path": "/api/swagger.yaml",
   "branch": "main",
-  "baseUrl": "/v1/audit"
+  "baseUrl": "/v1/audit",
+  "production": false
 }
