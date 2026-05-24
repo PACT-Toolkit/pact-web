@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { isMock, isProduction } from '@/src/framework/helpers/environment';
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -388,22 +389,41 @@ export const TestWorkbench = () => {
         return;
       }
 
-      const mockLayers = data._mock_layers ?? [];
+      const mockLayers = data._mock_layers;
       setLayers(prev =>
         prev.map((l, i) => {
           if (bypassLayers.includes(l.id)) return l; // keep bypassed as-is
-          const ml = mockLayers[i];
-          if (!ml) return { ...l, decision: 'skip' as LayerDecision };
 
-          return {
-            ...l,
-            decision: ml.decision as LayerDecision,
-            ruleId: ml.rule_id,
-            reason: ml.reason,
-            latencyMs: ml.latency_ms,
-            confidence: ml.confidence,
-            bypassed: false,
-          };
+          if (mockLayers) {
+            const ml = mockLayers[i];
+            if (!ml) return { ...l, decision: 'skip' as LayerDecision };
+
+            return {
+              ...l,
+              decision: ml.decision as LayerDecision,
+              ruleId: ml.rule_id,
+              reason: ml.reason,
+              latencyMs: ml.latency_ms,
+              confidence: ml.confidence,
+              bypassed: false,
+            };
+          }
+
+          // Real gateway response — infer layer states from decision + reason
+          if (l.id === 'filter') {
+            return data.reason === 'filter_hostile'
+              ? { ...l, decision: 'block' as LayerDecision, ruleId: data.filter_rule_id, reason: 'Filter matched rule', bypassed: false }
+              : { ...l, decision: 'allow' as LayerDecision, reason: undefined, ruleId: undefined, bypassed: false };
+          }
+
+          // classifier
+          if (data.reason === 'filter_hostile') {
+            return { ...l, decision: 'skip' as LayerDecision, reason: 'Skipped — filter blocked', bypassed: false };
+          }
+
+          return data.decision === 'block'
+            ? { ...l, decision: 'block' as LayerDecision, reason: data.reason, bypassed: false }
+            : { ...l, decision: 'allow' as LayerDecision, reason: undefined, bypassed: false };
         }),
       );
 
@@ -515,8 +535,21 @@ export const TestWorkbench = () => {
               <Play className="mr-1.5 h-3.5 w-3.5" />
               {status === 'running' ? 'Running…' : 'Run Test'}
             </Button>
+            {!isProduction() && (
+              <span
+                className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${
+                  isMock()
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                    : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                }`}
+              >
+                {isMock() ? 'MOCK' : 'LIVE'}
+              </span>
+            )}
             {status === 'error' && (
-              <span className="text-xs text-destructive">Request failed — is pact-gateway running?</span>
+              <span className="text-xs text-destructive">
+                {isMock() ? 'Mock handler failed' : 'Request failed — is pact-gateway running?'}
+              </span>
             )}
           </div>
         </CardContent>
