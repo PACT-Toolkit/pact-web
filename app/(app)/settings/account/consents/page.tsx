@@ -1,7 +1,7 @@
-import { ConsentsList } from '@/src/app/account/ui/settings/ConsentsList';
+import { AccountSettingsConsentsList } from '@/src/app/account/ui/settings/AccountSettingsConsentsList';
 
 const AccountConsentsPage = () => {
-  return <ConsentsList />;
+  return <AccountSettingsConsentsList />;
 };
 
 export default AccountConsentsPage;

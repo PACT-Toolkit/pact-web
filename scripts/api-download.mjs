@@ -4,7 +4,10 @@
  * Download swagger specs from GitHub for each service in schema/.
  *
  * Each schema/{service}/services.config.json must exist with:
- *   { "repo": "pact-backend", "path": "/api/swagger.yaml" }
+ *   { "repo": "pact-backend", "path": "/api/swagger.yaml", "production": false }
+ *
+ * production: true  — download failure exits non-zero (breaks CI).
+ * production: false — download failure prints a warning and continues (safe during early dev).
  *
  * Requires GITHUB_TOKEN (or GIT_TOKEN) in env with read access to the PACT-Toolkit org.
  */
@@ -84,22 +87,46 @@ async function main() {
     return;
   }
 
-  const results = await Promise.allSettled(
+  const configs = await Promise.all(
     services.map(async (service) => {
       const configPath = join(SCHEMA_DIR, service, 'services.config.json');
       const config = JSON.parse(await readFile(configPath, 'utf-8'));
+
+      return { service, config };
+    })
+  );
+
+  const results = await Promise.allSettled(
+    configs.map(async ({ service, config }) => {
       const spec = await downloadSpec(service, config);
 
       await mkdir(join(SCHEMA_DIR, service), { recursive: true });
       await writeFile(join(SCHEMA_DIR, service, 'swagger.yaml'), spec);
       console.log(`  ✅ ${service}`);
+
+      return { service, production: config.production ?? false };
     })
   );
 
-  const failures = results.filter((r) => r.status === 'rejected');
+  let hasProductionFailure = false;
 
-  if (failures.length > 0) {
-    for (const f of failures) console.error(`  ❌ ${f.reason.message}`);
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+
+    if (result.status === 'rejected') {
+      const { service, config } = configs[i];
+      const isProduction = config.production ?? false;
+
+      if (isProduction) {
+        console.error(`  ❌ ${service} (production): ${result.reason.message}`);
+        hasProductionFailure = true;
+      } else {
+        console.warn(`  ⚠️  ${service} (pre-production): ${result.reason.message} — skipped`);
+      }
+    }
+  }
+
+  if (hasProductionFailure) {
     process.exit(1);
   }
 

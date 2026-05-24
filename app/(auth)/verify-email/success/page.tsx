@@ -1,8 +1,8 @@
 import { CircleCheckBig } from 'lucide-react';
 import Link from 'next/link';
 
+import { AuthVerifyEmailNotifier } from '@/src/app/auth/ui/verify-email/AuthVerifyEmailNotifier';
 import { safeNextPath } from '@/src/app/auth/ui/verify-email/safe_next_path';
-import { VerifyEmailNotifier } from '@/src/app/auth/ui/verify-email/VerifyEmailNotifier';
 import { Button } from '@/src/components/ui/button';
 import { FieldDescription } from '@/src/components/ui/field';
 
@@ -36,7 +36,7 @@ const VerifyEmailSuccessPage = async ({
           </Link>
         </Button>
       </div>
-      <VerifyEmailNotifier next={target} />
+      <AuthVerifyEmailNotifier next={target} />
     </div>
   );
 };

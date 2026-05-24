@@ -1,4 +1,4 @@
-import { ResetPasswordForm } from '@/src/app/auth';
+import { AuthResetPasswordForm } from '@/src/app/auth';
 
 type SearchParams = { token?: string | string[] };
 
@@ -13,7 +13,7 @@ const ResetPasswordPage = async ({
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
       <div className="w-full max-w-sm">
-        <ResetPasswordForm token={t ?? ''} />
+        <AuthResetPasswordForm token={t ?? ''} />
       </div>
     </div>
   );

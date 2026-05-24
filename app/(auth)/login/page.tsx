@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-import { LoginForm } from '@/src/app/auth';
+import { AuthLoginForm } from '@/src/app/auth';
 import { validateSessionFromCookies } from '@/src/framework/auth/pact_auth/session';
 
 type SearchParams = {
@@ -51,7 +51,7 @@ const LoginPage = async ({
             run their own deletion asynchronously.
           </div>
         )}
-        <LoginForm initialError={oauthError} />
+        <AuthLoginForm initialError={oauthError} />
       </div>
     </div>
   );

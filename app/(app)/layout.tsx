@@ -1,4 +1,4 @@
-import { PasskeyEnrollmentBanner } from '@/src/app/auth';
+import { AuthPasskeyEnrollmentBanner } from '@/src/app/auth';
 import { AppSidebar } from '@/src/components/app-sidebar';
 import { Separator } from '@/src/components/ui/separator';
 import {
@@ -18,7 +18,7 @@ const AppLayout = async ({ children }: { children: React.ReactNode }) => {
     <SidebarProvider>
       <AppSidebar userId={session.userId} />
       <SidebarInset>
-        <PasskeyEnrollmentBanner hasPasskeyOrWebauthnMfa={hasWebauthn} />
+        <AuthPasskeyEnrollmentBanner hasPasskeyOrWebauthnMfa={hasWebauthn} />
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <SidebarTrigger className="-ml-1" />
           <Separator

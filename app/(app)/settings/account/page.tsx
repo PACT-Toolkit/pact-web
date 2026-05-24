@@ -1,7 +1,7 @@
-import { ProfileForm } from '@/src/app/account/ui/settings/ProfileForm';
+import { AccountSettingsProfileForm } from '@/src/app/account/ui/settings/AccountSettingsProfileForm';
 
 const AccountProfilePage = () => {
-  return <ProfileForm />;
+  return <AccountSettingsProfileForm />;
 };
 
 export default AccountProfilePage;
