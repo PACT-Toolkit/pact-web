@@ -48,7 +48,7 @@
     "@connectrpc/connect-node": "2.1.1",
     "@hookform/resolvers": "5.2.2",
     "@vercel/analytics": "2.0.1",
-    "axios": "1.16.0",
+    "axios": "1.16.1",
     "class-variance-authority": "0.7.1",
     "clsx": "2.1.1",
     "date-fns": "4.1.0",
