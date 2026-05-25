@@ -43,6 +43,9 @@ export const handlers: RequestHandler[] = [
             ? 'classifier_hostile'
             : undefined,
       filter_rule_id: filterResult?.decision === 'block' ? filterResult.ruleId : undefined,
+      classifier: classifierResult
+        ? { label: classifierResult.label, score: classifierResult.confidence }
+        : undefined,
       latency_ms: Math.floor(3 + Math.random() * 8),
       _mock_layers: [
         filterBypassed
@@ -59,6 +62,7 @@ export const handlers: RequestHandler[] = [
           ? {
               name: 'classifier',
               decision: classifierResult.decision,
+              label: classifierResult.label,
               reason: classifierResult.reason ?? 'Clean input',
               latency_ms: Math.floor(12 + Math.random() * 22),
               confidence: classifierResult.confidence,

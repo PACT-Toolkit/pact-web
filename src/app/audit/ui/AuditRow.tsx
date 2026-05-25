@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Shield } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { type AuditEvent } from '@/src/__codegen__/rest/audit';
@@ -74,6 +74,17 @@ export const AuditRow = ({ event }: { event: AuditEvent }) => {
               <code className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
                 {dp.reason}
               </code>
+            )}
+            {dp?.classifier?.label && (
+              <code className="rounded bg-blue-500/10 px-1.5 py-0.5 text-xs text-blue-600 dark:text-blue-400">
+                {dp.classifier.label}
+              </code>
+            )}
+            {dp?.policy?.verdict && (
+              <Shield
+                className="h-3.5 w-3.5 text-muted-foreground"
+                aria-label={`policy: ${dp.policy.verdict}`}
+              />
             )}
             {!dp && (
               <span className="font-medium">

@@ -79,17 +79,17 @@ export function runFilter(
 
 export function runClassifier(
   content: string,
-): { decision: 'allow' | 'block'; reason?: string; confidence: number } {
+): { decision: 'allow' | 'block'; label: string; reason?: string; confidence: number } {
   const lower = content.toLowerCase();
   const hits = HOSTILE_WORDS.filter(w => lower.includes(w)).length;
 
   if (hits >= 2) {
-    return { decision: 'block', reason: 'Semantic hostility detected', confidence: 0.68 + Math.random() * 0.22 };
+    return { decision: 'block', label: 'hostile', reason: 'Semantic hostility detected', confidence: 0.68 + Math.random() * 0.22 };
   }
 
   if (hits === 1 && Math.random() > 0.65) {
-    return { decision: 'block', reason: 'Low-confidence hostile content', confidence: 0.5 + Math.random() * 0.18 };
+    return { decision: 'block', label: 'hostile', reason: 'Low-confidence hostile content', confidence: 0.5 + Math.random() * 0.18 };
   }
 
-  return { decision: 'allow', confidence: 0.84 + Math.random() * 0.12 };
+  return { decision: 'allow', label: 'benign', confidence: 0.84 + Math.random() * 0.12 };
 }
