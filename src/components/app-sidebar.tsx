@@ -9,6 +9,7 @@ import {
   FlaskConical,
   Frame,
   GalleryVerticalEnd,
+  KeyRound,
   LayoutDashboard,
   Map,
   PieChart,
@@ -82,6 +83,12 @@ const buildNavMain = (pathname: string): NavMainItem[] => [
     url: '/test-lab',
     icon: FlaskConical,
     isActive: isRouteActive(pathname, '/test-lab'),
+  },
+  {
+    title: 'Policy',
+    url: '/policy',
+    icon: KeyRound,
+    isActive: isRouteActive(pathname, '/policy'),
   },
   {
     title: 'Activity',

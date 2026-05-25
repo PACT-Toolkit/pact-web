@@ -19,5 +19,6 @@ export interface LayerState {
   reason?: string;
   latencyMs?: number;
   confidence?: number;
+  classifierLabel?: string;
   bypassed?: boolean;
 }

@@ -9,6 +9,7 @@ export interface MockLayer {
   reason?: string;
   latency_ms?: number;
   confidence?: number;
+  label?: string;
 }
 
 export interface CheckResponse {
@@ -17,6 +18,7 @@ export interface CheckResponse {
   reason?: string;
   filter_rule_id?: string;
   latency_ms: number;
+  classifier?: { label?: string; score?: number };
   _mock_layers?: MockLayer[];
 }
 
@@ -65,6 +67,7 @@ export const applyMockLayers = (
       reason: ml.reason,
       latencyMs: ml.latency_ms,
       confidence: ml.confidence,
+      classifierLabel: ml.label,
       bypassed: false,
     };
   });
@@ -98,10 +101,10 @@ export const applyLiveLayers = (
       return { ...l, decision: 'allow' as LayerDecision, reason: undefined, bypassed: false };
     }
     if (data.reason === 'classifier_tagged') {
-      return { ...l, decision: 'allow' as LayerDecision, reason: 'Tagged by classifier', bypassed: false };
+      return { ...l, decision: 'allow' as LayerDecision, reason: 'Tagged by classifier', classifierLabel: data.classifier?.label, bypassed: false };
     }
 
     return data.decision === 'block'
-      ? { ...l, decision: 'block' as LayerDecision, reason: data.reason, bypassed: false }
-      : { ...l, decision: 'allow' as LayerDecision, reason: undefined, bypassed: false };
+      ? { ...l, decision: 'block' as LayerDecision, reason: data.reason, classifierLabel: data.classifier?.label, bypassed: false }
+      : { ...l, decision: 'allow' as LayerDecision, reason: undefined, classifierLabel: data.classifier?.label, bypassed: false };
   });
