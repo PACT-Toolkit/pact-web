@@ -1,7 +1,31 @@
 import { http, HttpResponse, type RequestHandler } from 'msw';
 import { v4 as uuidv4 } from 'uuid';
 
-import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
+import {
+  type BenchmarkJobState,
+  type RowResult,
+} from '@/src/app/benchmark/domain/benchmark_job';
+
+const TOTAL_ROWS = 200;
+
+const MOCK_ROWS: RowResult[] = Array.from({ length: TOTAL_ROWS }, (_, i) => {
+  const expected = i % 3 === 0 ? 'hostile' : 'safe';
+  const correct = i % 7 !== 0;
+  const decision = correct
+    ? expected === 'hostile'
+      ? 'block'
+      : 'allow'
+    : expected === 'hostile'
+      ? 'allow'
+      : 'block';
+
+  return {
+    row_id: `row-${String(i).padStart(3, '0')}`,
+    expected_label: expected,
+    decision,
+    latency_ms: 10 + (i % 40) + Math.round((i * 1.3) % 10) / 10,
+  };
+});
 
 interface MockJob extends BenchmarkJobState {
   createdAt: number;
@@ -25,7 +49,8 @@ const advanceJob = (job: MockJob) => {
         fp_rate: 0.04,
         p50_latency: 18.4,
         p99_latency: 112.7,
-        total_rows: 200,
+        total_rows: TOTAL_ROWS,
+        rows: [],
       };
     }
   }
@@ -44,7 +69,7 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json({ job_id: jobId }, { status: 202 });
   }),
 
-  http.get('*/api/pact/benchmark/v1/jobs/:jobId', ({ params }) => {
+  http.get('*/api/pact/benchmark/v1/jobs/:jobId', ({ params, request }) => {
     const jobId = params.jobId as string;
     const job = jobs.get(jobId);
     if (!job) {
@@ -53,6 +78,18 @@ export const handlers: RequestHandler[] = [
     advanceJob(job);
     const { createdAt: _omit, ...state } = job;
 
-    return HttpResponse.json(state);
+    if (state.status !== 'done' || !state.result) {
+      return HttpResponse.json(state);
+    }
+
+    const url = new URL(request.url);
+    const offset = Number(url.searchParams.get('offset') ?? 0);
+    const limit = Number(url.searchParams.get('limit') ?? 100);
+    const page = MOCK_ROWS.slice(offset, offset + limit);
+
+    return HttpResponse.json({
+      ...state,
+      result: { ...state.result, rows: page },
+    });
   }),
 ];

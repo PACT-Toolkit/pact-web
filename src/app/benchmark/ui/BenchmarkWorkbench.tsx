@@ -5,6 +5,7 @@ import useSWR from 'swr';
 
 import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
 import { BenchmarkJobProgress } from '@/src/app/benchmark/ui/BenchmarkJobProgress';
+import { BenchmarkResultsTable } from '@/src/app/benchmark/ui/BenchmarkResultsTable';
 import { BenchmarkUploadForm } from '@/src/app/benchmark/ui/BenchmarkUploadForm';
 import { httpClient } from '@/src/framework/http';
 
@@ -74,6 +75,14 @@ export const BenchmarkWorkbench = () => {
           jobId={jobId}
           state={jobState}
           isLoading={isLoading}
+        />
+      )}
+
+      {jobId && jobState?.status === 'done' && jobState.result && (
+        <BenchmarkResultsTable
+          key={jobId}
+          jobId={jobId}
+          totalRows={jobState.result.total_rows}
         />
       )}
     </div>
