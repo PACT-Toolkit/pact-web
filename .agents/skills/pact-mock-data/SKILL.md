@@ -1,6 +1,6 @@
 ---
 name: pact-mock-data
-description: Conventions for adding or editing per-feature MSW mocks in pact-web — the `MockRepository<T>` + central `db` factory pattern, the `mock/data` vs `mock/handlers` split, instantiator + `createXMockData(db)` seeders, and how handlers read/write via `db.<entity>`. Use when scaffolding a new feature's mock layer, migrating an existing one, or wiring a new endpoint into MSW.
+description: Conventions for adding or editing per-feature MSW mocks in pact-web — the `MockRepository<T>` + central `db` factory pattern, the `mock/data` vs `mock/handlers` split, feature-named handler files (`{feature}.ts` not `index.ts`), instantiator + `createXMockData(db)` seeders, and how handlers read/write via `db.<entity>`. Use when scaffolding a new feature's mock layer, migrating an existing one, or wiring a new endpoint into MSW.
 ---
 
 # pact-mock-data
@@ -15,11 +15,13 @@ For a feature `src/app/<feature>/`:
 src/app/<feature>/
 ├── mock/
 │   ├── data/
-│   │   └── index.ts          # type + instantiator + createXMockData(db) seeder
+│   │   └── {feature}.ts      # type + instantiator + createXMockData(db) seeder
 │   └── handlers/
-│       └── index.ts          # MSW handlers reading via db.<entity>.<op>()
+│       └── {feature}.ts      # MSW handlers reading via db.<entity>.<op>()
 └── ... (ui, domain, data layers as needed)
 ```
+
+Both files are named after the feature folder — `account.ts`, `benchmark.ts`, `test_lab.ts`, etc. Never `index.ts`. The central wiring files import them by their full path so the file name is visible at the call site.
 
 The central `db` lives at `mocks/data/dbFactory.ts`. The generic store is `mocks/data/repository.ts` (`MockRepository<T>` with `create / update / delete / getAll / findFirst / findMany`). You don't edit those when adding a new feature — you contribute to `dbFactory.ts`.
 
@@ -58,7 +60,7 @@ The central `db` lives at `mocks/data/dbFactory.ts`. The generic store is `mocks
    createWidgetMockData(db);
    ```
 
-3. **`src/app/<feature>/mock/handlers/index.ts`** — write MSW handlers that read/write via `db.widgets.<op>()`. **Always use `*/...` glob paths** (see [Handler patterns](#handler-patterns) below).
+3. **`src/app/<feature>/mock/handlers/{feature}.ts`** — write MSW handlers that read/write via `db.widgets.<op>()`. **Always use `*/...` glob paths** (see [Handler patterns](#handler-patterns) below). For proxy-routed paths use the full proxy prefix (`*/api/pact/{service}/...`).
 
    ```ts
    import { http, HttpResponse, type RequestHandler } from 'msw';
@@ -80,10 +82,10 @@ The central `db` lives at `mocks/data/dbFactory.ts`. The generic store is `mocks
    ];
    ```
 
-4. **`mocks/handlers.ts`** — spread the feature's handlers into the central array. Keep import order alphabetical.
+4. **`mocks/handlers.ts`** — spread the feature's handlers into the central array. Import by the full file path (not the directory). Keep import order alphabetical.
 
    ```ts
-   import { handlers as widgetHandlers } from '@/src/app/widget/mock/handlers';
+   import { handlers as widgetHandlers } from '@/src/app/widget/mock/handlers/widget';
 
    export const handlers: RequestHandler[] = [
      // ...
@@ -148,6 +150,7 @@ Server-side handlers (running under setupServer) read the cookie via `next/heade
 - **Don't bypass `db` for mutations.** Closing over a mutable module-scoped variable defeats the central seed-from-zero behavior (no way to reset between Vitest tests, no way to inspect from devtools, no shared semantics with other features).
 - **Don't use leading-slash paths.** Even if it works in the browser, the hygiene test will fail CI.
 - **Don't seed in handlers.** Seeders run once at `dbFactory.ts` module load. Re-seeding on every request makes data unpredictable.
+- **Don't name mock files `index.ts`.** Both `mock/data/` and `mock/handlers/` files must use the feature name (`account.ts`, `benchmark.ts`, `test_lab.ts`). An `index.ts` hides the feature identity in imports and makes the call site in `mocks/handlers.ts` opaque.
 
 ## Related skills
 
