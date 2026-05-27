@@ -8,6 +8,7 @@ import {
   Files,
   FlaskConical,
   Frame,
+  Gauge,
   GalleryVerticalEnd,
   KeyRound,
   LayoutDashboard,
@@ -89,6 +90,12 @@ const buildNavMain = (pathname: string): NavMainItem[] => [
     url: '/policy',
     icon: KeyRound,
     isActive: isRouteActive(pathname, '/policy'),
+  },
+  {
+    title: 'Benchmark',
+    url: '/benchmark',
+    icon: Gauge,
+    isActive: isRouteActive(pathname, '/benchmark'),
   },
   {
     title: 'Activity',

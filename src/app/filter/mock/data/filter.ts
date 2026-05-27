@@ -13,7 +13,9 @@ export interface DecisionPayload {
   created_at: string;
 }
 
-export const mockDecisionEvent = (overrides: Partial<AuditEvent>): AuditEvent => ({
+export const mockDecisionEvent = (
+  overrides: Partial<AuditEvent>
+): AuditEvent => ({
   id: uuidv4(),
   topic: 'pact.decisions',
   eventId: 'filter.decision',
@@ -34,7 +36,10 @@ const BLOCKED_RULES = [
   'inject-012',
 ];
 
-const buildEvent = (offsetMs: number, payload: DecisionPayload): Partial<AuditEvent> => {
+const buildEvent = (
+  offsetMs: number,
+  payload: DecisionPayload
+): Partial<AuditEvent> => {
   const createdAt = new Date(Date.now() - offsetMs).toISOString();
 
   return {
@@ -60,7 +65,12 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 4,
     created_at: '',
   });
-  seed(5 * min, { request_id: 'req-d4e5f6', decision: 'allow', latency_ms: 2, created_at: '' });
+  seed(5 * min, {
+    request_id: 'req-d4e5f6',
+    decision: 'allow',
+    latency_ms: 2,
+    created_at: '',
+  });
   seed(8 * min, {
     request_id: 'req-g7h8i9',
     decision: 'block',
@@ -69,7 +79,12 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 5,
     created_at: '',
   });
-  seed(12 * min, { request_id: 'req-j1k2l3', decision: 'allow', latency_ms: 3, created_at: '' });
+  seed(12 * min, {
+    request_id: 'req-j1k2l3',
+    decision: 'allow',
+    latency_ms: 3,
+    created_at: '',
+  });
   seed(15 * min, {
     request_id: 'req-m4n5o6',
     decision: 'block',
@@ -78,7 +93,12 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 6,
     created_at: '',
   });
-  seed(20 * min, { request_id: 'req-p7q8r9', decision: 'allow', latency_ms: 2, created_at: '' });
+  seed(20 * min, {
+    request_id: 'req-p7q8r9',
+    decision: 'allow',
+    latency_ms: 2,
+    created_at: '',
+  });
   seed(25 * min, {
     request_id: 'req-s1t2u3',
     decision: 'block',
@@ -95,7 +115,12 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 3,
     created_at: '',
   });
-  seed(35 * min, { request_id: 'req-y7z8a9', decision: 'allow', latency_ms: 2, created_at: '' });
+  seed(35 * min, {
+    request_id: 'req-y7z8a9',
+    decision: 'allow',
+    latency_ms: 2,
+    created_at: '',
+  });
   seed(40 * min, {
     request_id: 'req-b1c2d3',
     decision: 'block',
@@ -104,7 +129,12 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 5,
     created_at: '',
   });
-  seed(45 * min, { request_id: 'req-e4f5g6', decision: 'allow', latency_ms: 3, created_at: '' });
+  seed(45 * min, {
+    request_id: 'req-e4f5g6',
+    decision: 'allow',
+    latency_ms: 3,
+    created_at: '',
+  });
   seed(50 * min, {
     request_id: 'req-h7i8j9',
     decision: 'block',
@@ -113,7 +143,12 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 4,
     created_at: '',
   });
-  seed(55 * min, { request_id: 'req-k1l2m3', decision: 'allow', latency_ms: 2, created_at: '' });
+  seed(55 * min, {
+    request_id: 'req-k1l2m3',
+    decision: 'allow',
+    latency_ms: 2,
+    created_at: '',
+  });
   seed(hour + 5 * min, {
     request_id: 'req-n4o5p6',
     decision: 'block',
@@ -122,7 +157,12 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 7,
     created_at: '',
   });
-  seed(hour + 15 * min, { request_id: 'req-q7r8s9', decision: 'allow', latency_ms: 2, created_at: '' });
+  seed(hour + 15 * min, {
+    request_id: 'req-q7r8s9',
+    decision: 'allow',
+    latency_ms: 2,
+    created_at: '',
+  });
   seed(hour + 25 * min, {
     request_id: 'req-t1u2v3',
     decision: 'block',
@@ -139,14 +179,25 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 5,
     created_at: '',
   });
-  seed(2 * hour, { request_id: 'req-z7a8b9', decision: 'allow', latency_ms: 2, created_at: '' });
+  seed(2 * hour, {
+    request_id: 'req-z7a8b9',
+    decision: 'allow',
+    latency_ms: 2,
+    created_at: '',
+  });
   seed(2 * hour + 20 * min, {
     request_id: 'req-c1d2e3',
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id: BLOCKED_RULES[Math.floor(Math.random() * BLOCKED_RULES.length)],
+    filter_rule_id:
+      BLOCKED_RULES[Math.floor(Math.random() * BLOCKED_RULES.length)],
     latency_ms: 4,
     created_at: '',
   });
-  seed(3 * hour, { request_id: 'req-f4g5h6', decision: 'allow', latency_ms: 3, created_at: '' });
+  seed(3 * hour, {
+    request_id: 'req-f4g5h6',
+    decision: 'allow',
+    latency_ms: 3,
+    created_at: '',
+  });
 };

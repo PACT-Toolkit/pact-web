@@ -4,7 +4,7 @@ import { db } from '@/mocks/data/dbFactory';
 
 export const handlers = [
   http.get('*/api/pact/feature/features', () =>
-    HttpResponse.json(db.features.getAll()),
+    HttpResponse.json(db.features.getAll())
   ),
 
   http.put('*/api/pact/feature/features/:id', async ({ params, request }) => {
@@ -12,8 +12,8 @@ export const handlers = [
     const body = (await request.json()) as { isEnabled: boolean };
 
     const updated = db.features.update(
-      f => f.id === id,
-      f => ({ ...f, isEnabled: body.isEnabled }),
+      (f) => f.id === id,
+      (f) => ({ ...f, isEnabled: body.isEnabled })
     );
 
     if (!updated) {

@@ -18,12 +18,12 @@ import {
 import {
   createFilterMockData,
   mockDecisionEvent,
-} from '@/src/app/filter/mock/data';
+} from '@/src/app/filter/mock/data/filter';
 import {
   type AttackExample,
   createTestLabMockData,
   mockAttackExample,
-} from '@/src/app/test_lab/mock/data';
+} from '@/src/app/test_lab/mock/data/test_lab';
 
 import { MockRepository } from './repository';
 
