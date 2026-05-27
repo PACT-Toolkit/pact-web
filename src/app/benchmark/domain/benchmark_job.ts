@@ -1,5 +1,13 @@
 export type JobStatus = 'queued' | 'running' | 'done' | 'error';
 
+export interface RowResult {
+  row_id: string;
+  expected_label: 'hostile' | 'safe';
+  decision: 'block' | 'allow' | null;
+  latency_ms: number;
+  error?: string;
+}
+
 export interface BenchmarkJobState {
   status: JobStatus;
   progress_pct: number;
@@ -10,8 +18,18 @@ export interface BenchmarkJobState {
     p50_latency: number;
     p99_latency: number;
     total_rows: number;
+    rows: RowResult[];
   };
 }
+
+export const isRowCorrect = (row: RowResult): boolean => {
+  if (row.decision === null) return false;
+
+  return (
+    (row.expected_label === 'hostile' && row.decision === 'block') ||
+    (row.expected_label === 'safe' && row.decision === 'allow')
+  );
+};
 
 /** Validates that a file is a non-empty JSONL or CSV with the required columns. */
 export function validateCorpusFile(
