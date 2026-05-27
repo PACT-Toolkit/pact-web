@@ -7,7 +7,7 @@ import { runClassifier, runFilter } from '../data';
 
 export const handlers: RequestHandler[] = [
   http.get('*/v1/benchmark/corpus/examples', () =>
-    HttpResponse.json(db.attackExamples.getAll()),
+    HttpResponse.json(db.attackExamples.getAll())
   ),
 
   http.post('*/v1/check', async ({ request }) => {
@@ -19,12 +19,15 @@ export const handlers: RequestHandler[] = [
     const content = body.content ?? '';
     const bypass = body._bypass_layers ?? [];
 
-    await new Promise(r => setTimeout(r, 120 + Math.random() * 80));
+    await new Promise((r) => setTimeout(r, 120 + Math.random() * 80));
 
     const filterBypassed = bypass.includes('filter');
     const filterResult = filterBypassed ? null : runFilter(content);
-    const shouldRunClassifier = filterBypassed || filterResult?.decision === 'allow';
-    const classifierResult = shouldRunClassifier ? runClassifier(content) : null;
+    const shouldRunClassifier =
+      filterBypassed || filterResult?.decision === 'allow';
+    const classifierResult = shouldRunClassifier
+      ? runClassifier(content)
+      : null;
 
     const decision =
       filterResult?.decision === 'block'
@@ -42,14 +45,21 @@ export const handlers: RequestHandler[] = [
           : classifierResult?.decision === 'block'
             ? 'classifier_hostile'
             : undefined,
-      filter_rule_id: filterResult?.decision === 'block' ? filterResult.ruleId : undefined,
+      filter_rule_id:
+        filterResult?.decision === 'block' ? filterResult.ruleId : undefined,
       classifier: classifierResult
         ? { label: classifierResult.label, score: classifierResult.confidence }
         : undefined,
       latency_ms: Math.floor(3 + Math.random() * 8),
       _mock_layers: [
         filterBypassed
-          ? { name: 'filter', decision: 'skip', reason: 'Bypassed by user', latency_ms: 0, confidence: 0 }
+          ? {
+              name: 'filter',
+              decision: 'skip',
+              reason: 'Bypassed by user',
+              latency_ms: 0,
+              confidence: 0,
+            }
           : {
               name: 'filter',
               decision: filterResult!.decision,
@@ -79,8 +89,11 @@ export const handlers: RequestHandler[] = [
   }),
 
   http.post('*/v1/benchmark/corpus', async () => {
-    await new Promise(r => setTimeout(r, 60));
+    await new Promise((r) => setTimeout(r, 60));
 
-    return HttpResponse.json({ id: uuidv4(), status: 'created' }, { status: 201 });
+    return HttpResponse.json(
+      { id: uuidv4(), status: 'created' },
+      { status: 201 }
+    );
   }),
 ];

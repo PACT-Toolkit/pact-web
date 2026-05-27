@@ -22,7 +22,7 @@ const applyMask = <T extends object>(
   target: T,
   patch: Partial<T>,
   mask: string[],
-  fieldMap: Record<string, keyof T>,
+  fieldMap: Record<string, keyof T>
 ): void => {
   for (const maskField of mask) {
     const key = fieldMap[maskField];
@@ -52,7 +52,8 @@ const preferencesMaskMap: Record<string, keyof Preferences> = {
 };
 
 const getProfile = (): Profile => db.accountProfile.findFirst(() => true)!;
-const getPreferences = (): Preferences => db.accountPreferences.findFirst(() => true)!;
+const getPreferences = (): Preferences =>
+  db.accountPreferences.findFirst(() => true)!;
 
 export const handlers = [
   http.get('*/v1/account/profile', () => {
@@ -62,7 +63,7 @@ export const handlers = [
     const persona = profilePersonaFor(getMockUserType());
     db.accountProfile.update(
       () => true,
-      p => ({ ...p, displayName: persona.displayName, bio: persona.bio }),
+      (p) => ({ ...p, displayName: persona.displayName, bio: persona.bio })
     );
 
     return HttpResponse.json(getProfile());
@@ -76,7 +77,9 @@ export const handlers = [
     return HttpResponse.json(profile);
   }),
 
-  http.get('*/v1/account/preferences', () => HttpResponse.json(getPreferences())),
+  http.get('*/v1/account/preferences', () =>
+    HttpResponse.json(getPreferences())
+  ),
 
   http.put('*/v1/account/preferences', async ({ request }) => {
     const body = (await request.json()) as UpdatePreferencesRequest;
@@ -87,7 +90,7 @@ export const handlers = [
   }),
 
   http.get('*/v1/account/consents', () =>
-    HttpResponse.json({ consents: db.accountConsents.getAll() }),
+    HttpResponse.json({ consents: db.accountConsents.getAll() })
   ),
 
   http.post('*/v1/account/consents', async ({ request }) => {
@@ -95,11 +98,13 @@ export const handlers = [
     if (!body.document || !body.version) {
       return HttpResponse.json(
         { error: 'document and version are required' },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    const existing = db.accountConsents.findFirst(c => c.document === body.document);
+    const existing = db.accountConsents.findFirst(
+      (c) => c.document === body.document
+    );
     const next: Consent = {
       document: body.document,
       version: body.version,
@@ -108,7 +113,10 @@ export const handlers = [
     };
 
     if (existing) {
-      db.accountConsents.update(c => c.document === body.document, () => next);
+      db.accountConsents.update(
+        (c) => c.document === body.document,
+        () => next
+      );
     } else {
       db.accountConsents.create(next);
     }
@@ -123,10 +131,13 @@ export const handlers = [
       consents: db.accountConsents.getAll(),
       exportedAt: new Date().toISOString(),
       userId: MOCK_USER_ID,
-    }),
+    })
   ),
 
   http.post('*/v1/account/erasure', () =>
-    HttpResponse.json({ requestedAt: new Date().toISOString() }, { status: 202 }),
+    HttpResponse.json(
+      { requestedAt: new Date().toISOString() },
+      { status: 202 }
+    )
   ),
 ];

@@ -13,7 +13,11 @@ const policyEvents: PolicyEvent[] = [
     createdAt: new Date(Date.now() - 3 * min).toISOString(),
     decision: 'allow',
     reason: 'policy_token_allowed',
-    policy: { verdict: 'allowed', agentId: 'agent-alpha', toolId: 'tool-search' },
+    policy: {
+      verdict: 'allowed',
+      agentId: 'agent-alpha',
+      toolId: 'tool-search',
+    },
   },
   {
     id: uuidv4(),
@@ -37,7 +41,11 @@ const policyEvents: PolicyEvent[] = [
     createdAt: new Date(Date.now() - 45 * min).toISOString(),
     decision: 'block',
     reason: 'policy_token_denied',
-    policy: { verdict: 'denied', agentId: 'agent-gamma', toolId: 'tool-delete' },
+    policy: {
+      verdict: 'denied',
+      agentId: 'agent-gamma',
+      toolId: 'tool-delete',
+    },
   },
   {
     id: uuidv4(),
@@ -45,7 +53,11 @@ const policyEvents: PolicyEvent[] = [
     createdAt: new Date(Date.now() - hour).toISOString(),
     decision: 'allow',
     reason: 'policy_token_allowed',
-    policy: { verdict: 'allowed', agentId: 'agent-beta', toolId: 'tool-search' },
+    policy: {
+      verdict: 'allowed',
+      agentId: 'agent-beta',
+      toolId: 'tool-search',
+    },
   },
   {
     id: uuidv4(),
@@ -67,6 +79,6 @@ const policyEvents: PolicyEvent[] = [
 
 export const handlers: RequestHandler[] = [
   http.get('*/v1/audit/policy-events', () =>
-    HttpResponse.json({ events: policyEvents, total: policyEvents.length }),
+    HttpResponse.json({ events: policyEvents, total: policyEvents.length })
   ),
 ];
