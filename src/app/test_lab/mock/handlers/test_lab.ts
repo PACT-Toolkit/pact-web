@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { db } from '@/mocks/data/dbFactory';
 
-import { runClassifier, runFilter } from '../data';
+import { runClassifier, runFilter } from '../data/test_lab';
 
 export const handlers: RequestHandler[] = [
   http.get('*/v1/benchmark/corpus/examples', () =>
