@@ -1,31 +1,9 @@
 import { http, HttpResponse, type RequestHandler } from 'msw';
 import { v4 as uuidv4 } from 'uuid';
 
-import {
-  type BenchmarkJobState,
-  type RowResult,
-} from '@/src/app/benchmark/domain/benchmark_job';
-
-const TOTAL_ROWS = 200;
-
-const MOCK_ROWS: RowResult[] = Array.from({ length: TOTAL_ROWS }, (_, i) => {
-  const expected = i % 3 === 0 ? 'hostile' : 'safe';
-  const correct = i % 7 !== 0;
-  const decision = correct
-    ? expected === 'hostile'
-      ? 'block'
-      : 'allow'
-    : expected === 'hostile'
-      ? 'allow'
-      : 'block';
-
-  return {
-    row_id: `row-${String(i).padStart(3, '0')}`,
-    expected_label: expected,
-    decision,
-    latency_ms: 10 + (i % 40) + Math.round((i * 1.3) % 10) / 10,
-  };
-});
+import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
+import { MOCK_ROWS, TOTAL_ROWS } from '@/src/app/benchmark/mock/data/benchmark';
+import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 interface MockJob extends BenchmarkJobState {
   createdAt: number;
@@ -57,7 +35,7 @@ const advanceJob = (job: MockJob) => {
 };
 
 export const handlers: RequestHandler[] = [
-  http.post('*/api/pact/benchmark/v1/jobs', async () => {
+  http.post(`${MSW_PACT_BASE}/benchmark/v1/jobs`, async () => {
     await new Promise((r) => setTimeout(r, 200));
     const jobId = uuidv4();
     jobs.set(jobId, {
@@ -69,27 +47,30 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json({ job_id: jobId }, { status: 202 });
   }),
 
-  http.get('*/api/pact/benchmark/v1/jobs/:jobId', ({ params, request }) => {
-    const jobId = params.jobId as string;
-    const job = jobs.get(jobId);
-    if (!job) {
-      return HttpResponse.json({ error: 'job not found' }, { status: 404 });
+  http.get(
+    `${MSW_PACT_BASE}/benchmark/v1/jobs/:jobId`,
+    ({ params, request }) => {
+      const jobId = params.jobId as string;
+      const job = jobs.get(jobId);
+      if (!job) {
+        return HttpResponse.json({ error: 'job not found' }, { status: 404 });
+      }
+      advanceJob(job);
+      const { createdAt: _omit, ...state } = job;
+
+      if (state.status !== 'done' || !state.result) {
+        return HttpResponse.json(state);
+      }
+
+      const url = new URL(request.url);
+      const offset = Number(url.searchParams.get('offset') ?? 0);
+      const limit = Number(url.searchParams.get('limit') ?? 100);
+      const page = MOCK_ROWS.slice(offset, offset + limit);
+
+      return HttpResponse.json({
+        ...state,
+        result: { ...state.result, rows: page },
+      });
     }
-    advanceJob(job);
-    const { createdAt: _omit, ...state } = job;
-
-    if (state.status !== 'done' || !state.result) {
-      return HttpResponse.json(state);
-    }
-
-    const url = new URL(request.url);
-    const offset = Number(url.searchParams.get('offset') ?? 0);
-    const limit = Number(url.searchParams.get('limit') ?? 100);
-    const page = MOCK_ROWS.slice(offset, offset + limit);
-
-    return HttpResponse.json({
-      ...state,
-      result: { ...state.result, rows: page },
-    });
-  }),
+  ),
 ];

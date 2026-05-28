@@ -2,15 +2,16 @@ import { http, HttpResponse, type RequestHandler } from 'msw';
 import { v4 as uuidv4 } from 'uuid';
 
 import { db } from '@/mocks/data/dbFactory';
+import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 import { runClassifier, runFilter } from '../data/test_lab';
 
 export const handlers: RequestHandler[] = [
-  http.get('*/v1/benchmark/corpus/examples', () =>
+  http.get(`${MSW_PACT_BASE}/benchmark/v1/corpus/examples`, () =>
     HttpResponse.json(db.attackExamples.getAll())
   ),
 
-  http.post('*/v1/check', async ({ request }) => {
+  http.post(`${MSW_PACT_BASE}/gateway/v1/check`, async ({ request }) => {
     const body = (await request.json()) as {
       content?: string;
       kind?: string;
@@ -88,7 +89,7 @@ export const handlers: RequestHandler[] = [
     });
   }),
 
-  http.post('*/v1/benchmark/corpus', async () => {
+  http.post(`${MSW_PACT_BASE}/benchmark/v1/corpus`, async () => {
     await new Promise((r) => setTimeout(r, 60));
 
     return HttpResponse.json(
