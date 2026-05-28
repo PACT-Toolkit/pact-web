@@ -6,11 +6,11 @@ import { db } from '@/mocks/data/dbFactory';
 import { runClassifier, runFilter } from '../data/test_lab';
 
 export const handlers: RequestHandler[] = [
-  http.get('*/v1/benchmark/corpus/examples', () =>
+  http.get('*/api/pact/benchmark/v1/corpus/examples', () =>
     HttpResponse.json(db.attackExamples.getAll())
   ),
 
-  http.post('*/v1/check', async ({ request }) => {
+  http.post('*/api/pact/gateway/v1/check', async ({ request }) => {
     const body = (await request.json()) as {
       content?: string;
       kind?: string;
@@ -88,7 +88,7 @@ export const handlers: RequestHandler[] = [
     });
   }),
 
-  http.post('*/v1/benchmark/corpus', async () => {
+  http.post('*/api/pact/benchmark/v1/corpus', async () => {
     await new Promise((r) => setTimeout(r, 60));
 
     return HttpResponse.json(

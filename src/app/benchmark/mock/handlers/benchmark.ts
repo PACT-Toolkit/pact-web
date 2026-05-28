@@ -1,31 +1,8 @@
 import { http, HttpResponse, type RequestHandler } from 'msw';
 import { v4 as uuidv4 } from 'uuid';
 
-import {
-  type BenchmarkJobState,
-  type RowResult,
-} from '@/src/app/benchmark/domain/benchmark_job';
-
-const TOTAL_ROWS = 200;
-
-const MOCK_ROWS: RowResult[] = Array.from({ length: TOTAL_ROWS }, (_, i) => {
-  const expected = i % 3 === 0 ? 'hostile' : 'safe';
-  const correct = i % 7 !== 0;
-  const decision = correct
-    ? expected === 'hostile'
-      ? 'block'
-      : 'allow'
-    : expected === 'hostile'
-      ? 'allow'
-      : 'block';
-
-  return {
-    row_id: `row-${String(i).padStart(3, '0')}`,
-    expected_label: expected,
-    decision,
-    latency_ms: 10 + (i % 40) + Math.round((i * 1.3) % 10) / 10,
-  };
-});
+import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
+import { MOCK_ROWS, TOTAL_ROWS } from '@/src/app/benchmark/mock/data/benchmark';
 
 interface MockJob extends BenchmarkJobState {
   createdAt: number;
