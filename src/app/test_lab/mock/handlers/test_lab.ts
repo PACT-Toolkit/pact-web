@@ -97,4 +97,34 @@ export const handlers: RequestHandler[] = [
       { status: 201 }
     );
   }),
+
+  http.get(`${MSW_PACT_BASE}/benchmark/v1/testlab/runs`, ({ request }) => {
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+    const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+    const all = [...db.testLabRuns.getAll()].reverse();
+    const page = all.slice(offset, offset + limit);
+
+    return HttpResponse.json({ runs: page, total: all.length });
+  }),
+
+  http.post(
+    `${MSW_PACT_BASE}/benchmark/v1/testlab/runs`,
+    async ({ request }) => {
+      const body = (await request.json()) as Record<string, unknown>;
+      const run = db.testLabRuns.create({
+        id: uuidv4(),
+        content: String(body.content ?? ''),
+        attack_type: String(body.attack_type ?? 'custom'),
+        decision: body.decision === 'block' ? 'block' : 'allow',
+        reason: String(body.reason ?? ''),
+        filter_rule_id: String(body.filter_rule_id ?? ''),
+        latency_ms: Number(body.latency_ms ?? 0),
+        request_id: String(body.request_id ?? ''),
+        created_at: Math.floor(Date.now() / 1000),
+      });
+
+      return HttpResponse.json({ id: run.id }, { status: 201 });
+    }
+  ),
 ];
