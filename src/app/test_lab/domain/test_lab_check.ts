@@ -39,6 +39,46 @@ export interface TestRun {
   timestamp: string;
 }
 
+// ─── persisted run types (API shape) ─────────────────────────────────────────
+
+export interface TestLabRunRecord {
+  id: string;
+  content: string;
+  attack_type: string;
+  decision: 'allow' | 'block';
+  reason: string;
+  filter_rule_id: string;
+  latency_ms: number;
+  request_id: string;
+  created_at: number; // Unix seconds (UTC)
+}
+
+export interface TestLabRunsResponse {
+  runs: TestLabRunRecord[];
+  total: number;
+}
+
+export interface SaveRunPayload {
+  content: string;
+  attack_type: string;
+  decision: 'allow' | 'block';
+  reason: string;
+  filter_rule_id: string;
+  latency_ms: number;
+  request_id: string;
+}
+
+export const toTestRun = (r: TestLabRunRecord): TestRun => ({
+  id: r.id,
+  input: r.content,
+  attackType: r.attack_type,
+  decision: r.decision,
+  reason: r.reason || undefined,
+  filterRuleId: r.filter_rule_id || undefined,
+  latencyMs: r.latency_ms,
+  timestamp: new Date(r.created_at * 1000).toISOString(),
+});
+
 // ─── pipeline constants ───────────────────────────────────────────────────────
 
 // Attack examples are fetched from GET /api/pact/benchmark/v1/corpus/examples

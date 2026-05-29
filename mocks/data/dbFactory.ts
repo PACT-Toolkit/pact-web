@@ -21,8 +21,11 @@ import {
 } from '@/src/app/filter/mock/data/filter';
 import {
   type AttackExample,
+  type TestLabRunRecord,
   createTestLabMockData,
+  createTestLabRunsMockData,
   mockAttackExample,
+  mockTestLabRun,
 } from '@/src/app/test_lab/mock/data/test_lab';
 
 import { MockRepository } from './repository';
@@ -34,6 +37,7 @@ export const db = {
   attackExamples: new MockRepository<AttackExample>(mockAttackExample),
   decisions: new MockRepository<AuditEvent>(mockDecisionEvent),
   features: new MockRepository<Feature>(mockFeature),
+  testLabRuns: new MockRepository<TestLabRunRecord>(mockTestLabRun),
 };
 
 export type DB = typeof db;
@@ -42,3 +46,4 @@ createAccountMockData(db);
 createFeatureMockData(db);
 createFilterMockData(db);
 createTestLabMockData(db);
+createTestLabRunsMockData(db);
