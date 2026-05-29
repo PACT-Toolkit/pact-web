@@ -6,6 +6,7 @@ import useSWR from 'swr';
 import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
 import { BenchmarkJobProgress } from '@/src/app/benchmark/ui/BenchmarkJobProgress';
 import { BenchmarkResultsTable } from '@/src/app/benchmark/ui/BenchmarkResultsTable';
+import { BenchmarkTrendChart } from '@/src/app/benchmark/ui/BenchmarkTrendChart';
 import { BenchmarkUploadForm } from '@/src/app/benchmark/ui/BenchmarkUploadForm';
 import { httpClient } from '@/src/framework/http';
 
@@ -59,6 +60,8 @@ export const BenchmarkWorkbench = () => {
 
   return (
     <div className="flex flex-col gap-6">
+      <BenchmarkTrendChart />
+
       <BenchmarkUploadForm
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}

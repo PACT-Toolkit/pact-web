@@ -2,7 +2,11 @@ import { http, HttpResponse, type RequestHandler } from 'msw';
 import { v4 as uuidv4 } from 'uuid';
 
 import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
-import { MOCK_ROWS, TOTAL_ROWS } from '@/src/app/benchmark/mock/data/benchmark';
+import {
+  MOCK_ROWS,
+  MOCK_RUNS,
+  TOTAL_ROWS,
+} from '@/src/app/benchmark/mock/data/benchmark';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 interface MockJob extends BenchmarkJobState {
@@ -35,6 +39,19 @@ const advanceJob = (job: MockJob) => {
 };
 
 export const handlers: RequestHandler[] = [
+  http.get(`${MSW_PACT_BASE}/benchmark/v1/runs`, ({ request }) => {
+    const url = new URL(request.url);
+    const since = Number(url.searchParams.get('since_unix') ?? 0);
+    const limit = Number(url.searchParams.get('limit') ?? 200);
+
+    const filtered = since
+      ? MOCK_RUNS.filter((r) => r.ran_at >= since)
+      : MOCK_RUNS;
+    const runs = filtered.slice(0, limit);
+
+    return HttpResponse.json({ runs, total: filtered.length });
+  }),
+
   http.post(`${MSW_PACT_BASE}/benchmark/v1/jobs`, async () => {
     await new Promise((r) => setTimeout(r, 200));
     const jobId = uuidv4();
