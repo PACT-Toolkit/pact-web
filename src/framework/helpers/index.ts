@@ -1,4 +1,5 @@
 export {
+  isDemo,
   isLocalDevelopment,
   isMock,
   isPreview,
