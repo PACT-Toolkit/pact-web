@@ -1,4 +1,14 @@
-@import 'tailwindcss';
+/*
+ * `source(none)` disables Tailwind v4's automatic content detection and we
+ * declare the real source roots explicitly. Auto-detection walks the whole
+ * project and follows symlinked tooling dirs (e.g. `.claude/skills ->
+ * ../../.shared/skills`) that escape the project root, which crashes
+ * Turbopack's CSS pipeline ("FileSystemPath leaves the filesystem root").
+ * All of our markup/classes live under `app/` and `src/`.
+ */
+@import 'tailwindcss' source(none);
+@source '../app';
+@source '../src';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -25,6 +35,20 @@
   --font-sans: var(--font-inter), 'Inter', 'system-ui', 'sans-serif';
   --font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
   --font-serif: var(--font-inter), 'Inter', 'system-ui', 'serif';
+
+  /* Ndot55 dot-matrix display face. Generates a `font-display` utility
+     for splash-style hero numerals and other "screen readout" moments;
+     falls back to the mono stack so the layout stays stable while the
+     font is fetched. */
+  --font-display: var(--font-ndot), var(--font-jetbrains-mono), monospace;
+
+  /* Space Grotesk — geometric proportional sans. Generates a `font-grotesk`
+     utility; currently powers the splash screen's percent counter and
+     welcome copy. Falls back to the sans stack so the layout stays stable
+     while the font is fetched. */
+  --font-grotesk:
+    var(--font-space-grotesk), 'Space Grotesk', 'Inter', 'system-ui',
+    'sans-serif';
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -173,10 +197,20 @@
 }
 
 @keyframes flowRight {
-  0% { left: -8px; opacity: 0; }
-  20% { opacity: 1; }
-  80% { opacity: 1; }
-  100% { left: calc(100% + 4px); opacity: 0; }
+  0% {
+    left: -8px;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    left: calc(100% + 4px);
+    opacity: 0;
+  }
 }
 
 @layer base {
