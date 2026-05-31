@@ -13,6 +13,10 @@ public/mockServiceWorker.js
 **/*.pdf
 **/*.heic
 **/*.svg
+**/*.otf
+**/*.ttf
+**/*.woff
+**/*.woff2
 .cursor/rules/
 **/*.mdc
 .agents/rules/
