@@ -17,9 +17,17 @@ type WelcomeCopyProps = {
   prefersReducedMotion: boolean;
 };
 
-// Welcome copy — anchored to the screen's left edge, vertically centered to
-// the row that also holds the (centered) count and the (right-anchored)
-// Continue button. Two lines slide in from offstage left with a small
+// Welcome copy — at `md+` anchored to the screen's left edge and vertically
+// centered to the row that also holds the (centered) count and the
+// (right-anchored) Continue button. Below `md` the row is a column and
+// the welcome flows as a normal flex item, picking up the row's
+// `items-center` to sit horizontally centered above the (also-centered)
+// Continue button. The wrapper is `relative` (overridden to
+// `md:absolute` on desktop) so the corner brackets inside have a
+// containing block to anchor to — without it they'd climb the DOM until
+// they hit the row container and sit at the viewport's edges.
+//
+// Either way, two lines slide in from offstage left with a small
 // stagger; the splash root's own `overflow-hidden` clips the offstage
 // start so the row itself doesn't need to clip (which would crop the
 // heading's descenders).
@@ -39,7 +47,7 @@ export const WelcomeCopy = ({ prefersReducedMotion }: WelcomeCopyProps) => (
   <motion.div
     key="welcome"
     initial={false}
-    className="absolute top-1/2 left-8 -translate-y-1/2 font-grotesk tracking-normal md:left-12"
+    className="relative font-grotesk tracking-normal md:absolute md:top-1/2 md:left-12 md:-translate-y-1/2"
   >
     <motion.div
       initial={prefersReducedMotion ? { x: 0 } : { x: '-100%' }}

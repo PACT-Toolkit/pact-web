@@ -227,7 +227,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
       aria-modal="true"
       aria-label="Welcome to PACT"
       aria-busy={!ready}
-      className={`fixed inset-0 z-50 flex min-h-svh flex-col items-center justify-start gap-30 overflow-hidden pt-[8vh] text-black dark:text-white ${
+      className={`fixed inset-0 z-50 flex min-h-svh flex-col items-center justify-start gap-12 overflow-hidden pt-[5vh] pb-[5vh] text-black dark:text-white md:gap-30 md:pt-[8vh] md:pb-0 ${
         // During entry the root paints opaque so the destination page
         // underneath is hidden. The instant `closing` flips, the root
         // goes transparent — the facade halves still paint their own
@@ -267,22 +267,51 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
           />
 
           {/* Number row + bottom-left welcome + bottom-right Continue
-              share this slot so they sit on the same horizontal Y line.
-              - `relative w-full flex items-center` — full width so the
-                centered number, left-anchored welcome, and right-
-                anchored Continue can co-exist on the same row.
-              - `min-h-[1em]` (resolved against the wrapper's
-                `text-6xl/8xl` font-size) keeps the row tall enough that
-                the number's slide-down clip works and the slot doesn't
-                collapse after exit.
+              share this slot so they sit on the same horizontal Y line
+              at `md+`. Below `md` there isn't enough width for the
+              left/right anchored children not to collide, so the row
+              flips to a column and the children stack vertically
+              (count → welcome → Continue).
+              - At `md+`: `flex items-center min-h-[1em]` — single
+                horizontal row. The centered number, left-anchored
+                welcome, and right-anchored Continue co-exist on the
+                same line; `min-h-[1em]` (resolved against the
+                wrapper's `text-8xl` font-size) keeps the row tall
+                enough that the number's slide-down clip works and
+                the slot doesn't collapse after exit.
+              - On mobile: `flex-col flex-1 justify-center gap-16`
+                — the row grows to fill the space below the mark
+                and vertically centers its children, so the welcome
+                + Continue stack reads as anchored to the middle of
+                the lower viewport rather than crammed up against
+                the mark's mobile `gap-12`. The `gap-16` (64 px) is
+                sized to clear both the welcome's bottom corner
+                brackets and Continue's top corner brackets (each
+                extends ~20 px outside its box, so ~24 px of clean
+                air remains between the two sets). Picked tight
+                enough that even short portrait viewports
+                (iPhone SE class, ~667 svh) fit the full stack
+                without the bottom brackets clipping against the
+                splash root's `pb-[5vh]` safe inset. While only
+                the count is mounted (during the 0→100 sweep) the
+                count itself is vertically centered the same way.
               - The number child uses `mx-auto` (inside its own clip
-                wrapper) to land in the row's center; the welcome +
-                Continue children are `absolute` with `top-1/2
-                -translate-y-1/2`, anchored to the screen's left/right
-                edges and vertically centered to the row.
+                wrapper) to land in the row's center in either layout
+                — auto cross-axis margins center it horizontally in
+                the column too.
+              - In the desktop row, welcome + Continue are `absolute`
+                with `top-1/2 -translate-y-1/2`, anchored to the
+                screen's left/right edges and vertically centered to
+                the row. In the mobile column they fall back to
+                in-flow flex items, picking up the row's
+                `items-center` so the two stack on a single
+                vertical centerline. Each keeps `relative` on mobile
+                so the corner brackets they contain anchor to their
+                own box rather than escaping up the DOM to the row
+                container.
               - `overflow-hidden` on the inner number wrapper is what
                 clips the number's `y: 110%` slide-down exit. */}
-          <div className="relative flex min-h-[1em] w-full items-center text-6xl leading-none tabular-nums tracking-tight md:text-8xl">
+          <div className="relative flex w-full flex-1 flex-col items-center justify-center gap-16 text-6xl leading-none tabular-nums tracking-tight md:min-h-[1em] md:flex-none md:flex-row md:justify-start md:gap-0 md:text-8xl">
             {/* Number clip wrapper. Overflow-hidden lives here (not on
                 the row) so the number's slide-down exit is masked at the
                 baseline without also clipping the welcome copy's

@@ -94,7 +94,7 @@ export const PactMarkStack = ({
       initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 2.2, ease: 'easeOut', delay: 0.3 }}
-      className="relative h-72 w-72 md:h-96 md:w-96 lg:h-[28rem] lg:w-[28rem]"
+      className="relative h-56 w-56 sm:h-90 sm:w-90 md:h-96 md:w-96 lg:h-[28rem] lg:w-[28rem]"
     >
       <PactMark className="absolute inset-0 h-full w-full opacity-20" />
       <motion.div

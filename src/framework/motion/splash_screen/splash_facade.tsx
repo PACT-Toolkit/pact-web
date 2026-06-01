@@ -30,8 +30,11 @@ import { WelcomeCopy } from './welcome_copy';
 // (`flex flex-col items-center justify-start gap-30 pt-[8vh]` + the
 // `min-h-[1em] text-6xl/8xl` row) so that when the facade is clipped to
 // the top or bottom half of the viewport, the visible pixels align
-// exactly with the live splash content underneath. Any drift here would
-// be visible as a one-frame jump at the moment the facade halves mount.
+// exactly with the live splash content underneath. The row also needs
+// the same responsive `flex-col → md:flex-row` switch so the stacked
+// mobile layout (count → welcome → Continue) lines up with the live
+// splash on narrow viewports. Any drift here would be visible as a
+// one-frame jump at the moment the facade halves mount.
 //
 // `relative isolate` on the outer div establishes a stacking context so
 // the backdrop's `-z-10` is contained to the facade — without
@@ -43,14 +46,14 @@ export const SplashFacade = () => {
   const frozenBreath = useMotionValue(0);
 
   return (
-    <div className="pointer-events-none relative isolate flex min-h-svh w-full flex-col items-center justify-start gap-30 bg-white pt-[8vh] text-black dark:bg-black dark:text-white">
+    <div className="pointer-events-none relative isolate flex min-h-svh w-full flex-col items-center justify-start gap-12 bg-white pt-[5vh] pb-[5vh] text-black md:gap-30 md:pt-[8vh] md:pb-0 dark:bg-black dark:text-white">
       <EtherealBackdrop />
       <PactMarkStack
         progress={frozenProgress}
         breathCenter={frozenBreath}
         prefersReducedMotion
       />
-      <div className="relative flex min-h-[1em] w-full items-center text-6xl leading-none tabular-nums tracking-tight md:text-8xl">
+      <div className="relative flex w-full flex-1 flex-col items-center justify-center gap-16 text-6xl leading-none tabular-nums tracking-tight md:min-h-[1em] md:flex-none md:flex-row md:justify-start md:gap-0 md:text-8xl">
         <WelcomeCopy prefersReducedMotion />
         {/* `onClick` is a no-op — the facade is aria-hidden and its
             button is never interactive (pointer-events: none on the
