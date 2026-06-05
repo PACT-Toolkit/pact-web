@@ -1,9 +1,10 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 
 import { SplashScreen } from './splash_screen';
+import { wasShownThisSession } from './splash_screen/splash_throttle';
 
 // Query-param flag set by `app/page.tsx` when redirecting a logged-out
 // visitor from `/` to `/login`. This component is the only thing that
@@ -47,7 +48,39 @@ const SplashOverlayInner = () => {
   const searchParams = useSearchParams();
 
   const introPresent = searchParams.get(INTRO_PARAM) === INTRO_VALUE;
-  if (!introPresent) return null;
+
+  // Per-session throttle (see `splash_throttle.ts`): if the splash was
+  // already acknowledged in this browser session, suppress it on this
+  // visit even though `?intro=1` is present. Computed lazily once per
+  // mount — re-evaluating on every render would race the strip-flag
+  // effect below (the session flag would still read "shown" mid-strip
+  // and we'd render `null` forever even after the suppress had
+  // completed). `useState` with an initializer is the right shape for
+  // "read once, freeze".
+  //
+  // SSR returns `false` (no `window`); the first client render then sees
+  // the real value. The Suspense fallback above swallows the SSR pass for
+  // `useSearchParams`, so the first paint of this component is already
+  // client-side — there is no flash of splash between SSR and hydration.
+  const [suppressed] = useState<boolean>(() =>
+    introPresent ? wasShownThisSession() : false
+  );
+
+  // When suppressed, strip `?intro=1` in an effect (router.replace cannot
+  // run during render). The next render sees `introPresent=false` and we
+  // bail at the early return below. We deliberately keep `suppressed`
+  // frozen via `useState` so this effect doesn't re-fire after the URL
+  // change rewrites `searchParams`.
+  useEffect(() => {
+    if (!suppressed) return;
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete(INTRO_PARAM);
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suppressed]);
+
+  if (!introPresent || suppressed) return null;
 
   // The close animation runs entirely inside `SplashScreen` (it
   // schedules `onClose` via a setTimeout sized to `SPLIT_TOTAL_MS`),

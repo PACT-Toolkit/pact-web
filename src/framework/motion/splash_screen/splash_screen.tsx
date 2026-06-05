@@ -31,6 +31,7 @@ import {
   SWEEP_EASE,
   VISIBLE_DURATION_MS,
 } from './splash_screen.const';
+import { markShown } from './splash_throttle';
 import { SplitTransition } from './split_transition';
 import { WelcomeCopy } from './welcome_copy';
 
@@ -199,6 +200,12 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
   }, []);
 
   const handleContinue = () => {
+    // Stamp the throttle on *acknowledged* exit (the user clicked
+    // Continue or reduced-motion auto-dismissed). Mounting alone doesn't
+    // count — closing the tab during the intro should leave the next
+    // entry fresh, see `splash_throttle.ts`.
+    markShown();
+
     if (prefersReducedMotion) {
       // No animation, just hand control back to the overlay so it can
       // strip the `?intro=1` flag and unmount the splash. The
@@ -316,7 +323,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
                 the row) so the number's slide-down exit is masked at the
                 baseline without also clipping the welcome copy's
                 descenders below the row's `min-h-[1em]` line. */}
-            <div className="mx-auto flex overflow-hidden">
+            <div className="mx-auto -mt-5 flex overflow-hidden">
               <AnimatePresence>
                 {!ready && (
                   <CountDisplay
