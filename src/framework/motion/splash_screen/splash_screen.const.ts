@@ -154,7 +154,7 @@ export const SCRAMBLE_UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 export const SCRAMBLE_LOWER = 'abcdefghijklmnopqrstuvwxyz';
 export const SCRAMBLE_SYMBOL = '0123456789!@#$%&*';
 export const SCRAMBLE_INTERVAL_MS = 50;
-export const REVEAL_STAGGER_MS = 80;
+export const REVEAL_STAGGER_MS = 50;
 
 // ── Welcome + continue copy and cascade ─────────────────────────────────
 
@@ -228,3 +228,12 @@ export const SPLIT_SLIDE_EASE: [number, number, number, number] = [
 // Total duration of the exit transition in ms — used to schedule the
 // router.replace so it fires the instant the halves have cleared.
 export const SPLIT_TOTAL_MS = (SPLIT_SLIDE_DELAY_S + SPLIT_SLIDE_S) * 1000;
+
+// ── Throttle ────────────────────────────────────────────────────────────
+
+// sessionStorage key for the "splash already played this session" flag.
+// Prefixed with `pact:` so it's grep-able and can't collide with any third-
+// party SDK that decides to squat on a bare `splash` key. Scoped to the
+// tab session by sessionStorage — closing the tab clears it and the next
+// app-open gets a fresh splash. See `splash_throttle.ts`.
+export const SPLASH_SESSION_KEY = 'pact:splash:shown';

@@ -47,7 +47,7 @@ export const WelcomeCopy = ({ prefersReducedMotion }: WelcomeCopyProps) => (
   <motion.div
     key="welcome"
     initial={false}
-    className="relative font-grotesk tracking-normal md:absolute md:top-1/2 md:left-12 md:-translate-y-1/2"
+    className="relative font-grotesk tracking-normal -mt-5 md:absolute md:top-1/2 md:left-12 md:-translate-y-1/2"
   >
     <motion.div
       initial={prefersReducedMotion ? { x: 0 } : { x: '-100%' }}
