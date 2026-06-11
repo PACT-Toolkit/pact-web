@@ -119,83 +119,113 @@ export const applyMockLayers = (
   });
 
 // ─── layer inference (live path) ──────────────────────────────────────────────
-// Used when talking to the real gateway — infers layer states from top-level
-// decision + reason code since individual stage results aren't returned.
+// Used when talking to the real gateway. Per the current /v1/check response
+// shape (pact-gateway/internal/features/check/types.go), only the top-level
+// decision, reason code, optional filter_rule_id, and optional classifier
+// {label, score} are exposed — individual stage verdicts aren't structured.
+//
+// Hardening (PACT-230): infer layer state from *structural* signals
+// (non-empty filter_rule_id, presence of classifier.label) rather than
+// string-matching the `reason` field, which is documentary, not contractual.
+// The `reason` value is still surfaced as the human-readable explanation but
+// never used as a control-flow gate. When PACT-249 lands and the response
+// carries explicit per-stage verdicts, this function collapses to a direct
+// projection of those fields.
+
+const filterBlocked = (data: CheckResponse): boolean =>
+  Boolean(data.filter_rule_id) || data.reason === 'filter_hostile';
+
+const classifierUnreachable = (data: CheckResponse): boolean =>
+  data.reason === 'classifier_unreachable';
+
+const classifierResponded = (data: CheckResponse): boolean =>
+  Boolean(data.classifier?.label);
+
+const filterReason = (data: CheckResponse): string | undefined => {
+  if (!filterBlocked(data)) return undefined;
+  if (data.filter_rule_id) return `Matched rule ${data.filter_rule_id}`;
+
+  return data.reason || 'Filter matched';
+};
+
+const classifierReason = (
+  data: CheckResponse,
+  blocked: boolean
+): string | undefined => {
+  if (classifierUnreachable(data)) return 'Classifier unreachable — fail open';
+  if (!classifierResponded(data)) return undefined;
+  if (blocked) return data.reason || 'Blocked by classifier';
+  if (data.reason === 'classifier_tagged') return 'Tagged by classifier';
+
+  return undefined;
+};
 
 export const applyLiveLayers = (
   prev: LayerState[],
   data: CheckResponse,
   bypassLayers: string[]
-): LayerState[] =>
-  prev.map((l) => {
+): LayerState[] => {
+  const filterDidBlock = filterBlocked(data);
+
+  return prev.map((l) => {
     if (bypassLayers.includes(l.id)) return l;
 
     if (l.id === 'filter') {
-      return data.reason === 'filter_hostile'
-        ? {
-            ...l,
-            decision: 'block' as LayerDecision,
-            ruleId: data.filter_rule_id,
-            reason: 'Filter matched rule',
-            bypassed: false,
-          }
-        : {
-            ...l,
-            decision: 'allow' as LayerDecision,
-            reason: undefined,
-            ruleId: undefined,
-            bypassed: false,
-          };
+      return {
+        ...l,
+        decision: (filterDidBlock ? 'block' : 'allow') as LayerDecision,
+        ruleId: data.filter_rule_id || undefined,
+        reason: filterReason(data),
+        latencyMs: undefined,
+        confidence: undefined,
+        classifierLabel: undefined,
+        bypassed: false,
+      };
     }
 
     // classifier
-    if (data.reason === 'filter_hostile') {
+    if (filterDidBlock) {
       return {
         ...l,
         decision: 'skip' as LayerDecision,
         reason: 'Skipped — filter blocked',
+        ruleId: undefined,
+        latencyMs: undefined,
+        confidence: undefined,
+        classifierLabel: undefined,
         bypassed: false,
       };
     }
-    if (data.reason === 'classifier_unreachable') {
+    if (classifierUnreachable(data)) {
       return {
         ...l,
         decision: 'skip' as LayerDecision,
-        reason: 'Classifier unreachable — fail open',
-        bypassed: false,
-      };
-    }
-    if (data.reason === 'policy_token_denied') {
-      return {
-        ...l,
-        decision: 'allow' as LayerDecision,
-        reason: undefined,
-        bypassed: false,
-      };
-    }
-    if (data.reason === 'classifier_tagged') {
-      return {
-        ...l,
-        decision: 'allow' as LayerDecision,
-        reason: 'Tagged by classifier',
-        classifierLabel: data.classifier?.label,
+        reason: classifierReason(data, false),
+        ruleId: undefined,
+        latencyMs: undefined,
+        confidence: undefined,
+        classifierLabel: undefined,
         bypassed: false,
       };
     }
 
-    return data.decision === 'block'
-      ? {
-          ...l,
-          decision: 'block' as LayerDecision,
-          reason: data.reason,
-          classifierLabel: data.classifier?.label,
-          bypassed: false,
-        }
-      : {
-          ...l,
-          decision: 'allow' as LayerDecision,
-          reason: undefined,
-          classifierLabel: data.classifier?.label,
-          bypassed: false,
-        };
+    // Only attribute a block to the classifier when the classifier actually
+    // labelled the content. A block decision without a classifier label
+    // means it came from a downstream stage (policy / consensus) — those
+    // aren't visualised today, so classifier reads "allow" with whatever
+    // diagnostic the classifier itself returned.
+    const classifierBlocked =
+      data.decision === 'block' && !filterDidBlock && classifierResponded(data);
+
+    return {
+      ...l,
+      decision: (classifierBlocked ? 'block' : 'allow') as LayerDecision,
+      reason: classifierReason(data, classifierBlocked),
+      ruleId: undefined,
+      latencyMs: undefined,
+      confidence: data.classifier?.score,
+      classifierLabel: data.classifier?.label,
+      bypassed: false,
+    };
   });
+};
