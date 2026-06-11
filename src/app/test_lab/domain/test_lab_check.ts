@@ -16,13 +16,40 @@ export interface MockLayer {
   label?: string;
 }
 
+// FilterInfo mirrors pact-gateway's `CheckResponse.filter` sub-object
+// (internal/features/check/types.go). Present whenever the filter stage
+// produced a non-safe verdict OR a rule fired (shadow rules included).
+// Absent on clean-safe paths.
+export interface FilterInfo {
+  verdict?: 'safe' | 'suspicious' | 'hostile' | 'unknown';
+  rule_id?: string;
+  shadow?: boolean;
+}
+
+export interface RedactedSpan {
+  start: number;
+  end: number;
+  label?: string;
+}
+
+// RedactorInfo mirrors pact-gateway's `CheckResponse.redactor` sub-object.
+// Present whenever the redactor ran (i.e. the request reached stage 3).
+// Absent on pre-redactor blocks (filter hostile / policy deny / pipeline
+// error) and on transport fail-open where the verdict couldn't be obtained.
+export interface RedactorInfo {
+  verdict?: 'pass_through' | 'redacted' | 'unknown';
+  spans?: RedactedSpan[];
+}
+
 export interface CheckResponse {
   request_id: string;
   decision: 'allow' | 'block';
   reason?: string;
   filter_rule_id?: string;
   latency_ms: number;
+  filter?: FilterInfo;
   classifier?: { label?: string; score?: number };
+  redactor?: RedactorInfo;
   _mock_layers?: MockLayer[];
 }
 
@@ -119,21 +146,36 @@ export const applyMockLayers = (
   });
 
 // ─── layer inference (live path) ──────────────────────────────────────────────
-// Used when talking to the real gateway. Per the current /v1/check response
-// shape (pact-gateway/internal/features/check/types.go), only the top-level
-// decision, reason code, optional filter_rule_id, and optional classifier
-// {label, score} are exposed — individual stage verdicts aren't structured.
+// Used when talking to the real gateway. PACT-249 added structural sub-objects
+// (`filter`, `redactor`) to /v1/check. PACT-252 swaps this function over to
+// consume them. Precedence inside `filterBlocked`:
 //
-// Hardening (PACT-230): infer layer state from *structural* signals
-// (non-empty filter_rule_id, presence of classifier.label) rather than
-// string-matching the `reason` field, which is documentary, not contractual.
+//   1. structural — `data.filter.verdict === 'hostile' && !data.filter.shadow`
+//   2. legacy fallback — `filter_rule_id` set AND gateway decision is block
+//   3. legacy fallback — `reason === 'filter_hostile'`
+//
 // The `reason` value is still surfaced as the human-readable explanation but
-// never used as a control-flow gate. When PACT-249 lands and the response
-// carries explicit per-stage verdicts, this function collapses to a direct
-// projection of those fields.
+// never used as a control-flow gate where a structural equivalent exists.
+// Classifier signalling (`classifier_unreachable`, `classifier_tagged`) is
+// untouched — PACT-249 didn't add a structural equivalent on the classifier
+// side, so the reason match stays as the canonical signal there.
 
-const filterBlocked = (data: CheckResponse): boolean =>
-  Boolean(data.filter_rule_id) || data.reason === 'filter_hostile';
+const filterRuleId = (data: CheckResponse): string | undefined =>
+  data.filter?.rule_id || data.filter_rule_id || undefined;
+
+const filterShadow = (data: CheckResponse): boolean =>
+  Boolean(data.filter?.shadow);
+
+const filterBlocked = (data: CheckResponse): boolean => {
+  if (data.filter?.verdict === 'hostile' && !data.filter.shadow) return true;
+  // The structural sub-object is authoritative when present — any non-hostile
+  // verdict (incl. safe/suspicious + shadow-hostile) means filter did NOT block.
+  if (data.filter?.verdict) return false;
+  // Back-compat for gateway builds older than PACT-249.
+  if (data.filter_rule_id) return data.decision === 'block';
+
+  return data.reason === 'filter_hostile';
+};
 
 const classifierUnreachable = (data: CheckResponse): boolean =>
   data.reason === 'classifier_unreachable';
@@ -142,8 +184,14 @@ const classifierResponded = (data: CheckResponse): boolean =>
   Boolean(data.classifier?.label);
 
 const filterReason = (data: CheckResponse): string | undefined => {
+  const ruleId = filterRuleId(data);
+  // A shadow match never blocks but is worth surfacing on the filter layer
+  // so reviewers can see which dry-run rule fired during a Test Lab run.
+  if (filterShadow(data) && ruleId) {
+    return `Shadow rule ${ruleId} matched (not enforced)`;
+  }
   if (!filterBlocked(data)) return undefined;
-  if (data.filter_rule_id) return `Matched rule ${data.filter_rule_id}`;
+  if (ruleId) return `Matched rule ${ruleId}`;
 
   return data.reason || 'Filter matched';
 };
@@ -174,7 +222,7 @@ export const applyLiveLayers = (
       return {
         ...l,
         decision: (filterDidBlock ? 'block' : 'allow') as LayerDecision,
-        ruleId: data.filter_rule_id || undefined,
+        ruleId: filterRuleId(data),
         reason: filterReason(data),
         latencyMs: undefined,
         confidence: undefined,

@@ -149,3 +149,95 @@ describe('applyLiveLayers — PACT-230 live-mode hardening', () => {
     expect(out[1].decision).toBe('allow');
   });
 });
+
+describe('applyLiveLayers — PACT-252 structural /v1/check fields', () => {
+  it('filter.verdict=hostile blocks without filter_rule_id or reason string match', () => {
+    // Pure structural path: the gateway only emits the filter sub-object,
+    // no top-level filter_rule_id, and a reason value web has never seen.
+    const out = applyLiveLayers(
+      startingLayers(),
+      baseResponse({
+        decision: 'block',
+        reason: 'some_future_filter_code',
+        filter: { verdict: 'hostile', rule_id: 'STRUCTURAL-001' },
+      }),
+      []
+    );
+    expect(out[0].decision).toBe('block');
+    expect(out[0].ruleId).toBe('STRUCTURAL-001');
+    expect(out[0].reason).toContain('STRUCTURAL-001');
+    expect(out[1].decision).toBe('skip');
+    expect(out[1].reason).toMatch(/filter blocked/i);
+  });
+
+  it('filter.shadow=true: hostile verdict but decision=allow → filter layer = allow with shadow note', () => {
+    // PACT-249's shadow mode: the rule fired but the gateway did NOT
+    // enforce. The filter layer must NOT report block — it should surface
+    // the shadow match in the reason text so reviewers can see the dry-run
+    // rule that matched.
+    const out = applyLiveLayers(
+      startingLayers(),
+      baseResponse({
+        decision: 'allow',
+        filter: { verdict: 'hostile', rule_id: 'SHADOW-007', shadow: true },
+      }),
+      []
+    );
+    expect(out[0].decision).toBe('allow');
+    expect(out[0].ruleId).toBe('SHADOW-007');
+    expect(out[0].reason).toMatch(/shadow/i);
+    expect(out[0].reason).toContain('SHADOW-007');
+    expect(out[1].decision).toBe('allow');
+  });
+
+  it('filter.verdict=suspicious does not block (only hostile gates)', () => {
+    const out = applyLiveLayers(
+      startingLayers(),
+      baseResponse({
+        decision: 'allow',
+        filter: { verdict: 'suspicious' },
+      }),
+      []
+    );
+    expect(out[0].decision).toBe('allow');
+    expect(out[0].reason).toBeUndefined();
+    expect(out[1].decision).toBe('allow');
+  });
+
+  it('structural filter sub-object is authoritative — verdict=safe overrides legacy filter_rule_id', () => {
+    // If pact-gateway started populating both surfaces during a migration
+    // and the structural verdict says safe, web must trust the structural
+    // signal even if filter_rule_id is set (e.g. a shadow rule that didn't
+    // promote to hostile).
+    const out = applyLiveLayers(
+      startingLayers(),
+      baseResponse({
+        decision: 'allow',
+        filter_rule_id: 'LEGACY-NOISE',
+        filter: { verdict: 'safe' },
+      }),
+      []
+    );
+    expect(out[0].decision).toBe('allow');
+    expect(out[1].decision).toBe('allow');
+  });
+
+  it('forward-compat: redactor sub-object on the response does not affect layer resolution', () => {
+    // The Test Lab does not visualise a redactor layer today, but pact-gateway
+    // emits redactor.{verdict, spans} on the /v1/check response. The presence
+    // of those fields must not perturb filter/classifier inference.
+    const out = applyLiveLayers(
+      startingLayers(),
+      baseResponse({
+        decision: 'allow',
+        redactor: {
+          verdict: 'redacted',
+          spans: [{ start: 12, end: 28, label: 'EMAIL' }],
+        },
+      }),
+      []
+    );
+    expect(out[0].decision).toBe('allow');
+    expect(out[1].decision).toBe('allow');
+  });
+});
