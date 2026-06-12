@@ -71,3 +71,71 @@ describe('parseDecisionPayload — redactor.spans surface (PACT-231)', () => {
     expect(parseDecisionPayload('[1,2,3]')).toBeNull();
   });
 });
+
+describe('parseDecisionPayload — consensus surface (PACT-263)', () => {
+  // Production-shaped sample: classifier score below PACT_CONSENSUS_THRESHOLD,
+  // gateway invoked pact-consensus as stage 2.5 (PACT-217), quorum reached.
+  // Mirrors the JSONB observed during PACT-231 dev-stack verification.
+  it('exposes consensus when quorum reached', () => {
+    const dp = parseDecisionPayload(
+      JSON.stringify({
+        request_id: 'req-4',
+        decision: 'allow',
+        engine: 'classifier',
+        classifier: { label: 'benign' },
+        consensus: {
+          label: 'benign',
+          quorum_reached: true,
+          backend_count: 1,
+        },
+      })
+    );
+    expect(dp?.consensus).toEqual({
+      label: 'benign',
+      quorum_reached: true,
+      backend_count: 1,
+    });
+  });
+
+  it('exposes consensus skipped on transport fail-open', () => {
+    const dp = parseDecisionPayload(
+      JSON.stringify({
+        request_id: 'req-5',
+        decision: 'allow',
+        consensus: { skipped: true },
+      })
+    );
+    expect(dp?.consensus?.skipped).toBe(true);
+    expect(dp?.consensus?.label).toBeUndefined();
+    expect(dp?.consensus?.quorum_reached).toBeUndefined();
+  });
+
+  it('exposes consensus without quorum (dissenting backends)', () => {
+    const dp = parseDecisionPayload(
+      JSON.stringify({
+        request_id: 'req-6',
+        decision: 'allow',
+        consensus: {
+          label: 'benign',
+          quorum_reached: false,
+          backend_count: 3,
+        },
+      })
+    );
+    expect(dp?.consensus?.quorum_reached).toBe(false);
+    expect(dp?.consensus?.backend_count).toBe(3);
+  });
+
+  it('tolerates pre-PACT-217 payloads with no consensus field', () => {
+    // Classic two-stage decision: filter + classifier, no consensus.
+    const dp = parseDecisionPayload(
+      JSON.stringify({
+        request_id: 'req-7',
+        decision: 'allow',
+        engine: 'classifier',
+        classifier: { label: 'benign' },
+      })
+    );
+    expect(dp?.consensus).toBeUndefined();
+  });
+});

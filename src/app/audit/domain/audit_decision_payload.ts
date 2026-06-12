@@ -18,6 +18,18 @@ export interface DecisionPayload {
     verdict?: string;
     spans?: { start?: number; end?: number; label?: string }[];
   };
+  // Consensus sub-object (gateway kafka.ConsensusDecision): present only when
+  // classifier score was below PACT_CONSENSUS_THRESHOLD and stage 2.5 ran.
+  // Absent on pre-PACT-217 payloads and on requests that didn't trip the
+  // threshold. `skipped: true` signals a transport fail-open where consensus
+  // couldn't be reached and the original classifier result was preserved.
+  consensus?: {
+    label?: string;
+    confidence?: number;
+    quorum_reached?: boolean;
+    backend_count?: number;
+    skipped?: boolean;
+  };
   policy?: { verdict?: string; agent_id?: string; tool_id?: string };
 }
 

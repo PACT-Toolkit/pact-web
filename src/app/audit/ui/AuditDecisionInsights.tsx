@@ -68,6 +68,45 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         })}
       </div>
     )}
+    {dp.consensus && (dp.consensus.label || dp.consensus.skipped) && (
+      <div className="flex items-center gap-1.5">
+        <span className="text-muted-foreground">Consensus</span>
+        {dp.consensus.label && (
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            {dp.consensus.label}
+          </code>
+        )}
+        {dp.consensus.skipped ? (
+          <span
+            className="italic text-muted-foreground"
+            title="Consensus backend unreachable — classifier result preserved (fail-open)"
+          >
+            skipped
+          </span>
+        ) : dp.consensus.quorum_reached === true ? (
+          <code
+            className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300"
+            title="Consensus quorum reached"
+          >
+            {'\u2713 quorum'}
+          </code>
+        ) : dp.consensus.quorum_reached === false ? (
+          <code
+            className="rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-300"
+            title="Consensus quorum not reached"
+          >
+            {'\u26a0 no quorum'}
+          </code>
+        ) : null}
+        {typeof dp.consensus.backend_count === 'number' &&
+          dp.consensus.backend_count > 0 && (
+            <span className="text-muted-foreground">
+              {dp.consensus.backend_count} backend
+              {dp.consensus.backend_count === 1 ? '' : 's'}
+            </span>
+          )}
+      </div>
+    )}
     {dp.policy?.verdict && (
       <div className="flex items-center gap-1.5">
         <span className="text-muted-foreground">Policy</span>
