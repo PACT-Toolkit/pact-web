@@ -13,7 +13,9 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
     {dp.classifier?.label && (
       <div className="flex items-center gap-1.5">
         <span className="text-muted-foreground">Classifier</span>
-        <code className="rounded bg-muted px-1.5 py-0.5">{dp.classifier.label}</code>
+        <code className="rounded bg-muted px-1.5 py-0.5">
+          {dp.classifier.label}
+        </code>
         {dp.classifier.score !== undefined && dp.classifier.score > 0 && (
           <span className="font-medium">
             {(dp.classifier.score * 100).toFixed(0)}%
@@ -24,7 +26,9 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
     {dp.filter?.verdict && dp.filter.verdict !== 'safe' && (
       <div className="flex items-center gap-1.5">
         <span className="text-muted-foreground">Filter</span>
-        <code className="rounded bg-muted px-1.5 py-0.5">{dp.filter.verdict}</code>
+        <code className="rounded bg-muted px-1.5 py-0.5">
+          {dp.filter.verdict}
+        </code>
         {dp.filter.rule_id && (
           <code className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
             {dp.filter.rule_id}
@@ -36,17 +40,44 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
       </div>
     )}
     {dp.redactor?.verdict && dp.redactor.verdict !== 'pass_through' && (
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         <span className="text-muted-foreground">Redactor</span>
-        <code className="rounded bg-muted px-1.5 py-0.5">{dp.redactor.verdict}</code>
+        <code className="rounded bg-muted px-1.5 py-0.5">
+          {dp.redactor.verdict}
+        </code>
+        {dp.redactor.spans?.map((s, i) => {
+          const offsets =
+            typeof s.start === 'number' && typeof s.end === 'number'
+              ? `${s.start}\u2013${s.end}`
+              : null;
+
+          return (
+            <code
+              key={`${s.label ?? 'span'}-${s.start ?? i}-${s.end ?? i}`}
+              className="rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-300"
+              title={offsets ? `bytes ${offsets}` : undefined}
+            >
+              {s.label || 'SPAN'}
+              {offsets && (
+                <span className="ml-1 font-normal text-muted-foreground">
+                  {offsets}
+                </span>
+              )}
+            </code>
+          );
+        })}
       </div>
     )}
     {dp.policy?.verdict && (
       <div className="flex items-center gap-1.5">
         <span className="text-muted-foreground">Policy</span>
-        <code className="rounded bg-muted px-1.5 py-0.5">{dp.policy.verdict}</code>
+        <code className="rounded bg-muted px-1.5 py-0.5">
+          {dp.policy.verdict}
+        </code>
         {dp.policy.agent_id && (
-          <span className="text-muted-foreground">agent {dp.policy.agent_id}</span>
+          <span className="text-muted-foreground">
+            agent {dp.policy.agent_id}
+          </span>
         )}
       </div>
     )}
