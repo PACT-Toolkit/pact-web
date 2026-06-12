@@ -4,6 +4,7 @@ import { useState } from 'react';
 import useSWR from 'swr';
 
 import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
+import { BenchmarkComparison } from '@/src/app/benchmark/ui/BenchmarkComparison';
 import { BenchmarkJobProgress } from '@/src/app/benchmark/ui/BenchmarkJobProgress';
 import { BenchmarkResultsTable } from '@/src/app/benchmark/ui/BenchmarkResultsTable';
 import { BenchmarkTrendChart } from '@/src/app/benchmark/ui/BenchmarkTrendChart';
@@ -61,6 +62,8 @@ export const BenchmarkWorkbench = () => {
   return (
     <div className="flex flex-col gap-6">
       <BenchmarkTrendChart />
+
+      <BenchmarkComparison />
 
       <BenchmarkUploadForm
         onSubmit={handleSubmit}
