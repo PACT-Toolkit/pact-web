@@ -2,6 +2,8 @@ import { http, HttpResponse, type RequestHandler } from 'msw';
 import { v4 as uuidv4 } from 'uuid';
 
 import { type PolicyEvent } from '@/src/app/policy/domain/policy_event';
+import { type PolicyRule } from '@/src/app/policy/domain/policy_rule';
+import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 const min = 60_000;
 const hour = 60 * min;
@@ -77,8 +79,66 @@ const policyEvents: PolicyEvent[] = [
   },
 ];
 
+// In-memory rule store backing the /v1/rules editor stub. Seeded with a couple
+// of rules so the list renders non-empty on first load in mock mode.
+const now = Date.now();
+const policyRules: PolicyRule[] = [
+  {
+    id: uuidv4(),
+    name: 'block-credential-exfil',
+    status: 'published',
+    version: 2,
+    createdAt: new Date(now - 2 * hour).toISOString(),
+    updatedAt: new Date(now - 30 * min).toISOString(),
+  },
+  {
+    id: uuidv4(),
+    name: 'flag-pii-in-prompts',
+    status: 'draft',
+    version: 1,
+    createdAt: new Date(now - 6 * hour).toISOString(),
+    updatedAt: new Date(now - 6 * hour).toISOString(),
+  },
+];
+
+interface CreateRuleBody {
+  name?: string;
+  packYaml?: string;
+  scopes?: string[];
+}
+
 export const handlers: RequestHandler[] = [
   http.get('*/v1/audit/policy-events', () =>
     HttpResponse.json({ events: policyEvents, total: policyEvents.length })
   ),
+
+  http.get(`${MSW_PACT_BASE}/gateway/v1/rules`, () =>
+    HttpResponse.json({
+      rules: [...policyRules].sort((a, b) =>
+        b.createdAt.localeCompare(a.createdAt)
+      ),
+    })
+  ),
+
+  http.post(`${MSW_PACT_BASE}/gateway/v1/rules`, async ({ request }) => {
+    const body = (await request.json()) as CreateRuleBody;
+    if (!body.name || !body.packYaml) {
+      return HttpResponse.json(
+        { error: 'name and packYaml are required' },
+        { status: 400 }
+      );
+    }
+    const ts = new Date().toISOString();
+    const rule: PolicyRule = {
+      id: uuidv4(),
+      name: body.name,
+      status: 'draft',
+      version: 1,
+      createdAt: ts,
+      updatedAt: ts,
+    };
+    policyRules.push(rule);
+
+    return HttpResponse.json(rule, { status: 201 });
+  }),
 ];
