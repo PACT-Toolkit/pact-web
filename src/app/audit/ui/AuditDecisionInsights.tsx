@@ -2,6 +2,23 @@ import { type DecisionPayload } from '@/src/app/audit/domain/audit_decision_payl
 
 export { parseDecisionPayload } from '@/src/app/audit/domain/audit_decision_payload';
 
+// Short hex preview for fingerprints/hashes: the full value lives in a title
+// tooltip and in the raw payload below. 12 chars is plenty to eyeball-match two
+// rows from the same session or the same prompt.
+const shortHash = (h: string) =>
+  h.length > 12 ? `${h.slice(0, 12)}\u2026` : h;
+
+// hasForensics gates the Trace group so we don't render an empty divider on
+// pre-PACT-265 payloads.
+const hasForensics = (dp: DecisionPayload): boolean =>
+  Boolean(
+    dp.conversation_id ||
+    dp.client_ip ||
+    dp.user_agent ||
+    dp.session_id ||
+    dp.content?.sha256
+  );
+
 export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
   <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-md border bg-muted/20 px-3 py-2 text-xs">
     {dp.engine && (
@@ -116,6 +133,65 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         {dp.policy.agent_id && (
           <span className="text-muted-foreground">
             agent {dp.policy.agent_id}
+          </span>
+        )}
+      </div>
+    )}
+    {hasForensics(dp) && (
+      <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1.5 border-t pt-2">
+        <span className="text-muted-foreground">Trace</span>
+        {dp.conversation_id && (
+          <span className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">conversation</span>
+            <code className="rounded bg-muted px-1.5 py-0.5">
+              {dp.conversation_id}
+            </code>
+          </span>
+        )}
+        {dp.session_id && (
+          <span className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">session</span>
+            <code
+              className="rounded bg-muted px-1.5 py-0.5"
+              title={`session fingerprint (sha256 of bearer): ${dp.session_id}`}
+            >
+              {shortHash(dp.session_id)}
+            </code>
+          </span>
+        )}
+        {dp.client_ip && (
+          <span className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">ip</span>
+            <code className="rounded bg-muted px-1.5 py-0.5">
+              {dp.client_ip}
+            </code>
+          </span>
+        )}
+        {dp.user_agent && (
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="text-muted-foreground">ua</span>
+            <code
+              className="max-w-[16rem] truncate rounded bg-muted px-1.5 py-0.5"
+              title={dp.user_agent}
+            >
+              {dp.user_agent}
+            </code>
+          </span>
+        )}
+        {dp.content?.sha256 && (
+          <span className="flex items-center gap-1.5">
+            <span className="text-muted-foreground">content</span>
+            <code
+              className="rounded bg-muted px-1.5 py-0.5"
+              title={`sha256: ${dp.content.sha256}`}
+            >
+              {shortHash(dp.content.sha256)}
+            </code>
+            {typeof dp.content.bytes === 'number' && dp.content.bytes > 0 && (
+              <span className="text-muted-foreground">
+                {dp.content.bytes} B
+              </span>
+            )}
           </span>
         )}
       </div>

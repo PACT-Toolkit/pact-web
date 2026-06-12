@@ -139,3 +139,64 @@ describe('parseDecisionPayload — consensus surface (PACT-263)', () => {
     expect(dp?.consensus).toBeUndefined();
   });
 });
+
+describe('parseDecisionPayload — forensic-trace surface (PACT-265)', () => {
+  // Production-shaped sample: a full pipeline decision enriched with the
+  // forensic-trace block the gateway stamps on every pact.decisions event.
+  // Mirrors pact-gateway DecisionEvent — field names are frozen there.
+  it('exposes the full forensic block when present', () => {
+    const dp = parseDecisionPayload(
+      JSON.stringify({
+        request_id: 'req-8',
+        decision: 'block',
+        engine: 'classifier',
+        session_id: 'a'.repeat(64),
+        client_ip: '203.0.113.7',
+        user_agent: 'pact-sdk/1.2.3',
+        conversation_id: 'conv-42',
+        content: { sha256: 'b'.repeat(64), bytes: 26 },
+      })
+    );
+    expect(dp?.session_id).toBe('a'.repeat(64));
+    expect(dp?.client_ip).toBe('203.0.113.7');
+    expect(dp?.user_agent).toBe('pact-sdk/1.2.3');
+    expect(dp?.conversation_id).toBe('conv-42');
+    expect(dp?.content).toEqual({ sha256: 'b'.repeat(64), bytes: 26 });
+  });
+
+  it('exposes the partial block on a pre-pipeline rejection', () => {
+    // engine=gateway rejections carry ip/ua/conversation but never
+    // session_id/content (body unread, identity not established).
+    const dp = parseDecisionPayload(
+      JSON.stringify({
+        request_id: 'req-9',
+        decision: 'block',
+        reason: 'auth_rejected',
+        engine: 'gateway',
+        client_ip: '198.51.100.9',
+        user_agent: 'pact-sdk/9.9.9',
+        conversation_id: 'conv-rejected',
+      })
+    );
+    expect(dp?.client_ip).toBe('198.51.100.9');
+    expect(dp?.conversation_id).toBe('conv-rejected');
+    expect(dp?.session_id).toBeUndefined();
+    expect(dp?.content).toBeUndefined();
+  });
+
+  it('tolerates pre-PACT-265 payloads with no forensic fields', () => {
+    const dp = parseDecisionPayload(
+      JSON.stringify({
+        request_id: 'req-10',
+        decision: 'allow',
+        engine: 'classifier',
+        classifier: { label: 'benign' },
+      })
+    );
+    expect(dp?.session_id).toBeUndefined();
+    expect(dp?.client_ip).toBeUndefined();
+    expect(dp?.user_agent).toBeUndefined();
+    expect(dp?.conversation_id).toBeUndefined();
+    expect(dp?.content).toBeUndefined();
+  });
+});

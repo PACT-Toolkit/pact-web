@@ -12,6 +12,17 @@ export interface DecisionPayload {
   decision?: string;
   reason?: string;
   engine?: string;
+  // Forensic-trace block (gateway PACT-265): lets an operator pivot a single
+  // decision back to the actor and session that produced it. All optional —
+  // absent on pre-PACT-265 payloads, and partially absent on pre-pipeline
+  // rejections (no session_id/content). session_id is a SHA-256 fingerprint of
+  // the bearer (never the token); content is a hash of the prompt (never the
+  // prompt). user_id rides at the row level (AuditEvent), not here.
+  session_id?: string;
+  client_ip?: string;
+  user_agent?: string;
+  conversation_id?: string;
+  content?: { sha256?: string; bytes?: number };
   filter?: { verdict?: string; rule_id?: string; shadow?: boolean };
   classifier?: { label?: string; score?: number };
   redactor?: {
