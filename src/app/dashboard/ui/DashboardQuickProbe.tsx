@@ -25,7 +25,16 @@ import { httpClient } from '@/src/framework/http';
 type ProbeStatus = 'idle' | 'running' | 'done' | 'error';
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
-export const DashboardQuickProbe = () => {
+type DashboardQuickProbeProps = {
+  // onProbeComplete lets the parent revalidate the shared pipeline-stats cache
+  // after a probe lands, so the live stream and stage widgets reflect the new
+  // decision immediately instead of waiting for the next poll.
+  onProbeComplete?: () => void;
+};
+
+export const DashboardQuickProbe = ({
+  onProbeComplete,
+}: DashboardQuickProbeProps) => {
   const [inputText, setInputText] = useState('');
   const [status, setStatus] = useState<ProbeStatus>('idle');
   const [result, setResult] = useState<CheckResponse | null>(null);
@@ -44,6 +53,7 @@ export const DashboardQuickProbe = () => {
       });
       setResult(data);
       setStatus('done');
+      onProbeComplete?.();
     } catch {
       setStatus('error');
     }

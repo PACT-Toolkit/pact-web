@@ -21,7 +21,7 @@ export const DashboardConsole = () => {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <DashboardQuickProbe />
+        <DashboardQuickProbe onProbeComplete={() => void mutate()} />
         <DashboardLiveDecisions
           records={records}
           isLoading={isLoading}
