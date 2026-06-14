@@ -5,5 +5,6 @@
 
 export * as account from './account';
 export * as audit from './audit';
+export * as benchmark from './benchmark';
 export * as feature from './feature';
 export * as files from './files';

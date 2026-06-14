@@ -8,6 +8,9 @@
  *
  * production: true  — download failure exits non-zero (breaks CI).
  * production: false — download failure prints a warning and continues (safe during early dev).
+ * manual: true      — skip download entirely; the swagger.yaml is hand-maintained
+ *                     (e.g. benchmark, whose REST contract lives only in the gateway's
+ *                     combined spec and must be snapshotted, not pulled whole).
  *
  * Requires GITHUB_TOKEN (or GIT_TOKEN) in env with read access to the PACT-Toolkit org.
  */
@@ -87,7 +90,7 @@ async function main() {
     return;
   }
 
-  const configs = await Promise.all(
+  const allConfigs = await Promise.all(
     services.map(async (service) => {
       const configPath = join(SCHEMA_DIR, service, 'services.config.json');
       const config = JSON.parse(await readFile(configPath, 'utf-8'));
@@ -95,6 +98,12 @@ async function main() {
       return { service, config };
     })
   );
+
+  for (const { service } of allConfigs.filter((c) => c.config.manual)) {
+    console.log(`  ⏭️  ${service} (manual) — hand-maintained, not downloaded`);
+  }
+
+  const configs = allConfigs.filter(({ config }) => !config.manual);
 
   const results = await Promise.allSettled(
     configs.map(async ({ service, config }) => {
@@ -121,7 +130,9 @@ async function main() {
         console.error(`  ❌ ${service} (production): ${result.reason.message}`);
         hasProductionFailure = true;
       } else {
-        console.warn(`  ⚠️  ${service} (pre-production): ${result.reason.message} — skipped`);
+        console.warn(
+          `  ⚠️  ${service} (pre-production): ${result.reason.message} — skipped`
+        );
       }
     }
   }

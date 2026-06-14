@@ -29,8 +29,8 @@ const advanceJob = (job: MockJob) => {
       job.result = {
         detection_rate: 0.93,
         fp_rate: 0.04,
-        p50_latency: 18.4,
-        p99_latency: 112.7,
+        p50_latency_ms: 18.4,
+        p99_latency_ms: 112.7,
         total_rows: TOTAL_ROWS,
         rows: [],
       };

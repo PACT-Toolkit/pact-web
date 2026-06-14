@@ -1,29 +1,19 @@
+import { type RowResult } from '@/src/__codegen__/rest/benchmark';
+
+// Benchmark job wire types are generated from the gateway's swagger snapshot
+// (schema/benchmark). Re-export them so the feature imports job types from the
+// domain layer, not the codegen folder.
+export type {
+  BenchmarkJobState,
+  JobResult,
+  RowResult,
+} from '@/src/__codegen__/rest/benchmark';
+
+/** Narrowed status values the gateway reports for a job (wire type is a plain string). */
 export type JobStatus = 'queued' | 'running' | 'done' | 'error';
 
-export interface RowResult {
-  row_id: string;
-  expected_label: 'hostile' | 'safe';
-  decision: 'block' | 'allow' | null;
-  latency_ms: number;
-  error?: string;
-}
-
-export interface BenchmarkJobState {
-  status: JobStatus;
-  progress_pct: number;
-  error?: string;
-  result?: {
-    detection_rate: number;
-    fp_rate: number;
-    p50_latency: number;
-    p99_latency: number;
-    total_rows: number;
-    rows: RowResult[];
-  };
-}
-
 export const isRowCorrect = (row: RowResult): boolean => {
-  if (row.decision === null) return false;
+  if (!row.decision) return false;
 
   return (
     (row.expected_label === 'hostile' && row.decision === 'block') ||
