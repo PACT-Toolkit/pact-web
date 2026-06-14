@@ -35,6 +35,23 @@ export default defineConfig({
       },
     },
   },
+  benchmark: {
+    input: '.rest-codegen-temp/benchmark.openapi.yaml',
+    output: {
+      mode: 'split',
+      target: 'src/__codegen__/rest/benchmark/hooks.ts',
+      schemas: 'src/__codegen__/rest/benchmark/types',
+      client: 'swr',
+      baseUrl: '/api/pact/benchmark/v1',
+      override: {
+        query: {
+          useQuery: true,
+          useMutation: true,
+          signal: true,
+        },
+      },
+    },
+  },
   feature: {
     input: '.rest-codegen-temp/feature.openapi.yaml',
     output: {

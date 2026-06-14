@@ -1,0 +1,268 @@
+swagger: "2.0"
+info:
+  title: Benchmark Service
+  description: |
+    Benchmark run history and bulk-test jobs, surfaced to the SPA through
+    pact-gateway. The gateway owns the REST contract (it proxies pact-benchmark
+    over gRPC and persists run history); pact-web reaches it through the
+    dedicated /api/pact/benchmark/v1/* Next.js proxy routes, which translate the
+    pact_session cookie into the Bearer token the gateway expects.
+
+    Unlike account / audit / files, benchmark has no service-owned REST swagger:
+    its HTTP shape lives only in pact-gateway's generated spec. This file is a
+    hand-synced snapshot of the gateway's benchmark paths (services.config.json
+    sets manual:true so the schema downloader leaves it alone). Keep it in step
+    with pact-gateway/api/swagger.yaml when the benchmark contract changes.
+  version: "0.1.0"
+host: localhost:8080
+basePath: /api/pact/benchmark/v1
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /runs:
+    get:
+      summary: List persisted benchmark run history, newest-first upstream
+      description: |
+        Paginated view of persisted benchmark runs. limit defaults to 100 when
+        0 or omitted; since_unix / until_unix bound ran_at (Unix seconds, 0 =
+        no bound) and gateway_version filters by exact tag.
+      operationId: listBenchmarkRuns
+      tags: [benchmark]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          type: integer
+          description: Max runs to return (0 or omitted = 100).
+        - name: offset
+          in: query
+          required: false
+          type: integer
+          description: Page offset (default 0).
+        - name: since_unix
+          in: query
+          required: false
+          type: integer
+          description: Lower bound on ran_at (Unix seconds, 0 = none).
+        - name: until_unix
+          in: query
+          required: false
+          type: integer
+          description: Upper bound on ran_at (Unix seconds, 0 = none).
+        - name: gateway_version
+          in: query
+          required: false
+          type: string
+          description: Filter by exact gateway version tag.
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/BenchmarkRunsResponse"
+        "400":
+          description: invalid query parameter
+          schema:
+            type: string
+        "401":
+          description: missing or invalid bearer token
+          schema:
+            type: string
+  /jobs:
+    post:
+      summary: Submit a corpus for a bulk benchmark job
+      description: |
+        Queues a benchmark job that replays the supplied JSONL corpus through
+        the target gateway. Returns a job id to poll via GET /jobs/{id}.
+      operationId: submitBenchmarkJob
+      tags: [benchmark]
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema:
+            $ref: "#/definitions/SubmitJobRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/SubmitJobResponse"
+        "202":
+          description: Accepted
+          schema:
+            $ref: "#/definitions/SubmitJobResponse"
+        "400":
+          description: malformed corpus or request
+          schema:
+            type: string
+        "401":
+          description: missing or invalid bearer token
+          schema:
+            type: string
+  /jobs/{id}:
+    get:
+      summary: Poll a benchmark job's status and result
+      description: |
+        Returns the current status, progress, and (once done) the aggregate
+        result plus a page of per-row verdicts. offset / limit page the rows
+        array; they are ignored until the job is done.
+      operationId: getBenchmarkJob
+      tags: [benchmark]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          type: string
+          description: Job id returned by POST /jobs.
+        - name: offset
+          in: query
+          required: false
+          type: integer
+          description: Row page offset (default 0).
+        - name: limit
+          in: query
+          required: false
+          type: integer
+          description: Row page size.
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/BenchmarkJobState"
+        "401":
+          description: missing or invalid bearer token
+          schema:
+            type: string
+        "404":
+          description: job not found
+          schema:
+            type: string
+definitions:
+  BenchmarkRun:
+    type: object
+    required:
+      - id
+      - gateway_version
+      - engine
+      - corpus_version
+      - detection_rate
+      - fp_rate
+      - p50_latency
+      - p99_latency
+      - row_count
+      - ran_at
+    properties:
+      id:
+        type: string
+      gateway_version:
+        type: string
+      engine:
+        type: string
+      corpus_version:
+        type: string
+      detection_rate:
+        type: number
+        description: Fraction of hostile rows blocked (0-1).
+      fp_rate:
+        type: number
+        description: Fraction of safe rows blocked (0-1).
+      p50_latency:
+        type: number
+        description: Median decision latency, milliseconds.
+      p99_latency:
+        type: number
+        description: p99 decision latency, milliseconds.
+      row_count:
+        type: integer
+      ran_at:
+        type: integer
+        description: Run timestamp, Unix seconds (UTC).
+  BenchmarkRunsResponse:
+    type: object
+    required:
+      - runs
+      - total
+    properties:
+      runs:
+        type: array
+        items:
+          $ref: "#/definitions/BenchmarkRun"
+      total:
+        type: integer
+  SubmitJobRequest:
+    type: object
+    required:
+      - corpus_jsonl
+      - gateway_url
+    properties:
+      corpus_jsonl:
+        type: string
+      gateway_url:
+        type: string
+      engine:
+        type: string
+  SubmitJobResponse:
+    type: object
+    required:
+      - job_id
+    properties:
+      job_id:
+        type: string
+  BenchmarkJobState:
+    type: object
+    required:
+      - status
+      - progress_pct
+    properties:
+      status:
+        type: string
+        description: queued | running | done | error.
+      progress_pct:
+        type: integer
+      error:
+        type: string
+      result:
+        $ref: "#/definitions/JobResult"
+  JobResult:
+    type: object
+    required:
+      - detection_rate
+      - fp_rate
+      - p50_latency_ms
+      - p99_latency_ms
+      - total_rows
+      - rows
+    properties:
+      detection_rate:
+        type: number
+      fp_rate:
+        type: number
+      p50_latency_ms:
+        type: number
+      p99_latency_ms:
+        type: number
+      total_rows:
+        type: integer
+      rows:
+        type: array
+        items:
+          $ref: "#/definitions/RowResult"
+  RowResult:
+    type: object
+    required:
+      - row_id
+      - expected_label
+      - decision
+      - latency_ms
+    properties:
+      row_id:
+        type: string
+      expected_label:
+        type: string
+      decision:
+        type: string
+      latency_ms:
+        type: number
+      error:
+        type: string

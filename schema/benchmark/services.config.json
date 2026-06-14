@@ -1,0 +1,9 @@
+{
+  "repo": "pact-gateway",
+  "path": "/api/swagger.yaml",
+  "branch": "master",
+  "baseUrl": "/api/pact/benchmark/v1",
+  "production": false,
+  "manual": true,
+  "manualReason": "Benchmark has no service-owned REST swagger; its HTTP contract lives only in pact-gateway's combined spec. swagger.yaml here is a hand-synced snapshot of the gateway's benchmark paths, so the downloader must not overwrite it with the full gateway doc."
+}

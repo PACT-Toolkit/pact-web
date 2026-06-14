@@ -11,11 +11,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
-import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
 
 interface BenchmarkUploadFormProps {
-  onSubmit: (corpusText: string, gatewayVersion: string) => Promise<void>;
+  onSubmit: (corpusText: string) => Promise<void>;
   isSubmitting: boolean;
 }
 
@@ -27,7 +26,6 @@ export const BenchmarkUploadForm = ({
   const [fileName, setFileName] = useState<string | null>(null);
   const [corpusText, setCorpusText] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [gatewayVersion, setGatewayVersion] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -53,7 +51,7 @@ export const BenchmarkUploadForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!corpusText) return;
-    await onSubmit(corpusText, gatewayVersion);
+    await onSubmit(corpusText);
   };
 
   return (
@@ -91,17 +89,6 @@ export const BenchmarkUploadForm = ({
             {validationError && (
               <p className="text-xs text-destructive">{validationError}</p>
             )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="gateway-version">Gateway version (optional)</Label>
-            <Input
-              id="gateway-version"
-              placeholder="e.g. v1.4.2"
-              value={gatewayVersion}
-              onChange={(e) => setGatewayVersion(e.target.value)}
-              className="max-w-xs"
-            />
           </div>
 
           <Button

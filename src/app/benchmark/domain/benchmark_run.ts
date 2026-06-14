@@ -1,20 +1,10 @@
-export interface BenchmarkRun {
-  id: string;
-  gateway_version: string;
-  engine: string;
-  corpus_version: string;
-  detection_rate: number; // 0–1
-  fp_rate: number; // 0–1
-  p50_latency: number; // ms
-  p99_latency: number; // ms
-  row_count: number;
-  ran_at: number; // Unix seconds (UTC)
-}
-
-export interface BenchmarkRunsResponse {
-  runs: BenchmarkRun[];
-  total: number;
-}
+// Benchmark run wire types are generated from the gateway's swagger snapshot
+// (schema/benchmark). Re-export them here so the rest of the benchmark feature
+// imports run types from the domain layer, not the codegen folder.
+export type {
+  BenchmarkRun,
+  BenchmarkRunsResponse,
+} from '@/src/__codegen__/rest/benchmark';
 
 /** Date-range presets for the trend chart filter. */
 export type TrendDateRange = '7d' | '30d' | '90d' | 'all';

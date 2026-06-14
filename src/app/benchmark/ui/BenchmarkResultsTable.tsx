@@ -1,12 +1,11 @@
 'use client';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
-import useSWR from 'swr';
+import { useMemo, useState } from 'react';
 
+import { useGetBenchmarkJob } from '@/src/__codegen__/rest/benchmark';
 import {
   isRowCorrect,
-  type BenchmarkJobState,
   type RowResult,
 } from '@/src/app/benchmark/domain/benchmark_job';
 import { Button } from '@/src/components/ui/button';
@@ -16,12 +15,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
-import { httpClient } from '@/src/framework/http';
 
 const PAGE_SIZE = 20;
-
-const fetchPage = (url: string) =>
-  httpClient.get<BenchmarkJobState>(url).then((r) => r.data);
 
 interface BenchmarkResultsTableProps {
   jobId: string;
@@ -34,14 +29,13 @@ export const BenchmarkResultsTable = ({
 }: BenchmarkResultsTableProps) => {
   const [page, setPage] = useState(0);
   const offset = page * PAGE_SIZE;
+  const params = useMemo(() => ({ offset, limit: PAGE_SIZE }), [offset]);
 
-  const { data, isLoading } = useSWR<BenchmarkJobState>(
-    `/api/pact/benchmark/v1/jobs/${jobId}?offset=${offset}&limit=${PAGE_SIZE}`,
-    fetchPage,
-    { revalidateOnFocus: false, keepPreviousData: true }
-  );
+  const { data, isLoading } = useGetBenchmarkJob(jobId, params, {
+    swr: { revalidateOnFocus: false, keepPreviousData: true },
+  });
 
-  const rows = data?.result?.rows ?? [];
+  const rows = data?.status === 200 ? (data.data.result?.rows ?? []) : [];
   const pageCount = Math.ceil(totalRows / PAGE_SIZE);
   const from = offset + 1;
   const to = Math.min(offset + PAGE_SIZE, totalRows);

@@ -107,11 +107,11 @@ export const BenchmarkJobProgress = ({
             />
             <Stat
               label="p50 latency"
-              value={`${state.result.p50_latency.toFixed(1)} ms`}
+              value={`${state.result.p50_latency_ms.toFixed(1)} ms`}
             />
             <Stat
               label="p99 latency"
-              value={`${state.result.p99_latency.toFixed(1)} ms`}
+              value={`${state.result.p99_latency_ms.toFixed(1)} ms`}
             />
           </div>
         )}
