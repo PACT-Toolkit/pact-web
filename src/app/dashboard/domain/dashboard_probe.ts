@@ -3,13 +3,6 @@ import { type CheckResponse } from '@/src/app/test_lab/domain/test_lab_check';
 
 export const CORPUS_ENDPOINT = '/api/pact/benchmark/v1/corpus';
 
-export interface CorpusCaptureRequest {
-  content: string;
-  attack_type: string;
-  reason?: string;
-  filter_rule_id?: string;
-}
-
 // Maps a /v1/check response onto the looser audit DecisionPayload so the probe
 // result reuses AuditDecisionInsights — the exact renderer the live stream and
 // the activity log use, keeping verdict presentation consistent everywhere.

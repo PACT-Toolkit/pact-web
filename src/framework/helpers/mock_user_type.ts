@@ -9,7 +9,11 @@
 
 export type MockUserType = 'admin' | 'auditor' | 'developer';
 
-export const MOCK_USER_TYPES: readonly MockUserType[] = ['admin', 'auditor', 'developer'];
+export const MOCK_USER_TYPES: readonly MockUserType[] = [
+  'admin',
+  'auditor',
+  'developer',
+];
 
 export const MOCK_USER_TYPE_COOKIE = 'mock-user-type';
 
@@ -21,12 +25,14 @@ const isMockUserTypeValue = (v: unknown): v is MockUserType =>
 // Reads the active mock user type from document.cookie. Returns the
 // default when called server-side (no document) — server reads should
 // come from next/headers cookies() and validate via isMockUserTypeValue.
-export const getMockUserType = (defaultValue: MockUserType = DEFAULT_MOCK_USER_TYPE): MockUserType => {
+export const getMockUserType = (
+  defaultValue: MockUserType = DEFAULT_MOCK_USER_TYPE
+): MockUserType => {
   if (typeof document === 'undefined') return defaultValue;
 
   const match = document.cookie
     .split('; ')
-    .find(row => row.startsWith(`${MOCK_USER_TYPE_COOKIE}=`));
+    .find((row) => row.startsWith(`${MOCK_USER_TYPE_COOKIE}=`));
   const raw = match?.slice(MOCK_USER_TYPE_COOKIE.length + 1);
 
   return isMockUserTypeValue(raw) ? raw : defaultValue;
@@ -42,6 +48,3 @@ export const setMockUserType = (type: MockUserType): void => {
   // within the tab but doesn't outlive the browser session.
   document.cookie = `${MOCK_USER_TYPE_COOKIE}=${type}; path=/; SameSite=Lax`;
 };
-
-export const isMockUserType = (types: readonly MockUserType[]): boolean =>
-  types.includes(getMockUserType());

@@ -10,9 +10,6 @@ export type {
   BenchmarkJobRowBody as RowResult,
 } from '@/src/__codegen__/rest/benchmark';
 
-/** Narrowed status values the gateway reports for a job (wire type is a plain string). */
-export type JobStatus = 'queued' | 'running' | 'done' | 'error';
-
 export const isRowCorrect = (row: RowResult): boolean => {
   if (!row.decision) return false;
 

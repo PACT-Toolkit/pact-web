@@ -8,12 +8,10 @@
 // the domain layer rather than the __codegen__ folder.
 import {
   type RulesCreateRuleRequest,
-  type RulesListRulesResponse,
   type RulesRuleResponse,
 } from '@/src/__codegen__/rest/rules';
 
 export type PolicyRule = RulesRuleResponse;
-export type ListRulesResponse = RulesListRulesResponse;
 export type CreateRuleInput = RulesCreateRuleRequest;
 
 // RuleStatus is the closed set of statuses pact-policy assigns. The gateway

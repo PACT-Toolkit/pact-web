@@ -33,10 +33,6 @@ export const SWEEP_EASE: [number, number, number, number] = [
 // signal stall.
 export const SAFETY_TIMEOUT_MS = ENTRY_DURATION_MS + VISIBLE_DURATION_MS;
 
-// `router.prefetch` has no completion promise; give it a realistic budget
-// before crediting it as ready.
-export const ROUTE_PREFETCH_BUDGET_MS = 1500;
-
 // ── Mark breath + fill ──────────────────────────────────────────────────
 
 // While loading, a soft gradient band sweeps diagonally (bottom-left → top-

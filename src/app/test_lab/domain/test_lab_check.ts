@@ -1,9 +1,6 @@
 import {
   type CheckCheckRequest,
   type CheckCheckResponse,
-  type CheckFilterInfo,
-  type CheckRedactedSpan,
-  type CheckRedactorInfo,
 } from '@/src/__codegen__/rest/check';
 import {
   type AttackChip,
@@ -27,12 +24,6 @@ export interface MockLayer {
 // slice (schema/check, pulled from pact-gateway). Alias the codegen names to
 // the domain vocabulary the Test Lab UI uses.
 //
-// FilterInfo / RedactorInfo / RedactedSpan map 1:1 onto the gateway sub-objects
-// (internal/features/check/types.go).
-export type FilterInfo = CheckFilterInfo;
-export type RedactedSpan = CheckRedactedSpan;
-export type RedactorInfo = CheckRedactorInfo;
-
 // CheckResponse refines the generated `decision` string to the closed
 // allow/block union the layer-inference relies on, and adds the mock-only
 // `_mock_layers` escape hatch. dev:mock returns _mock_layers to drive the
