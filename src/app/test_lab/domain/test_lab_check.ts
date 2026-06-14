@@ -1,4 +1,11 @@
 import {
+  type CheckCheckRequest,
+  type CheckCheckResponse,
+  type CheckFilterInfo,
+  type CheckRedactedSpan,
+  type CheckRedactorInfo,
+} from '@/src/__codegen__/rest/check';
+import {
   type AttackChip,
   type LayerDecision,
   type LayerState,
@@ -16,42 +23,29 @@ export interface MockLayer {
   label?: string;
 }
 
-// FilterInfo mirrors pact-gateway's `CheckResponse.filter` sub-object
-// (internal/features/check/types.go). Present whenever the filter stage
-// produced a non-safe verdict OR a rule fired (shadow rules included).
-// Absent on clean-safe paths.
-export interface FilterInfo {
-  verdict?: 'safe' | 'suspicious' | 'hostile' | 'unknown';
-  rule_id?: string;
-  shadow?: boolean;
-}
+// The /v1/check wire types are generated from the gateway's per-tag swagger
+// slice (schema/check, pulled from pact-gateway). Alias the codegen names to
+// the domain vocabulary the Test Lab UI uses.
+//
+// FilterInfo / RedactorInfo / RedactedSpan map 1:1 onto the gateway sub-objects
+// (internal/features/check/types.go).
+export type FilterInfo = CheckFilterInfo;
+export type RedactedSpan = CheckRedactedSpan;
+export type RedactorInfo = CheckRedactorInfo;
 
-export interface RedactedSpan {
-  start: number;
-  end: number;
-  label?: string;
-}
-
-// RedactorInfo mirrors pact-gateway's `CheckResponse.redactor` sub-object.
-// Present whenever the redactor ran (i.e. the request reached stage 3).
-// Absent on pre-redactor blocks (filter hostile / policy deny / pipeline
-// error) and on transport fail-open where the verdict couldn't be obtained.
-export interface RedactorInfo {
-  verdict?: 'pass_through' | 'redacted' | 'unknown';
-  spans?: RedactedSpan[];
-}
-
-export interface CheckResponse {
-  request_id: string;
+// CheckResponse refines the generated `decision` string to the closed
+// allow/block union the layer-inference relies on, and adds the mock-only
+// `_mock_layers` escape hatch. dev:mock returns _mock_layers to drive the
+// pipeline animation; the real gateway never emits it.
+export type CheckResponse = Omit<CheckCheckResponse, 'decision'> & {
   decision: 'allow' | 'block';
-  reason?: string;
-  filter_rule_id?: string;
-  latency_ms: number;
-  filter?: FilterInfo;
-  classifier?: { label?: string; score?: number };
-  redactor?: RedactorInfo;
   _mock_layers?: MockLayer[];
-}
+};
+
+// CheckInput is the /v1/check request body plus the mock-only `_bypass_layers`
+// hint that lets the Test Lab re-run with a stage skipped (dev:mock reads it;
+// the real gateway ignores unknown fields).
+export type CheckInput = CheckCheckRequest & { _bypass_layers?: string[] };
 
 // ─── domain record ────────────────────────────────────────────────────────────
 

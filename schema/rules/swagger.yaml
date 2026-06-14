@@ -1,0 +1,114 @@
+basePath: /
+definitions:
+    rules.CreateRuleRequest:
+        properties:
+            name:
+                type: string
+            packYaml:
+                type: string
+            scopes:
+                items:
+                    type: string
+                type: array
+        required:
+            - name
+            - packYaml
+        type: object
+    rules.ListRulesResponse:
+        properties:
+            rules:
+                items:
+                    $ref: '#/definitions/rules.RuleResponse'
+                type: array
+        required:
+            - rules
+        type: object
+    rules.RuleResponse:
+        properties:
+            createdAt:
+                type: string
+            id:
+                type: string
+            name:
+                type: string
+            status:
+                type: string
+            updatedAt:
+                type: string
+            version:
+                type: integer
+        required:
+            - createdAt
+            - id
+            - name
+            - status
+            - updatedAt
+            - version
+        type: object
+host: localhost:8080
+info:
+    contact: {}
+    description: Public REST entrypoint for the PACT safety pipeline.
+    title: pact-gateway
+    version: 0.1.0
+paths:
+    /v1/rules:
+        get:
+            operationId: listRules
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/rules.ListRulesResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: List policy rules
+            tags:
+                - rules
+        post:
+            consumes:
+                - application/json
+            operationId: createRule
+            parameters:
+                - description: Rule name, pack YAML, and scopes
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/rules.CreateRuleRequest'
+            produces:
+                - application/json
+            responses:
+                "201":
+                    description: Created
+                    schema:
+                        $ref: '#/definitions/rules.RuleResponse'
+                "400":
+                    description: missing name/packYaml or invalid body
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Create a policy rule (Draft)
+            tags:
+                - rules
+schemes:
+    - http
+    - https
+securityDefinitions:
+    Bearer:
+        description: 'Opaque pact-auth session token. Format: <uuid>.<base64-hmac>.'
+        in: header
+        name: Authorization
+        type: apiKey
+swagger: "2.0"
