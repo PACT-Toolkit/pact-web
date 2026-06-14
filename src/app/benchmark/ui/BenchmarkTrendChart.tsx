@@ -35,7 +35,7 @@ const chartConfig = {
 
 export const BenchmarkTrendChart = () => {
   const [dateRange, setDateRange] = useState<TrendDateRange>('90d');
-  const { runs, isLoading } = useBenchmarkRuns(dateRange);
+  const { runs, isLoading, error } = useBenchmarkRuns(dateRange);
 
   const chartData = useMemo(
     () =>
@@ -78,6 +78,11 @@ export const BenchmarkTrendChart = () => {
         {isLoading ? (
           <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
             Loading…
+          </div>
+        ) : error ? (
+          <div className="flex h-48 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
+            <p>Couldn&apos;t load benchmark runs.</p>
+            <p className="text-xs">Try refreshing in a moment.</p>
           </div>
         ) : chartData.length === 0 ? (
           <div className="flex h-48 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
