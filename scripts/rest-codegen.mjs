@@ -81,6 +81,54 @@ const normalizeSubPropertyRefs = async (openApiPath) => {
 };
 
 /**
+ * Strip a leading path prefix from every path key in the converted OpenAPI doc.
+ *
+ * Gateway-owned per-tag slices (the gateway emits one OpenAPI document per tag)
+ * expose the real gateway routes, e.g. `/v1/benchmark/runs`, but pact-web reaches
+ * them through Next.js proxy routes mounted at `/api/pact/{service}/v1/...` (the
+ * `baseUrl` override). Without stripping, the generated client would hit
+ * `/api/pact/benchmark/v1` + `/v1/benchmark/runs` = a doubled, broken path.
+ * Removing the `/v1/benchmark` prefix here leaves `/runs`, which `baseUrl`
+ * prepends to the correct proxy path. Service-owned specs set no prefix and are
+ * left untouched.
+ */
+const stripPathPrefix = async (openApiPath, prefix) => {
+  if (!prefix) return;
+
+  const content = await readFile(openApiPath, 'utf-8');
+  const lines = content.split('\n');
+
+  let inPaths = false;
+  const rewritten = lines.map((line) => {
+    const trimmed = line.trimStart();
+    const indent = line.length - trimmed.length;
+
+    // Top-level keys delimit sections; `paths:` opens the block we rewrite.
+    if (indent === 0 && trimmed.length > 0) {
+      inPaths = trimmed === 'paths:';
+
+      return line;
+    }
+    if (!inPaths) return line;
+
+    // Path-item keys are the route strings under `paths:` — a `/`-leading,
+    // space-free key ending in `:` (optionally quoted), e.g.
+    // `  /v1/benchmark/jobs/{id}:`. Nested $ref/description lines never match.
+    const match = line.match(/^(\s+)('|"|)(\/[^'"\s]*)\2:\s*$/);
+    if (!match) return line;
+
+    const [, lead, quote, pathKey] = match;
+    if (!pathKey.startsWith(prefix)) return line;
+
+    const stripped = pathKey.slice(prefix.length) || '/';
+
+    return `${lead}${quote}${stripped}${quote}:`;
+  });
+
+  await writeFile(openApiPath, rewritten.join('\n'));
+};
+
+/**
  * Find a property's schema definition within the YAML lines.
  */
 const findPropertySchema = (lines, schemaName, propName) => {
@@ -144,12 +192,15 @@ const findPropertySchema = (lines, schemaName, propName) => {
 
 /**
  * Read the optional services.config.json next to a service's swagger
- * for codegen overrides. Today the only override that matters is
- * baseUrl -- some services live behind /api/pact/{name} (matches the
- * default Next.js proxy) and some at /{name-prefix} on the gateway
- * directly (e.g. account at /v1/account, matching the existing
- * /v1/check pattern). When absent we keep the historical default
- * `/api/pact/{name}` so existing services keep working.
+ * for codegen overrides:
+ *   - baseUrl: client URL prefix. Some services live behind
+ *     /api/pact/{name} (the default Next.js proxy) and some at a
+ *     /{name-prefix} on the gateway directly. When absent we keep the
+ *     historical default `/api/pact/{name}` so existing services work.
+ *   - stripPathPrefix: a leading path segment removed from every route
+ *     before codegen. Gateway per-tag slices carry the real gateway
+ *     routes (e.g. /v1/benchmark/runs); stripping /v1/benchmark leaves
+ *     /runs so baseUrl resolves to the proxy path. See stripPathPrefix().
  */
 const readServiceOverrides = async (serviceName) => {
   const configPath = join(SCHEMA_DIR, serviceName, 'services.config.json');
@@ -283,6 +334,8 @@ async function main() {
   for (const name of services) {
     const openApiPath = convertToOpenApi(name);
     await normalizeSubPropertyRefs(openApiPath);
+    const { stripPathPrefix: prefix } = await readServiceOverrides(name);
+    await stripPathPrefix(openApiPath, prefix);
     console.log(`✅ ${name}`);
   }
 

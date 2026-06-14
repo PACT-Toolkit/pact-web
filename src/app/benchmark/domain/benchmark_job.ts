@@ -1,12 +1,13 @@
-import { type RowResult } from '@/src/__codegen__/rest/benchmark';
+import { type BenchmarkJobRowBody as RowResult } from '@/src/__codegen__/rest/benchmark';
 
-// Benchmark job wire types are generated from the gateway's swagger snapshot
-// (schema/benchmark). Re-export them so the feature imports job types from the
-// domain layer, not the codegen folder.
+// Benchmark job wire types are generated from the gateway's per-tag swagger
+// slice (schema/benchmark, pulled from pact-gateway). The generated names carry
+// the Go package + struct prefix; alias them to the domain vocabulary so the
+// feature imports stable job types from the domain layer, not the codegen folder.
 export type {
-  BenchmarkJobState,
-  JobResult,
-  RowResult,
+  BenchmarkGetJobResponse as BenchmarkJobState,
+  BenchmarkJobResultBody as JobResult,
+  BenchmarkJobRowBody as RowResult,
 } from '@/src/__codegen__/rest/benchmark';
 
 /** Narrowed status values the gateway reports for a job (wire type is a plain string). */

@@ -9,8 +9,9 @@
  * production: true  — download failure exits non-zero (breaks CI).
  * production: false — download failure prints a warning and continues (safe during early dev).
  * manual: true      — skip download entirely; the swagger.yaml is hand-maintained
- *                     (e.g. benchmark, whose REST contract lives only in the gateway's
- *                     combined spec and must be snapshotted, not pulled whole).
+ *                     in-repo rather than pulled from a producing service. No
+ *                     service uses this today (benchmark moved to the gateway's
+ *                     per-tag slice); kept for specs with no upstream source.
  *
  * Requires GITHUB_TOKEN (or GIT_TOKEN) in env with read access to the PACT-Toolkit org.
  */

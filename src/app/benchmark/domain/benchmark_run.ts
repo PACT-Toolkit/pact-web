@@ -1,9 +1,11 @@
-// Benchmark run wire types are generated from the gateway's swagger snapshot
-// (schema/benchmark). Re-export them here so the rest of the benchmark feature
-// imports run types from the domain layer, not the codegen folder.
+// Benchmark run wire types are generated from the gateway's per-tag swagger
+// slice (schema/benchmark, pulled from pact-gateway). The generated names carry
+// the Go package + struct prefix; alias them to the domain vocabulary so the
+// rest of the feature imports stable run types from the domain layer, not the
+// codegen folder.
 export type {
-  BenchmarkRun,
-  BenchmarkRunsResponse,
+  BenchmarkBenchmarkRunBody as BenchmarkRun,
+  BenchmarkListRunsResponse as BenchmarkRunsResponse,
 } from '@/src/__codegen__/rest/benchmark';
 
 /** Date-range presets for the trend chart filter. */

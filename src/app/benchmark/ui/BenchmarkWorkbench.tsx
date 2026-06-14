@@ -50,7 +50,7 @@ export const BenchmarkWorkbench = () => {
         corpus_jsonl: corpusText,
         gateway_url: GATEWAY_URL,
       });
-      if (response.status !== 200 && response.status !== 202) {
+      if (response.status !== 202) {
         throw new Error('unexpected status');
       }
       setJobId(response.data.job_id);
