@@ -1,10 +1,8 @@
 import { useMemo } from 'react';
 
+import { useListBenchmarkRuns } from '@/src/__codegen__/rest/benchmark';
 import {
   type BenchmarkRun,
-  useListBenchmarkRuns,
-} from '@/src/__codegen__/rest/benchmark';
-import {
   type TrendDateRange,
   sinceUnixFromRange,
 } from '@/src/app/benchmark/domain/benchmark_run';
