@@ -4,10 +4,12 @@ import { useCallback, useState } from 'react';
 import useSWR from 'swr';
 import { v4 as uuidv4 } from 'uuid';
 
+import { checkContent } from '@/src/__codegen__/rest/check';
 import {
   applyLiveLayers,
   applyMockLayers,
   BLANK_LAYERS,
+  type CheckInput,
   type CheckResponse,
   type SaveRunPayload,
   STATIC_CHIPS,
@@ -96,11 +98,16 @@ export const TestLabWorkbench = () => {
 
       let data: CheckResponse;
       try {
-        const response = await httpClient.post<CheckResponse>(
-          '/api/pact/gateway/v1/check',
-          { content: inputText, kind: 'input', _bypass_layers: bypassLayers }
-        );
-        data = response.data;
+        const body: CheckInput = {
+          content: inputText,
+          kind: 'input',
+          _bypass_layers: bypassLayers,
+        };
+        const response = await checkContent(body);
+        if (response.status !== 200) {
+          throw new Error(`check failed (${response.status})`);
+        }
+        data = response.data as CheckResponse;
       } catch {
         setLayers((prev) =>
           prev.map((l) =>

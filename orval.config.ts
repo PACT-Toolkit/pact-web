@@ -52,6 +52,23 @@ export default defineConfig({
       },
     },
   },
+  check: {
+    input: '.rest-codegen-temp/check.openapi.yaml',
+    output: {
+      mode: 'split',
+      target: 'src/__codegen__/rest/check/hooks.ts',
+      schemas: 'src/__codegen__/rest/check/types',
+      client: 'swr',
+      baseUrl: '/api/pact/gateway/v1',
+      override: {
+        query: {
+          useQuery: true,
+          useMutation: true,
+          signal: true,
+        },
+      },
+    },
+  },
   feature: {
     input: '.rest-codegen-temp/feature.openapi.yaml',
     output: {
@@ -77,6 +94,23 @@ export default defineConfig({
       schemas: 'src/__codegen__/rest/files/types',
       client: 'swr',
       baseUrl: '/v1/files',
+      override: {
+        query: {
+          useQuery: true,
+          useMutation: true,
+          signal: true,
+        },
+      },
+    },
+  },
+  rules: {
+    input: '.rest-codegen-temp/rules.openapi.yaml',
+    output: {
+      mode: 'split',
+      target: 'src/__codegen__/rest/rules/hooks.ts',
+      schemas: 'src/__codegen__/rest/rules/types',
+      client: 'swr',
+      baseUrl: '/api/pact/gateway/v1',
       override: {
         query: {
           useQuery: true,

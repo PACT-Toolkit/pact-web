@@ -4,9 +4,9 @@ import { ArrowUpRight, BookmarkPlus, Play } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
+import { checkContent } from '@/src/__codegen__/rest/check';
 import { AuditDecisionInsights } from '@/src/app/audit/ui/AuditDecisionInsights';
 import {
-  CHECK_ENDPOINT,
   CORPUS_ENDPOINT,
   checkResponseToDecisionPayload,
 } from '@/src/app/dashboard/domain/dashboard_probe';
@@ -47,11 +47,14 @@ export const DashboardQuickProbe = ({
     setSaveStatus('idle');
 
     try {
-      const { data } = await httpClient.post<CheckResponse>(CHECK_ENDPOINT, {
+      const response = await checkContent({
         content: inputText,
         kind: 'input',
       });
-      setResult(data);
+      if (response.status !== 200) {
+        throw new Error(`probe failed (${response.status})`);
+      }
+      setResult(response.data as CheckResponse);
       setStatus('done');
       onProbeComplete?.();
     } catch {

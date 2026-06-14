@@ -1,0 +1,150 @@
+basePath: /
+definitions:
+    check.CheckRequest:
+        properties:
+            content:
+                type: string
+            conversation_id:
+                description: |-
+                    ConversationID is an optional client-supplied chat/thread correlation id.
+                    Mirrored verbatim onto the pact.decisions audit event so a decision can
+                    be traced back to the chat session that produced it. May also be supplied
+                    via the X-Pact-Conversation-Id header; the body value wins when both are
+                    present. Opaque to the gateway — never parsed or validated.
+                type: string
+            kind:
+                description: '"input" | "output"'
+                type: string
+        required:
+            - content
+            - kind
+        type: object
+    check.CheckResponse:
+        properties:
+            classifier:
+                $ref: '#/definitions/check.ClassifierInfo'
+            decision:
+                description: '"allow" | "block"'
+                type: string
+            filter:
+                $ref: '#/definitions/check.FilterInfo'
+            filter_rule_id:
+                type: string
+            latency_ms:
+                type: integer
+            reason:
+                type: string
+            redactor:
+                $ref: '#/definitions/check.RedactorInfo'
+            request_id:
+                type: string
+        required:
+            - decision
+            - latency_ms
+            - request_id
+        type: object
+    check.ClassifierInfo:
+        properties:
+            label:
+                type: string
+            score:
+                type: number
+        type: object
+    check.FilterInfo:
+        properties:
+            rule_id:
+                type: string
+            shadow:
+                description: true when the match was a dry-run / shadow rule
+                type: boolean
+            verdict:
+                description: '"safe" | "suspicious" | "hostile" | "unknown"'
+                type: string
+        type: object
+    check.RedactedSpan:
+        properties:
+            end:
+                type: integer
+            label:
+                type: string
+            start:
+                type: integer
+        required:
+            - end
+            - start
+        type: object
+    check.RedactorInfo:
+        properties:
+            spans:
+                items:
+                    $ref: '#/definitions/check.RedactedSpan'
+                type: array
+            verdict:
+                description: '"pass_through" | "redacted" | "unknown"'
+                type: string
+        type: object
+host: localhost:8080
+info:
+    contact: {}
+    description: Public REST entrypoint for the PACT safety pipeline.
+    title: pact-gateway
+    version: 0.1.0
+paths:
+    /v1/check:
+        post:
+            consumes:
+                - application/json
+            operationId: checkContent
+            parameters:
+                - description: Content and kind (input|output); optional conversation_id
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/check.CheckRequest'
+                - description: Client chat/thread correlation id for the audit trail (body conversation_id wins when both supplied)
+                  in: header
+                  name: X-Pact-Conversation-Id
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/check.CheckResponse'
+                "400":
+                    description: malformed request
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "429":
+                    description: per-IP rate limit exceeded
+                    schema:
+                        type: string
+                "503":
+                    description: auth dependency unavailable
+                    schema:
+                        type: string
+                "504":
+                    description: request exceeded timeout
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Evaluate content against the safety pipeline
+            tags:
+                - check
+schemes:
+    - http
+    - https
+securityDefinitions:
+    Bearer:
+        description: 'Opaque pact-auth session token. Format: <uuid>.<base64-hmac>.'
+        in: header
+        name: Authorization
+        type: apiKey
+swagger: "2.0"

@@ -44,7 +44,7 @@ const RuleRow = ({ rule }: { rule: PolicyRule }) => (
   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
     <span
       className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${
-        STATUS_CLASS[rule.status] ?? STATUS_CLASS.unspecified
+        STATUS_CLASS[rule.status as RuleStatus] ?? STATUS_CLASS.unspecified
       }`}
     >
       {rule.status.toUpperCase()}
