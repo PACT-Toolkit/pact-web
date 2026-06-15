@@ -1,6 +1,0 @@
-{
-  "repo": "pact-feature",
-  "path": "/api/swagger.yaml",
-  "branch": "master",
-  "production": false
-}

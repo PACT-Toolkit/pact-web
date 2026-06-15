@@ -4,17 +4,12 @@ import {
   type Profile,
 } from '@/src/__codegen__/rest/account';
 import { type AuditEvent } from '@/src/__codegen__/rest/audit';
-import { type Feature } from '@/src/__codegen__/rest/feature/types';
 import {
   createAccountMockData,
   mockConsent,
   mockPreferences,
   mockProfile,
 } from '@/src/app/account/mock/data/profile';
-import {
-  createFeatureMockData,
-  mockFeature,
-} from '@/src/app/feature_toggle/mock/data/features';
 import {
   createFilterMockData,
   mockDecisionEvent,
@@ -36,14 +31,12 @@ export const db = {
   accountConsents: new MockRepository<Consent>(mockConsent),
   attackExamples: new MockRepository<AttackExample>(mockAttackExample),
   decisions: new MockRepository<AuditEvent>(mockDecisionEvent),
-  features: new MockRepository<Feature>(mockFeature),
   testLabRuns: new MockRepository<TestLabRunRecord>(mockTestLabRun),
 };
 
 export type DB = typeof db;
 
 createAccountMockData(db);
-createFeatureMockData(db);
 createFilterMockData(db);
 createTestLabMockData(db);
 createTestLabRunsMockData(db);

@@ -7,6 +7,5 @@ export * as account from './account';
 export * as audit from './audit';
 export * as benchmark from './benchmark';
 export * as check from './check';
-export * as feature from './feature';
 export * as files from './files';
 export * as rules from './rules';

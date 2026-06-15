@@ -11,7 +11,6 @@ import {
   type DeltaDirection,
 } from '@/src/app/benchmark/domain/benchmark_comparison';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
-import { FeatureToggle, useFeatureToggle } from '@/src/app/feature_toggle';
 import {
   Card,
   CardContent,
@@ -26,13 +25,7 @@ const DELTA_CLASS: Record<DeltaDirection, string> = {
   neutral: 'text-muted-foreground',
 };
 
-/** Flag-gated wrapper: data hooks only mount when the flag is enabled. */
-export const BenchmarkComparison = () => {
-  const isEnabled = useFeatureToggle(FeatureToggle.BenchmarkComparison);
-  if (!isEnabled) return null;
-
-  return <BenchmarkComparisonPanel />;
-};
+export const BenchmarkComparison = () => <BenchmarkComparisonPanel />;
 
 const RunSelect = ({
   id,
