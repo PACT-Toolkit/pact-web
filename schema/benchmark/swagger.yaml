@@ -102,6 +102,22 @@ definitions:
             - runs
             - total
         type: object
+    benchmark.SaveCorpusRequest:
+        properties:
+            corpus_jsonl:
+                type: string
+            name:
+                type: string
+        required:
+            - corpus_jsonl
+        type: object
+    benchmark.SaveCorpusResponse:
+        properties:
+            corpus_version:
+                type: string
+        required:
+            - corpus_version
+        type: object
     benchmark.SubmitJobRequest:
         properties:
             corpus_jsonl:
@@ -128,6 +144,42 @@ info:
     title: pact-gateway
     version: 0.1.0
 paths:
+    /v1/benchmark/corpus:
+        post:
+            consumes:
+                - application/json
+            operationId: saveBenchmarkCorpus
+            parameters:
+                - description: Corpus JSONL and optional name
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/benchmark.SaveCorpusRequest'
+            produces:
+                - application/json
+            responses:
+                "201":
+                    description: Created
+                    schema:
+                        $ref: '#/definitions/benchmark.SaveCorpusResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "502":
+                    description: upstream error
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Save a corpus for reuse in benchmark runs
+            tags:
+                - benchmark
     /v1/benchmark/jobs:
         post:
             consumes:

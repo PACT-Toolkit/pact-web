@@ -11,6 +11,8 @@ export * from './benchmarkGetJobResponse';
 export * from './benchmarkJobResultBody';
 export * from './benchmarkJobRowBody';
 export * from './benchmarkListRunsResponse';
+export * from './benchmarkSaveCorpusRequest';
+export * from './benchmarkSaveCorpusResponse';
 export * from './benchmarkSubmitJobRequest';
 export * from './benchmarkSubmitJobResponse';
 export * from './getBenchmarkJobParams';

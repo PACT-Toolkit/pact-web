@@ -17,6 +17,8 @@ import type { AxiosError, AxiosRequestConfig } from 'axios';
 import type {
   BenchmarkGetJobResponse,
   BenchmarkListRunsResponse,
+  BenchmarkSaveCorpusRequest,
+  BenchmarkSaveCorpusResponse,
   BenchmarkSubmitJobRequest,
   BenchmarkSubmitJobResponse,
   GetBenchmarkJobParams,
@@ -24,6 +26,17 @@ import type {
 } from './types';
 
 import {
+  saveBenchmarkCorpusResponse201,
+  saveBenchmarkCorpusResponse400,
+  saveBenchmarkCorpusResponse401,
+  saveBenchmarkCorpusResponse502,
+  saveBenchmarkCorpusResponseSuccess,
+  saveBenchmarkCorpusResponseError,
+  getSaveBenchmarkCorpusUrl,
+  saveBenchmarkCorpusResponse,
+  saveBenchmarkCorpus,
+  getSaveBenchmarkCorpusMutationFetcher,
+  getSaveBenchmarkCorpusMutationKey,
   submitBenchmarkJobResponse202,
   submitBenchmarkJobResponse400,
   submitBenchmarkJobResponse401,
@@ -57,6 +70,36 @@ import {
   listBenchmarkRuns,
   getListBenchmarkRunsKey,
 } from './fetchers';
+
+export type SaveBenchmarkCorpusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveBenchmarkCorpus>>
+>;
+
+/**
+ * @summary Save a corpus for reuse in benchmark runs
+ */
+export const useSaveBenchmarkCorpus = <TError = Promise<string>>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof saveBenchmarkCorpus>>,
+    TError,
+    Key,
+    BenchmarkSaveCorpusRequest,
+    Awaited<ReturnType<typeof saveBenchmarkCorpus>>
+  > & { swrKey?: string };
+  fetch?: RequestInit;
+}) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getSaveBenchmarkCorpusMutationKey();
+  const swrFn = getSaveBenchmarkCorpusMutationFetcher(fetchOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
 
 export type SubmitBenchmarkJobMutationResult = NonNullable<
   Awaited<ReturnType<typeof submitBenchmarkJob>>
