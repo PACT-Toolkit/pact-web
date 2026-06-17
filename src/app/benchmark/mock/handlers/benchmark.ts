@@ -64,6 +64,15 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json({ job_id: jobId }, { status: 202 });
   }),
 
+  http.post(`${MSW_PACT_BASE}/benchmark/v1/corpus`, async () => {
+    await new Promise((r) => setTimeout(r, 150));
+
+    return HttpResponse.json(
+      { corpus_version: `mock-${Date.now()}` },
+      { status: 201 }
+    );
+  }),
+
   http.get(
     `${MSW_PACT_BASE}/benchmark/v1/jobs/:jobId`,
     ({ params, request }) => {

@@ -1,13 +1,15 @@
 import { type BenchmarkJobRowBody as RowResult } from '@/src/__codegen__/rest/benchmark';
 
-// Benchmark job wire types are generated from the gateway's per-tag swagger
-// slice (schema/benchmark, pulled from pact-gateway). The generated names carry
-// the Go package + struct prefix; alias them to the domain vocabulary so the
-// feature imports stable job types from the domain layer, not the codegen folder.
+// Benchmark job and corpus wire types are generated from the gateway's per-tag
+// swagger slice (schema/benchmark, pulled from pact-gateway). The generated names
+// carry the Go package + struct prefix; alias them to the domain vocabulary so the
+// feature imports stable types from the domain layer, not the codegen folder.
 export type {
   BenchmarkGetJobResponse as BenchmarkJobState,
   BenchmarkJobResultBody as JobResult,
   BenchmarkJobRowBody as RowResult,
+  BenchmarkSaveCorpusRequest as SaveCorpusRequest,
+  BenchmarkSaveCorpusResponse as SaveCorpusResponse,
 } from '@/src/__codegen__/rest/benchmark';
 
 export const isRowCorrect = (row: RowResult): boolean => {

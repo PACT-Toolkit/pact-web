@@ -13,11 +13,91 @@ import type { Key } from 'swr';
 import type {
   BenchmarkGetJobResponse,
   BenchmarkListRunsResponse,
+  BenchmarkSaveCorpusRequest,
+  BenchmarkSaveCorpusResponse,
   BenchmarkSubmitJobRequest,
   BenchmarkSubmitJobResponse,
   GetBenchmarkJobParams,
   ListBenchmarkRunsParams,
 } from './types';
+
+export type saveBenchmarkCorpusResponse201 = {
+  data: BenchmarkSaveCorpusResponse;
+  status: 201;
+};
+
+export type saveBenchmarkCorpusResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type saveBenchmarkCorpusResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type saveBenchmarkCorpusResponse502 = {
+  data: string;
+  status: 502;
+};
+
+export type saveBenchmarkCorpusResponseSuccess =
+  saveBenchmarkCorpusResponse201 & {
+    headers: Headers;
+  };
+
+export type saveBenchmarkCorpusResponseError = (
+  | saveBenchmarkCorpusResponse400
+  | saveBenchmarkCorpusResponse401
+  | saveBenchmarkCorpusResponse502
+) & {
+  headers: Headers;
+};
+
+export type saveBenchmarkCorpusResponse =
+  | saveBenchmarkCorpusResponseSuccess
+  | saveBenchmarkCorpusResponseError;
+
+export const getSaveBenchmarkCorpusUrl = () => {
+  return `/api/pact/benchmark/v1/corpus`;
+};
+
+/**
+ * @summary Save a corpus for reuse in benchmark runs
+ */
+export const saveBenchmarkCorpus = async (
+  benchmarkSaveCorpusRequest: BenchmarkSaveCorpusRequest,
+  options?: RequestInit
+): Promise<saveBenchmarkCorpusResponse> => {
+  const res = await fetch(getSaveBenchmarkCorpusUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(benchmarkSaveCorpusRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: saveBenchmarkCorpusResponse['data'] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as saveBenchmarkCorpusResponse;
+};
+
+export const getSaveBenchmarkCorpusMutationFetcher = (
+  options?: RequestInit
+) => {
+  return (_: Key, { arg }: { arg: BenchmarkSaveCorpusRequest }) => {
+    return saveBenchmarkCorpus(arg, options);
+  };
+};
+
+export const getSaveBenchmarkCorpusMutationKey = () =>
+  [`/api/pact/benchmark/v1/corpus`] as const;
 
 export type submitBenchmarkJobResponse202 = {
   data: BenchmarkSubmitJobResponse;
