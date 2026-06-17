@@ -164,7 +164,7 @@ importers:
         version: 2.14.6(@types/node@24.12.4)(typescript@6.0.3)
       orval:
         specifier: 8.12.3
-        version: 8.12.3(@faker-js/faker@10.4.0)(prettier@3.8.3)(typescript@6.0.3)
+        version: 8.12.3(@faker-js/faker@10.4.0)(prettier@3.8.4)(typescript@6.0.3)
       otpauth:
         specifier: 9.5.1
         version: 9.5.1
@@ -172,8 +172,8 @@ importers:
         specifier: 8.20.0
         version: 8.20.0
       prettier:
-        specifier: 3.8.3
-        version: 3.8.3
+        specifier: 3.8.4
+        version: 3.8.4
       swagger2openapi:
         specifier: 7.0.8
         version: 7.0.8
@@ -5739,8 +5739,8 @@ packages:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
 
-  prettier@3.8.3:
-    resolution: {integrity: sha512-7igPTM53cGHMW8xWuVTydi2KO233VFiTNyF5hLJqpilHfmn8C8gPf+PS7dUT64YcXFbiMGZxS9pCSxL/Dxm/Jw==}
+  prettier@3.8.4:
+    resolution: {integrity: sha512-N2MylSdi48+5N/6S5j+maeHbUSIzzZ5uOcX5Hm4QpV8Dkb1HFjfAKTKX6yNPJQD9AhcT3ifHNB66tWTTJDi11Q==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -12397,7 +12397,7 @@ snapshots:
       type-check: 0.4.0
       word-wrap: 1.2.5
 
-  orval@8.12.3(@faker-js/faker@10.4.0)(prettier@3.8.3)(typescript@6.0.3):
+  orval@8.12.3(@faker-js/faker@10.4.0)(prettier@3.8.4)(typescript@6.0.3):
     dependencies:
       '@commander-js/extra-typings': 14.0.0(commander@14.0.3)
       '@orval/angular': 8.12.3(@faker-js/faker@10.4.0)(typescript@6.0.3)
@@ -12429,7 +12429,7 @@ snapshots:
       typedoc-plugin-coverage: 4.0.3(typedoc@0.28.19(typescript@6.0.3))
       typedoc-plugin-markdown: 4.12.0(typedoc@0.28.19(typescript@6.0.3))
     optionalDependencies:
-      prettier: 3.8.3
+      prettier: 3.8.4
     transitivePeerDependencies:
       - '@faker-js/faker'
       - supports-color
@@ -12636,7 +12636,7 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier@3.8.3: {}
+  prettier@3.8.4: {}
 
   pretty-format@27.5.1:
     dependencies:
