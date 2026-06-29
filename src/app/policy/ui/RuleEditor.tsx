@@ -5,6 +5,7 @@ import { type FormEvent, useState } from 'react';
 
 import {
   type PolicyRule,
+  RuleActionError,
   type RuleStatus,
   parseScopes,
 } from '@/src/app/policy/domain/policy_rule';
@@ -19,6 +20,11 @@ import {
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
+
+// RuleAction names the write the user triggered. The in-flight button label is
+// derived from this, not from the optimistically-updated rule status, so a
+// publish never briefly reads "Revoking…" after the badge flips.
+type RuleAction = 'publish' | 'revoke';
 
 const STATUS_CLASS: Record<RuleStatus, string> = {
   draft: 'bg-muted text-muted-foreground',
@@ -40,65 +46,148 @@ const formatTimestamp = (iso: string) => {
   });
 };
 
-interface RuleRowProps {
+// messageForRuleError maps a failed action onto an actionable, no-em-dash
+// message. 400 means the rule's status changed under us; 404 means it is gone.
+const messageForRuleError = (error: unknown, action: RuleAction): string => {
+  const verb = action === 'publish' ? 'published' : 'revoked';
+
+  if (error instanceof RuleActionError) {
+    if (error.code === 'illegal_transition') {
+      return `This rule can no longer be ${verb} because its status changed. Refresh to see the latest.`;
+    }
+    if (error.code === 'not_found') {
+      return 'This rule no longer exists.';
+    }
+  }
+
+  return action === 'publish'
+    ? 'Failed to publish rule. Please try again.'
+    : 'Failed to revoke rule. Please try again.';
+};
+
+interface PolicyRuleRowProps {
   rule: PolicyRule;
-  isPending: boolean;
+  pendingAction: RuleAction | null;
   actionError: string | null;
   onPublish: (id: string) => void;
   onRevoke: (id: string) => void;
 }
 
-const RuleRow = ({
+const PolicyRuleRow = ({
   rule,
-  isPending,
+  pendingAction,
   actionError,
   onPublish,
   onRevoke,
-}: RuleRowProps) => (
-  <div className="flex flex-col gap-1 px-4 py-3">
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-      <span
-        className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${
-          STATUS_CLASS[rule.status as RuleStatus] ?? STATUS_CLASS.unspecified
-        }`}
-      >
-        {rule.status.toUpperCase()}
-      </span>
-      <span className="font-medium">{rule.name}</span>
-      <code className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-        v{rule.version}
-      </code>
-      <span className="ml-auto text-xs text-muted-foreground">
-        {formatTimestamp(rule.createdAt)}
-      </span>
-      {rule.status === 'draft' && (
+}: PolicyRuleRowProps) => {
+  // Local visual state: revoke removes live protection and is effectively
+  // irreversible, so it takes a second deliberate click to confirm.
+  const [confirmingRevoke, setConfirmingRevoke] = useState(false);
+
+  const errorId = `rule-error-${rule.id}`;
+  const describedBy = actionError ? errorId : undefined;
+
+  const renderActions = () => {
+    if (pendingAction) {
+      return (
+        <Button
+          variant={pendingAction === 'revoke' ? 'destructive' : 'outline'}
+          size="sm"
+          disabled
+          aria-busy
+          aria-describedby={describedBy}
+        >
+          {pendingAction === 'publish' ? 'Publishing…' : 'Revoking…'}
+        </Button>
+      );
+    }
+
+    if (rule.status === 'draft') {
+      return (
         <Button
           variant="outline"
           size="sm"
-          disabled={isPending}
+          aria-describedby={describedBy}
           onClick={() => onPublish(rule.id)}
         >
-          {isPending ? 'Publishing…' : 'Publish'}
+          Publish
         </Button>
-      )}
-      {rule.status === 'published' && (
+      );
+    }
+
+    if (rule.status === 'published') {
+      if (confirmingRevoke) {
+        return (
+          <div className="flex items-center gap-2">
+            <Button
+              variant="destructive"
+              size="sm"
+              aria-describedby={describedBy}
+              onClick={() => {
+                setConfirmingRevoke(false);
+                onRevoke(rule.id);
+              }}
+            >
+              Confirm revoke
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setConfirmingRevoke(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        );
+      }
+
+      return (
         <Button
-          variant="outline"
+          variant="destructive"
           size="sm"
-          disabled={isPending}
-          onClick={() => onRevoke(rule.id)}
+          aria-describedby={describedBy}
+          onClick={() => setConfirmingRevoke(true)}
         >
-          {isPending ? 'Revoking…' : 'Revoke'}
+          Revoke
         </Button>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <div className="flex flex-col gap-1 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        <span
+          className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${
+            STATUS_CLASS[rule.status as RuleStatus] ?? STATUS_CLASS.unspecified
+          }`}
+        >
+          {rule.status.toUpperCase()}
+        </span>
+        <span className="font-medium">{rule.name}</span>
+        <code className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+          v{rule.version}
+        </code>
+        <span className="ml-auto text-xs text-muted-foreground">
+          {formatTimestamp(rule.createdAt)}
+        </span>
+        {renderActions()}
+      </div>
+      {actionError && (
+        <p
+          id={errorId}
+          role="alert"
+          aria-live="polite"
+          className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive"
+        >
+          {actionError}
+        </p>
       )}
     </div>
-    {actionError && (
-      <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-        {actionError}
-      </p>
-    )}
-  </div>
-);
+  );
+};
 
 export const RuleEditor = () => {
   const {
@@ -118,10 +207,11 @@ export const RuleEditor = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Tracks which rule ids have an in-flight publish/revoke request.
-  const [pendingRuleIds, setPendingRuleIds] = useState<ReadonlySet<string>>(
-    new Set()
-  );
+  // Maps a rule id to the in-flight action ('publish' | 'revoke'), so the row
+  // can label the spinner by the action rather than the optimistic status.
+  const [pendingActions, setPendingActions] = useState<
+    Record<string, RuleAction>
+  >({});
   // Per-rule error messages keyed by rule id.
   const [ruleActionErrors, setRuleActionErrors] = useState<
     Record<string, string>
@@ -152,12 +242,8 @@ export const RuleEditor = () => {
     }
   };
 
-  const handleRuleAction = async (
-    ruleId: string,
-    action: (id: string) => Promise<PolicyRule>,
-    errorMessage: string
-  ) => {
-    setPendingRuleIds((prev) => new Set([...prev, ruleId]));
+  const handleRuleAction = async (ruleId: string, action: RuleAction) => {
+    setPendingActions((prev) => ({ ...prev, [ruleId]: action }));
     setRuleActionErrors((prev) => {
       const next = { ...prev };
       delete next[ruleId];
@@ -165,13 +251,16 @@ export const RuleEditor = () => {
       return next;
     });
     try {
-      await action(ruleId);
-    } catch {
-      setRuleActionErrors((prev) => ({ ...prev, [ruleId]: errorMessage }));
+      await (action === 'publish' ? publishRule(ruleId) : revokeRule(ruleId));
+    } catch (err) {
+      setRuleActionErrors((prev) => ({
+        ...prev,
+        [ruleId]: messageForRuleError(err, action),
+      }));
     } finally {
-      setPendingRuleIds((prev) => {
-        const next = new Set(prev);
-        next.delete(ruleId);
+      setPendingActions((prev) => {
+        const next = { ...prev };
+        delete next[ruleId];
 
         return next;
       });
@@ -179,18 +268,10 @@ export const RuleEditor = () => {
   };
 
   const handlePublish = (ruleId: string) =>
-    void handleRuleAction(
-      ruleId,
-      publishRule,
-      'Failed to publish rule. Please try again.'
-    );
+    void handleRuleAction(ruleId, 'publish');
 
   const handleRevoke = (ruleId: string) =>
-    void handleRuleAction(
-      ruleId,
-      revokeRule,
-      'Failed to revoke rule. Please try again.'
-    );
+    void handleRuleAction(ruleId, 'revoke');
 
   return (
     <div className="flex flex-col gap-6">
@@ -199,7 +280,7 @@ export const RuleEditor = () => {
           <CardTitle>New rule</CardTitle>
           <CardDescription>
             Create a Draft policy rule. It is authored under your account and
-            starts unpublished — publishing is a separate review step.
+            starts unpublished. Publishing is a separate review step.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -291,10 +372,10 @@ export const RuleEditor = () => {
           {rules.length > 0 && (
             <div className="flex flex-col divide-y rounded-md border text-sm">
               {rules.map((rule) => (
-                <RuleRow
+                <PolicyRuleRow
                   key={rule.id}
                   rule={rule}
-                  isPending={pendingRuleIds.has(rule.id)}
+                  pendingAction={pendingActions[rule.id] ?? null}
                   actionError={ruleActionErrors[rule.id] ?? null}
                   onPublish={handlePublish}
                   onRevoke={handleRevoke}
