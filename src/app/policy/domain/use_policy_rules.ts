@@ -19,21 +19,15 @@ import {
 
 // replaceRuleInCache returns a copy of the cached list response with the rule
 // matching `updated.id` swapped for `updated`. It reads from whatever cache it
-// is handed, so passing the FRESHEST cache (SWR's populateCache currentData
-// arg) keeps concurrent in-flight actions on other rules intact.
+// is handed, so passing the FRESHEST cache keeps concurrent in-flight actions
+// on other rules intact. When there is no loaded 200 list (the cache is still
+// undefined or holds an error), it returns `current` unchanged so an action
+// firing pre-load can never replace a real cache with a fabricated one.
 const replaceRuleInCache = (
   current: listRulesResponse | undefined,
   updated: PolicyRule
-): listRulesResponse => {
-  // No loaded list to merge into (not reachable once the action buttons have
-  // rendered). Seed a 200 response holding just the confirmed rule.
-  if (!current || current.status !== 200) {
-    return {
-      status: 200 as const,
-      data: { rules: [updated] },
-      headers: current?.headers ?? new Headers(),
-    } as listRulesResponse;
-  }
+): listRulesResponse | undefined => {
+  if (!current || current.status !== 200) return current;
 
   return {
     ...current,
@@ -44,23 +38,15 @@ const replaceRuleInCache = (
 };
 
 // patchRuleStatusInCache returns a copy of the cached list response with only
-// the targeted rule's status flipped. Used for the optimistic snapshot so the
-// badge updates instantly without touching any other row.
+// the targeted rule's status flipped, used for the optimistic badge update.
+// Like replaceRuleInCache, it is a no-op (returns `current` unchanged) when
+// there is no loaded 200 list, so it never blanks the visible list.
 const patchRuleStatusInCache = (
   current: listRulesResponse | undefined,
   ruleId: string,
   status: string
-): listRulesResponse => {
-  // The action buttons only render once the list has loaded, so a non-200 /
-  // undefined cache is not reachable in practice. Fall back to an empty list
-  // response to satisfy SWR's "optimisticData must return Data" contract.
-  if (!current || current.status !== 200) {
-    return (current ?? {
-      status: 200 as const,
-      data: { rules: [] },
-      headers: new Headers(),
-    }) as listRulesResponse;
-  }
+): listRulesResponse | undefined => {
+  if (!current || current.status !== 200) return current;
 
   return {
     ...current,
@@ -112,7 +98,9 @@ export function usePolicyRules() {
   // one of two concurrent transitions. A synchronous updater commits
   // immediately and is not subject to that race.
   const patchListRule = (
-    updater: (current: listRulesResponse | undefined) => listRulesResponse
+    updater: (
+      current: listRulesResponse | undefined
+    ) => listRulesResponse | undefined
   ): Promise<unknown> =>
     globalMutate<listRulesResponse>(getListRulesKey(), updater, {
       revalidate: false,
