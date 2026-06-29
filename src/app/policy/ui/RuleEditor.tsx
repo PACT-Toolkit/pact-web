@@ -40,34 +40,92 @@ const formatTimestamp = (iso: string) => {
   });
 };
 
-const RuleRow = ({ rule }: { rule: PolicyRule }) => (
-  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3">
-    <span
-      className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${
-        STATUS_CLASS[rule.status as RuleStatus] ?? STATUS_CLASS.unspecified
-      }`}
-    >
-      {rule.status.toUpperCase()}
-    </span>
-    <span className="font-medium">{rule.name}</span>
-    <code className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-      v{rule.version}
-    </code>
-    <span className="ml-auto text-xs text-muted-foreground">
-      {formatTimestamp(rule.createdAt)}
-    </span>
+interface RuleRowProps {
+  rule: PolicyRule;
+  isPending: boolean;
+  actionError: string | null;
+  onPublish: (id: string) => void;
+  onRevoke: (id: string) => void;
+}
+
+const RuleRow = ({
+  rule,
+  isPending,
+  actionError,
+  onPublish,
+  onRevoke,
+}: RuleRowProps) => (
+  <div className="flex flex-col gap-1 px-4 py-3">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+      <span
+        className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${
+          STATUS_CLASS[rule.status as RuleStatus] ?? STATUS_CLASS.unspecified
+        }`}
+      >
+        {rule.status.toUpperCase()}
+      </span>
+      <span className="font-medium">{rule.name}</span>
+      <code className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+        v{rule.version}
+      </code>
+      <span className="ml-auto text-xs text-muted-foreground">
+        {formatTimestamp(rule.createdAt)}
+      </span>
+      {rule.status === 'draft' && (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isPending}
+          onClick={() => onPublish(rule.id)}
+        >
+          {isPending ? 'Publishing…' : 'Publish'}
+        </Button>
+      )}
+      {rule.status === 'published' && (
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isPending}
+          onClick={() => onRevoke(rule.id)}
+        >
+          {isPending ? 'Revoking…' : 'Revoke'}
+        </Button>
+      )}
+    </div>
+    {actionError && (
+      <p className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+        {actionError}
+      </p>
+    )}
   </div>
 );
 
 export const RuleEditor = () => {
-  const { rules, isLoading, isValidating, error, createRule, refresh } =
-    usePolicyRules();
+  const {
+    rules,
+    isLoading,
+    isValidating,
+    error,
+    createRule,
+    publishRule,
+    revokeRule,
+    refresh,
+  } = usePolicyRules();
 
   const [name, setName] = useState('');
   const [packYaml, setPackYaml] = useState('');
   const [scopes, setScopes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Tracks which rule ids have an in-flight publish/revoke request.
+  const [pendingRuleIds, setPendingRuleIds] = useState<ReadonlySet<string>>(
+    new Set()
+  );
+  // Per-rule error messages keyed by rule id.
+  const [ruleActionErrors, setRuleActionErrors] = useState<
+    Record<string, string>
+  >({});
 
   const canSubmit =
     name.trim() !== '' && packYaml.trim() !== '' && !isSubmitting;
@@ -93,6 +151,46 @@ export const RuleEditor = () => {
       setIsSubmitting(false);
     }
   };
+
+  const handleRuleAction = async (
+    ruleId: string,
+    action: (id: string) => Promise<PolicyRule>,
+    errorMessage: string
+  ) => {
+    setPendingRuleIds((prev) => new Set([...prev, ruleId]));
+    setRuleActionErrors((prev) => {
+      const next = { ...prev };
+      delete next[ruleId];
+
+      return next;
+    });
+    try {
+      await action(ruleId);
+    } catch {
+      setRuleActionErrors((prev) => ({ ...prev, [ruleId]: errorMessage }));
+    } finally {
+      setPendingRuleIds((prev) => {
+        const next = new Set(prev);
+        next.delete(ruleId);
+
+        return next;
+      });
+    }
+  };
+
+  const handlePublish = (ruleId: string) =>
+    void handleRuleAction(
+      ruleId,
+      publishRule,
+      'Failed to publish rule. Please try again.'
+    );
+
+  const handleRevoke = (ruleId: string) =>
+    void handleRuleAction(
+      ruleId,
+      revokeRule,
+      'Failed to revoke rule. Please try again.'
+    );
 
   return (
     <div className="flex flex-col gap-6">
@@ -193,7 +291,14 @@ export const RuleEditor = () => {
           {rules.length > 0 && (
             <div className="flex flex-col divide-y rounded-md border text-sm">
               {rules.map((rule) => (
-                <RuleRow key={rule.id} rule={rule} />
+                <RuleRow
+                  key={rule.id}
+                  rule={rule}
+                  isPending={pendingRuleIds.has(rule.id)}
+                  actionError={ruleActionErrors[rule.id] ?? null}
+                  onPublish={handlePublish}
+                  onRevoke={handleRevoke}
+                />
               ))}
             </div>
           )}

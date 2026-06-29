@@ -9,7 +9,7 @@
  */
 import useSwr from 'swr';
 import useSWRMutation from 'swr/mutation';
-import type { Key, SWRConfiguration } from 'swr';
+import type { Arguments, Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
 import type { AxiosError, AxiosRequestConfig } from 'axios';
@@ -39,6 +39,28 @@ import {
   createRule,
   getCreateRuleMutationFetcher,
   getCreateRuleMutationKey,
+  publishRuleResponse200,
+  publishRuleResponse400,
+  publishRuleResponse401,
+  publishRuleResponse404,
+  publishRuleResponseSuccess,
+  publishRuleResponseError,
+  getPublishRuleUrl,
+  publishRuleResponse,
+  publishRule,
+  getPublishRuleMutationFetcher,
+  getPublishRuleMutationKey,
+  revokeRuleResponse200,
+  revokeRuleResponse400,
+  revokeRuleResponse401,
+  revokeRuleResponse404,
+  revokeRuleResponseSuccess,
+  revokeRuleResponseError,
+  getRevokeRuleUrl,
+  revokeRuleResponse,
+  revokeRule,
+  getRevokeRuleMutationFetcher,
+  getRevokeRuleMutationKey,
 } from './fetchers';
 
 export type ListRulesQueryResult = NonNullable<
@@ -95,6 +117,72 @@ export const useCreateRule = <TError = Promise<string>>(options?: {
 
   const swrKey = swrOptions?.swrKey ?? getCreateRuleMutationKey();
   const swrFn = getCreateRuleMutationFetcher(fetchOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type PublishRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof publishRule>>
+>;
+
+/**
+ * @summary Publish a draft policy rule
+ */
+export const usePublishRule = <TError = Promise<string>>(
+  id: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof publishRule>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof publishRule>>
+    > & { swrKey?: string };
+    fetch?: RequestInit;
+  }
+) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getPublishRuleMutationKey(id);
+  const swrFn = getPublishRuleMutationFetcher(id, fetchOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type RevokeRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof revokeRule>>
+>;
+
+/**
+ * @summary Revoke a published policy rule
+ */
+export const useRevokeRule = <TError = Promise<string>>(
+  id: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof revokeRule>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof revokeRule>>
+    > & { swrKey?: string };
+    fetch?: RequestInit;
+  }
+) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getRevokeRuleMutationKey(id);
+  const swrFn = getRevokeRuleMutationFetcher(id, fetchOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

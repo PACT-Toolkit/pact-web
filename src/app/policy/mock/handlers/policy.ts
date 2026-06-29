@@ -107,6 +107,10 @@ interface CreateRuleBody {
   scopes?: string[];
 }
 
+// Valid publish/revoke transitions enforced by the mock.
+const PUBLISH_TRANSITIONS: Record<string, string> = { draft: 'published' };
+const REVOKE_TRANSITIONS: Record<string, string> = { published: 'revoked' };
+
 export const handlers: RequestHandler[] = [
   http.get('*/v1/audit/policy-events', () =>
     HttpResponse.json({ events: policyEvents, total: policyEvents.length })
@@ -140,5 +144,41 @@ export const handlers: RequestHandler[] = [
     policyRules.push(rule);
 
     return HttpResponse.json(rule, { status: 201 });
+  }),
+
+  http.post(`${MSW_PACT_BASE}/gateway/v1/rules/:id/publish`, ({ params }) => {
+    const rule = policyRules.find((r) => r.id === params.id);
+    if (!rule) {
+      return HttpResponse.json({ error: 'rule not found' }, { status: 404 });
+    }
+    const nextStatus = PUBLISH_TRANSITIONS[rule.status];
+    if (!nextStatus) {
+      return HttpResponse.json(
+        { error: `cannot publish a rule with status: ${rule.status}` },
+        { status: 400 }
+      );
+    }
+    rule.status = nextStatus;
+    rule.updatedAt = new Date().toISOString();
+
+    return HttpResponse.json({ ...rule });
+  }),
+
+  http.post(`${MSW_PACT_BASE}/gateway/v1/rules/:id/revoke`, ({ params }) => {
+    const rule = policyRules.find((r) => r.id === params.id);
+    if (!rule) {
+      return HttpResponse.json({ error: 'rule not found' }, { status: 404 });
+    }
+    const nextStatus = REVOKE_TRANSITIONS[rule.status];
+    if (!nextStatus) {
+      return HttpResponse.json(
+        { error: `cannot revoke a rule with status: ${rule.status}` },
+        { status: 400 }
+      );
+    }
+    rule.status = nextStatus;
+    rule.updatedAt = new Date().toISOString();
+
+    return HttpResponse.json({ ...rule });
   }),
 ];
