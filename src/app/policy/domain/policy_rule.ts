@@ -24,6 +24,38 @@ export type RuleStatus =
   | 'revoked'
   | 'unspecified';
 
+// RuleActionErrorCode classifies a failed publish/revoke so the UI can map it
+// to an actionable message. `illegal_transition` is the gateway's 400 (the
+// rule's status changed under us), `not_found` is its 404 (the rule no longer
+// exists), and `unknown` covers auth/transport/5xx failures.
+export type RuleActionErrorCode =
+  | 'illegal_transition'
+  | 'not_found'
+  | 'unknown';
+
+// RuleActionError is thrown by the publish/revoke flows so callers can branch
+// on `code` rather than parsing a message string.
+export class RuleActionError extends Error {
+  readonly code: RuleActionErrorCode;
+
+  constructor(code: RuleActionErrorCode, message: string) {
+    super(message);
+    this.name = 'RuleActionError';
+    this.code = code;
+  }
+}
+
+// ruleActionErrorCodeForStatus maps a gateway HTTP status onto the closed set
+// of action error codes.
+export function ruleActionErrorCodeForStatus(
+  status: number
+): RuleActionErrorCode {
+  if (status === 400) return 'illegal_transition';
+  if (status === 404) return 'not_found';
+
+  return 'unknown';
+}
+
 // parseScopes turns a free-form comma-separated string into a deduped,
 // trimmed scope list. Empty segments are dropped so "read, , write," yields
 // ["read", "write"].

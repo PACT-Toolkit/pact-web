@@ -8,7 +8,7 @@
 
 import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-import type { Key } from 'swr';
+import type { Arguments, Key } from 'swr';
 
 import type {
   RulesCreateRuleRequest,
@@ -131,3 +131,151 @@ export const getCreateRuleMutationFetcher = (options?: RequestInit) => {
 
 export const getCreateRuleMutationKey = () =>
   [`/api/pact/gateway/v1/rules`] as const;
+
+export type publishRuleResponse200 = {
+  data: RulesRuleResponse;
+  status: 200;
+};
+
+export type publishRuleResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type publishRuleResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type publishRuleResponse404 = {
+  data: string;
+  status: 404;
+};
+
+export type publishRuleResponseSuccess = publishRuleResponse200 & {
+  headers: Headers;
+};
+
+export type publishRuleResponseError = (
+  | publishRuleResponse400
+  | publishRuleResponse401
+  | publishRuleResponse404
+) & {
+  headers: Headers;
+};
+
+export type publishRuleResponse =
+  | publishRuleResponseSuccess
+  | publishRuleResponseError;
+
+export const getPublishRuleUrl = (id: string) => {
+  return `/api/pact/gateway/v1/rules/${id}/publish`;
+};
+
+/**
+ * @summary Publish a draft policy rule
+ */
+export const publishRule = async (
+  id: string,
+  options?: RequestInit
+): Promise<publishRuleResponse> => {
+  const res = await fetch(getPublishRuleUrl(id), {
+    ...options,
+    method: 'POST',
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: publishRuleResponse['data'] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as publishRuleResponse;
+};
+
+export const getPublishRuleMutationFetcher = (
+  id: string,
+  options?: RequestInit
+) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return publishRule(id, options);
+  };
+};
+
+export const getPublishRuleMutationKey = (id: string) =>
+  [`/api/pact/gateway/v1/rules/${id}/publish`] as const;
+
+export type revokeRuleResponse200 = {
+  data: RulesRuleResponse;
+  status: 200;
+};
+
+export type revokeRuleResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type revokeRuleResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type revokeRuleResponse404 = {
+  data: string;
+  status: 404;
+};
+
+export type revokeRuleResponseSuccess = revokeRuleResponse200 & {
+  headers: Headers;
+};
+
+export type revokeRuleResponseError = (
+  | revokeRuleResponse400
+  | revokeRuleResponse401
+  | revokeRuleResponse404
+) & {
+  headers: Headers;
+};
+
+export type revokeRuleResponse =
+  | revokeRuleResponseSuccess
+  | revokeRuleResponseError;
+
+export const getRevokeRuleUrl = (id: string) => {
+  return `/api/pact/gateway/v1/rules/${id}/revoke`;
+};
+
+/**
+ * @summary Revoke a published policy rule
+ */
+export const revokeRule = async (
+  id: string,
+  options?: RequestInit
+): Promise<revokeRuleResponse> => {
+  const res = await fetch(getRevokeRuleUrl(id), {
+    ...options,
+    method: 'POST',
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: revokeRuleResponse['data'] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as revokeRuleResponse;
+};
+
+export const getRevokeRuleMutationFetcher = (
+  id: string,
+  options?: RequestInit
+) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return revokeRule(id, options);
+  };
+};
+
+export const getRevokeRuleMutationKey = (id: string) =>
+  [`/api/pact/gateway/v1/rules/${id}/revoke`] as const;
