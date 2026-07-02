@@ -19,7 +19,7 @@ const createWrapper = () => {
   return Wrapper;
 };
 
-describe('useDashboardPipelineStats — PACT-363 audit:stats 403 gate (PACT-377)', () => {
+describe('useDashboardPipelineStats - PACT-363 audit:stats 403 gate (PACT-377)', () => {
   it('exposes statsForbidden=true and empty stats on a 403, without touching the live decisions query', async () => {
     server.use(
       http.get('*/v1/audit/stats', () =>

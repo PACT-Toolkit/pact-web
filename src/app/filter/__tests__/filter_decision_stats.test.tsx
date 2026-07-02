@@ -19,7 +19,7 @@ const createWrapper = () => {
   return Wrapper;
 };
 
-describe('useFilterDecisionStats — PACT-363 audit:stats 403 gate (PACT-377)', () => {
+describe('useFilterDecisionStats - PACT-363 audit:stats 403 gate (PACT-377)', () => {
   it('exposes forbidden=true and empty stats on a 403, not a raw error', async () => {
     server.use(
       http.get('*/v1/audit/stats', () =>
