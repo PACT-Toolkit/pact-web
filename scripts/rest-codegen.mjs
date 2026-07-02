@@ -250,7 +250,15 @@ ${configs}
 });
 `;
 
-  await writeFile(join(ROOT, 'orval.config.ts'), configContent);
+  const configPath = join(ROOT, 'orval.config.ts');
+  await writeFile(configPath, configContent);
+
+  // The template above always quotes object keys, but the repo's prettier
+  // config uses `quoteProps: "as-needed"` and drops quotes from valid
+  // identifiers. Format with the project's own prettier so the committed
+  // file matches what `pnpm prettier:check` expects, keeping the tree clean
+  // across repeated codegen runs.
+  run(`pnpm exec prettier --write "${configPath}"`);
 };
 
 /**
