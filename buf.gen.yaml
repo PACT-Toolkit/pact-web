@@ -11,7 +11,10 @@ clean: true
 inputs:
   - directory: ../pact-auth/proto
 plugins:
-  - local: ./node_modules/.bin/protoc-gen-es
+  # Invoked as `node <script>` (array form) rather than the .bin/ shim so this
+  # resolves on native Windows too - the .bin/ shim is a POSIX shell script
+  # that Windows cannot execute directly.
+  - local: ['node', './node_modules/@bufbuild/protoc-gen-es/bin/protoc-gen-es']
     out: src/__codegen__/proto
     opt:
       - target=ts
