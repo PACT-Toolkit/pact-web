@@ -36,6 +36,7 @@
 # Include these files
 !.editorconfig
 !eslint.config.mjs
+!.gitattributes
 !.gitignore
 !.lintstagedrc.json
 !.npmrc

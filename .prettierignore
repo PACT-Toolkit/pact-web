@@ -1,6 +1,7 @@
 .husky/
 .next/
 CODEOWNERS
+.gitattributes
 .gitignore
 .prettierignore
 .tool-versions
