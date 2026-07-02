@@ -12,6 +12,15 @@ import {
 export type ConsensusSubObject = NonNullable<DecisionPayload['consensus']>;
 export type ConsensusVote = NonNullable<ConsensusSubObject['votes']>[number];
 
+// Client-side page size for the consensus console (PACT-369). Distinct from
+// the fixed fetch window in ConsensusWorkbench.tsx (FETCH_WINDOW_SIZE):
+// that constant bounds the single SWR request against the server-side
+// clamp, this one bounds how many already-fetched records are shown per
+// page. Co-located with ConsensusRecord for the same reason
+// filter_decision.ts keeps PAGE_SIZE next to DecisionPayload -- the two are
+// defined together and read together.
+export const PAGE_SIZE = 25;
+
 // One arbitrated request: the audit event's identity/timing fields paired
 // with the decoded consensus sub-object (and classifier engine, for
 // context on which model triggered the stage 2.5 escalation).
@@ -27,6 +36,11 @@ export interface ConsensusRecord {
   // end-to-end request latency (kafka.DecisionEvent.LatencyMs). Rendered as
   // "Request latency" in the UI, never as "consensus latency".
   latencyMs?: number;
+  // Raw JSONB payload string for the same event, pretty-printed on demand
+  // via audit_event_variant.ts's prettyPayload (PACT-369). Threaded through
+  // so the console can offer the same raw-JSON fallback /audit has, without
+  // re-fetching the event.
+  rawPayload: string;
 }
 
 // Only events whose decoded payload carries a `consensus` sub-object become
@@ -50,6 +64,7 @@ export const extractConsensusRecords = (
       consensus: payload.consensus,
       classifierEngine: payload.classifier?.engine,
       latencyMs: payload.latency_ms,
+      rawPayload: event.payloadJson,
     });
   }
 

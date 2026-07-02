@@ -125,7 +125,7 @@ export const AuditWorkbench = () => {
   };
 
   return (
-    <Card>
+    <Card data-testid="audit-workbench">
       <CardHeader className="flex flex-col gap-1">
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-1">
@@ -157,6 +157,7 @@ export const AuditWorkbench = () => {
               handleFilterChange(() => setTopic(event.target.value))
             }
             className="h-9 rounded-md border bg-background px-3 text-sm"
+            data-testid="audit-topic-select"
           >
             {TOPIC_OPTIONS.map((opt) => (
               <option key={opt.value || '__all__'} value={opt.value}>
@@ -220,7 +221,10 @@ export const AuditWorkbench = () => {
         )}
 
         {!error && filteredEvents.length === 0 && !isLoading && (
-          <p className="rounded-md border bg-muted/40 p-4 text-sm text-muted-foreground">
+          <p
+            className="rounded-md border bg-muted/40 p-4 text-sm text-muted-foreground"
+            data-testid="audit-empty-state"
+          >
             {topic === 'pact.policy'
               ? "pact.policy events aren't recorded in the audit log yet -- pact-audit doesn't consume that topic yet."
               : 'No audit events match these filters yet.'}
@@ -232,7 +236,10 @@ export const AuditWorkbench = () => {
         )}
 
         {filteredEvents.length > 0 && (
-          <div className="flex flex-col divide-y rounded-md border">
+          <div
+            className="flex flex-col divide-y rounded-md border"
+            data-testid="audit-row-list"
+          >
             {filteredEvents.map((event) => (
               <AuditRow key={event.id} event={event} />
             ))}
@@ -240,7 +247,7 @@ export const AuditWorkbench = () => {
         )}
 
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>
+          <span data-testid="audit-page-info">
             {total > 0
               ? `Showing ${pageStart}–${pageEnd} of ${total}`
               : 'No matching rows'}
@@ -251,6 +258,7 @@ export const AuditWorkbench = () => {
               size="sm"
               disabled={page === 0 || isValidating}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
+              data-testid="audit-page-prev"
             >
               Previous
             </Button>
@@ -262,6 +270,7 @@ export const AuditWorkbench = () => {
               size="sm"
               disabled={page + 1 >= totalPages || isValidating}
               onClick={() => setPage((p) => p + 1)}
+              data-testid="audit-page-next"
             >
               Next
             </Button>

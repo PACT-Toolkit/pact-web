@@ -8,9 +8,20 @@ export const handlers: RequestHandler[] = [
     const url = new URL(request.url);
     if (url.searchParams.get('topic') !== 'pact.decisions') return undefined;
 
+    const requestId = url.searchParams.get('requestId');
     const limit = Math.min(Number(url.searchParams.get('limit') ?? '50'), 200);
     const offset = Number(url.searchParams.get('offset') ?? '0');
-    const all = db.decisions.getAll();
+    // Sort newest-first explicitly rather than relying on insertion order --
+    // consensus.ts (PACT-369) appends a second batch of pact.decisions rows
+    // via createConsensusMockData, so insertion order no longer coincides
+    // with recency once both seeders have run.
+    const all = db.decisions
+      .getAll()
+      .filter((event) => !requestId || event.requestId === requestId)
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
     const page = all.slice(offset, offset + limit);
 
     return HttpResponse.json({ events: page, total: all.length });

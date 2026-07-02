@@ -13,6 +13,7 @@ import {
   isSplit,
 } from '@/src/app/consensus/domain/consensus_flags';
 import { type ConsensusRecord } from '@/src/app/consensus/domain/consensus_record';
+import { ConsensusRawPayloadToggle } from '@/src/app/consensus/ui/ConsensusRawPayloadToggle';
 import { ConsensusVoteChip } from '@/src/app/consensus/ui/ConsensusVoteChip';
 
 const formatTimestamp = (iso: string) => {
@@ -30,14 +31,14 @@ const formatTimestamp = (iso: string) => {
 };
 
 // One arbitrated request: winning label, confidence, backend count, quorum
-// badge, per-model vote chips, and highlight badges for the cases an
-// operator cares about most (SPLIT / NO QUORUM / FAIL-OPEN / LOW
-// CONFIDENCE). Mirrors the badge-row + info-line visual language of
+// badge, per-model vote chips, highlight badges for the cases an operator
+// cares about most (SPLIT / NO QUORUM / FAIL-OPEN / LOW CONFIDENCE), and a
+// collapsible raw-JSON fallback (PACT-369, ConsensusRawPayloadToggle).
+// Mirrors the badge-row + info-line visual language of
 // AuditRowShell/AuditDecisionInsights without reusing AuditRowShell's
-// collapsible raw-payload chrome -- the extraction step (consensus_record.ts)
-// keeps only the decoded consensus sub-object, not the full raw payload
-// string, since the console's job is to make votes/quorum scannable across
-// many rows rather than inspect one row's full JSON.
+// header/body split directly -- this card's layout (badge row + vote chips)
+// doesn't nest inside AuditRowShell's collapsible chrome, so the raw-payload
+// toggle here is a small dedicated component instead.
 export const ConsensusRecordCard = ({
   record,
 }: {
@@ -53,6 +54,7 @@ export const ConsensusRecordCard = ({
   return (
     <div
       className={`flex flex-col gap-2 p-4 text-sm ${flagged ? 'bg-amber-500/5' : ''}`}
+      data-testid="consensus-record-card"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -150,6 +152,8 @@ export const ConsensusRecordCard = ({
           </code>
         </span>
       )}
+
+      <ConsensusRawPayloadToggle rawPayload={record.rawPayload} />
     </div>
   );
 };
