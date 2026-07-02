@@ -26,9 +26,16 @@
  *
  * OpenAPI spec version: 0.1.0
  */
-import type { Error } from './error';
+import type { DecisionStatsClassifier } from './decisionStatsClassifier';
+import type { DecisionStatsFilter } from './decisionStatsFilter';
+import type { DecisionStatsRedactor } from './decisionStatsRedactor';
 
-/**
- * Per-IP rate limit exceeded
- */
-export type TooManyRequestsResponse = Error;
+export interface QueryDecisionStatsResponse {
+  /** Decisions matched by the requested [sinceUnix, untilUnix) window. */
+  total: number;
+  /** Unix seconds of the newest matched decision; 0 if total is 0. */
+  latest_at_unix: number;
+  filter: DecisionStatsFilter;
+  classifier: DecisionStatsClassifier;
+  redactor: DecisionStatsRedactor;
+}

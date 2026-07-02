@@ -34,9 +34,9 @@ export const DashboardFilterWidget = ({
         <DashboardStatTile label="Flagged" value={stats.filter.flagged} />
         <DashboardStatTile
           label="Block rate"
-          value={`${stats.filter.blockRate.toFixed(1)}%`}
+          value={`${stats.filter.block_rate.toFixed(1)}%`}
           valueClass={
-            stats.filter.blockRate > 10 ? 'text-destructive' : undefined
+            stats.filter.block_rate > 10 ? 'text-destructive' : undefined
           }
         />
       </div>
@@ -46,7 +46,7 @@ export const DashboardFilterWidget = ({
           {stats.filter.hostile} hostile
         </p>
         <DashboardBreakdownList
-          items={stats.filter.topRules}
+          items={stats.filter.top_rules}
           barClass="bg-destructive/60"
           emptyText="No filter rules matched in this window."
         />

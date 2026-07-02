@@ -26,9 +26,15 @@
  *
  * OpenAPI spec version: 0.1.0
  */
-import type { Error } from './error';
+import type { DecisionStatsLabelCount } from './decisionStatsLabelCount';
 
-/**
- * Per-IP rate limit exceeded
- */
-export type TooManyRequestsResponse = Error;
+export interface DecisionStatsRedactor {
+  /** Decisions where the redactor removed at least one span. */
+  redacted: number;
+  /** Total PII spans removed across the matched window. */
+  spans: number;
+  /** redacted / total, as a 0-100 percentage. */
+  redaction_rate: number;
+  /** PII span label distribution, highest first, max 3. */
+  span_labels: DecisionStatsLabelCount[];
+}

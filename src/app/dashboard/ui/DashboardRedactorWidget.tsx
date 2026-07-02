@@ -36,13 +36,13 @@ export const DashboardRedactorWidget = ({
         <DashboardStatTile label="Spans" value={stats.redactor.spans} />
         <DashboardStatTile
           label="Redaction rate"
-          value={`${stats.redactor.redactionRate.toFixed(1)}%`}
+          value={`${stats.redactor.redaction_rate.toFixed(1)}%`}
         />
       </div>
       <div className="flex flex-col gap-2 border-t pt-3">
         <p className="text-xs font-medium text-muted-foreground">PII types</p>
         <DashboardBreakdownList
-          items={stats.redactor.spanLabels}
+          items={stats.redactor.span_labels}
           barClass="bg-amber-500/60"
           emptyText="No PII redacted in this window."
         />

@@ -26,9 +26,19 @@
  *
  * OpenAPI spec version: 0.1.0
  */
-import type { Error } from './error';
+import type { DecisionStatsLabelCount } from './decisionStatsLabelCount';
 
-/**
- * Per-IP rate limit exceeded
- */
-export type TooManyRequestsResponse = Error;
+export interface DecisionStatsClassifier {
+  /** Decisions where the classifier returned a label. */
+  responded: number;
+  /** Decisions tagged with a non-benign label. */
+  tagged: number;
+  /** Most frequent non-benign label; empty if none. */
+  top_label: string;
+  /** Mean score across tagged decisions, as a 0-100 percentage. */
+  avg_tagged_score: number;
+  /** Decisions arbitrated by pact-consensus (sub-object present, not skipped). */
+  consensus: number;
+  /** Non-benign label distribution, highest first, max 3. */
+  labels: DecisionStatsLabelCount[];
+}

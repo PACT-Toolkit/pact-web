@@ -16,6 +16,13 @@ info:
     The payloadJson field is the raw JSONB column from audit_events.
     Schema is per-topic and evolves over time; decode lazily and
     tolerate unknown fields.
+
+    This spec is hand-maintained (schema/audit/services.config.json
+    sets "manual": true) because pact-audit is a gRPC-only service
+    with no swagger of its own; pact-gateway owns the REST surface
+    as a proxy and publishes its own per-tag slice at
+    api/swagger/audit.yaml. Keep this file in sync by hand when that
+    slice's audit paths change shape.
   version: "0.1.0"
 host: localhost:8110
 basePath: /v1/audit
@@ -85,6 +92,40 @@ paths:
         "401": { $ref: "#/responses/Unauthorized" }
         "429": { $ref: "#/responses/TooManyRequests" }
 
+  /stats:
+    get:
+      summary: Read aggregate decision stats for the pipeline dashboard
+      description: |
+        Server-side aggregate over the caller's pact.decisions rows in
+        [sinceUnix, untilUnix). Both bounds are optional; omitting both
+        aggregates over all of the caller's history. Mirrors the shape
+        of the client-side aggregatePipelineStats helper it replaces,
+        field for field, but computed exactly instead of over a
+        200-event window.
+      operationId: queryDecisionStats
+      tags: [audit]
+      parameters:
+        - name: sinceUnix
+          in: query
+          required: false
+          type: integer
+          format: int64
+          minimum: 0
+          description: Inclusive lower bound on createdAt, unix seconds UTC.
+        - name: untilUnix
+          in: query
+          required: false
+          type: integer
+          format: int64
+          minimum: 0
+          description: Exclusive upper bound on createdAt, unix seconds UTC.
+      responses:
+        "200":
+          description: OK
+          schema: { $ref: "#/definitions/QueryDecisionStatsResponse" }
+        "400": { $ref: "#/responses/BadRequest" }
+        "401": { $ref: "#/responses/Unauthorized" }
+
 definitions:
   AuditEvent:
     type: object
@@ -137,6 +178,102 @@ definitions:
           Caller's matching row count (independent of len(events),
           which is the requested page). Lets the SPA render
           "page x of y" without a follow-up count call.
+
+  # These four definitions are a field-for-field mirror of pact-gateway's
+  # audit.DecisionStats* DTOs (snake_case, not the camelCase used
+  # elsewhere in this file) because pact-gateway's own JSON encoding
+  # mirrors pact-audit's QueryDecisionStatsResponse proto verbatim.
+  # Do not rename, flatten, or otherwise "improve" these fields.
+  DecisionStatsLabelCount:
+    type: object
+    required: [label, count]
+    properties:
+      label: { type: string }
+      count: { type: integer }
+
+  DecisionStatsFilter:
+    type: object
+    required:
+      [flagged, blocked, block_rate, top_rule_id, suspicious, hostile, top_rules]
+    properties:
+      flagged:
+        type: integer
+        description: Decisions where the filter produced a non-safe verdict.
+      blocked:
+        type: integer
+        description: Decisions the gateway ultimately blocked.
+      block_rate:
+        type: number
+        description: blocked / total, as a 0-100 percentage.
+      top_rule_id:
+        type: string
+        description: Most frequently matched filter rule id; empty if none.
+      suspicious:
+        type: integer
+      hostile:
+        type: integer
+      top_rules:
+        type: array
+        items: { $ref: "#/definitions/DecisionStatsLabelCount" }
+        description: Top matched rule ids with counts, highest first, max 3.
+
+  DecisionStatsClassifier:
+    type: object
+    required:
+      [responded, tagged, top_label, avg_tagged_score, consensus, labels]
+    properties:
+      responded:
+        type: integer
+        description: Decisions where the classifier returned a label.
+      tagged:
+        type: integer
+        description: Decisions tagged with a non-benign label.
+      top_label:
+        type: string
+        description: Most frequent non-benign label; empty if none.
+      avg_tagged_score:
+        type: number
+        description: Mean score across tagged decisions, as a 0-100 percentage.
+      consensus:
+        type: integer
+        description: Decisions arbitrated by pact-consensus (sub-object present, not skipped).
+      labels:
+        type: array
+        items: { $ref: "#/definitions/DecisionStatsLabelCount" }
+        description: Non-benign label distribution, highest first, max 3.
+
+  DecisionStatsRedactor:
+    type: object
+    required: [redacted, spans, redaction_rate, span_labels]
+    properties:
+      redacted:
+        type: integer
+        description: Decisions where the redactor removed at least one span.
+      spans:
+        type: integer
+        description: Total PII spans removed across the matched window.
+      redaction_rate:
+        type: number
+        description: redacted / total, as a 0-100 percentage.
+      span_labels:
+        type: array
+        items: { $ref: "#/definitions/DecisionStatsLabelCount" }
+        description: PII span label distribution, highest first, max 3.
+
+  QueryDecisionStatsResponse:
+    type: object
+    required: [total, latest_at_unix, filter, classifier, redactor]
+    properties:
+      total:
+        type: integer
+        description: Decisions matched by the requested [sinceUnix, untilUnix) window.
+      latest_at_unix:
+        type: integer
+        format: int64
+        description: Unix seconds of the newest matched decision; 0 if total is 0.
+      filter: { $ref: "#/definitions/DecisionStatsFilter" }
+      classifier: { $ref: "#/definitions/DecisionStatsClassifier" }
+      redactor: { $ref: "#/definitions/DecisionStatsRedactor" }
 
   Error:
     type: object

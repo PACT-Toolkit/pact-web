@@ -26,9 +26,8 @@
  *
  * OpenAPI spec version: 0.1.0
  */
-import type { Error } from './error';
 
-/**
- * Per-IP rate limit exceeded
- */
-export type TooManyRequestsResponse = Error;
+export interface DecisionStatsLabelCount {
+  label: string;
+  count: number;
+}

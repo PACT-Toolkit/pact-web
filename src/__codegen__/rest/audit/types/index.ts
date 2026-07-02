@@ -17,13 +17,26 @@
  * Schema is per-topic and evolves over time; decode lazily and
  * tolerate unknown fields.
  *
+ * This spec is hand-maintained (schema/audit/services.config.json
+ * sets "manual": true) because pact-audit is a gRPC-only service
+ * with no swagger of its own; pact-gateway owns the REST surface
+ * as a proxy and publishes its own per-tag slice at
+ * api/swagger/audit.yaml. Keep this file in sync by hand when that
+ * slice's audit paths change shape.
+ *
  * OpenAPI spec version: 0.1.0
  */
 
 export * from './auditEvent';
 export * from './badRequestResponse';
+export * from './decisionStatsClassifier';
+export * from './decisionStatsFilter';
+export * from './decisionStatsLabelCount';
+export * from './decisionStatsRedactor';
 export * from './error';
 export * from './queryAuditEventsParams';
 export * from './queryAuditEventsResponse';
+export * from './queryDecisionStatsParams';
+export * from './queryDecisionStatsResponse';
 export * from './tooManyRequestsResponse';
 export * from './unauthorizedResponse';
