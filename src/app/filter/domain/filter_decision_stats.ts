@@ -2,6 +2,10 @@ import {
   type QueryDecisionStatsResponse,
   useQueryDecisionStats,
 } from '@/src/__codegen__/rest/audit';
+import {
+  decisionStatsPollingConfig,
+  isDecisionStatsForbidden,
+} from '@/src/app/audit/domain/audit_decision_stats_access';
 
 // How often the server-side aggregate re-polls. Matches the app's standard
 // background refresh cadence (see dashboard_pipeline_stats.ts, AuditWorkbench,
@@ -35,7 +39,7 @@ export const useFilterDecisionStats = () => {
   const { data, error, isLoading, isValidating, mutate } =
     useQueryDecisionStats(undefined, {
       swr: {
-        refreshInterval: STATS_REFRESH_MS,
+        ...decisionStatsPollingConfig(STATS_REFRESH_MS),
         revalidateOnFocus: false,
         keepPreviousData: true,
       },
@@ -46,10 +50,17 @@ export const useFilterDecisionStats = () => {
   const total = data?.status === 200 ? data.data.total : 0;
   const filter = data?.status === 200 ? data.data.filter : EMPTY_FILTER_STATS;
 
+  // A 403 (PACT-363's audit:stats permission gate) is a stable, expected
+  // outcome for non-operator users -- not a transient error. The workbench
+  // renders a permission-aware empty state for this instead of the "try
+  // refreshing" copy that fits a real transient failure.
+  const forbidden = isDecisionStatsForbidden(data);
+
   return {
     total,
     filter,
     error: Boolean(error),
+    forbidden,
     isLoading,
     isValidating,
     mutate,

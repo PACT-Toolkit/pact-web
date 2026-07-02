@@ -1,4 +1,4 @@
-import { ArrowUpRight, type LucideIcon } from 'lucide-react';
+import { ArrowUpRight, Lock, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { type ReactNode } from 'react';
 
@@ -17,6 +17,7 @@ export const DashboardPipelineWidget = ({
   hrefLabel,
   isLoading,
   error,
+  forbidden,
   isEmpty,
   emptyText,
   children,
@@ -27,6 +28,11 @@ export const DashboardPipelineWidget = ({
   hrefLabel: string;
   isLoading?: boolean;
   error?: boolean;
+  // True when the stats aggregate came back 403 -- a stable, expected
+  // outcome for non-operator users, not a transient failure. Takes
+  // priority over `error` so a caller lacking the permission never sees
+  // the generic "try refreshing" copy.
+  forbidden?: boolean;
   isEmpty?: boolean;
   emptyText?: string;
   children: ReactNode;
@@ -51,6 +57,11 @@ export const DashboardPipelineWidget = ({
           <Skeleton className="h-8 w-24" />
           <Skeleton className="h-4 w-40" />
         </div>
+      ) : forbidden ? (
+        <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          Insufficient permissions to view this data.
+        </p>
       ) : error ? (
         <p className="text-sm text-muted-foreground">
           Couldn&apos;t load this stage. Try refreshing in a moment.

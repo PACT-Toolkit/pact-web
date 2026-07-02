@@ -33,6 +33,7 @@ import type { Key } from 'swr';
 
 import type {
   BadRequestResponse,
+  ForbiddenResponse,
   QueryAuditEventsParams,
   QueryAuditEventsResponse,
   QueryDecisionStatsParams,
@@ -140,6 +141,11 @@ export type queryDecisionStatsResponse401 = {
   status: 401;
 };
 
+export type queryDecisionStatsResponse403 = {
+  data: ForbiddenResponse;
+  status: 403;
+};
+
 export type queryDecisionStatsResponseSuccess =
   queryDecisionStatsResponse200 & {
     headers: Headers;
@@ -148,6 +154,7 @@ export type queryDecisionStatsResponseSuccess =
 export type queryDecisionStatsResponseError = (
   | queryDecisionStatsResponse400
   | queryDecisionStatsResponse401
+  | queryDecisionStatsResponse403
 ) & {
   headers: Headers;
 };
@@ -179,6 +186,9 @@ export const getQueryDecisionStatsUrl = (params?: QueryDecisionStatsParams) => {
  * of the client-side aggregatePipelineStats helper it replaces,
  * field for field, but computed exactly instead of over a
  * 200-event window.
+ *
+ * Gated behind the audit:stats permission (operator/admin only);
+ * a caller without it gets a 403, not a filtered result.
  *
  * @summary Read aggregate decision stats for the pipeline dashboard
  */

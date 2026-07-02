@@ -2,6 +2,7 @@ import { http, HttpResponse, type RequestHandler } from 'msw';
 
 import { db } from '@/mocks/data/dbFactory';
 import { computeDecisionStats } from '@/src/app/filter/mock/data/filter';
+import { getMockUserType } from '@/src/framework/helpers/mock_user_type';
 
 export const handlers: RequestHandler[] = [
   http.get('*/v1/audit/events', ({ request }) => {
@@ -27,6 +28,18 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json({ events: page, total: all.length });
   }),
   http.get('*/v1/audit/stats', ({ request }) => {
+    // Mirrors pact-gateway's audit:stats permission gate (PACT-363):
+    // operator/admin only. The 'admin' mock persona is the operator stand-in
+    // -- 'auditor' and 'developer' exercise the 403 path so PACT-377's
+    // permission-aware empty state is reachable in dev:mock without a real
+    // gateway. Switch personas via the sidebar's mock-user-type dropdown.
+    if (getMockUserType() !== 'admin') {
+      return HttpResponse.json(
+        { error: 'insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
     const url = new URL(request.url);
     const sinceUnixParam = url.searchParams.get('sinceUnix');
     const untilUnixParam = url.searchParams.get('untilUnix');

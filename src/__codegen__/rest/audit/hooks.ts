@@ -35,6 +35,7 @@ import type { AxiosError, AxiosRequestConfig } from 'axios';
 
 import type {
   BadRequestResponse,
+  ForbiddenResponse,
   QueryAuditEventsParams,
   QueryAuditEventsResponse,
   QueryDecisionStatsParams,
@@ -57,6 +58,7 @@ import {
   queryDecisionStatsResponse200,
   queryDecisionStatsResponse400,
   queryDecisionStatsResponse401,
+  queryDecisionStatsResponse403,
   queryDecisionStatsResponseSuccess,
   queryDecisionStatsResponseError,
   getQueryDecisionStatsUrl,
@@ -114,7 +116,9 @@ export type QueryDecisionStatsQueryResult = NonNullable<
  * @summary Read aggregate decision stats for the pipeline dashboard
  */
 export const useQueryDecisionStats = <
-  TError = Promise<BadRequestResponse | UnauthorizedResponse>,
+  TError = Promise<
+    BadRequestResponse | UnauthorizedResponse | ForbiddenResponse
+  >,
 >(
   params?: QueryDecisionStatsParams,
   options?: {
