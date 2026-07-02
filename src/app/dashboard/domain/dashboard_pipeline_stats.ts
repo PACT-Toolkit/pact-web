@@ -124,9 +124,9 @@ export const parseDecisions = (events: AuditEvent[]): DecisionRecord[] => {
  * Console data source: the live decision stream and the headline stat
  * widgets, backed by two independent SWR queries.
  *
- * - `records` — the last DECISIONS_WINDOW pact.decisions events, re-polled
+ * - `records` - the last DECISIONS_WINDOW pact.decisions events, re-polled
  *   at LIVE_REFRESH_MS while `live` is true. Feeds DashboardLiveDecisions.
- * - `stats` — the exact server-side aggregate over all of the caller's
+ * - `stats` - the exact server-side aggregate over all of the caller's
  *   history (unbounded; the console has no time-range controls), re-polled
  *   at STATS_REFRESH_MS regardless of the live toggle. Feeds the Filter /
  *   Classifier / Redactor widgets.
