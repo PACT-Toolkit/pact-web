@@ -9,10 +9,12 @@ export const DashboardClassifierWidget = ({
   stats,
   isLoading,
   error,
+  forbidden,
 }: {
   stats: PipelineStats;
   isLoading?: boolean;
   error?: boolean;
+  forbidden?: boolean;
 }) => {
   const { classifier } = stats;
 
@@ -24,6 +26,7 @@ export const DashboardClassifierWidget = ({
       hrefLabel="Test lab"
       isLoading={isLoading}
       error={error}
+      forbidden={forbidden}
       isEmpty={stats.total === 0}
       emptyText="No classifier verdicts recorded yet."
     >

@@ -13,8 +13,15 @@ import { DashboardRedactorWidget } from '@/src/app/dashboard/ui/DashboardRedacto
 
 export const DashboardConsole = () => {
   const [live, setLive] = useState(true);
-  const { stats, records, error, isLoading, isValidating, mutate } =
-    useDashboardPipelineStats(live);
+  const {
+    stats,
+    records,
+    error,
+    statsForbidden,
+    isLoading,
+    isValidating,
+    mutate,
+  } = useDashboardPipelineStats(live);
 
   const hasError = Boolean(error);
 
@@ -38,16 +45,19 @@ export const DashboardConsole = () => {
           stats={stats}
           isLoading={isLoading}
           error={hasError}
+          forbidden={statsForbidden}
         />
         <DashboardClassifierWidget
           stats={stats}
           isLoading={isLoading}
           error={hasError}
+          forbidden={statsForbidden}
         />
         <DashboardRedactorWidget
           stats={stats}
           isLoading={isLoading}
           error={hasError}
+          forbidden={statsForbidden}
         />
         <DashboardBenchmarkWidget />
       </div>

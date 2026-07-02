@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw } from 'lucide-react';
+import { Lock, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
@@ -52,6 +52,7 @@ export const FilterDecisionsWorkbench = () => {
     total,
     filter: filterStats,
     error: statsError,
+    forbidden: statsForbidden,
   } = useFilterDecisionStats();
   const allowed = total - filterStats.blocked;
   const maxRuleCount = filterStats.top_rules[0]?.count ?? 1;
@@ -77,59 +78,68 @@ export const FilterDecisionsWorkbench = () => {
 
   return (
     <div className="flex flex-col gap-6">
-      {statsError && (
-        <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-          Failed to load decision stats. Try refreshing in a moment.
+      {statsForbidden ? (
+        <p className="flex items-center gap-1.5 rounded-md border bg-muted/40 p-3 text-sm text-muted-foreground">
+          <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          Insufficient permissions to view decision stats.
         </p>
-      )}
+      ) : (
+        <>
+          {statsError && (
+            <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              Failed to load decision stats. Try refreshing in a moment.
+            </p>
+          )}
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <FilterStatCard label="Total decisions" value={total} />
-        <FilterStatCard
-          label="Blocked"
-          value={filterStats.blocked}
-          valueClass="text-destructive"
-        />
-        <FilterStatCard label="Allowed" value={allowed} />
-        <FilterStatCard
-          label="Block rate"
-          value={`${filterStats.block_rate.toFixed(1)}%`}
-          valueClass={
-            filterStats.block_rate > 10 ? 'text-destructive' : undefined
-          }
-        />
-      </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <FilterStatCard label="Total decisions" value={total} />
+            <FilterStatCard
+              label="Blocked"
+              value={filterStats.blocked}
+              valueClass="text-destructive"
+            />
+            <FilterStatCard label="Allowed" value={allowed} />
+            <FilterStatCard
+              label="Block rate"
+              value={`${filterStats.block_rate.toFixed(1)}%`}
+              valueClass={
+                filterStats.block_rate > 10 ? 'text-destructive' : undefined
+              }
+            />
+          </div>
 
-      {filterStats.top_rules.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Top blocked rules</CardTitle>
-            <CardDescription>
-              Rules with the highest block counts across all decisions.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            {filterStats.top_rules.map(({ label, count }) => (
-              <div key={label} className="flex items-center gap-3 text-sm">
-                <span className="w-32 shrink-0 font-mono text-xs text-muted-foreground">
-                  {label}
-                </span>
-                <div className="flex flex-1 items-center gap-2">
-                  <div
-                    className="h-2 rounded-full bg-destructive/70"
-                    style={{
-                      width: `${(count / maxRuleCount) * 100}%`,
-                      minWidth: '4px',
-                    }}
-                  />
-                  <span className="tabular-nums text-muted-foreground">
-                    {count}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+          {filterStats.top_rules.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Top blocked rules</CardTitle>
+                <CardDescription>
+                  Rules with the highest block counts across all decisions.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-2">
+                {filterStats.top_rules.map(({ label, count }) => (
+                  <div key={label} className="flex items-center gap-3 text-sm">
+                    <span className="w-32 shrink-0 font-mono text-xs text-muted-foreground">
+                      {label}
+                    </span>
+                    <div className="flex flex-1 items-center gap-2">
+                      <div
+                        className="h-2 rounded-full bg-destructive/70"
+                        style={{
+                          width: `${(count / maxRuleCount) * 100}%`,
+                          minWidth: '4px',
+                        }}
+                      />
+                      <span className="tabular-nums text-muted-foreground">
+                        {count}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
 
       <Card>

@@ -11,6 +11,10 @@ import {
   type DecisionPayload,
   parseDecisionPayload,
 } from '@/src/app/audit/domain/audit_decision_payload';
+import {
+  decisionStatsPollingConfig,
+  isDecisionStatsForbidden,
+} from '@/src/app/audit/domain/audit_decision_stats_access';
 
 // Number of most-recent pact.decisions events the live stream window holds.
 // Only feeds DashboardLiveDecisions now -- the headline stat widgets get
@@ -150,7 +154,7 @@ export const useDashboardPipelineStats = (live: boolean) => {
 
   const statsQuery = useQueryDecisionStats(undefined, {
     swr: {
-      refreshInterval: STATS_REFRESH_MS,
+      ...decisionStatsPollingConfig(STATS_REFRESH_MS),
       revalidateOnFocus: false,
       keepPreviousData: true,
     },
@@ -170,6 +174,12 @@ export const useDashboardPipelineStats = (live: boolean) => {
     [statsQuery.data]
   );
 
+  // A 403 on /v1/audit/stats (PACT-363's audit:stats permission gate) is a
+  // stable, expected outcome for non-operator users -- not a transient
+  // error. The Filter/Classifier/Redactor widgets render a permission-aware
+  // empty state for this instead of the generic error banner.
+  const statsForbidden = isDecisionStatsForbidden(statsQuery.data);
+
   const mutate = () => {
     void eventsQuery.mutate();
     void statsQuery.mutate();
@@ -179,6 +189,7 @@ export const useDashboardPipelineStats = (live: boolean) => {
     stats,
     records,
     error: Boolean(eventsQuery.error) || Boolean(statsQuery.error),
+    statsForbidden,
     isLoading: eventsQuery.isLoading || statsQuery.isLoading,
     isValidating: eventsQuery.isValidating || statsQuery.isValidating,
     mutate,

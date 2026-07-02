@@ -26,18 +26,9 @@
  *
  * OpenAPI spec version: 0.1.0
  */
+import type { Error } from './error';
 
-export * from './auditEvent';
-export * from './badRequestResponse';
-export * from './decisionStatsClassifier';
-export * from './decisionStatsFilter';
-export * from './decisionStatsLabelCount';
-export * from './decisionStatsRedactor';
-export * from './error';
-export * from './forbiddenResponse';
-export * from './queryAuditEventsParams';
-export * from './queryAuditEventsResponse';
-export * from './queryDecisionStatsParams';
-export * from './queryDecisionStatsResponse';
-export * from './tooManyRequestsResponse';
-export * from './unauthorizedResponse';
+/**
+ * Caller lacks the required permission
+ */
+export type ForbiddenResponse = Error;

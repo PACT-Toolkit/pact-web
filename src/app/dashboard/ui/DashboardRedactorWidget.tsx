@@ -9,10 +9,12 @@ export const DashboardRedactorWidget = ({
   stats,
   isLoading,
   error,
+  forbidden,
 }: {
   stats: PipelineStats;
   isLoading?: boolean;
   error?: boolean;
+  forbidden?: boolean;
 }) => (
   <DashboardPipelineWidget
     title="Redactor"
@@ -21,6 +23,7 @@ export const DashboardRedactorWidget = ({
     hrefLabel="Activity"
     isLoading={isLoading}
     error={error}
+    forbidden={forbidden}
     isEmpty={stats.total === 0}
     emptyText="No redactor activity recorded yet."
   >

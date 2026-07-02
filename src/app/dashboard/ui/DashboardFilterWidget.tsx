@@ -9,10 +9,12 @@ export const DashboardFilterWidget = ({
   stats,
   isLoading,
   error,
+  forbidden,
 }: {
   stats: PipelineStats;
   isLoading?: boolean;
   error?: boolean;
+  forbidden?: boolean;
 }) => (
   <DashboardPipelineWidget
     title="Filter"
@@ -21,6 +23,7 @@ export const DashboardFilterWidget = ({
     hrefLabel="Decisions"
     isLoading={isLoading}
     error={error}
+    forbidden={forbidden}
     isEmpty={stats.total === 0}
     emptyText="No filter decisions recorded yet."
   >
