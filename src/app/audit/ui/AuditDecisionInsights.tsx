@@ -21,6 +21,17 @@ const hasForensics = (dp: DecisionPayload): boolean =>
 
 export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
   <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-md border bg-muted/20 px-3 py-2 text-xs">
+    {typeof dp.latency_ms === 'number' && dp.latency_ms > 0 && (
+      <div
+        className="flex items-center gap-1.5"
+        data-testid="audit-decision-latency"
+      >
+        <span className="text-muted-foreground">Request latency</span>
+        <code className="rounded bg-muted px-1.5 py-0.5">
+          {dp.latency_ms} ms
+        </code>
+      </div>
+    )}
     {dp.engine && (
       <div className="flex items-center gap-1.5">
         <span className="text-muted-foreground">Engine</span>

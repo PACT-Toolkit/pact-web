@@ -40,12 +40,13 @@ export const AuditRowShell = ({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex flex-col gap-2 p-4 text-sm">
+    <div className="flex flex-col gap-2 p-4 text-sm" data-testid="audit-row">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-start justify-between gap-4 text-left"
         aria-expanded={open}
+        data-testid="audit-row-toggle"
       >
         <div className="flex min-w-0 flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -68,7 +69,10 @@ export const AuditRowShell = ({
       {open && (
         <div className="flex flex-col gap-2">
           {detail}
-          <pre className="max-h-72 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs">
+          <pre
+            className="max-h-72 overflow-auto rounded-md border bg-muted/40 p-3 font-mono text-xs"
+            data-testid="audit-row-raw-payload"
+          >
             {rawPayload || '(empty payload)'}
           </pre>
         </div>

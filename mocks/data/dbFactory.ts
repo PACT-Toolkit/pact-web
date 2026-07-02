@@ -11,6 +11,11 @@ import {
   mockProfile,
 } from '@/src/app/account/mock/data/profile';
 import {
+  createAuditMockData,
+  mockAuditEvent,
+} from '@/src/app/audit/mock/data/audit';
+import { createConsensusMockData } from '@/src/app/consensus/mock/data/consensus';
+import {
   createFilterMockData,
   mockDecisionEvent,
 } from '@/src/app/filter/mock/data/filter';
@@ -30,6 +35,9 @@ export const db = {
   accountPreferences: new MockRepository<Preferences>(mockPreferences),
   accountConsents: new MockRepository<Consent>(mockConsent),
   attackExamples: new MockRepository<AttackExample>(mockAttackExample),
+  auditAuthEvents: new MockRepository<AuditEvent>(mockAuditEvent),
+  auditAccountEvents: new MockRepository<AuditEvent>(mockAuditEvent),
+  auditFilesEvents: new MockRepository<AuditEvent>(mockAuditEvent),
   decisions: new MockRepository<AuditEvent>(mockDecisionEvent),
   testLabRuns: new MockRepository<TestLabRunRecord>(mockTestLabRun),
 };
@@ -37,6 +45,13 @@ export const db = {
 export type DB = typeof db;
 
 createAccountMockData(db);
+createAuditMockData(db);
 createFilterMockData(db);
+// Must run after createFilterMockData -- both seeders append rows to the
+// shared db.decisions repository (see consensus.ts's header comment).
+// Order doesn't affect correctness (the audit/filter handlers sort
+// newest-first before slicing) but keeps the two decisions-producing
+// seeders visually adjacent here.
+createConsensusMockData(db);
 createTestLabMockData(db);
 createTestLabRunsMockData(db);
