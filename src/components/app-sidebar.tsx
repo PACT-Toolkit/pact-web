@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   Map,
   PieChart,
+  Scale,
   ScrollText,
   Settings2,
   ShieldCheck,
@@ -78,6 +79,12 @@ const buildNavMain = (pathname: string): NavMainItem[] => [
     url: '/filter',
     icon: ShieldCheck,
     isActive: pathname === '/filter',
+  },
+  {
+    title: 'Consensus',
+    url: '/consensus',
+    icon: Scale,
+    isActive: isRouteActive(pathname, '/consensus'),
   },
   {
     title: 'Test lab',
