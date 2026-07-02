@@ -2,85 +2,77 @@ import { useMemo } from 'react';
 
 import {
   type AuditEvent,
+  type DecisionStatsLabelCount,
+  type QueryDecisionStatsResponse,
   useQueryAuditEvents,
+  useQueryDecisionStats,
 } from '@/src/__codegen__/rest/audit';
 import {
   type DecisionPayload,
   parseDecisionPayload,
 } from '@/src/app/audit/domain/audit_decision_payload';
 
-// Number of most-recent pact.decisions events the console aggregates over.
-// Matches the filter workbench window so the two surfaces agree.
+// Number of most-recent pact.decisions events the live stream window holds.
+// Only feeds DashboardLiveDecisions now -- the headline stat widgets get
+// their numbers from the server-side aggregate below, not this window.
 const DECISIONS_WINDOW = 200;
 
 // How often the live stream re-polls when the live toggle is on.
 export const LIVE_REFRESH_MS = 10_000;
 
+// How often the server-side aggregate re-polls. Matches the app's standard
+// background refresh cadence (see FilterDecisionsWorkbench, AuditWorkbench,
+// ConsensusWorkbench, use_policy_events) -- independent of the live toggle,
+// since the aggregate is cheap to recompute server-side either way.
+export const STATS_REFRESH_MS = 30_000;
+
 // Labels that mean "no injection detected". Compared case-insensitively so the
 // stub engine ("benign") and DeBERTa ("BENIGN") both fold into the benign set.
 const BENIGN_LABELS = new Set(['benign', 'none', 'safe', 'clean', '']);
 
-// A named tally used for the per-stage breakdown lists (rule ids, classifier
-// labels, PII span labels). Sorted descending by count by the aggregator.
-export interface LabelCount {
-  label: string;
-  count: number;
-}
+// The dashboard's headline stats, straight from GET /v1/audit/stats. Derived
+// from the generated response types rather than redeclared, so the UI can
+// never drift from the wire contract (see pact-domain-layer). All rates are
+// 0-100 and label arrays are always present (possibly empty), never null --
+// pact-gateway's DTOs have no omitempty and every field here is required in
+// schema/audit/swagger.yaml, so no NonNullable<...> unwrapping is needed.
+export type PipelineStats = QueryDecisionStatsResponse;
+export type FilterStats = PipelineStats['filter'];
+export type ClassifierStats = PipelineStats['classifier'];
+export type RedactorStats = PipelineStats['redactor'];
+export type LabelCount = DecisionStatsLabelCount;
 
-export interface FilterStats {
-  /** Decisions in the window where the filter produced a non-safe verdict. */
-  flagged: number;
-  /** Decisions the gateway ultimately blocked. */
-  blocked: number;
-  /** blocked / total, as a 0–100 percentage. */
-  blockRate: number;
-  /** Most frequently matched filter rule id, if any. */
-  topRuleId?: string;
-  /** Suspicious vs hostile split across the window. */
-  suspicious: number;
-  hostile: number;
-  /** Top matched rule ids with counts (highest first). */
-  topRules: LabelCount[];
-}
-
-export interface ClassifierStats {
-  /** Decisions where the classifier returned a label. */
-  responded: number;
-  /** Decisions tagged with a non-benign label. */
-  tagged: number;
-  /** Most frequent non-benign label, if any. */
-  topLabel?: string;
-  /** Mean score across tagged decisions, as a 0–100 percentage. */
-  avgTaggedScore: number;
-  /** Decisions arbitrated by pact-consensus (sub-object present, not skipped). */
-  consensus: number;
-  /** Non-benign label distribution with counts (highest first). */
-  labels: LabelCount[];
-}
-
-export interface RedactorStats {
-  /** Decisions where the redactor removed at least one span. */
-  redacted: number;
-  /** Total PII spans removed across the window. */
-  spans: number;
-  /** redacted / total, as a 0–100 percentage. */
-  redactionRate: number;
-  /** PII span label distribution with counts (highest first). */
-  spanLabels: LabelCount[];
-}
-
-export interface PipelineStats {
-  /** Total decisions considered (window size, capped at DECISIONS_WINDOW). */
-  total: number;
-  /** ISO timestamp of the newest decision in the window, if any. */
-  latestAt?: string;
-  filter: FilterStats;
-  classifier: ClassifierStats;
-  redactor: RedactorStats;
-}
+const EMPTY_STATS: PipelineStats = {
+  total: 0,
+  latest_at_unix: 0,
+  filter: {
+    flagged: 0,
+    blocked: 0,
+    block_rate: 0,
+    top_rule_id: '',
+    suspicious: 0,
+    hostile: 0,
+    top_rules: [],
+  },
+  classifier: {
+    responded: 0,
+    tagged: 0,
+    top_label: '',
+    avg_tagged_score: 0,
+    consensus: 0,
+    labels: [],
+  },
+  redactor: {
+    redacted: 0,
+    spans: 0,
+    redaction_rate: 0,
+    span_labels: [],
+  },
+};
 
 // A parsed pact.decisions row: the raw audit event plus its decoded payload.
-// Shared by the stage stats and the live stream so the window is parsed once.
+// Feeds the live stream (DashboardLiveDecisions), which still reads its own
+// event window -- only the headline stat widgets moved server-side.
 export interface DecisionRecord {
   event: AuditEvent;
   dp: DecisionPayload;
@@ -128,154 +120,67 @@ export const parseDecisions = (events: AuditEvent[]): DecisionRecord[] => {
   return records;
 };
 
-const EMPTY_STATS: PipelineStats = {
-  total: 0,
-  filter: {
-    flagged: 0,
-    blocked: 0,
-    blockRate: 0,
-    suspicious: 0,
-    hostile: 0,
-    topRules: [],
-  },
-  classifier: {
-    responded: 0,
-    tagged: 0,
-    avgTaggedScore: 0,
-    consensus: 0,
-    labels: [],
-  },
-  redactor: { redacted: 0, spans: 0, redactionRate: 0, spanLabels: [] },
-};
-
-// Sort a count map into a descending LabelCount[], keeping the top `limit`.
-const topCounts = (
-  counts: Record<string, number>,
-  limit: number
-): LabelCount[] =>
-  Object.entries(counts)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, limit)
-    .map(([label, count]) => ({ label, count }));
-
-export const aggregatePipelineStats = (
-  records: DecisionRecord[]
-): PipelineStats => {
-  if (records.length === 0) return EMPTY_STATS;
-
-  let flagged = 0;
-  let blocked = 0;
-  let suspicious = 0;
-  let hostile = 0;
-  let responded = 0;
-  let tagged = 0;
-  let taggedScoreSum = 0;
-  let consensus = 0;
-  let redacted = 0;
-  let spans = 0;
-  const labelCounts: Record<string, number> = {};
-  const ruleCounts: Record<string, number> = {};
-  const spanLabelCounts: Record<string, number> = {};
-
-  for (const { dp } of records) {
-    if (dp.decision === 'block') blocked++;
-
-    const verdict = dp.filter?.verdict?.toLowerCase();
-    if (verdict === 'suspicious') suspicious++;
-    if (verdict === 'hostile') hostile++;
-
-    if (isFilterFlagged(dp)) {
-      flagged++;
-      if (dp.filter?.rule_id) {
-        ruleCounts[dp.filter.rule_id] =
-          (ruleCounts[dp.filter.rule_id] ?? 0) + 1;
-      }
-    }
-
-    const label = dp.classifier?.label;
-    if (label) {
-      responded++;
-      if (!isBenignLabel(label)) {
-        tagged++;
-        taggedScoreSum += dp.classifier?.score ?? 0;
-        labelCounts[label] = (labelCounts[label] ?? 0) + 1;
-      }
-    }
-
-    if (dp.consensus && !dp.consensus.skipped) consensus++;
-
-    if (isRedacted(dp)) {
-      redacted++;
-      spans += dp.redactor?.spans?.length ?? 0;
-      for (const span of dp.redactor?.spans ?? []) {
-        const key = span.label || 'SPAN';
-        spanLabelCounts[key] = (spanLabelCounts[key] ?? 0) + 1;
-      }
-    }
-  }
-
-  const total = records.length;
-  const topRules = topCounts(ruleCounts, 3);
-  const labels = topCounts(labelCounts, 3);
-
-  return {
-    total,
-    latestAt: records[0]?.event.createdAt,
-    filter: {
-      flagged,
-      blocked,
-      blockRate: total > 0 ? (blocked / total) * 100 : 0,
-      topRuleId: topRules[0]?.label,
-      suspicious,
-      hostile,
-      topRules,
-    },
-    classifier: {
-      responded,
-      tagged,
-      topLabel: labels[0]?.label,
-      avgTaggedScore: tagged > 0 ? (taggedScoreSum / tagged) * 100 : 0,
-      consensus,
-      labels,
-    },
-    redactor: {
-      redacted,
-      spans,
-      redactionRate: total > 0 ? (redacted / total) * 100 : 0,
-      spanLabels: topCounts(spanLabelCounts, 3),
-    },
-  };
-};
-
 /**
- * Single SWR-backed source for the console's stage widgets and live stream.
- * One `pact.decisions` query feeds both; SWR dedupes the request so calling
- * this once in the orchestrator is enough. When `live` is true the window
- * re-polls every LIVE_REFRESH_MS; when false polling is paused.
+ * Console data source: the live decision stream and the headline stat
+ * widgets, backed by two independent SWR queries.
+ *
+ * - `records` — the last DECISIONS_WINDOW pact.decisions events, re-polled
+ *   at LIVE_REFRESH_MS while `live` is true. Feeds DashboardLiveDecisions.
+ * - `stats` — the exact server-side aggregate over all of the caller's
+ *   history (unbounded; the console has no time-range controls), re-polled
+ *   at STATS_REFRESH_MS regardless of the live toggle. Feeds the Filter /
+ *   Classifier / Redactor widgets.
+ *
+ * `mutate` revalidates both so a completed probe (DashboardQuickProbe)
+ * refreshes the stream and the numbers together.
  */
 export const useDashboardPipelineStats = (live: boolean) => {
-  const params = useMemo(
+  const eventsParams = useMemo(
     () => ({ topic: 'pact.decisions', limit: DECISIONS_WINDOW }),
     []
   );
 
-  const { data, error, isLoading, isValidating, mutate } = useQueryAuditEvents(
-    params,
-    {
-      swr: {
-        refreshInterval: live ? LIVE_REFRESH_MS : 0,
-        revalidateOnFocus: false,
-        keepPreviousData: true,
-      },
-    }
-  );
+  const eventsQuery = useQueryAuditEvents(eventsParams, {
+    swr: {
+      refreshInterval: live ? LIVE_REFRESH_MS : 0,
+      revalidateOnFocus: false,
+      keepPreviousData: true,
+    },
+  });
+
+  const statsQuery = useQueryDecisionStats(undefined, {
+    swr: {
+      refreshInterval: STATS_REFRESH_MS,
+      revalidateOnFocus: false,
+      keepPreviousData: true,
+    },
+  });
 
   const records = useMemo(
-    () => (data?.status === 200 ? parseDecisions(data.data.events) : []),
-    [data]
+    () =>
+      eventsQuery.data?.status === 200
+        ? parseDecisions(eventsQuery.data.data.events)
+        : [],
+    [eventsQuery.data]
   );
 
-  const stats = useMemo(() => aggregatePipelineStats(records), [records]);
+  const stats = useMemo(
+    () =>
+      statsQuery.data?.status === 200 ? statsQuery.data.data : EMPTY_STATS,
+    [statsQuery.data]
+  );
 
-  return { stats, records, error, isLoading, isValidating, mutate };
+  const mutate = () => {
+    void eventsQuery.mutate();
+    void statsQuery.mutate();
+  };
+
+  return {
+    stats,
+    records,
+    error: Boolean(eventsQuery.error) || Boolean(statsQuery.error),
+    isLoading: eventsQuery.isLoading || statsQuery.isLoading,
+    isValidating: eventsQuery.isValidating || statsQuery.isValidating,
+    mutate,
+  };
 };

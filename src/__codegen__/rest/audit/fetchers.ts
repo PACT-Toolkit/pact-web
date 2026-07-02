@@ -17,6 +17,13 @@
  * Schema is per-topic and evolves over time; decode lazily and
  * tolerate unknown fields.
  *
+ * This spec is hand-maintained (schema/audit/services.config.json
+ * sets "manual": true) because pact-audit is a gRPC-only service
+ * with no swagger of its own; pact-gateway owns the REST surface
+ * as a proxy and publishes its own per-tag slice at
+ * api/swagger/audit.yaml. Keep this file in sync by hand when that
+ * slice's audit paths change shape.
+ *
  * OpenAPI spec version: 0.1.0
  */
 
@@ -28,6 +35,8 @@ import type {
   BadRequestResponse,
   QueryAuditEventsParams,
   QueryAuditEventsResponse,
+  QueryDecisionStatsParams,
+  QueryDecisionStatsResponse,
   TooManyRequestsResponse,
   UnauthorizedResponse,
 } from './types';
@@ -115,3 +124,82 @@ export const queryAuditEvents = async (
 
 export const getQueryAuditEventsKey = (params?: QueryAuditEventsParams) =>
   [`/v1/audit/events`, ...(params ? [params] : [])] as const;
+
+export type queryDecisionStatsResponse200 = {
+  data: QueryDecisionStatsResponse;
+  status: 200;
+};
+
+export type queryDecisionStatsResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type queryDecisionStatsResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type queryDecisionStatsResponseSuccess =
+  queryDecisionStatsResponse200 & {
+    headers: Headers;
+  };
+
+export type queryDecisionStatsResponseError = (
+  | queryDecisionStatsResponse400
+  | queryDecisionStatsResponse401
+) & {
+  headers: Headers;
+};
+
+export type queryDecisionStatsResponse =
+  | queryDecisionStatsResponseSuccess
+  | queryDecisionStatsResponseError;
+
+export const getQueryDecisionStatsUrl = (params?: QueryDecisionStatsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/audit/stats?${stringifiedParams}`
+    : `/v1/audit/stats`;
+};
+
+/**
+ * Server-side aggregate over the caller's pact.decisions rows in
+ * [sinceUnix, untilUnix). Both bounds are optional; omitting both
+ * aggregates over all of the caller's history. Mirrors the shape
+ * of the client-side aggregatePipelineStats helper it replaces,
+ * field for field, but computed exactly instead of over a
+ * 200-event window.
+ *
+ * @summary Read aggregate decision stats for the pipeline dashboard
+ */
+export const queryDecisionStats = async (
+  params?: QueryDecisionStatsParams,
+  options?: RequestInit
+): Promise<queryDecisionStatsResponse> => {
+  const res = await fetch(getQueryDecisionStatsUrl(params), {
+    ...options,
+    method: 'GET',
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: queryDecisionStatsResponse['data'] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as queryDecisionStatsResponse;
+};
+
+export const getQueryDecisionStatsKey = (params?: QueryDecisionStatsParams) =>
+  [`/v1/audit/stats`, ...(params ? [params] : [])] as const;

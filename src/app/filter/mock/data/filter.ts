@@ -1,7 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import { type DB } from '@/mocks/data/dbFactory';
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import {
+  type AuditEvent,
+  type QueryDecisionStatsResponse,
+} from '@/src/__codegen__/rest/audit';
 
 export interface DecisionPayload {
   request_id: string;
@@ -24,6 +27,101 @@ export const mockDecisionEvent = (
   createdAt: new Date().toISOString(),
   ...overrides,
 });
+
+const parseDecisionPayload = (raw: string): DecisionPayload | null => {
+  try {
+    return JSON.parse(raw) as DecisionPayload;
+  } catch {
+    return null;
+  }
+};
+
+const topRuleCounts = (
+  counts: Record<string, number>,
+  limit = 3
+): { label: string; count: number }[] =>
+  Object.entries(counts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, limit)
+    .map(([label, count]) => ({ label, count }));
+
+/**
+ * Mock counterpart of pact-audit's SQL-side decision stats aggregate --
+ * computes the exact GET /v1/audit/stats shape over the mock decisions
+ * repository so mock mode exercises the same contract as pact-gateway.
+ *
+ * The mock DecisionPayload only models the filter stage (decision,
+ * filter_rule_id, reason); it never populates the nested classifier/
+ * redactor/consensus objects the real gateway payload carries, so those
+ * two stages come back genuinely empty here -- same as they always have
+ * in mock mode, since the pre-existing client-side aggregation read those
+ * same (never-populated) fields.
+ */
+export const computeDecisionStats = (
+  events: AuditEvent[],
+  window: { sinceUnix?: number; untilUnix?: number } = {}
+): QueryDecisionStatsResponse => {
+  const { sinceUnix, untilUnix } = window;
+  const matched = events.filter((event) => {
+    const createdUnix = Math.floor(new Date(event.createdAt).getTime() / 1000);
+    if (sinceUnix !== undefined && createdUnix < sinceUnix) return false;
+    if (untilUnix !== undefined && createdUnix >= untilUnix) return false;
+
+    return true;
+  });
+
+  let blocked = 0;
+  const ruleCounts: Record<string, number> = {};
+  let latestAtUnix = 0;
+
+  for (const event of matched) {
+    const createdUnix = Math.floor(new Date(event.createdAt).getTime() / 1000);
+    if (createdUnix > latestAtUnix) latestAtUnix = createdUnix;
+
+    const payload = parseDecisionPayload(event.payloadJson);
+    if (!payload) continue;
+
+    if (payload.decision === 'block') {
+      blocked++;
+      const ruleId = payload.filter_rule_id ?? payload.reason;
+      if (ruleId) ruleCounts[ruleId] = (ruleCounts[ruleId] ?? 0) + 1;
+    }
+  }
+
+  const total = matched.length;
+  const topRules = topRuleCounts(ruleCounts);
+
+  return {
+    total,
+    latest_at_unix: latestAtUnix,
+    filter: {
+      // The mock payload has no nested filter.verdict; every blocked
+      // decision in the fixtures carries reason "filter_hostile", so
+      // block == flagged == hostile here.
+      flagged: blocked,
+      blocked,
+      block_rate: total > 0 ? (blocked / total) * 100 : 0,
+      top_rule_id: topRules[0]?.label ?? '',
+      suspicious: 0,
+      hostile: blocked,
+      top_rules: topRules,
+    },
+    classifier: {
+      responded: 0,
+      tagged: 0,
+      top_label: '',
+      avg_tagged_score: 0,
+      consensus: 0,
+      labels: [],
+    },
+    redactor: {
+      redacted: 0,
+      spans: 0,
+      redaction_rate: 0,
+      span_labels: [],
+    },
+  };
+};
 
 const BLOCKED_RULES = [
   'inject-003',

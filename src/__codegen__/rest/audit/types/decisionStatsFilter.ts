@@ -26,9 +26,19 @@
  *
  * OpenAPI spec version: 0.1.0
  */
-import type { Error } from './error';
+import type { DecisionStatsLabelCount } from './decisionStatsLabelCount';
 
-/**
- * Per-IP rate limit exceeded
- */
-export type TooManyRequestsResponse = Error;
+export interface DecisionStatsFilter {
+  /** Decisions where the filter produced a non-safe verdict. */
+  flagged: number;
+  /** Decisions the gateway ultimately blocked. */
+  blocked: number;
+  /** blocked / total, as a 0-100 percentage. */
+  block_rate: number;
+  /** Most frequently matched filter rule id; empty if none. */
+  top_rule_id: string;
+  suspicious: number;
+  hostile: number;
+  /** Top matched rule ids with counts, highest first, max 3. */
+  top_rules: DecisionStatsLabelCount[];
+}

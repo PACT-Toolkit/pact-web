@@ -26,9 +26,16 @@
  *
  * OpenAPI spec version: 0.1.0
  */
-import type { Error } from './error';
 
-/**
- * Per-IP rate limit exceeded
- */
-export type TooManyRequestsResponse = Error;
+export type QueryDecisionStatsParams = {
+  /**
+   * Inclusive lower bound on createdAt, unix seconds UTC.
+   * @minimum 0
+   */
+  sinceUnix?: number;
+  /**
+   * Exclusive upper bound on createdAt, unix seconds UTC.
+   * @minimum 0
+   */
+  untilUnix?: number;
+};

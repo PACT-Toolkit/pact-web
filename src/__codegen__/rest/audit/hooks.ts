@@ -19,6 +19,13 @@
  * Schema is per-topic and evolves over time; decode lazily and
  * tolerate unknown fields.
  *
+ * This spec is hand-maintained (schema/audit/services.config.json
+ * sets "manual": true) because pact-audit is a gRPC-only service
+ * with no swagger of its own; pact-gateway owns the REST surface
+ * as a proxy and publishes its own per-tag slice at
+ * api/swagger/audit.yaml. Keep this file in sync by hand when that
+ * slice's audit paths change shape.
+ *
  * OpenAPI spec version: 0.1.0
  */
 import useSwr from 'swr';
@@ -30,6 +37,8 @@ import type {
   BadRequestResponse,
   QueryAuditEventsParams,
   QueryAuditEventsResponse,
+  QueryDecisionStatsParams,
+  QueryDecisionStatsResponse,
   TooManyRequestsResponse,
   UnauthorizedResponse,
 } from './types';
@@ -45,6 +54,15 @@ import {
   queryAuditEventsResponse,
   queryAuditEvents,
   getQueryAuditEventsKey,
+  queryDecisionStatsResponse200,
+  queryDecisionStatsResponse400,
+  queryDecisionStatsResponse401,
+  queryDecisionStatsResponseSuccess,
+  queryDecisionStatsResponseError,
+  getQueryDecisionStatsUrl,
+  queryDecisionStatsResponse,
+  queryDecisionStats,
+  getQueryDecisionStatsKey,
 } from './fetchers';
 
 export type QueryAuditEventsQueryResult = NonNullable<
@@ -75,6 +93,45 @@ export const useQueryAuditEvents = <
     swrOptions?.swrKey ??
     (() => (isEnabled ? getQueryAuditEventsKey(params) : null));
   const swrFn = () => queryAuditEvents(params, fetchOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type QueryDecisionStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof queryDecisionStats>>
+>;
+
+/**
+ * @summary Read aggregate decision stats for the pipeline dashboard
+ */
+export const useQueryDecisionStats = <
+  TError = Promise<BadRequestResponse | UnauthorizedResponse>,
+>(
+  params?: QueryDecisionStatsParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof queryDecisionStats>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+    fetch?: RequestInit;
+  }
+) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getQueryDecisionStatsKey(params) : null));
+  const swrFn = () => queryDecisionStats(params, fetchOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,

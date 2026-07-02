@@ -39,7 +39,7 @@ export const DashboardClassifierWidget = ({
             label="Avg score"
             value={
               classifier.tagged > 0
-                ? `${classifier.avgTaggedScore.toFixed(0)}%`
+                ? `${classifier.avg_tagged_score.toFixed(0)}%`
                 : '\u2014'
             }
           />
