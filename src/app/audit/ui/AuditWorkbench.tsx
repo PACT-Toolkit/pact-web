@@ -4,6 +4,11 @@ import { RefreshCw, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { useQueryAuditEvents } from '@/src/__codegen__/rest/audit';
+import { decodeAuditEventVariant } from '@/src/app/audit/domain/audit_event_variant';
+import {
+  localDateTimeToUnixSeconds,
+  matchesActorFilter,
+} from '@/src/app/audit/domain/audit_filters';
 import { AuditRow } from '@/src/app/audit/ui/AuditRow';
 import { Button } from '@/src/components/ui/button';
 import {
@@ -21,24 +26,42 @@ import { Input } from '@/src/components/ui/input';
 // scrolling burning through pages.
 const PAGE_SIZE = 50;
 
-// Canonical topics today. Free-form on the wire, but a select beats
-// a free-text field for the common cases. "All" maps to no filter.
+// Poll on the same cadence as the other live PACT feeds (filter decisions,
+// policy events) so the activity log doesn't feel stale next to them.
+// Rows are still append-only/immutable -- polling just surfaces new rows,
+// it never mutates an existing one.
+const REFRESH_INTERVAL_MS = 30_000;
+
+// Every topic pact-audit is queryable over today. "All topics" is a real
+// server-side option -- pact-audit's QueryEvents only applies a topic
+// predicate `if f.Topic != ""` (internal/store/events.go buildWhere), so
+// omitting topic returns rows across every topic the caller can see, not
+// an error. pact.policy is listed for discoverability even though
+// pact-audit doesn't consume that topic yet (PACT-306/308); selecting it
+// today always yields an honest empty result, never a crash.
 const TOPIC_OPTIONS = [
   { value: '', label: 'All topics' },
   { value: 'pact.auth', label: 'pact.auth (sign-in / passkey / MFA)' },
   { value: 'pact.account', label: 'pact.account (profile / consents / GDPR)' },
   { value: 'pact.files', label: 'pact.files (upload lifecycle)' },
   { value: 'pact.decisions', label: 'pact.decisions (allow / block calls)' },
+  { value: 'pact.policy', label: 'pact.policy (not yet available)' },
 ];
 
 export const AuditWorkbench = () => {
   const [topic, setTopic] = useState<string>('');
   const [requestId, setRequestId] = useState<string>('');
+  const [actor, setActor] = useState<string>('');
+  const [since, setSince] = useState<string>('');
+  const [until, setUntil] = useState<string>('');
   const [page, setPage] = useState(0);
 
-  // Build the query params from the current UI state. SWR re-keys
-  // on any change, so flipping `topic` or `requestId` fetches the
-  // first page with the new filter automatically.
+  // Build the query params from the current UI state. SWR re-keys on any
+  // change, so flipping a filter fetches the first page with the new
+  // filter automatically. topic/requestId/sinceUnix/untilUnix are all
+  // genuine server-side params (pact-gateway QueryAuditEventsParams); the
+  // actor filter below has no server-side equivalent and is applied
+  // client-side over the returned page instead.
   const params = useMemo(() => {
     const out: Record<string, string | number | undefined> = {
       limit: PAGE_SIZE,
@@ -46,35 +69,57 @@ export const AuditWorkbench = () => {
     };
     if (topic) out.topic = topic;
     if (requestId.trim()) out.requestId = requestId.trim();
+    const sinceUnix = localDateTimeToUnixSeconds(since);
+    if (sinceUnix !== undefined) out.sinceUnix = sinceUnix;
+    const untilUnix = localDateTimeToUnixSeconds(until);
+    if (untilUnix !== undefined) out.untilUnix = untilUnix;
 
     return out;
-  }, [topic, requestId, page]);
+  }, [topic, requestId, since, until, page]);
 
   const { data, error, isLoading, isValidating, mutate } = useQueryAuditEvents(
     params,
     {
       swr: {
-        // Audit rows are append-only on the server -- once a row
-        // appears it never changes -- so we don't poll. The user
-        // hits the refresh button when they want a fresh page.
+        refreshInterval: REFRESH_INTERVAL_MS,
         revalidateOnFocus: false,
-        revalidateIfStale: false,
         keepPreviousData: true,
       },
     }
   );
 
-  const events = data?.status === 200 ? data.data.events : [];
+  const events = useMemo(
+    () => (data?.status === 200 ? data.data.events : []),
+    [data]
+  );
   const total = data?.status === 200 ? data.data.total : 0;
+
+  // Actor/user has no server-side query param (see audit_filters.ts), so
+  // it's applied here over the page we already fetched. This means the
+  // "Showing X-Y of total" counts below reflect the server-side filters
+  // only -- the actor filter narrows what's displayed on top of that.
+  const filteredEvents = useMemo(
+    () =>
+      actor.trim()
+        ? events.filter((event) =>
+            matchesActorFilter(
+              event,
+              decodeAuditEventVariant(event.topic, event.payloadJson),
+              actor
+            )
+          )
+        : events,
+    [events, actor]
+  );
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const pageStart = page * PAGE_SIZE + 1;
   const pageEnd = Math.min(total, (page + 1) * PAGE_SIZE);
 
   const handleFilterChange = (next: () => void) => {
-    // Any filter change resets the page -- offset is relative to
-    // the current filter, not the previous one, so persisting it
-    // would jump the user to a random slice of the new result set.
+    // Any filter change resets the page -- offset is relative to the
+    // current filter, not the previous one, so persisting it would jump
+    // the user to a random slice of the new result set.
     setPage(0);
     next();
   };
@@ -86,9 +131,9 @@ export const AuditWorkbench = () => {
           <div className="flex flex-col gap-1">
             <CardTitle>Activity log</CardTitle>
             <CardDescription>
-              Every audit-relevant action recorded against your account, newest
-              first. Rows are immutable -- nothing here can be edited or
-              deleted, even by you.
+              Every audit-relevant action recorded against your account, across
+              every topic PACT tracks, newest first. Rows are immutable --
+              nothing here can be edited or deleted, even by you.
             </CardDescription>
           </div>
           <Button
@@ -104,7 +149,7 @@ export const AuditWorkbench = () => {
             Refresh
           </Button>
         </div>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="mt-4 flex flex-wrap items-end gap-2">
           <select
             aria-label="Topic"
             value={topic}
@@ -130,10 +175,41 @@ export const AuditWorkbench = () => {
                 handleFilterChange(() => setRequestId(event.target.value))
               }
               placeholder="Filter by request id"
-              className="w-64 pl-8"
+              className="w-56 pl-8"
               aria-label="Request id"
             />
           </div>
+          <Input
+            value={actor}
+            onChange={(event) => setActor(event.target.value)}
+            placeholder="Filter by actor / user"
+            className="w-56"
+            aria-label="Actor or user"
+          />
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+            Since
+            <Input
+              type="datetime-local"
+              value={since}
+              onChange={(event) =>
+                handleFilterChange(() => setSince(event.target.value))
+              }
+              className="w-56"
+              aria-label="Since"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+            Until
+            <Input
+              type="datetime-local"
+              value={until}
+              onChange={(event) =>
+                handleFilterChange(() => setUntil(event.target.value))
+              }
+              className="w-56"
+              aria-label="Until"
+            />
+          </label>
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -143,9 +219,11 @@ export const AuditWorkbench = () => {
           </p>
         )}
 
-        {!error && events.length === 0 && !isLoading && (
+        {!error && filteredEvents.length === 0 && !isLoading && (
           <p className="rounded-md border bg-muted/40 p-4 text-sm text-muted-foreground">
-            No audit events match these filters yet.
+            {topic === 'pact.policy'
+              ? "pact.policy events aren't recorded in the audit log yet -- pact-audit doesn't consume that topic yet."
+              : 'No audit events match these filters yet.'}
           </p>
         )}
 
@@ -153,9 +231,9 @@ export const AuditWorkbench = () => {
           <p className="text-sm text-muted-foreground">Loading activity…</p>
         )}
 
-        {events.length > 0 && (
+        {filteredEvents.length > 0 && (
           <div className="flex flex-col divide-y rounded-md border">
-            {events.map((event) => (
+            {filteredEvents.map((event) => (
               <AuditRow key={event.id} event={event} />
             ))}
           </div>
