@@ -4,5 +4,11 @@
 # those lines before the message is finalized (runs for every commit).
 msg_file="${1:?missing commit message file path}"
 [ -f "$msg_file" ] || exit 0
-# macOS/BSD sed in-place
-sed -i '' '/^Co-authored-by: Cursor/d' "$msg_file"
+# sed -i in-place syntax differs between BSD/macOS (requires a backup-suffix
+# argument right after -i, `''` for none) and GNU/Linux (a suffix must be
+# attached directly to -i, e.g. `-i.bak`; passing `-i ''` makes GNU sed read
+# '' as the script and the pattern as a filename, which fails). Avoid the
+# dialect split entirely by writing to a temp file and moving it back, which
+# works identically on both.
+tmp_file="${msg_file}.tmp"
+sed '/^Co-authored-by: Cursor/d' "$msg_file" > "$tmp_file" && mv "$tmp_file" "$msg_file"
