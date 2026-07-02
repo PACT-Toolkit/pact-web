@@ -24,7 +24,15 @@ export interface DecisionPayload {
   conversation_id?: string;
   content?: { sha256?: string; bytes?: number };
   filter?: { verdict?: string; rule_id?: string; shadow?: boolean };
-  classifier?: { label?: string; score?: number };
+  classifier?: {
+    label?: string;
+    score?: number;
+    // Free-form model/checkpoint tag the classifier engine reported for this
+    // verdict (e.g. "stub-v1", "deberta-prompt-injection-v2@abcd1234").
+    // Additive (PACT-328, mirrors gateway kafka.ClassifierDecision.Engine) --
+    // absent when the engine did not report one.
+    engine?: string;
+  };
   redactor?: {
     verdict?: string;
     spans?: { start?: number; end?: number; label?: string }[];
@@ -40,8 +48,20 @@ export interface DecisionPayload {
     quorum_reached?: boolean;
     backend_count?: number;
     skipped?: boolean;
+    // Per-model breakdown behind label/backend_count (PACT-328, mirrors
+    // gateway kafka.ConsensusDecision.Votes). Additive -- absent when the
+    // consensus stage didn't run or returned no per-model votes (e.g. a
+    // transport-error fail-open, where skipped=true and votes is omitted).
+    votes?: { backend_id?: string; label?: string; score?: number }[];
   };
   policy?: { verdict?: string; agent_id?: string; tool_id?: string };
+  // Whole /v1/check pipeline latency in ms (gateway kafka.DecisionEvent.
+  // LatencyMs). This is end-to-end request latency, not scoped to any single
+  // pipeline stage -- there is no per-stage (e.g. consensus-only) duration on
+  // the wire. Additive here since earlier consumers of DecisionPayload never
+  // needed it; the consensus console (PACT-323) is the first to surface it,
+  // labeled "Request latency" rather than implying it's consensus-specific.
+  latency_ms?: number;
 }
 
 export const parseDecisionPayload = (raw: string): DecisionPayload | null => {

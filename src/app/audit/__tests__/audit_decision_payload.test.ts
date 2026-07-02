@@ -140,6 +140,84 @@ describe('parseDecisionPayload — consensus surface (PACT-263)', () => {
   });
 });
 
+describe('parseDecisionPayload — consensus votes + classifier engine (PACT-328/PACT-323)', () => {
+  // Production-shaped sample: gateway PR #96 additively started emitting
+  // per-model votes on consensus and a model/checkpoint tag on classifier.
+  it('exposes votes and classifier engine when present', () => {
+    const dp = parseDecisionPayload(
+      JSON.stringify({
+        request_id: 'req-11',
+        decision: 'allow',
+        engine: 'consensus',
+        classifier: {
+          label: 'suspicious',
+          score: 0.5,
+          engine: 'deberta-prompt-injection-v2@abcd1234',
+        },
+        consensus: {
+          label: 'benign',
+          confidence: 0.82,
+          quorum_reached: true,
+          backend_count: 2,
+          votes: [
+            { backend_id: 'b1', label: 'benign', score: 0.91 },
+            { backend_id: 'b2', label: 'benign', score: 0.73 },
+          ],
+        },
+        latency_ms: 145,
+      })
+    );
+    expect(dp?.classifier?.engine).toBe('deberta-prompt-injection-v2@abcd1234');
+    expect(dp?.consensus?.votes).toEqual([
+      { backend_id: 'b1', label: 'benign', score: 0.91 },
+      { backend_id: 'b2', label: 'benign', score: 0.73 },
+    ]);
+    expect(dp?.latency_ms).toBe(145);
+  });
+
+  it('exposes a split vote where backends disagree on label', () => {
+    const dp = parseDecisionPayload(
+      JSON.stringify({
+        request_id: 'req-12',
+        decision: 'block',
+        consensus: {
+          label: 'hostile',
+          confidence: 0.55,
+          quorum_reached: true,
+          backend_count: 2,
+          votes: [
+            { backend_id: 'b1', label: 'hostile', score: 0.7 },
+            { backend_id: 'b2', label: 'benign', score: 0.4 },
+          ],
+        },
+      })
+    );
+    expect(dp?.consensus?.votes?.map((v) => v.label)).toEqual([
+      'hostile',
+      'benign',
+    ]);
+  });
+
+  it('tolerates pre-PACT-328 payloads with no votes and no classifier engine', () => {
+    const dp = parseDecisionPayload(
+      JSON.stringify({
+        request_id: 'req-13',
+        decision: 'allow',
+        engine: 'classifier',
+        classifier: { label: 'benign', score: 0.97 },
+        consensus: {
+          label: 'benign',
+          quorum_reached: true,
+          backend_count: 1,
+        },
+      })
+    );
+    expect(dp?.classifier?.engine).toBeUndefined();
+    expect(dp?.consensus?.votes).toBeUndefined();
+    expect(dp?.latency_ms).toBeUndefined();
+  });
+});
+
 describe('parseDecisionPayload — forensic-trace surface (PACT-265)', () => {
   // Production-shaped sample: a full pipeline decision enriched with the
   // forensic-trace block the gateway stamps on every pact.decisions event.
