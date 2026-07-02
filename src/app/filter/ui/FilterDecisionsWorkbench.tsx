@@ -7,7 +7,8 @@ import {
   type AuditEvent,
   useQueryAuditEvents,
 } from '@/src/__codegen__/rest/audit';
-import { PAGE_SIZE, parsePayload } from '@/src/app/filter/domain/filter_decision';
+import { PAGE_SIZE } from '@/src/app/filter/domain/filter_decision';
+import { useFilterDecisionStats } from '@/src/app/filter/domain/filter_decision_stats';
 import { FilterDecisionRow } from '@/src/app/filter/ui/FilterDecisionRow';
 import { FilterStatCard } from '@/src/app/filter/ui/FilterStatCard';
 import { Button } from '@/src/components/ui/button';
@@ -47,33 +48,13 @@ export const FilterDecisionsWorkbench = () => {
     [data]
   );
 
-  const stats = useMemo(() => {
-    let blocked = 0;
-    const ruleCounts: Record<string, number> = {};
-
-    for (const evt of allEvents) {
-      const payload = parsePayload(evt.payloadJson);
-      if (!payload) continue;
-
-      if (payload.decision === 'block') {
-        blocked++;
-        const ruleKey = payload.filter_rule_id ?? payload.reason;
-        if (ruleKey) {
-          ruleCounts[ruleKey] = (ruleCounts[ruleKey] ?? 0) + 1;
-        }
-      }
-    }
-
-    const total = allEvents.length;
-    const allowed = total - blocked;
-    const blockRate = total > 0 ? (blocked / total) * 100 : 0;
-    const topRules = Object.entries(ruleCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5);
-    const maxRuleCount = topRules[0]?.[1] ?? 1;
-
-    return { total, blocked, allowed, blockRate, topRules, maxRuleCount };
-  }, [allEvents]);
+  const {
+    total,
+    filter: filterStats,
+    error: statsError,
+  } = useFilterDecisionStats();
+  const allowed = total - filterStats.blocked;
+  const maxRuleCount = filterStats.top_rules[0]?.count ?? 1;
 
   const totalPages = Math.max(1, Math.ceil(allEvents.length / PAGE_SIZE));
   const pageEvents = allEvents.slice(
@@ -96,41 +77,48 @@ export const FilterDecisionsWorkbench = () => {
 
   return (
     <div className="flex flex-col gap-6">
+      {statsError && (
+        <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+          Failed to load decision stats. Try refreshing in a moment.
+        </p>
+      )}
+
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <FilterStatCard label="Total decisions" value={stats.total} />
+        <FilterStatCard label="Total decisions" value={total} />
         <FilterStatCard
           label="Blocked"
-          value={stats.blocked}
+          value={filterStats.blocked}
           valueClass="text-destructive"
         />
-        <FilterStatCard label="Allowed" value={stats.allowed} />
+        <FilterStatCard label="Allowed" value={allowed} />
         <FilterStatCard
           label="Block rate"
-          value={`${stats.blockRate.toFixed(1)}%`}
-          valueClass={stats.blockRate > 10 ? 'text-destructive' : undefined}
+          value={`${filterStats.block_rate.toFixed(1)}%`}
+          valueClass={
+            filterStats.block_rate > 10 ? 'text-destructive' : undefined
+          }
         />
       </div>
 
-      {stats.topRules.length > 0 && (
+      {filterStats.top_rules.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Top blocked rules</CardTitle>
             <CardDescription>
-              Rules with the highest block counts across the most recent 200
-              decisions.
+              Rules with the highest block counts across all decisions.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
-            {stats.topRules.map(([ruleId, count]) => (
-              <div key={ruleId} className="flex items-center gap-3 text-sm">
+            {filterStats.top_rules.map(({ label, count }) => (
+              <div key={label} className="flex items-center gap-3 text-sm">
                 <span className="w-32 shrink-0 font-mono text-xs text-muted-foreground">
-                  {ruleId}
+                  {label}
                 </span>
                 <div className="flex flex-1 items-center gap-2">
                   <div
                     className="h-2 rounded-full bg-destructive/70"
                     style={{
-                      width: `${(count / stats.maxRuleCount) * 100}%`,
+                      width: `${(count / maxRuleCount) * 100}%`,
                       minWidth: '4px',
                     }}
                   />
