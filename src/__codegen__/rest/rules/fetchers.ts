@@ -147,6 +147,11 @@ export type publishRuleResponse401 = {
   status: 401;
 };
 
+export type publishRuleResponse403 = {
+  data: string;
+  status: 403;
+};
+
 export type publishRuleResponse404 = {
   data: string;
   status: 404;
@@ -159,6 +164,7 @@ export type publishRuleResponseSuccess = publishRuleResponse200 & {
 export type publishRuleResponseError = (
   | publishRuleResponse400
   | publishRuleResponse401
+  | publishRuleResponse403
   | publishRuleResponse404
 ) & {
   headers: Headers;
@@ -173,7 +179,7 @@ export const getPublishRuleUrl = (id: string) => {
 };
 
 /**
- * @summary Publish a draft policy rule
+ * @summary Publish a policy rule
  */
 export const publishRule = async (
   id: string,
@@ -221,6 +227,11 @@ export type revokeRuleResponse401 = {
   status: 401;
 };
 
+export type revokeRuleResponse403 = {
+  data: string;
+  status: 403;
+};
+
 export type revokeRuleResponse404 = {
   data: string;
   status: 404;
@@ -233,6 +244,7 @@ export type revokeRuleResponseSuccess = revokeRuleResponse200 & {
 export type revokeRuleResponseError = (
   | revokeRuleResponse400
   | revokeRuleResponse401
+  | revokeRuleResponse403
   | revokeRuleResponse404
 ) & {
   headers: Headers;
@@ -247,7 +259,7 @@ export const getRevokeRuleUrl = (id: string) => {
 };
 
 /**
- * @summary Revoke a published policy rule
+ * @summary Revoke a policy rule
  */
 export const revokeRule = async (
   id: string,

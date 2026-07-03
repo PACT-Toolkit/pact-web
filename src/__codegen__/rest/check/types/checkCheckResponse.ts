@@ -6,17 +6,23 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CheckClassifierInfo } from './checkClassifierInfo';
+import type { CheckDiagnosticsInfo } from './checkDiagnosticsInfo';
+import type { CheckExternalRefsInfo } from './checkExternalRefsInfo';
 import type { CheckFilterInfo } from './checkFilterInfo';
 import type { CheckRedactorInfo } from './checkRedactorInfo';
+import type { CheckSpotlightInfo } from './checkSpotlightInfo';
 
 export interface CheckCheckResponse {
   classifier?: CheckClassifierInfo;
   /** "allow" | "block" */
   decision: string;
+  diagnostics?: CheckDiagnosticsInfo;
+  external_refs?: CheckExternalRefsInfo;
   filter?: CheckFilterInfo;
   filter_rule_id?: string;
   latency_ms: number;
   reason?: string;
   redactor?: CheckRedactorInfo;
   request_id: string;
+  spotlight?: CheckSpotlightInfo;
 }

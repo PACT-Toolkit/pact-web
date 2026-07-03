@@ -140,6 +140,15 @@ export function runFilter(content: string): {
   return { decision: 'allow', confidence: 0.98 };
 }
 
+// label uses the real pact-classifier taxonomy (unspecified | benign |
+// prompt_injection | jailbreak | sensitive | unknown -- see
+// pact-gateway's grpcclients.ClassifierLabel) rather than an ad-hoc
+// "hostile" string, so a caller that forwards this label to
+// POST /v1/classifier/label (PACT-322 part 2's ClassifierTestPanel) sends a
+// value the gateway's operatorLabel/predictedLabel enum validation accepts.
+// "sensitive" is the closest fit for HOSTILE_WORDS-triggered content
+// (violence/weapons/hacking terms) -- it is not a prompt-injection or
+// jailbreak attempt, just a dangerous topic.
 export function runClassifier(content: string): {
   decision: 'allow' | 'block';
   label: string;
@@ -152,7 +161,7 @@ export function runClassifier(content: string): {
   if (hits >= 2) {
     return {
       decision: 'block',
-      label: 'hostile',
+      label: 'sensitive',
       reason: 'Semantic hostility detected',
       confidence: 0.68 + Math.random() * 0.22,
     };
@@ -161,7 +170,7 @@ export function runClassifier(content: string): {
   if (hits === 1 && Math.random() > 0.65) {
     return {
       decision: 'block',
-      label: 'hostile',
+      label: 'sensitive',
       reason: 'Low-confidence hostile content',
       confidence: 0.5 + Math.random() * 0.18,
     };

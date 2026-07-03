@@ -69,6 +69,23 @@ export default defineConfig({
       },
     },
   },
+  classifier: {
+    input: '.rest-codegen-temp/classifier.openapi.yaml',
+    output: {
+      mode: 'split',
+      target: 'src/__codegen__/rest/classifier/hooks.ts',
+      schemas: 'src/__codegen__/rest/classifier/types',
+      client: 'swr',
+      baseUrl: '/api/pact/gateway/v1',
+      override: {
+        query: {
+          useQuery: true,
+          useMutation: true,
+          signal: true,
+        },
+      },
+    },
+  },
   files: {
     input: '.rest-codegen-temp/files.openapi.yaml',
     output: {

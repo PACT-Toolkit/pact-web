@@ -1,0 +1,97 @@
+basePath: /
+definitions:
+    classifier.LabelVerdictRequest:
+        properties:
+            content:
+                type: string
+            correctionLabel:
+                type: string
+            note:
+                type: string
+            operatorLabel:
+                type: string
+            predictedConfidence:
+                type: number
+            predictedLabel:
+                type: string
+            requestId:
+                type: string
+            source:
+                type: string
+        type: object
+    classifier.LabelVerdictResponse:
+        properties:
+            created:
+                type: boolean
+            verdictId:
+                type: string
+        type: object
+host: localhost:8080
+info:
+    contact: {}
+    description: Public REST entrypoint for the PACT safety pipeline.
+    title: pact-gateway
+    version: 0.1.0
+paths:
+    /v1/classifier/label:
+        post:
+            consumes:
+                - application/json
+            operationId: labelVerdict
+            parameters:
+                - description: Operator correction for a prior classification
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/classifier.LabelVerdictRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/classifier.LabelVerdictResponse'
+                "400":
+                    description: missing or invalid required field
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "403":
+                    description: missing required permission
+                    schema:
+                        type: string
+                "429":
+                    description: rate limit exceeded
+                    schema:
+                        type: string
+                "502":
+                    description: downstream classifier error
+                    schema:
+                        type: string
+                "503":
+                    description: classifier unavailable
+                    schema:
+                        type: string
+                "504":
+                    description: classifier timeout
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Label a classifier verdict
+            tags:
+                - classifier
+schemes:
+    - http
+    - https
+securityDefinitions:
+    Bearer:
+        description: 'Opaque pact-auth session token. Format: <uuid>.<base64-hmac>.'
+        in: header
+        name: Authorization
+        type: apiKey
+swagger: "2.0"
