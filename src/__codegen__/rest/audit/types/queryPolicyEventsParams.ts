@@ -27,21 +27,19 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from './auditEvent';
-export * from './badRequestResponse';
-export * from './decisionStatsClassifier';
-export * from './decisionStatsFilter';
-export * from './decisionStatsLabelCount';
-export * from './decisionStatsRedactor';
-export * from './error';
-export * from './forbiddenResponse';
-export * from './policyEvent';
-export * from './policyInfo';
-export * from './queryAuditEventsParams';
-export * from './queryAuditEventsResponse';
-export * from './queryDecisionStatsParams';
-export * from './queryDecisionStatsResponse';
-export * from './queryPolicyEventsParams';
-export * from './queryPolicyEventsResponse';
-export * from './tooManyRequestsResponse';
-export * from './unauthorizedResponse';
+export type QueryPolicyEventsParams = {
+  /**
+   * Inclusive lower bound on createdAt, unix seconds UTC.
+   * @minimum 0
+   */
+  sinceUnix?: number;
+  /**
+   * @minimum 0
+   * @maximum 200
+   */
+  limit?: number;
+  /**
+   * @minimum 0
+   */
+  offset?: number;
+};

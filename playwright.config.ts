@@ -28,7 +28,7 @@ export default defineConfig({
   webServer: {
     command: process.env.CI
       ? `pnpm run start:mock --port ${port}`
-      : `pnpm dev:mock -- --port ${port}`,
+      : `pnpm dev:mock --port ${port}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     stderr: 'ignore',

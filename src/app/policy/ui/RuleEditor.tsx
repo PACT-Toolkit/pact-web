@@ -157,7 +157,10 @@ const PolicyRuleRow = ({
   };
 
   return (
-    <div className="flex flex-col gap-1 px-4 py-3">
+    <div
+      className="flex flex-col gap-1 px-4 py-3"
+      data-testid="policy-rule-row"
+    >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         <span
           className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${

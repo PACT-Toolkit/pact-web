@@ -1,4 +1,8 @@
-import { PolicyWorkbench, RuleEditor } from '@/src/app/policy';
+import {
+  PolicyEventsFeed,
+  PolicyTokenIssuePanel,
+  RuleEditor,
+} from '@/src/app/policy';
 
 const PolicyPage = () => {
   return (
@@ -16,13 +20,24 @@ const PolicyPage = () => {
 
       <section className="flex flex-col gap-6">
         <header className="flex flex-col gap-1">
+          <h2 className="text-xl font-semibold">Capability tokens</h2>
+          <p className="text-sm text-muted-foreground">
+            Mint a scoped, time-limited capability token for an agent and tool
+            pair.
+          </p>
+        </header>
+        <PolicyTokenIssuePanel />
+      </section>
+
+      <section className="flex flex-col gap-6">
+        <header className="flex flex-col gap-1">
           <h2 className="text-xl font-semibold">Decisions</h2>
           <p className="text-sm text-muted-foreground">
             Requests evaluated against a capability token. Denied decisions mean
             the token did not authorize the requested agent or tool.
           </p>
         </header>
-        <PolicyWorkbench />
+        <PolicyEventsFeed />
       </section>
     </main>
   );

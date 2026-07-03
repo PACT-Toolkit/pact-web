@@ -27,21 +27,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from './auditEvent';
-export * from './badRequestResponse';
-export * from './decisionStatsClassifier';
-export * from './decisionStatsFilter';
-export * from './decisionStatsLabelCount';
-export * from './decisionStatsRedactor';
-export * from './error';
-export * from './forbiddenResponse';
-export * from './policyEvent';
-export * from './policyInfo';
-export * from './queryAuditEventsParams';
-export * from './queryAuditEventsResponse';
-export * from './queryDecisionStatsParams';
-export * from './queryDecisionStatsResponse';
-export * from './queryPolicyEventsParams';
-export * from './queryPolicyEventsResponse';
-export * from './tooManyRequestsResponse';
-export * from './unauthorizedResponse';
+export interface PolicyInfo {
+  /** The policy service's capability-token verdict for this
+   * request, e.g. "allowed" or "denied".
+   *  */
+  verdict?: string;
+  /** Agent the capability token was scoped to; may be empty. */
+  agentId?: string;
+  /** Tool the capability token was scoped to; may be empty. */
+  toolId?: string;
+}

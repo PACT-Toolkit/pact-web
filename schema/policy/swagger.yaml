@@ -1,0 +1,87 @@
+basePath: /
+definitions:
+    policy.IssueTokenRequest:
+        properties:
+            agentId:
+                type: string
+            scopes:
+                items:
+                    type: string
+                type: array
+            toolId:
+                type: string
+            ttlSeconds:
+                type: integer
+        type: object
+    policy.IssueTokenResponse:
+        properties:
+            expiresAtUnix:
+                type: integer
+            token:
+                type: string
+        type: object
+host: localhost:8080
+info:
+    contact: {}
+    description: Public REST entrypoint for the PACT safety pipeline.
+    title: pact-gateway
+    version: 0.1.0
+paths:
+    /v1/policy/tokens:
+        post:
+            consumes:
+                - application/json
+            operationId: issueToken
+            parameters:
+                - description: Agent ID, tool ID, scopes, and TTL
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/policy.IssueTokenRequest'
+            produces:
+                - application/json
+            responses:
+                "201":
+                    description: Created
+                    schema:
+                        $ref: '#/definitions/policy.IssueTokenResponse'
+                "400":
+                    description: agentId, toolId required; scopes must be non-empty; ttlSeconds must be 1..86400
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "429":
+                    description: rate limit exceeded
+                    schema:
+                        type: string
+                "502":
+                    description: upstream error
+                    schema:
+                        type: string
+                "503":
+                    description: service unavailable
+                    schema:
+                        type: string
+                "504":
+                    description: request timeout
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Mint a capability token
+            tags:
+                - policy
+schemes:
+    - http
+    - https
+securityDefinitions:
+    Bearer:
+        description: 'Opaque pact-auth session token. Format: <uuid>.<base64-hmac>.'
+        in: header
+        name: Authorization
+        type: apiKey
+swagger: "2.0"

@@ -26,22 +26,20 @@
  *
  * OpenAPI spec version: 0.1.0
  */
+import type { PolicyInfo } from './policyInfo';
 
-export * from './auditEvent';
-export * from './badRequestResponse';
-export * from './decisionStatsClassifier';
-export * from './decisionStatsFilter';
-export * from './decisionStatsLabelCount';
-export * from './decisionStatsRedactor';
-export * from './error';
-export * from './forbiddenResponse';
-export * from './policyEvent';
-export * from './policyInfo';
-export * from './queryAuditEventsParams';
-export * from './queryAuditEventsResponse';
-export * from './queryDecisionStatsParams';
-export * from './queryDecisionStatsResponse';
-export * from './queryPolicyEventsParams';
-export * from './queryPolicyEventsResponse';
-export * from './tooManyRequestsResponse';
-export * from './unauthorizedResponse';
+export interface PolicyEvent {
+  id: string;
+  /** Gateway-assigned correlation id; may be empty. */
+  requestId: string;
+  createdAt: string;
+  /** The pipeline's overall decision for the request: "allow" or
+   * "block". Matches the same union /v1/check itself returns.
+   *  */
+  decision: string;
+  /** Machine-readable reason code, e.g. "policy_token_denied".
+   * Empty on an allow decision.
+   *  */
+  reason?: string;
+  policy?: PolicyInfo;
+}

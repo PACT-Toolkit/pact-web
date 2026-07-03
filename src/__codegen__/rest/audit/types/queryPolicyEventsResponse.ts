@@ -26,22 +26,13 @@
  *
  * OpenAPI spec version: 0.1.0
  */
+import type { PolicyEvent } from './policyEvent';
 
-export * from './auditEvent';
-export * from './badRequestResponse';
-export * from './decisionStatsClassifier';
-export * from './decisionStatsFilter';
-export * from './decisionStatsLabelCount';
-export * from './decisionStatsRedactor';
-export * from './error';
-export * from './forbiddenResponse';
-export * from './policyEvent';
-export * from './policyInfo';
-export * from './queryAuditEventsParams';
-export * from './queryAuditEventsResponse';
-export * from './queryDecisionStatsParams';
-export * from './queryDecisionStatsResponse';
-export * from './queryPolicyEventsParams';
-export * from './queryPolicyEventsResponse';
-export * from './tooManyRequestsResponse';
-export * from './unauthorizedResponse';
+export interface QueryPolicyEventsResponse {
+  /** Page of PolicyEvents for the caller, newest first. */
+  events: PolicyEvent[];
+  /** Caller's matching row count (independent of len(events),
+   * which is the requested page).
+   *  */
+  total: number;
+}
