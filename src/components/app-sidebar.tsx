@@ -5,6 +5,7 @@ import {
   BookOpen,
   Bot,
   Command,
+  Eraser,
   Files,
   FlaskConical,
   Frame,
@@ -85,6 +86,12 @@ const buildNavMain = (pathname: string): NavMainItem[] => [
     url: '/consensus',
     icon: Scale,
     isActive: isRouteActive(pathname, '/consensus'),
+  },
+  {
+    title: 'Redactor',
+    url: '/redactor',
+    icon: Eraser,
+    isActive: isRouteActive(pathname, '/redactor'),
   },
   {
     title: 'Test lab',

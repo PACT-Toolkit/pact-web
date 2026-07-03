@@ -19,6 +19,7 @@ import {
   createFilterMockData,
   mockDecisionEvent,
 } from '@/src/app/filter/mock/data/filter';
+import { createRedactorMockData } from '@/src/app/redactor/mock/data/redactor';
 import {
   type AttackExample,
   type TestLabRunRecord,
@@ -53,5 +54,8 @@ createFilterMockData(db);
 // newest-first before slicing) but keeps the two decisions-producing
 // seeders visually adjacent here.
 createConsensusMockData(db);
+// Third seeder appending to the shared db.decisions repository (PACT-324);
+// see redactor.ts's header comment for its distinct offset scheme.
+createRedactorMockData(db);
 createTestLabMockData(db);
 createTestLabRunsMockData(db);
