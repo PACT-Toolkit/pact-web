@@ -130,6 +130,48 @@ paths:
         "401": { $ref: "#/responses/Unauthorized" }
         "403": { $ref: "#/responses/Forbidden" }
 
+  /policy-events:
+    get:
+      summary: Read the caller's policy decisions
+      description: |
+        Paginated, newest-first view of the caller's pact.policy events --
+        one row per capability-token evaluation the gateway ran during a
+        /v1/check request. The topic is hard-scoped server-side to
+        pact.policy; callers cannot override it via the query string.
+
+        Populated once pact-audit consumes the pact.policy topic
+        (PACT-308). Until then this returns an empty page, not an error --
+        an empty policy feed is expected in early deployments, not a bug.
+      operationId: queryPolicyEvents
+      tags: [audit]
+      parameters:
+        - name: sinceUnix
+          in: query
+          required: false
+          type: integer
+          format: int64
+          minimum: 0
+          description: Inclusive lower bound on createdAt, unix seconds UTC.
+        - name: limit
+          in: query
+          required: false
+          type: integer
+          minimum: 0
+          maximum: 200
+          default: 50
+        - name: offset
+          in: query
+          required: false
+          type: integer
+          minimum: 0
+          default: 0
+      responses:
+        "200":
+          description: OK
+          schema: { $ref: "#/definitions/QueryPolicyEventsResponse" }
+        "400": { $ref: "#/responses/BadRequest" }
+        "401": { $ref: "#/responses/Unauthorized" }
+
 definitions:
   AuditEvent:
     type: object
@@ -278,6 +320,64 @@ definitions:
       filter: { $ref: "#/definitions/DecisionStatsFilter" }
       classifier: { $ref: "#/definitions/DecisionStatsClassifier" }
       redactor: { $ref: "#/definitions/DecisionStatsRedactor" }
+
+  # Field-for-field mirror of pact-gateway's audit.PolicyInfo /
+  # audit.PolicyEventResponse / audit.QueryPolicyEventsResponse DTOs
+  # (internal/features/audit/types.go), which in turn match pact-web's
+  # pre-existing PolicyEvent / PolicyEventsResponse interfaces
+  # (src/app/policy/domain/policy_event.ts) exactly -- that domain file
+  # predates this codegen wiring and was hand-typed against the same
+  # contract, so no reshaping is needed on the pact-web side.
+  PolicyInfo:
+    type: object
+    properties:
+      verdict:
+        type: string
+        description: |
+          The policy service's capability-token verdict for this
+          request, e.g. "allowed" or "denied".
+      agentId:
+        type: string
+        description: Agent the capability token was scoped to; may be empty.
+      toolId:
+        type: string
+        description: Tool the capability token was scoped to; may be empty.
+
+  PolicyEvent:
+    type: object
+    required: [id, requestId, createdAt, decision]
+    properties:
+      id: { type: string, format: uuid }
+      requestId:
+        type: string
+        description: Gateway-assigned correlation id; may be empty.
+      createdAt: { type: string, format: date-time }
+      decision:
+        type: string
+        description: |
+          The pipeline's overall decision for the request: "allow" or
+          "block". Matches the same union /v1/check itself returns.
+        example: "block"
+      reason:
+        type: string
+        description: |
+          Machine-readable reason code, e.g. "policy_token_denied".
+          Empty on an allow decision.
+      policy: { $ref: "#/definitions/PolicyInfo" }
+
+  QueryPolicyEventsResponse:
+    type: object
+    required: [events, total]
+    properties:
+      events:
+        type: array
+        items: { $ref: "#/definitions/PolicyEvent" }
+        description: Page of PolicyEvents for the caller, newest first.
+      total:
+        type: integer
+        description: |
+          Caller's matching row count (independent of len(events),
+          which is the requested page).
 
   Error:
     type: object

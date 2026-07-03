@@ -38,6 +38,8 @@ import type {
   QueryAuditEventsResponse,
   QueryDecisionStatsParams,
   QueryDecisionStatsResponse,
+  QueryPolicyEventsParams,
+  QueryPolicyEventsResponse,
   TooManyRequestsResponse,
   UnauthorizedResponse,
 } from './types';
@@ -213,3 +215,83 @@ export const queryDecisionStats = async (
 
 export const getQueryDecisionStatsKey = (params?: QueryDecisionStatsParams) =>
   [`/v1/audit/stats`, ...(params ? [params] : [])] as const;
+
+export type queryPolicyEventsResponse200 = {
+  data: QueryPolicyEventsResponse;
+  status: 200;
+};
+
+export type queryPolicyEventsResponse400 = {
+  data: BadRequestResponse;
+  status: 400;
+};
+
+export type queryPolicyEventsResponse401 = {
+  data: UnauthorizedResponse;
+  status: 401;
+};
+
+export type queryPolicyEventsResponseSuccess = queryPolicyEventsResponse200 & {
+  headers: Headers;
+};
+
+export type queryPolicyEventsResponseError = (
+  | queryPolicyEventsResponse400
+  | queryPolicyEventsResponse401
+) & {
+  headers: Headers;
+};
+
+export type queryPolicyEventsResponse =
+  | queryPolicyEventsResponseSuccess
+  | queryPolicyEventsResponseError;
+
+export const getQueryPolicyEventsUrl = (params?: QueryPolicyEventsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/v1/audit/policy-events?${stringifiedParams}`
+    : `/v1/audit/policy-events`;
+};
+
+/**
+ * Paginated, newest-first view of the caller's pact.policy events --
+ * one row per capability-token evaluation the gateway ran during a
+ * /v1/check request. The topic is hard-scoped server-side to
+ * pact.policy; callers cannot override it via the query string.
+ *
+ * Populated once pact-audit consumes the pact.policy topic
+ * (PACT-308). Until then this returns an empty page, not an error --
+ * an empty policy feed is expected in early deployments, not a bug.
+ *
+ * @summary Read the caller's policy decisions
+ */
+export const queryPolicyEvents = async (
+  params?: QueryPolicyEventsParams,
+  options?: RequestInit
+): Promise<queryPolicyEventsResponse> => {
+  const res = await fetch(getQueryPolicyEventsUrl(params), {
+    ...options,
+    method: 'GET',
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: queryPolicyEventsResponse['data'] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as queryPolicyEventsResponse;
+};
+
+export const getQueryPolicyEventsKey = (params?: QueryPolicyEventsParams) =>
+  [`/v1/audit/policy-events`, ...(params ? [params] : [])] as const;

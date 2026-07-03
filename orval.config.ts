@@ -103,6 +103,23 @@ export default defineConfig({
       },
     },
   },
+  policy: {
+    input: '.rest-codegen-temp/policy.openapi.yaml',
+    output: {
+      mode: 'split',
+      target: 'src/__codegen__/rest/policy/hooks.ts',
+      schemas: 'src/__codegen__/rest/policy/types',
+      client: 'swr',
+      baseUrl: '/api/pact/gateway/v1',
+      override: {
+        query: {
+          useQuery: true,
+          useMutation: true,
+          signal: true,
+        },
+      },
+    },
+  },
   rules: {
     input: '.rest-codegen-temp/rules.openapi.yaml',
     output: {

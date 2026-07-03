@@ -3,6 +3,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { type PolicyEvent } from '@/src/app/policy/domain/policy_event';
 import { type PolicyRule } from '@/src/app/policy/domain/policy_rule';
+import {
+  MAX_TTL_SECONDS,
+  MIN_TTL_SECONDS,
+} from '@/src/app/policy/domain/policy_token';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 const min = 60_000;
@@ -107,6 +111,13 @@ interface CreateRuleBody {
   scopes?: string[];
 }
 
+interface IssueTokenBody {
+  agentId?: string;
+  toolId?: string;
+  scopes?: string[];
+  ttlSeconds?: number;
+}
+
 // Valid publish/revoke transitions enforced by the mock.
 const PUBLISH_TRANSITIONS: Record<string, string> = { draft: 'published' };
 const REVOKE_TRANSITIONS: Record<string, string> = { published: 'revoked' };
@@ -183,4 +194,40 @@ export const handlers: RequestHandler[] = [
 
     return HttpResponse.json({ ...rule });
   }),
+
+  http.post(
+    `${MSW_PACT_BASE}/gateway/v1/policy/tokens`,
+    async ({ request }) => {
+      const body = (await request.json()) as IssueTokenBody;
+
+      // Mirrors pact-gateway's documented runtime validation (api/swagger/
+      // policy.yaml's 400 response: "agentId, toolId required; scopes must be
+      // non-empty; ttlSeconds must be 1..86400"), not just the OpenAPI shape
+      // (every field there is optional) -- same pattern as the classifier
+      // label mock enforcing handler.go's runtime rules over the lenient spec.
+      if (
+        !body.agentId ||
+        !body.toolId ||
+        !Array.isArray(body.scopes) ||
+        body.scopes.length === 0 ||
+        !Number.isInteger(body.ttlSeconds) ||
+        (body.ttlSeconds as number) < MIN_TTL_SECONDS ||
+        (body.ttlSeconds as number) > MAX_TTL_SECONDS
+      ) {
+        // HttpResponse.json (not .text): the generated issueToken fetcher
+        // always JSON.parses the response body regardless of status
+        // (src/__codegen__/rest/policy/fetchers.ts), so an unquoted text body
+        // would throw a SyntaxError instead of surfacing as a normal 400 --
+        // same reason the publish/revoke handlers above use .json for their
+        // error string.
+        return HttpResponse.json(GATEWAY_INVALID_REQUEST, { status: 400 });
+      }
+
+      const token = `pact-cap-${uuidv4()}`;
+      const expiresAtUnix =
+        Math.floor(Date.now() / 1000) + (body.ttlSeconds as number);
+
+      return HttpResponse.json({ token, expiresAtUnix }, { status: 201 });
+    }
+  ),
 ];

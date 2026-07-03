@@ -40,6 +40,8 @@ import type {
   QueryAuditEventsResponse,
   QueryDecisionStatsParams,
   QueryDecisionStatsResponse,
+  QueryPolicyEventsParams,
+  QueryPolicyEventsResponse,
   TooManyRequestsResponse,
   UnauthorizedResponse,
 } from './types';
@@ -65,6 +67,15 @@ import {
   queryDecisionStatsResponse,
   queryDecisionStats,
   getQueryDecisionStatsKey,
+  queryPolicyEventsResponse200,
+  queryPolicyEventsResponse400,
+  queryPolicyEventsResponse401,
+  queryPolicyEventsResponseSuccess,
+  queryPolicyEventsResponseError,
+  getQueryPolicyEventsUrl,
+  queryPolicyEventsResponse,
+  queryPolicyEvents,
+  getQueryPolicyEventsKey,
 } from './fetchers';
 
 export type QueryAuditEventsQueryResult = NonNullable<
@@ -136,6 +147,45 @@ export const useQueryDecisionStats = <
     swrOptions?.swrKey ??
     (() => (isEnabled ? getQueryDecisionStatsKey(params) : null));
   const swrFn = () => queryDecisionStats(params, fetchOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type QueryPolicyEventsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof queryPolicyEvents>>
+>;
+
+/**
+ * @summary Read the caller's policy decisions
+ */
+export const useQueryPolicyEvents = <
+  TError = Promise<BadRequestResponse | UnauthorizedResponse>,
+>(
+  params?: QueryPolicyEventsParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof queryPolicyEvents>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+    fetch?: RequestInit;
+  }
+) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getQueryPolicyEventsKey(params) : null));
+  const swrFn = () => queryPolicyEvents(params, fetchOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
