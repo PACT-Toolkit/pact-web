@@ -4,6 +4,7 @@ import {
   AudioWaveform,
   BookOpen,
   Bot,
+  BrainCircuit,
   Command,
   Eraser,
   Files,
@@ -80,6 +81,12 @@ const buildNavMain = (pathname: string): NavMainItem[] => [
     url: '/filter',
     icon: ShieldCheck,
     isActive: pathname === '/filter',
+  },
+  {
+    title: 'Classifier',
+    url: '/classifier',
+    icon: BrainCircuit,
+    isActive: isRouteActive(pathname, '/classifier'),
   },
   {
     title: 'Consensus',

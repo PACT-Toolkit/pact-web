@@ -14,6 +14,7 @@ import {
   createAuditMockData,
   mockAuditEvent,
 } from '@/src/app/audit/mock/data/audit';
+import { createClassifierMockData } from '@/src/app/classifier/mock/data/classifier';
 import { createConsensusMockData } from '@/src/app/consensus/mock/data/consensus';
 import {
   createFilterMockData,
@@ -57,5 +58,8 @@ createConsensusMockData(db);
 // Third seeder appending to the shared db.decisions repository (PACT-324);
 // see redactor.ts's header comment for its distinct offset scheme.
 createRedactorMockData(db);
+// Fourth seeder appending to the shared db.decisions repository (PACT-322);
+// see classifier.ts's header comment for its distinct offset scheme.
+createClassifierMockData(db);
 createTestLabMockData(db);
 createTestLabRunsMockData(db);
