@@ -2,6 +2,7 @@ import { http, HttpResponse, type RequestHandler } from 'msw';
 import { v4 as uuidv4 } from 'uuid';
 
 import { db } from '@/mocks/data/dbFactory';
+import { runRedactor } from '@/src/app/redactor/mock/data/redactor';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 import { runClassifier, runFilter } from '../data/test_lab';
@@ -37,6 +38,13 @@ export const handlers: RequestHandler[] = [
           ? 'block'
           : 'allow';
 
+    // Redactor runs regardless of decision/kind, same as the real gateway
+    // (pact-redactor is bidirectional -- see README.md). Shared with
+    // createRedactorMockData's seed data via redactor/mock/data/redactor.ts
+    // so /redactor's ad-hoc test panel (PACT-324) exercises the same
+    // detection logic as the live console's fixtures.
+    const redactorResult = runRedactor(content);
+
     return HttpResponse.json({
       request_id: `req-test-${uuidv4().slice(0, 6)}`,
       decision,
@@ -51,6 +59,7 @@ export const handlers: RequestHandler[] = [
       classifier: classifierResult
         ? { label: classifierResult.label, score: classifierResult.confidence }
         : undefined,
+      redactor: redactorResult,
       latency_ms: Math.floor(3 + Math.random() * 8),
       _mock_layers: [
         filterBypassed
