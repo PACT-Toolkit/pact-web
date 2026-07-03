@@ -5,6 +5,8 @@
  * Public REST entrypoint for the PACT safety pipeline.
  * OpenAPI spec version: 0.1.0
  */
+import type { CheckExternalRef } from './checkExternalRef';
+import type { CheckSpotlightChunk } from './checkSpotlightChunk';
 
 export interface CheckCheckRequest {
   content: string;
@@ -14,6 +16,16 @@ export interface CheckCheckRequest {
    * via the X-Pact-Conversation-Id header; the body value wins when both are
    * present. Opaque to the gateway — never parsed or validated. */
   conversation_id?: string;
+  /** ExternalRefs is an optional list of third-party references (URLs) the
+   * gateway fetches in an isolated worker and re-scans for indirect prompt
+   * injection (PACT-236). When present and the sandbox is enabled, the request
+   * blocks if any reference is hostile — before the caller passes the fetched
+   * content to its LLM. Unlike SpotlightChunks, the content is NOT supplied
+   * inline; the gateway fetches it. */
+  external_refs?: CheckExternalRef[];
   /** "input" | "output" */
   kind: string;
+  /** SpotlightChunks is an optional list of third-party content chunks the host
+   * wants spotlight-wrapped before LLM injection. Populated on allow path only. */
+  spotlight_chunks?: CheckSpotlightChunk[];
 }

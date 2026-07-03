@@ -119,11 +119,15 @@ paths:
                     schema:
                         $ref: '#/definitions/rules.RuleResponse'
                 "400":
-                    description: invalid status transition
+                    description: invalid request
                     schema:
                         type: string
                 "401":
                     description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "403":
+                    description: missing required permission
                     schema:
                         type: string
                 "404":
@@ -132,7 +136,7 @@ paths:
                         type: string
             security:
                 - Bearer: []
-            summary: Publish a draft policy rule
+            summary: Publish a policy rule
             tags:
                 - rules
     /v1/rules/{id}/revoke:
@@ -152,11 +156,15 @@ paths:
                     schema:
                         $ref: '#/definitions/rules.RuleResponse'
                 "400":
-                    description: invalid status transition
+                    description: invalid request
                     schema:
                         type: string
                 "401":
                     description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "403":
+                    description: missing required permission
                     schema:
                         type: string
                 "404":
@@ -165,7 +173,7 @@ paths:
                         type: string
             security:
                 - Bearer: []
-            summary: Revoke a published policy rule
+            summary: Revoke a policy rule
             tags:
                 - rules
 schemes:

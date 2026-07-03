@@ -6,9 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './checkCausalSpanInfo';
 export * from './checkCheckRequest';
 export * from './checkCheckResponse';
 export * from './checkClassifierInfo';
+export * from './checkDiagnosticsInfo';
+export * from './checkExternalRef';
+export * from './checkExternalRefInfo';
+export * from './checkExternalRefsInfo';
 export * from './checkFilterInfo';
 export * from './checkRedactedSpan';
 export * from './checkRedactorInfo';
+export * from './checkSpotlightChunk';
+export * from './checkSpotlightInfo';
+export * from './checkWrappedChunk';

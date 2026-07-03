@@ -42,6 +42,7 @@ import {
   publishRuleResponse200,
   publishRuleResponse400,
   publishRuleResponse401,
+  publishRuleResponse403,
   publishRuleResponse404,
   publishRuleResponseSuccess,
   publishRuleResponseError,
@@ -53,6 +54,7 @@ import {
   revokeRuleResponse200,
   revokeRuleResponse400,
   revokeRuleResponse401,
+  revokeRuleResponse403,
   revokeRuleResponse404,
   revokeRuleResponseSuccess,
   revokeRuleResponseError,
@@ -131,7 +133,7 @@ export type PublishRuleMutationResult = NonNullable<
 >;
 
 /**
- * @summary Publish a draft policy rule
+ * @summary Publish a policy rule
  */
 export const usePublishRule = <TError = Promise<string>>(
   id: string,
@@ -164,7 +166,7 @@ export type RevokeRuleMutationResult = NonNullable<
 >;
 
 /**
- * @summary Revoke a published policy rule
+ * @summary Revoke a policy rule
  */
 export const useRevokeRule = <TError = Promise<string>>(
   id: string,

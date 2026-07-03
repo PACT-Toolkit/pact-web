@@ -11,13 +11,13 @@ import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 // sub-object, so this spec's "arbitrated" assertions exercise those shared
 // rows rather than a classifier-only fixture.
 //
-// The label-action sub-item (mark false-positive/false-negative) is not
-// built in this PR: pact-gateway's POST /v1/classifier/label handler
-// hard-requires a non-empty `content` field at runtime, and pact.decisions
-// payloads never carry raw request content (only a content.sha256/bytes
-// hash) -- see classifier_record.ts and the PR description for the full
-// gap writeup. This spec therefore only exercises the verdict stream and
-// pagination.
+// Part 2 (the "ad-hoc test panel" tests below) adds the FP/FN label
+// action: pact.decisions events never carry raw request content (only a
+// content.sha256/bytes hash), so labeling historical console rows stays
+// out of scope by design (see classifier_label.ts and the PR description).
+// The ad-hoc test panel sidesteps the gap entirely -- the operator types
+// the content, so it is in-hand for the POST /v1/classifier/label call the
+// label buttons trigger.
 test.describe('Classifier console', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/classifier');
@@ -97,6 +97,60 @@ test.describe('Classifier console', () => {
     await prevButton.click();
 
     await expect(pageInfo).toContainText('1–25 of');
+  });
+
+  test('ad-hoc test panel flags a hostile verdict and marks it false positive', async ({
+    page,
+  }) => {
+    // Two HOSTILE_WORDS hits (exploit, weapon) trip runClassifier's
+    // deterministic block/"sensitive" branch (src/app/test_lab/mock/data/
+    // test_lab.ts); none of the filter-stage regexes match, so the filter
+    // stage allows and the classifier stage actually runs.
+    await page
+      .getByTestId('classifier-test-input')
+      .fill(
+        'The article explains how someone could exploit a weapon design flaw.'
+      );
+    await page.getByTestId('classifier-test-run').click();
+
+    const resultPane = page.getByTestId('classifier-test-result');
+    await expect(resultPane).toBeVisible();
+    await expect(resultPane).toContainText('sensitive');
+
+    const markFalsePositive = page.getByTestId('classifier-test-mark-fp');
+    const markFalseNegative = page.getByTestId('classifier-test-mark-fn');
+    await expect(markFalsePositive).toBeEnabled();
+    await expect(markFalseNegative).toBeDisabled();
+
+    await markFalsePositive.click();
+
+    const confirmation = page.getByTestId('classifier-test-label-confirm');
+    await expect(confirmation).toBeVisible();
+    await expect(confirmation).toContainText('labeled false positive');
+  });
+
+  test('ad-hoc test panel reports a benign verdict and marks it false negative', async ({
+    page,
+  }) => {
+    await page
+      .getByTestId('classifier-test-input')
+      .fill('Please write a cheerful welcome message for new employees.');
+    await page.getByTestId('classifier-test-run').click();
+
+    const resultPane = page.getByTestId('classifier-test-result');
+    await expect(resultPane).toBeVisible();
+    await expect(resultPane).toContainText('benign');
+
+    const markFalsePositive = page.getByTestId('classifier-test-mark-fp');
+    const markFalseNegative = page.getByTestId('classifier-test-mark-fn');
+    await expect(markFalseNegative).toBeEnabled();
+    await expect(markFalsePositive).toBeDisabled();
+
+    await markFalseNegative.click();
+
+    const confirmation = page.getByTestId('classifier-test-label-confirm');
+    await expect(confirmation).toBeVisible();
+    await expect(confirmation).toContainText('labeled false negative');
   });
 
   test('has no accessibility violations', async ({ page }) => {

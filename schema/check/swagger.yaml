@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+    check.CausalSpanInfo:
+        properties:
+            end:
+                type: integer
+            start:
+                type: integer
+        type: object
     check.CheckRequest:
         properties:
             content:
@@ -12,9 +19,27 @@ definitions:
                     via the X-Pact-Conversation-Id header; the body value wins when both are
                     present. Opaque to the gateway — never parsed or validated.
                 type: string
+            external_refs:
+                description: |-
+                    ExternalRefs is an optional list of third-party references (URLs) the
+                    gateway fetches in an isolated worker and re-scans for indirect prompt
+                    injection (PACT-236). When present and the sandbox is enabled, the request
+                    blocks if any reference is hostile — before the caller passes the fetched
+                    content to its LLM. Unlike SpotlightChunks, the content is NOT supplied
+                    inline; the gateway fetches it.
+                items:
+                    $ref: '#/definitions/check.ExternalRef'
+                type: array
             kind:
                 description: '"input" | "output"'
                 type: string
+            spotlight_chunks:
+                description: |-
+                    SpotlightChunks is an optional list of third-party content chunks the host
+                    wants spotlight-wrapped before LLM injection. Populated on allow path only.
+                items:
+                    $ref: '#/definitions/check.SpotlightChunk'
+                type: array
         required:
             - content
             - kind
@@ -26,6 +51,10 @@ definitions:
             decision:
                 description: '"allow" | "block"'
                 type: string
+            diagnostics:
+                $ref: '#/definitions/check.DiagnosticsInfo'
+            external_refs:
+                $ref: '#/definitions/check.ExternalRefsInfo'
             filter:
                 $ref: '#/definitions/check.FilterInfo'
             filter_rule_id:
@@ -38,6 +67,8 @@ definitions:
                 $ref: '#/definitions/check.RedactorInfo'
             request_id:
                 type: string
+            spotlight:
+                $ref: '#/definitions/check.SpotlightInfo'
         required:
             - decision
             - latency_ms
@@ -49,6 +80,45 @@ definitions:
                 type: string
             score:
                 type: number
+        type: object
+    check.DiagnosticsInfo:
+        properties:
+            causal_spans:
+                items:
+                    $ref: '#/definitions/check.CausalSpanInfo'
+                type: array
+        type: object
+    check.ExternalRef:
+        properties:
+            source:
+                type: string
+            url:
+                type: string
+        type: object
+    check.ExternalRefInfo:
+        properties:
+            host:
+                type: string
+            purified_content:
+                type: string
+            source:
+                type: string
+            verdict:
+                description: '"clean" | "hostile" | "unfetchable" | "mitigated"'
+                type: string
+        type: object
+    check.ExternalRefsInfo:
+        properties:
+            blocked:
+                type: integer
+            mitigated:
+                type: integer
+            refs:
+                items:
+                    $ref: '#/definitions/check.ExternalRefInfo'
+                type: array
+            scanned:
+                type: integer
         type: object
     check.FilterInfo:
         properties:
@@ -81,6 +151,42 @@ definitions:
                 type: array
             verdict:
                 description: '"pass_through" | "redacted" | "unknown"'
+                type: string
+        type: object
+    check.SpotlightChunk:
+        properties:
+            content:
+                type: string
+            source:
+                description: e.g. "rag:doc#42", "tool:search", "url:https://…"
+                type: string
+            trust:
+                description: '"trusted" | "user" | "untrusted"'
+                type: string
+        type: object
+    check.SpotlightInfo:
+        properties:
+            chunks:
+                items:
+                    $ref: '#/definitions/check.WrappedChunk'
+                type: array
+            format:
+                description: '"delim" | "xml" | "json"'
+                type: string
+            header:
+                description: system-prompt fragment; only when SPOTLIGHT_INJECT_HEADER=true
+                type: string
+            source_count:
+                type: integer
+        type: object
+    check.WrappedChunk:
+        properties:
+            source:
+                type: string
+            trust:
+                type: string
+            wrapped:
+                description: nonce-tagged marker envelope ready for LLM injection
                 type: string
         type: object
 host: localhost:8080
