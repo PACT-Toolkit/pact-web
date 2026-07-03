@@ -4,3 +4,9 @@ allowBuilds:
   msw: true
   sharp: true
   unrs-resolver: true
+
+overrides:
+  postcss: '^8.5.10'
+  esbuild: '^0.28.1'
+  tar: '^7.5.16'
+  '@tootallnate/once': '^2.0.1'
