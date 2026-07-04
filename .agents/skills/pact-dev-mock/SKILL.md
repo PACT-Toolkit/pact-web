@@ -34,11 +34,24 @@ MSW runs in three places, all wired off the same handler array in `mocks/handler
 
 | Where | File | Activated by |
 |---|---|---|
-| Browser worker | `mocks/browser.ts` → `mocks/index.ts` `init()` | `<MSWProvider>` mounts on the client and calls `init()` if `NEXT_PUBLIC_API_MOCKING === 'enabled'`. Service worker URL is pinned to `/mockServiceWorker.js` with `waitUntilReady: true` so the first navigation doesn't race the SW install. |
+| Browser worker | `mocks/browser.ts` → `mocks/index.ts` `init()` | `<MSWProvider>` mounts on the client and calls `init()` if `NEXT_PUBLIC_API_MOCKING === 'enabled'`. Service worker URL is pinned to `/mockServiceWorker.js`. |
 | Next.js Node runtime | `mocks/server.ts` ← `instrumentation.ts` | `instrumentation.ts` calls `register()` once at server startup; it checks `process.env.NEXT_RUNTIME === 'nodejs'` + `NEXT_PUBLIC_API_MOCKING === 'enabled'` and calls `server.listen(...)`. Required so Server Components and route handlers also see mocked responses. |
 | Vitest | `mocks/server.ts` ← `vitest.setup.ts` | `beforeAll` calls `server.listen()`, `afterEach` resets, `afterAll` closes. |
 
-**Both browser and Node use the same `handlers` array.** That means handler URL patterns must work in both — see the [Handler patterns](#handler-patterns) rule below.
+**Both browser and Node use the same `handlers` array.** That means handler URL patterns must work in both - see the [Handler patterns](#handler-patterns) rule below.
+
+### Browser worker readiness (PACT-455)
+
+The browser Service Worker only intercepts fetch/XHR once it has registered, activated, and taken control of the page. Any request fired before that point slips past MSW onto the real network - which in dev:mock has no backend behind it. An older `worker.start()` readiness option that was once documented as the guard for this turned out to be a deprecated no-op in the installed msw version (prints a warning, defers nothing) and has been removed from `mocks/index.ts`.
+
+The actual guard is a shared readiness gate, not a per-spec workaround:
+
+- `src/framework/msw/msw_ready.ts` exports `mswReady`, a promise every outgoing request awaits before it's allowed to fire for real. It resolves immediately on the server and outside mock mode; in the browser under `dev:mock` it stays pending until `signalMswReady()` runs.
+- `src/framework/msw/msw_fetch_gate.ts` patches the global `window.fetch` to await `mswReady` first. It's installed from module scope in `msw_provider.tsx` (not inside a `useEffect`), so it's armed while the client bundle is first evaluated - before hydration commits and before any component's effects can fire a request. This is what covers the orval-generated REST hooks (`client: 'swr'` in `orval.config.ts` means the generated fetchers call `fetch` directly) plus any other first-party code that calls `fetch` directly.
+- `src/framework/http/axios.ts` adds a request interceptor on `httpClient` awaiting the same `mswReady`, since axios's browser adapter uses `XMLHttpRequest` rather than `fetch` and isn't covered by the patch above.
+- `mocks/index.ts` calls `signalMswReady()` in a `finally` around `worker.start()`, so a failed bootstrap still releases queued requests - they surface a visible network error instead of hanging the app forever.
+
+If you add a new HTTP transport to the app (a raw `XMLHttpRequest`, `navigator.sendBeacon`, a WebSocket-based request/response pattern, etc.), it needs its own await on `mswReady` - the fetch patch and the axios interceptor only cover those two transports.
 
 `instrumentation.ts` is in the repo root and is allowlisted in `.gitignore` (the repo uses an allowlist-style ignore — adding a new root-level file means adding `!filename` to `.gitignore`).
 

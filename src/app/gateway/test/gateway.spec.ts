@@ -19,28 +19,6 @@ test.describe('Gateway console', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/gateway');
     await expect(page.getByTestId('gateway-enforcement-panel')).toBeVisible();
-
-    // Guard against a pre-existing MSW bootstrap race (not introduced by
-    // PACT-327, see the identical comment in classifier.spec.ts /
-    // redactor.spec.ts / policy.spec.ts): poll a throwaway /v1/check call
-    // until it comes back mocked (200) so every test below only interacts
-    // once the browser SW is actually ready.
-    await expect(async () => {
-      const status = await page.evaluate(async () => {
-        const res = await fetch('/api/pact/gateway/v1/check', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'msw-readiness-probe',
-            kind: 'output',
-          }),
-        });
-
-        return res.status;
-      });
-      expect(status).toBe(200);
-    }).toPass({ timeout: 10_000 });
-
     await expect(page.getByTestId('gateway-config-grid')).toBeVisible();
   });
 
