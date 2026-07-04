@@ -117,7 +117,7 @@ export const TestLabAttackInput = ({
             <span className="text-xs text-destructive">
               {isMock()
                 ? 'Mock handler failed'
-                : 'Request failed — is pact-gateway running?'}
+                : 'Request failed - is pact-gateway running?'}
             </span>
           )}
         </div>
