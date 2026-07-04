@@ -4,15 +4,22 @@ import { Flag } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { type AuditEvent } from '@/src/__codegen__/rest/audit';
-import { formatTimestamp, parsePayload } from '@/src/app/filter/domain/filter_decision';
+import {
+  formatTimestamp,
+  parsePayload,
+} from '@/src/app/filter/domain/filter_decision';
 
 export const FilterDecisionRow = ({
   event,
   isFlagged,
+  isFlagging,
+  flagFailed,
   onFlagFP,
 }: {
   event: AuditEvent;
   isFlagged: boolean;
+  isFlagging: boolean;
+  flagFailed: boolean;
   onFlagFP: () => void;
 }) => {
   const payload = useMemo(
@@ -53,27 +60,36 @@ export const FilterDecisionRow = ({
       </div>
 
       {isBlock && (
-        <button
-          type="button"
-          onClick={onFlagFP}
-          title={
-            isFlagged ? 'Remove false-positive flag' : 'Flag as false positive'
-          }
-          aria-label={
-            isFlagged ? 'Remove false-positive flag' : 'Flag as false positive'
-          }
-          className={`shrink-0 rounded p-1 transition-colors hover:bg-muted ${
-            isFlagged
-              ? 'text-amber-500'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
-        >
-          <Flag
-            className="h-3.5 w-3.5"
-            fill={isFlagged ? 'currentColor' : 'none'}
-            aria-hidden
-          />
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          {flagFailed && !isFlagged && (
+            <span className="text-xs text-destructive">
+              Flag failed. Try again.
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={onFlagFP}
+            disabled={isFlagged || isFlagging}
+            title={
+              isFlagged ? 'Flagged as false positive' : 'Flag as false positive'
+            }
+            aria-label={
+              isFlagged ? 'Flagged as false positive' : 'Flag as false positive'
+            }
+            data-testid="filter-decision-flag-fp"
+            className={`rounded p-1 transition-colors hover:bg-muted disabled:cursor-not-allowed ${
+              isFlagged
+                ? 'text-amber-500'
+                : 'text-muted-foreground hover:text-foreground'
+            } ${isFlagging ? 'animate-pulse' : ''}`}
+          >
+            <Flag
+              className="h-3.5 w-3.5"
+              fill={isFlagged ? 'currentColor' : 'none'}
+              aria-hidden
+            />
+          </button>
+        </div>
       )}
     </div>
   );

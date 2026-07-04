@@ -33,10 +33,12 @@ export interface BuildLabelVerdictRequestParams {
   operatorLabel: OperatorLabelAction;
 }
 
-// Builds the POST /v1/classifier/label body. `content` is always sent even
-// though the generated ClassifierLabelVerdictRequest type marks it optional
-// -- the OpenAPI spec omits a `required` list entirely (a gateway doc gap
-// tracked as PACT-448) but the handler 400s without it at runtime (see
+// Builds the POST /v1/classifier/label body. `content` is required both by
+// the generated ClassifierLabelVerdictRequest type (PACT-456/commit bf2c77c
+// caught the OpenAPI spec's `required` list up to this) and, more strictly,
+// by the handler at runtime, which also 400s without requestId,
+// predictedLabel, or operatorLabel -- none of which the spec declares
+// required yet (a remaining gateway doc gap tracked as PACT-448; see
 // pact-gateway internal/features/classifier/handler.go's labelVerdict).
 // correctionLabel and note are intentionally omitted: this panel only
 // records a binary FP/FN signal, not a specific corrected label or

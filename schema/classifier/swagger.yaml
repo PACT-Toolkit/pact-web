@@ -18,6 +18,8 @@ definitions:
                 type: string
             source:
                 type: string
+        required:
+            - content
         type: object
     classifier.LabelVerdictResponse:
         properties:
