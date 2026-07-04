@@ -33,6 +33,13 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   ...(allowedDevOrigins ? { allowedDevOrigins } : {}),
   turbopack: {
+    // Pin the workspace root explicitly. Without this, Turbopack infers it
+    // by walking up from this directory looking for a lockfile, and picks
+    // the *first* one it finds - including a stray lockfile outside the
+    // repo (observed: a leftover package-lock.json in the user's home
+    // profile directory made Next select that directory as the workspace
+    // root instead of pact-web).
+    root: __dirname,
     rules: {
       '*.svg': {
         loaders: ['@svgr/webpack'],
