@@ -1,0 +1,92 @@
+basePath: /
+definitions:
+    config.ConfigResponse:
+        properties:
+            classifierEnforceMode:
+                description: |-
+                    ClassifierEnforceMode is "shadow" or "enforce". In shadow mode the
+                    classifier tag is recorded but never promotes to a block verdict.
+                type: string
+            consensusThreshold:
+                description: |-
+                    ConsensusThreshold is the classifier score below which pact-consensus
+                    is consulted. Scores in [0, threshold) go to consensus; scores in
+                    [threshold, 1] pass straight through.
+                type: number
+            diagnosticsEnabled:
+                description: |-
+                    DiagnosticsEnabled indicates whether the causal-diagnostic harness
+                    runs counterfactual span-replay on every block decision.
+                type: boolean
+            requestTimeoutSeconds:
+                description: |-
+                    RequestTimeoutSeconds is the wall-clock budget for a /v1/check request
+                    (auth check + pipeline combined) before the gateway gives up.
+                type: integer
+            sandboxEnabled:
+                description: |-
+                    SandboxEnabled indicates whether external_refs in /v1/check requests
+                    trigger an isolated fetch + re-scan.
+                type: boolean
+            sandboxIsolation:
+                description: |-
+                    SandboxIsolation is the worker containment level: "none" (plain
+                    process) or "namespace" (Linux user+mount namespace with /proc masked).
+                type: string
+            sandboxRuntimeWrapped:
+                description: |-
+                    SandboxRuntimeWrapped indicates whether sandbox workers are spawned under
+                    an external runtime wrapper (e.g. gVisor). Only the boolean posture is
+                    exposed; the raw runtime argv is intentionally not surfaced.
+                type: boolean
+            spotlightFormat:
+                description: |-
+                    SpotlightFormat is the marker style used when spotlight_chunks are
+                    present in /v1/check: "delim", "xml", or "json".
+                type: string
+            vectorEnforceMode:
+                description: |-
+                    VectorEnforceMode is "shadow" or "enforce". Controls the filter's
+                    SUSPICIOUS verdict (vector engine path).
+                type: string
+        type: object
+host: localhost:8080
+info:
+    contact: {}
+    description: Public REST entrypoint for the PACT safety pipeline.
+    title: pact-gateway
+    version: 0.1.0
+paths:
+    /v1/config:
+        get:
+            operationId: getConfig
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/config.ConfigResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "429":
+                    description: rate limit exceeded
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Get live enforcement config
+            tags:
+                - config
+schemes:
+    - http
+    - https
+securityDefinitions:
+    Bearer:
+        description: 'Opaque pact-auth session token. Format: <uuid>.<base64-hmac>.'
+        in: header
+        name: Authorization
+        type: apiKey
+swagger: "2.0"

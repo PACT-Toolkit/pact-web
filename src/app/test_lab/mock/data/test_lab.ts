@@ -140,6 +140,16 @@ export function runFilter(content: string): {
   return { decision: 'allow', confidence: 0.98 };
 }
 
+// filterMatchPattern returns the exact regex that runFilter would match
+// against, so a caller that already knows the content blocked (the gateway
+// console's diagnostics probe, PACT-327) can resolve the byte offset of the
+// matched span without re-implementing the rule table or guessing a range.
+export function filterMatchPattern(content: string): RegExp | undefined {
+  return [...INJECTION_RULES, ...ROLE_RULES, ...JAILBREAK_RULES].find(
+    ([pattern]) => pattern.test(content)
+  )?.[0];
+}
+
 // label uses the real pact-classifier taxonomy (unspecified | benign |
 // prompt_injection | jailbreak | sensitive | unknown -- see
 // pact-gateway's grpcclients.ClassifierLabel) rather than an ad-hoc
