@@ -38,8 +38,18 @@ const advanceJob = (job: MockJob) => {
   }
 };
 
+// PACT-465: the whole schema/benchmark orval group (this bulk-test surface
+// included) moved from the direct pact-benchmark proxy
+// (${MSW_PACT_BASE}/benchmark/v1/...) onto the gateway edge proxy, mirroring
+// schema/filter's baseUrl convention. Bulk-test jobs/runs are unrelated to
+// PACT-465's Test Lab corpus/run-history scope but share the same
+// pact-gateway swagger tag, so their generated hook URLs moved too -- these
+// mock paths follow. The old duplicate corpus-save handler that used to live
+// here (returning the pre-PACT-315 {corpus_version} shape) was dead code --
+// src/app/test_lab/mock/handlers/test_lab.ts's handler always shadowed it --
+// and is dropped rather than moved.
 export const handlers: RequestHandler[] = [
-  http.get(`${MSW_PACT_BASE}/benchmark/v1/runs`, ({ request }) => {
+  http.get(`${MSW_PACT_BASE}/gateway/v1/benchmark/runs`, ({ request }) => {
     const url = new URL(request.url);
     const since = Number(url.searchParams.get('since_unix') ?? 0);
     const limit = Number(url.searchParams.get('limit') ?? 200);
@@ -52,7 +62,7 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json({ runs, total: filtered.length });
   }),
 
-  http.post(`${MSW_PACT_BASE}/benchmark/v1/jobs`, async () => {
+  http.post(`${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`, async () => {
     await new Promise((r) => setTimeout(r, 200));
     const jobId = uuidv4();
     jobs.set(jobId, {
@@ -64,17 +74,8 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json({ job_id: jobId }, { status: 202 });
   }),
 
-  http.post(`${MSW_PACT_BASE}/benchmark/v1/corpus`, async () => {
-    await new Promise((r) => setTimeout(r, 150));
-
-    return HttpResponse.json(
-      { corpus_version: `mock-${Date.now()}` },
-      { status: 201 }
-    );
-  }),
-
   http.get(
-    `${MSW_PACT_BASE}/benchmark/v1/jobs/:jobId`,
+    `${MSW_PACT_BASE}/gateway/v1/benchmark/jobs/:jobId`,
     ({ params, request }) => {
       const jobId = params.jobId as string;
       const job = jobs.get(jobId);

@@ -42,7 +42,7 @@ export default defineConfig({
       target: 'src/__codegen__/rest/benchmark/hooks.ts',
       schemas: 'src/__codegen__/rest/benchmark/types',
       client: 'swr',
-      baseUrl: '/api/pact/benchmark/v1',
+      baseUrl: '/api/pact/gateway/v1',
       override: {
         query: {
           useQuery: true,

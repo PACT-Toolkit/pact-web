@@ -102,21 +102,73 @@ definitions:
             - runs
             - total
         type: object
+    benchmark.ListTestLabRunsResponse:
+        properties:
+            runs:
+                items:
+                    $ref: '#/definitions/benchmark.TestLabRunBody'
+                type: array
+            total:
+                type: integer
+        required:
+            - runs
+            - total
+        type: object
     benchmark.SaveCorpusRequest:
         properties:
-            corpus_jsonl:
+            attack_type:
                 type: string
-            name:
+            category:
+                type: string
+            content:
+                type: string
+            expected_label:
+                type: string
+            filter_rule_id:
+                type: string
+            kind:
+                type: string
+            reason:
                 type: string
         required:
-            - corpus_jsonl
+            - content
         type: object
     benchmark.SaveCorpusResponse:
         properties:
-            corpus_version:
+            id:
+                type: string
+            status:
                 type: string
         required:
-            - corpus_version
+            - id
+            - status
+        type: object
+    benchmark.SaveTestLabRunRequest:
+        properties:
+            attack_type:
+                type: string
+            content:
+                type: string
+            decision:
+                type: string
+            filter_rule_id:
+                type: string
+            latency_ms:
+                type: integer
+            reason:
+                type: string
+            request_id:
+                type: string
+        required:
+            - content
+            - decision
+        type: object
+    benchmark.SaveTestLabRunResponse:
+        properties:
+            id:
+                type: string
+        required:
+            - id
         type: object
     benchmark.SubmitJobRequest:
         properties:
@@ -137,6 +189,34 @@ definitions:
         required:
             - job_id
         type: object
+    benchmark.TestLabRunBody:
+        properties:
+            attack_type:
+                type: string
+            content:
+                type: string
+            created_at:
+                type: integer
+            decision:
+                type: string
+            filter_rule_id:
+                type: string
+            id:
+                type: string
+            latency_ms:
+                type: integer
+            reason:
+                type: string
+            request_id:
+                type: string
+        required:
+            - attack_type
+            - content
+            - created_at
+            - decision
+            - id
+            - latency_ms
+        type: object
 host: localhost:8080
 info:
     contact: {}
@@ -148,9 +228,9 @@ paths:
         post:
             consumes:
                 - application/json
-            operationId: saveBenchmarkCorpus
+            operationId: saveBenchmarkCorpusEntry
             parameters:
-                - description: Corpus JSONL and optional name
+                - description: Corpus entry (content plus optional classification fields)
                   in: body
                   name: body
                   required: true
@@ -177,7 +257,7 @@ paths:
                         type: string
             security:
                 - Bearer: []
-            summary: Save a corpus for reuse in benchmark runs
+            summary: Save one Test Lab corpus entry
             tags:
                 - benchmark
     /v1/benchmark/jobs:
@@ -307,6 +387,77 @@ paths:
             security:
                 - Bearer: []
             summary: List persisted benchmark run history
+            tags:
+                - benchmark
+    /v1/benchmark/testlab/runs:
+        get:
+            operationId: listBenchmarkTestLabRuns
+            parameters:
+                - description: Page size 1-200 (default 50)
+                  in: query
+                  name: limit
+                  type: integer
+                - description: Page offset (default 0)
+                  in: query
+                  name: offset
+                  type: integer
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/benchmark.ListTestLabRunsResponse'
+                "400":
+                    description: invalid query parameter
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "502":
+                    description: upstream error
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: List Test Lab run history
+            tags:
+                - benchmark
+        post:
+            consumes:
+                - application/json
+            operationId: saveBenchmarkTestLabRun
+            parameters:
+                - description: Prompt, decision, and metadata for one Test Lab submission
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/benchmark.SaveTestLabRunRequest'
+            produces:
+                - application/json
+            responses:
+                "201":
+                    description: Created
+                    schema:
+                        $ref: '#/definitions/benchmark.SaveTestLabRunResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "502":
+                    description: upstream error
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Save one Test Lab run-history entry
             tags:
                 - benchmark
 schemes:

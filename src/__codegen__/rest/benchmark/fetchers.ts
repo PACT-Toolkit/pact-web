@@ -13,63 +13,67 @@ import type { Key } from 'swr';
 import type {
   BenchmarkGetJobResponse,
   BenchmarkListRunsResponse,
+  BenchmarkListTestLabRunsResponse,
   BenchmarkSaveCorpusRequest,
   BenchmarkSaveCorpusResponse,
+  BenchmarkSaveTestLabRunRequest,
+  BenchmarkSaveTestLabRunResponse,
   BenchmarkSubmitJobRequest,
   BenchmarkSubmitJobResponse,
   GetBenchmarkJobParams,
   ListBenchmarkRunsParams,
+  ListBenchmarkTestLabRunsParams,
 } from './types';
 
-export type saveBenchmarkCorpusResponse201 = {
+export type saveBenchmarkCorpusEntryResponse201 = {
   data: BenchmarkSaveCorpusResponse;
   status: 201;
 };
 
-export type saveBenchmarkCorpusResponse400 = {
+export type saveBenchmarkCorpusEntryResponse400 = {
   data: string;
   status: 400;
 };
 
-export type saveBenchmarkCorpusResponse401 = {
+export type saveBenchmarkCorpusEntryResponse401 = {
   data: string;
   status: 401;
 };
 
-export type saveBenchmarkCorpusResponse502 = {
+export type saveBenchmarkCorpusEntryResponse502 = {
   data: string;
   status: 502;
 };
 
-export type saveBenchmarkCorpusResponseSuccess =
-  saveBenchmarkCorpusResponse201 & {
+export type saveBenchmarkCorpusEntryResponseSuccess =
+  saveBenchmarkCorpusEntryResponse201 & {
     headers: Headers;
   };
 
-export type saveBenchmarkCorpusResponseError = (
-  | saveBenchmarkCorpusResponse400
-  | saveBenchmarkCorpusResponse401
-  | saveBenchmarkCorpusResponse502
+export type saveBenchmarkCorpusEntryResponseError = (
+  | saveBenchmarkCorpusEntryResponse400
+  | saveBenchmarkCorpusEntryResponse401
+  | saveBenchmarkCorpusEntryResponse502
 ) & {
   headers: Headers;
 };
 
-export type saveBenchmarkCorpusResponse =
-  | saveBenchmarkCorpusResponseSuccess
-  | saveBenchmarkCorpusResponseError;
+export type saveBenchmarkCorpusEntryResponse =
+  | saveBenchmarkCorpusEntryResponseSuccess
+  | saveBenchmarkCorpusEntryResponseError;
 
-export const getSaveBenchmarkCorpusUrl = () => {
-  return `/api/pact/benchmark/v1/corpus`;
+export const getSaveBenchmarkCorpusEntryUrl = () => {
+  return `/api/pact/gateway/v1/benchmark/corpus`;
 };
 
 /**
- * @summary Save a corpus for reuse in benchmark runs
+ * @summary Save one Test Lab corpus entry
  */
-export const saveBenchmarkCorpus = async (
+export const saveBenchmarkCorpusEntry = async (
   benchmarkSaveCorpusRequest: BenchmarkSaveCorpusRequest,
   options?: RequestInit
-): Promise<saveBenchmarkCorpusResponse> => {
-  const res = await fetch(getSaveBenchmarkCorpusUrl(), {
+): Promise<saveBenchmarkCorpusEntryResponse> => {
+  const res = await fetch(getSaveBenchmarkCorpusEntryUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
@@ -78,26 +82,26 @@ export const saveBenchmarkCorpus = async (
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
 
-  const data: saveBenchmarkCorpusResponse['data'] = body
+  const data: saveBenchmarkCorpusEntryResponse['data'] = body
     ? JSON.parse(body)
     : {};
   return {
     data,
     status: res.status,
     headers: res.headers,
-  } as saveBenchmarkCorpusResponse;
+  } as saveBenchmarkCorpusEntryResponse;
 };
 
-export const getSaveBenchmarkCorpusMutationFetcher = (
+export const getSaveBenchmarkCorpusEntryMutationFetcher = (
   options?: RequestInit
 ) => {
   return (_: Key, { arg }: { arg: BenchmarkSaveCorpusRequest }) => {
-    return saveBenchmarkCorpus(arg, options);
+    return saveBenchmarkCorpusEntry(arg, options);
   };
 };
 
-export const getSaveBenchmarkCorpusMutationKey = () =>
-  [`/api/pact/benchmark/v1/corpus`] as const;
+export const getSaveBenchmarkCorpusEntryMutationKey = () =>
+  [`/api/pact/gateway/v1/benchmark/corpus`] as const;
 
 export type submitBenchmarkJobResponse202 = {
   data: BenchmarkSubmitJobResponse;
@@ -137,7 +141,7 @@ export type submitBenchmarkJobResponse =
   | submitBenchmarkJobResponseError;
 
 export const getSubmitBenchmarkJobUrl = () => {
-  return `/api/pact/benchmark/v1/jobs`;
+  return `/api/pact/gateway/v1/benchmark/jobs`;
 };
 
 /**
@@ -171,7 +175,7 @@ export const getSubmitBenchmarkJobMutationFetcher = (options?: RequestInit) => {
 };
 
 export const getSubmitBenchmarkJobMutationKey = () =>
-  [`/api/pact/benchmark/v1/jobs`] as const;
+  [`/api/pact/gateway/v1/benchmark/jobs`] as const;
 
 export type getBenchmarkJobResponse200 = {
   data: BenchmarkGetJobResponse;
@@ -230,8 +234,8 @@ export const getGetBenchmarkJobUrl = (
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/pact/benchmark/v1/jobs/${id}?${stringifiedParams}`
-    : `/api/pact/benchmark/v1/jobs/${id}`;
+    ? `/api/pact/gateway/v1/benchmark/jobs/${id}?${stringifiedParams}`
+    : `/api/pact/gateway/v1/benchmark/jobs/${id}`;
 };
 
 /**
@@ -261,7 +265,10 @@ export const getGetBenchmarkJobKey = (
   id: string,
   params?: GetBenchmarkJobParams
 ) =>
-  [`/api/pact/benchmark/v1/jobs/${id}`, ...(params ? [params] : [])] as const;
+  [
+    `/api/pact/gateway/v1/benchmark/jobs/${id}`,
+    ...(params ? [params] : []),
+  ] as const;
 
 export type listBenchmarkRunsResponse200 = {
   data: BenchmarkListRunsResponse;
@@ -311,8 +318,8 @@ export const getListBenchmarkRunsUrl = (params?: ListBenchmarkRunsParams) => {
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/pact/benchmark/v1/runs?${stringifiedParams}`
-    : `/api/pact/benchmark/v1/runs`;
+    ? `/api/pact/gateway/v1/benchmark/runs?${stringifiedParams}`
+    : `/api/pact/gateway/v1/benchmark/runs`;
 };
 
 /**
@@ -338,4 +345,169 @@ export const listBenchmarkRuns = async (
 };
 
 export const getListBenchmarkRunsKey = (params?: ListBenchmarkRunsParams) =>
-  [`/api/pact/benchmark/v1/runs`, ...(params ? [params] : [])] as const;
+  [`/api/pact/gateway/v1/benchmark/runs`, ...(params ? [params] : [])] as const;
+
+export type listBenchmarkTestLabRunsResponse200 = {
+  data: BenchmarkListTestLabRunsResponse;
+  status: 200;
+};
+
+export type listBenchmarkTestLabRunsResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type listBenchmarkTestLabRunsResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type listBenchmarkTestLabRunsResponse502 = {
+  data: string;
+  status: 502;
+};
+
+export type listBenchmarkTestLabRunsResponseSuccess =
+  listBenchmarkTestLabRunsResponse200 & {
+    headers: Headers;
+  };
+
+export type listBenchmarkTestLabRunsResponseError = (
+  | listBenchmarkTestLabRunsResponse400
+  | listBenchmarkTestLabRunsResponse401
+  | listBenchmarkTestLabRunsResponse502
+) & {
+  headers: Headers;
+};
+
+export type listBenchmarkTestLabRunsResponse =
+  | listBenchmarkTestLabRunsResponseSuccess
+  | listBenchmarkTestLabRunsResponseError;
+
+export const getListBenchmarkTestLabRunsUrl = (
+  params?: ListBenchmarkTestLabRunsParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/pact/gateway/v1/benchmark/testlab/runs?${stringifiedParams}`
+    : `/api/pact/gateway/v1/benchmark/testlab/runs`;
+};
+
+/**
+ * @summary List Test Lab run history
+ */
+export const listBenchmarkTestLabRuns = async (
+  params?: ListBenchmarkTestLabRunsParams,
+  options?: RequestInit
+): Promise<listBenchmarkTestLabRunsResponse> => {
+  const res = await fetch(getListBenchmarkTestLabRunsUrl(params), {
+    ...options,
+    method: 'GET',
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listBenchmarkTestLabRunsResponse['data'] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listBenchmarkTestLabRunsResponse;
+};
+
+export const getListBenchmarkTestLabRunsKey = (
+  params?: ListBenchmarkTestLabRunsParams
+) =>
+  [
+    `/api/pact/gateway/v1/benchmark/testlab/runs`,
+    ...(params ? [params] : []),
+  ] as const;
+
+export type saveBenchmarkTestLabRunResponse201 = {
+  data: BenchmarkSaveTestLabRunResponse;
+  status: 201;
+};
+
+export type saveBenchmarkTestLabRunResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type saveBenchmarkTestLabRunResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type saveBenchmarkTestLabRunResponse502 = {
+  data: string;
+  status: 502;
+};
+
+export type saveBenchmarkTestLabRunResponseSuccess =
+  saveBenchmarkTestLabRunResponse201 & {
+    headers: Headers;
+  };
+
+export type saveBenchmarkTestLabRunResponseError = (
+  | saveBenchmarkTestLabRunResponse400
+  | saveBenchmarkTestLabRunResponse401
+  | saveBenchmarkTestLabRunResponse502
+) & {
+  headers: Headers;
+};
+
+export type saveBenchmarkTestLabRunResponse =
+  | saveBenchmarkTestLabRunResponseSuccess
+  | saveBenchmarkTestLabRunResponseError;
+
+export const getSaveBenchmarkTestLabRunUrl = () => {
+  return `/api/pact/gateway/v1/benchmark/testlab/runs`;
+};
+
+/**
+ * @summary Save one Test Lab run-history entry
+ */
+export const saveBenchmarkTestLabRun = async (
+  benchmarkSaveTestLabRunRequest: BenchmarkSaveTestLabRunRequest,
+  options?: RequestInit
+): Promise<saveBenchmarkTestLabRunResponse> => {
+  const res = await fetch(getSaveBenchmarkTestLabRunUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(benchmarkSaveTestLabRunRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: saveBenchmarkTestLabRunResponse['data'] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as saveBenchmarkTestLabRunResponse;
+};
+
+export const getSaveBenchmarkTestLabRunMutationFetcher = (
+  options?: RequestInit
+) => {
+  return (_: Key, { arg }: { arg: BenchmarkSaveTestLabRunRequest }) => {
+    return saveBenchmarkTestLabRun(arg, options);
+  };
+};
+
+export const getSaveBenchmarkTestLabRunMutationKey = () =>
+  [`/api/pact/gateway/v1/benchmark/testlab/runs`] as const;

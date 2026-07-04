@@ -4,6 +4,12 @@ import { useCallback, useState } from 'react';
 import useSWR from 'swr';
 import { v4 as uuidv4 } from 'uuid';
 
+import {
+  type ListBenchmarkTestLabRunsQueryResult,
+  saveBenchmarkTestLabRun,
+  useListBenchmarkTestLabRuns,
+  useSaveBenchmarkCorpusEntry,
+} from '@/src/__codegen__/rest/benchmark';
 import { checkContent } from '@/src/__codegen__/rest/check';
 import {
   applyLiveLayers,
@@ -11,10 +17,10 @@ import {
   BLANK_LAYERS,
   type CheckInput,
   type CheckResponse,
+  type SaveCorpusPayload,
   type SaveRunPayload,
   STATIC_CHIPS,
   type TestLabRunRecord,
-  type TestLabRunsResponse,
   toTestRun,
 } from '@/src/app/test_lab/domain/test_lab_check';
 import { TestLabAttackInput } from '@/src/app/test_lab/ui/TestLabAttackInput';
@@ -31,6 +37,28 @@ import { httpClient } from '@/src/framework/http';
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+// Builds the SWR-shaped success envelope (matches the generated
+// listBenchmarkTestLabRuns fetcher's return type) for an optimistic update,
+// prepending the just-submitted run ahead of whatever the cache currently
+// holds. Used both as `optimisticData` and as the resolved value while the
+// real POST + revalidation are in flight.
+const withOptimisticRun = (
+  current: ListBenchmarkTestLabRunsQueryResult | undefined,
+  record: TestLabRunRecord
+): ListBenchmarkTestLabRunsQueryResult => {
+  const currentRuns = current?.status === 200 ? current.data.runs : [];
+  const currentTotal = current?.status === 200 ? current.data.total : 0;
+
+  return {
+    data: {
+      runs: [record, ...currentRuns].slice(0, 50),
+      total: currentTotal + 1,
+    },
+    status: 200,
+    headers: new Headers(),
+  };
+};
+
 // ─── main component ───────────────────────────────────────────────────────────
 
 export const TestLabWorkbench = () => {
@@ -42,14 +70,15 @@ export const TestLabWorkbench = () => {
   const [selectedLayer, setSelectedLayer] = useState<string | null>(null);
   const [result, setResult] = useState<CheckResponse | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
-  const { data: historyData, mutate: mutateHistory } =
-    useSWR<TestLabRunsResponse>(
-      '/api/pact/benchmark/v1/testlab/runs',
-      (url: string) =>
-        httpClient.get<TestLabRunsResponse>(url).then((r) => r.data),
-      { revalidateOnFocus: false, revalidateOnReconnect: false }
-    );
-  const history = historyData?.runs.map(toTestRun) ?? [];
+  const { data: historyResponse, mutate: mutateHistory } =
+    useListBenchmarkTestLabRuns(undefined, {
+      swr: { revalidateOnFocus: false, revalidateOnReconnect: false },
+    });
+  const history =
+    historyResponse?.status === 200
+      ? historyResponse.data.runs.map(toTestRun)
+      : [];
+  const { trigger: saveCorpusEntry } = useSaveBenchmarkCorpusEntry();
   const { data: exampleChips } = useSWR<AttackChip[]>(
     '/api/pact/benchmark/v1/corpus/examples',
     (url: string) =>
@@ -143,25 +172,26 @@ export const TestLabWorkbench = () => {
         const optimisticRecord: TestLabRunRecord = {
           id: uuidv4(),
           created_at: Math.floor(Date.now() / 1000),
-          ...payload,
+          content: payload.content,
+          attack_type: payload.attack_type ?? attackType,
+          decision: payload.decision,
+          reason: payload.reason,
+          filter_rule_id: payload.filter_rule_id,
+          latency_ms: payload.latency_ms ?? 0,
+          request_id: payload.request_id,
         };
         void mutateHistory(
           async (current) => {
-            await httpClient.post(
-              '/api/pact/benchmark/v1/testlab/runs',
-              payload
-            );
+            const response = await saveBenchmarkTestLabRun(payload);
+            if (response.status !== 201) {
+              throw new Error(`save run failed (${response.status})`);
+            }
 
-            return {
-              runs: [optimisticRecord, ...(current?.runs ?? [])].slice(0, 50),
-              total: (current?.total ?? 0) + 1,
-            };
+            return withOptimisticRun(current, optimisticRecord);
           },
           {
-            optimisticData: (current) => ({
-              runs: [optimisticRecord, ...(current?.runs ?? [])].slice(0, 50),
-              total: (current?.total ?? 0) + 1,
-            }),
+            optimisticData: (current) =>
+              withOptimisticRun(current, optimisticRecord),
             rollbackOnError: false,
             revalidate: true,
           }
@@ -175,12 +205,16 @@ export const TestLabWorkbench = () => {
     if (!result || !inputText) return;
     setSaveState('saving');
     try {
-      await httpClient.post('/api/pact/benchmark/v1/corpus', {
+      const payload: SaveCorpusPayload = {
         content: inputText,
         attack_type: attackType,
         reason: result.reason,
         filter_rule_id: result.filter_rule_id,
-      });
+      };
+      const response = await saveCorpusEntry(payload);
+      if (response.status !== 201) {
+        throw new Error(`save to corpus failed (${response.status})`);
+      }
       setSaveState('saved');
     } catch {
       setSaveState('error');

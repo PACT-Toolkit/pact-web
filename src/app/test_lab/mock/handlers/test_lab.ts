@@ -152,7 +152,10 @@ export const handlers: RequestHandler[] = [
     });
   }),
 
-  http.post(`${MSW_PACT_BASE}/benchmark/v1/corpus`, async () => {
+  // PACT-465: corpus save + run-history save/list moved from the direct
+  // pact-benchmark proxy (${MSW_PACT_BASE}/benchmark/v1/...) onto the gateway
+  // edge proxy, matching the schema/benchmark orval group's new baseUrl.
+  http.post(`${MSW_PACT_BASE}/gateway/v1/benchmark/corpus`, async () => {
     await new Promise((r) => setTimeout(r, 60));
 
     return HttpResponse.json(
@@ -161,18 +164,21 @@ export const handlers: RequestHandler[] = [
     );
   }),
 
-  http.get(`${MSW_PACT_BASE}/benchmark/v1/testlab/runs`, ({ request }) => {
-    const url = new URL(request.url);
-    const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
-    const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
-    const all = [...db.testLabRuns.getAll()].reverse();
-    const page = all.slice(offset, offset + limit);
+  http.get(
+    `${MSW_PACT_BASE}/gateway/v1/benchmark/testlab/runs`,
+    ({ request }) => {
+      const url = new URL(request.url);
+      const limit = parseInt(url.searchParams.get('limit') ?? '50', 10);
+      const offset = parseInt(url.searchParams.get('offset') ?? '0', 10);
+      const all = [...db.testLabRuns.getAll()].reverse();
+      const page = all.slice(offset, offset + limit);
 
-    return HttpResponse.json({ runs: page, total: all.length });
-  }),
+      return HttpResponse.json({ runs: page, total: all.length });
+    }
+  ),
 
   http.post(
-    `${MSW_PACT_BASE}/benchmark/v1/testlab/runs`,
+    `${MSW_PACT_BASE}/gateway/v1/benchmark/testlab/runs`,
     async ({ request }) => {
       const body = (await request.json()) as Record<string, unknown>;
       const run = db.testLabRuns.create({

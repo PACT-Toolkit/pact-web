@@ -6,12 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface BenchmarkSaveCorpusRequest {
+export interface BenchmarkSaveTestLabRunRequest {
   attack_type?: string;
-  category?: string;
   content: string;
-  expected_label?: string;
+  decision: string;
   filter_rule_id?: string;
-  kind?: string;
+  latency_ms?: number;
   reason?: string;
+  request_id?: string;
 }
