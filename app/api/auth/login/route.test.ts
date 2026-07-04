@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
-import { MOCK_MFA_RESET_TOKEN } from '@/src/framework/auth/pact_auth/mock';
+import { MOCK_MFA_LOGIN_EMAIL } from '@/src/framework/auth/pact_auth/mock';
 
 import { POST } from './route';
 
@@ -11,21 +11,19 @@ vi.mock('@/src/framework/auth/pact_auth/client', () => ({
   getPactAuthClient: vi.fn(),
 }));
 
-// The route only ever calls `.confirmPasswordReset(...)` on the client, so
-// the fake only needs to implement that one method.
-type ConfirmPasswordResetResult = Awaited<
-  ReturnType<ReturnType<typeof getPactAuthClient>['confirmPasswordReset']>
+// The route only ever calls `.login(...)` on the client, so the fake only
+// needs to implement that one method.
+type LoginResult = Awaited<
+  ReturnType<ReturnType<typeof getPactAuthClient>['login']>
 >;
-const fakeAuthClient = (
-  confirmPasswordReset: () => Promise<ConfirmPasswordResetResult>
-) =>
-  ({ confirmPasswordReset }) as unknown as ReturnType<typeof getPactAuthClient>;
+const fakeAuthClient = (login: () => Promise<LoginResult>) =>
+  ({ login }) as unknown as ReturnType<typeof getPactAuthClient>;
 
 const SESSION_COOKIE = 'pact_session';
 const MFA_TOKEN_COOKIE = 'pact_mfa_token';
 
 const makeRequest = (body: unknown) =>
-  new NextRequest('http://localhost:3000/api/auth/reset-password', {
+  new NextRequest('http://localhost:3000/api/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -33,7 +31,7 @@ const makeRequest = (body: unknown) =>
 
 const mockGetPactAuthClient = vi.mocked(getPactAuthClient);
 
-describe('POST /api/auth/reset-password', () => {
+describe('POST /api/auth/login', () => {
   beforeEach(() => {
     mockGetPactAuthClient.mockReset();
   });
@@ -52,12 +50,12 @@ describe('POST /api/auth/reset-password', () => {
           expiresAtUnix: BigInt(Math.floor(Date.now() / 1000) + 3600),
           mfaRequired: false,
           mfaToken: '',
-        } as ConfirmPasswordResetResult)
+        } as LoginResult)
       )
     );
 
     const res = await POST(
-      makeRequest({ token: 'reset-token', password: 'a-long-new-password' })
+      makeRequest({ email: 'user@example.com', password: 'correct-password' })
     );
 
     expect(res.status).toBe(200);
@@ -77,12 +75,12 @@ describe('POST /api/auth/reset-password', () => {
           expiresAtUnix: BigInt(0),
           mfaRequired: true,
           mfaToken: 'challenge-token',
-        } as ConfirmPasswordResetResult)
+        } as LoginResult)
       )
     );
 
     const res = await POST(
-      makeRequest({ token: 'reset-token', password: 'a-long-new-password' })
+      makeRequest({ email: 'user@example.com', password: 'correct-password' })
     );
 
     expect(res.status).toBe(200);
@@ -106,12 +104,12 @@ describe('POST /api/auth/reset-password', () => {
           expiresAtUnix: BigInt(0),
           mfaRequired: true,
           mfaToken: '',
-        } as ConfirmPasswordResetResult)
+        } as LoginResult)
       )
     );
 
     const res = await POST(
-      makeRequest({ token: 'reset-token', password: 'a-long-new-password' })
+      makeRequest({ email: 'user@example.com', password: 'correct-password' })
     );
 
     expect(res.status).toBe(502);
@@ -119,21 +117,39 @@ describe('POST /api/auth/reset-password', () => {
     expect(res.cookies.get(SESSION_COOKIE)).toBeUndefined();
   });
 
-  it('returns 400 when token or password is missing', async () => {
-    const res = await POST(makeRequest({ token: '', password: '' }));
+  it('returns 400 when email or password is missing', async () => {
+    const res = await POST(makeRequest({ email: '', password: '' }));
 
     expect(res.status).toBe(400);
     expect(mockGetPactAuthClient).not.toHaveBeenCalled();
   });
 
-  it('returns a synthetic mfaRequired response without calling pact-auth when in mock mode with the sentinel token', async () => {
+  it('returns a domain-specific 401 on invalid credentials', async () => {
+    mockGetPactAuthClient.mockReturnValue(
+      fakeAuthClient(() =>
+        Promise.reject(
+          new ConnectError(
+            'rpc error: code = Unauthenticated desc = bad credentials',
+            Code.Unauthenticated
+          )
+        )
+      )
+    );
+
+    const res = await POST(
+      makeRequest({ email: 'user@example.com', password: 'wrong-password' })
+    );
+
+    expect(res.status).toBe(401);
+    const payload = (await res.json()) as { code: string };
+    expect(payload.code).toBe('unauthorized');
+  });
+
+  it('returns a synthetic mfaRequired response without calling pact-auth when in mock mode with the sentinel email', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_MOCKING', 'enabled');
 
     const res = await POST(
-      makeRequest({
-        token: MOCK_MFA_RESET_TOKEN,
-        password: 'a-long-new-password',
-      })
+      makeRequest({ email: MOCK_MFA_LOGIN_EMAIL, password: 'anything' })
     );
 
     expect(res.status).toBe(200);
@@ -148,7 +164,7 @@ describe('POST /api/auth/reset-password', () => {
     expect(mockGetPactAuthClient).not.toHaveBeenCalled();
   });
 
-  it('still calls pact-auth in mock mode when the token is not the mock sentinel', async () => {
+  it('still calls pact-auth in mock mode when the email is not the mock sentinel', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_MOCKING', 'enabled');
     mockGetPactAuthClient.mockReturnValue(
       fakeAuthClient(() =>
@@ -159,39 +175,15 @@ describe('POST /api/auth/reset-password', () => {
           expiresAtUnix: BigInt(Math.floor(Date.now() / 1000) + 3600),
           mfaRequired: false,
           mfaToken: '',
-        } as ConfirmPasswordResetResult)
+        } as LoginResult)
       )
     );
 
     const res = await POST(
-      makeRequest({
-        token: 'a-real-reset-token',
-        password: 'a-long-new-password',
-      })
+      makeRequest({ email: 'user@example.com', password: 'correct-password' })
     );
 
     expect(res.status).toBe(200);
     expect(mockGetPactAuthClient).toHaveBeenCalledTimes(1);
-  });
-
-  it('returns a domain-specific 401 when the reset token is invalid', async () => {
-    mockGetPactAuthClient.mockReturnValue(
-      fakeAuthClient(() =>
-        Promise.reject(
-          new ConnectError(
-            'rpc error: code = Unauthenticated desc = bad token',
-            Code.Unauthenticated
-          )
-        )
-      )
-    );
-
-    const res = await POST(
-      makeRequest({ token: 'stale-token', password: 'a-long-new-password' })
-    );
-
-    expect(res.status).toBe(401);
-    const payload = (await res.json()) as { code: string };
-    expect(payload.code).toBe('unauthorized');
   });
 });

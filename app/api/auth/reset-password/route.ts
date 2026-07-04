@@ -11,6 +11,11 @@ import {
   AUTH_ERROR_CODES,
   mapPactAuthError,
 } from '@/src/framework/auth/pact_auth/errors';
+import {
+  mockMfaRequiredResponse,
+  MOCK_MFA_RESET_TOKEN,
+} from '@/src/framework/auth/pact_auth/mock';
+import { isMock } from '@/src/framework/helpers/environment';
 
 export const runtime = 'nodejs';
 
@@ -46,6 +51,14 @@ export const POST = async (req: NextRequest) => {
       { error: 'token and password required' },
       { status: 400 }
     );
+  }
+
+  // Dev:mock has no gRPC layer to fake pact-auth against - see
+  // src/framework/auth/pact_auth/mock.ts. A well-known sentinel token lets a
+  // developer demo the MFA step-up branch without pact-auth running; any
+  // other token still goes through the real call below, unchanged.
+  if (isMock() && token === MOCK_MFA_RESET_TOKEN) {
+    return mockMfaRequiredResponse();
   }
 
   let resp: Awaited<
