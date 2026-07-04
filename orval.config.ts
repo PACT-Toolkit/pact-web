@@ -86,6 +86,23 @@ export default defineConfig({
       },
     },
   },
+  config: {
+    input: '.rest-codegen-temp/config.openapi.yaml',
+    output: {
+      mode: 'split',
+      target: 'src/__codegen__/rest/config/hooks.ts',
+      schemas: 'src/__codegen__/rest/config/types',
+      client: 'swr',
+      baseUrl: '/api/pact/gateway/v1',
+      override: {
+        query: {
+          useQuery: true,
+          useMutation: true,
+          signal: true,
+        },
+      },
+    },
+  },
   files: {
     input: '.rest-codegen-temp/files.openapi.yaml',
     output: {

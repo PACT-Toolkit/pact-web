@@ -1,0 +1,8 @@
+{
+  "repo": "pact-gateway",
+  "path": "/api/swagger/config.yaml",
+  "branch": "master",
+  "baseUrl": "/api/pact/gateway/v1",
+  "stripPathPrefix": "/v1",
+  "production": false
+}

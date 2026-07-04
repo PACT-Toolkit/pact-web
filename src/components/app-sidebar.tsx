@@ -16,6 +16,7 @@ import {
   LayoutDashboard,
   Map,
   PieChart,
+  Radar,
   Scale,
   ScrollText,
   Settings2,
@@ -111,6 +112,12 @@ const buildNavMain = (pathname: string): NavMainItem[] => [
     url: '/policy',
     icon: KeyRound,
     isActive: isRouteActive(pathname, '/policy'),
+  },
+  {
+    title: 'Gateway',
+    url: '/gateway',
+    icon: Radar,
+    isActive: isRouteActive(pathname, '/gateway'),
   },
   {
     title: 'Benchmark',
