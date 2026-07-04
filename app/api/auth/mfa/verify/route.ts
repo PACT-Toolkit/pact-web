@@ -8,6 +8,9 @@ export const runtime = 'nodejs';
 
 const SESSION_COOKIE = 'pact_session';
 const MFA_TOKEN_COOKIE = 'pact_mfa_token';
+// Set only on the OAuth-callback MFA branch (app/v1/auth/callback/[provider]).
+// Absent for password-login MFA; deleting an absent cookie is a no-op.
+const OAUTH_RETURN_TO_COOKIE = 'pact_oauth_return_to';
 
 type Body = { code?: unknown; isRecovery?: unknown };
 
@@ -95,6 +98,10 @@ export const POST = async (req: NextRequest) => {
   });
   // The challenge is one-shot and now consumed server-side.
   res.cookies.delete(MFA_TOKEN_COOKIE);
+  // The client already read this into `returnTo` when it rendered
+  // /login/mfa; clear it so a stale tab can't linger with it past the
+  // challenge's own lifetime.
+  res.cookies.delete(OAUTH_RETURN_TO_COOKIE);
 
   return res;
 };

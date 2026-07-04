@@ -24,7 +24,18 @@ import {
 
 type ServerError = { code: string | null; message: string };
 
-export const AuthLoginMfaChallengeForm = () => {
+type AuthLoginMfaChallengeFormProps = {
+  // Absolute post-MFA redirect target, carried in from the OAuth callback
+  // (see app/(auth)/login/mfa/page.tsx). Undefined for the password-login
+  // MFA path, which has no return_to concept and always lands on /dashboard.
+  // May be cross-origin (dev cross-device flows, PACT_AUTH_DEFAULT_RETURN_TO),
+  // so a full navigation is used instead of the client-side router.
+  returnTo?: string;
+};
+
+export const AuthLoginMfaChallengeForm = ({
+  returnTo,
+}: AuthLoginMfaChallengeFormProps) => {
   const router = useRouter();
   const [mode, setMode] = useState<'totp' | 'recovery'>('totp');
   const [code, setCode] = useState('');
@@ -32,7 +43,14 @@ export const AuthLoginMfaChallengeForm = () => {
   const [serverError, setServerError] = useState<ServerError | null>(null);
 
   const verify = useSWRMutation(AUTH_KEYS.mfaVerify, verifyMfaFetcher, {
-    onSuccess: () => router.push('/dashboard'),
+    onSuccess: () => {
+      if (returnTo) {
+        window.location.href = returnTo;
+
+        return;
+      }
+      router.push('/dashboard');
+    },
     onError: (err: unknown) => {
       if (err instanceof ApiError) {
         if (

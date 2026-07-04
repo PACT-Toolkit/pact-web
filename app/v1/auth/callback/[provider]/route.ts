@@ -9,6 +9,19 @@ export const runtime = 'nodejs';
 
 const SESSION_COOKIE = 'pact_session';
 const STATE_COOKIE = 'pact_oauth_state';
+const MFA_TOKEN_COOKIE = 'pact_mfa_token';
+// Carries the rebased return_to target across the /login/mfa step-up so
+// the user lands back on their original deep link (not just /dashboard)
+// once they clear the second factor. See auth.proto's HandleCallbackResponse
+// comment: "return_to is still populated so the caller can resume the
+// post-login redirect once the second factor is verified."
+const OAUTH_RETURN_TO_COOKIE = 'pact_oauth_return_to';
+// pact-auth issues MFA challenge tokens with a 5-minute TTL (see
+// internal/mfa/service.go::challengeTTL — same constant the password-login
+// route mirrors as MFA_TOKEN_TTL_SECONDS). Both step-up cookies share it so
+// a stale tab can't sit on a step-up form backed by state that's already
+// invalid server-side.
+const MFA_TOKEN_TTL_SECONDS = 5 * 60;
 const FALLBACK_RETURN_TO = '/dashboard';
 
 const ALLOWED_PROVIDERS = new Set(['github', 'google', 'meta']);
@@ -53,7 +66,8 @@ export const GET = async (
     // session cookie — validateSessionFromCookies() short-circuits in
     // mock mode so the value here is purely cosmetic — and redirect
     // to the original return_to (the start handler put it on the URL).
-    const returnTo = req.nextUrl.searchParams.get('return_to') || FALLBACK_RETURN_TO;
+    const returnTo =
+      req.nextUrl.searchParams.get('return_to') || FALLBACK_RETURN_TO;
     const target = rebaseReturnTo(req, returnTo);
     const res = NextResponse.redirect(target);
     res.cookies.set({
@@ -115,6 +129,39 @@ export const GET = async (
   const returnTo = resp.returnTo || FALLBACK_RETURN_TO;
   const target = rebaseReturnTo(req, returnTo);
 
+  // MFA branch: pact-auth has not minted a session — session_token and
+  // refresh_token are empty — and instead handed us a short-lived
+  // mfa_token. Route through the same /login/mfa step-up the password
+  // flow uses, stashing the token in the same httpOnly cookie so the
+  // step-up form (and only that form) can present it back via
+  // /api/auth/mfa/verify. No pact_session cookie is set on this branch.
+  if (resp.mfaRequired) {
+    if (!resp.mfaToken) {
+      // Defensive: pact-auth never returns mfa_required without a token,
+      // but if it ever did we'd otherwise strand the user on a step-up
+      // page it has no way to complete.
+      return failed(req, 'mfa_token_missing');
+    }
+
+    const res = NextResponse.redirect(new URL('/login/mfa', req.url));
+    res.cookies.set({
+      name: MFA_TOKEN_COOKIE,
+      value: resp.mfaToken,
+      ...shortLivedCookieOptions(MFA_TOKEN_TTL_SECONDS),
+    });
+    // Carry the rebased return_to so the step-up form can send the user
+    // back to their original deep link once they clear the second factor,
+    // instead of always landing on /dashboard.
+    res.cookies.set({
+      name: OAUTH_RETURN_TO_COOKIE,
+      value: target.toString(),
+      ...shortLivedCookieOptions(MFA_TOKEN_TTL_SECONDS),
+    });
+    burnStateCookie(res);
+
+    return res;
+  }
+
   const expiresAt = new Date(Number(resp.expiresAtUnix) * 1000);
   const res = NextResponse.redirect(target);
   res.cookies.set({
@@ -126,16 +173,7 @@ export const GET = async (
     path: '/',
     expires: expiresAt,
   });
-  // Clear the one-shot state cookie regardless of how we got here.
-  res.cookies.set({
-    name: STATE_COOKIE,
-    value: '',
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 0,
-  });
+  burnStateCookie(res);
 
   return res;
 };
@@ -146,6 +184,25 @@ const failed = (req: NextRequest, reason: string) => {
   const res = NextResponse.redirect(url);
   // Burn the state cookie too — it's one-shot and we shouldn't leave it
   // sitting on the box if the dance failed.
+  burnStateCookie(res);
+
+  return res;
+};
+
+// Shared options for the two short-lived step-up cookies (mfa token +
+// pending return_to). Both are one-shot, httpOnly, and capped to the same
+// TTL as pact-auth's MFA challenge.
+const shortLivedCookieOptions = (maxAge: number) => ({
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  secure: process.env.NODE_ENV === 'production',
+  path: '/',
+  maxAge,
+});
+
+// The state cookie is one-shot: burn it on every exit path (success,
+// MFA step-up, or failure) so a replayed callback URL can't reuse it.
+const burnStateCookie = (res: NextResponse) => {
   res.cookies.set({
     name: STATE_COOKIE,
     value: '',
@@ -155,6 +212,4 @@ const failed = (req: NextRequest, reason: string) => {
     path: '/',
     maxAge: 0,
   });
-
-  return res;
 };
