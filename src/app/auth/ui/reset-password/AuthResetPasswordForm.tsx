@@ -31,7 +31,11 @@ type Props = React.ComponentProps<'div'> & {
 
 type ServerError = { code: string | null; message: string };
 
-export const AuthResetPasswordForm = ({ token, className, ...props }: Props) => {
+export const AuthResetPasswordForm = ({
+  token,
+  className,
+  ...props
+}: Props) => {
   const router = useRouter();
   const [serverError, setServerError] = useState<ServerError | null>(null);
   const { warning: breachWarning, onPasswordBlur } = usePasswordBreachWarning();
@@ -75,6 +79,20 @@ export const AuthResetPasswordForm = ({ token, className, ...props }: Props) => 
 
       return;
     }
+
+    const payload = (await res.json().catch(() => null)) as {
+      mfaRequired?: boolean;
+    } | null;
+    if (payload?.mfaRequired) {
+      // pact-auth withheld the session - the resetting user still has a
+      // verified MFA factor to clear. No session exists yet, so we must
+      // not broadcast password-reset-completed to other tabs: the reset
+      // isn't done until the step-up form at /login/mfa also succeeds.
+      router.push('/login/mfa');
+
+      return;
+    }
+
     notifyPasswordResetCompleted();
     router.push('/dashboard');
   };

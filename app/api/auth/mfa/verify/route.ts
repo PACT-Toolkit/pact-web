@@ -3,6 +3,8 @@ import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import { MOCK_MFA_CHALLENGE_TOKEN } from '@/src/framework/auth/pact_auth/mock';
+import { isMock, MOCK_USER_ID } from '@/src/framework/helpers/environment';
 
 export const runtime = 'nodejs';
 
@@ -70,6 +72,27 @@ export const POST = async (req: NextRequest) => {
       { error: 'Recovery code looks too short.', code: 'invalid_code' },
       { status: 400 }
     );
+  }
+
+  // Dev:mock has no gRPC layer to fake pact-auth against - see
+  // src/framework/auth/pact_auth/mock.ts. The mock MFA-required branches on
+  // /api/auth/login and /api/auth/reset-password stash this sentinel token
+  // instead of a real one; any correctly-formatted code completes the demo.
+  if (isMock() && mfaToken === MOCK_MFA_CHALLENGE_TOKEN) {
+    const res = NextResponse.json({ ok: true, userId: MOCK_USER_ID });
+    res.cookies.set({
+      name: SESSION_COOKIE,
+      value: 'mock-session-token',
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: false,
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+    });
+    res.cookies.delete(MFA_TOKEN_COOKIE);
+    res.cookies.delete(OAUTH_RETURN_TO_COOKIE);
+
+    return res;
   }
 
   let resp: Awaited<

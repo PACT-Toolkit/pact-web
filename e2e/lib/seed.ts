@@ -65,19 +65,32 @@ const withPg = async <T>(fn: (pg: PgClient) => Promise<T>): Promise<T> => {
   }
 };
 
-// seedVerifiedUser idempotently provisions the test user and flips
-// email_verified_at on so the next login lands them straight on the
-// dashboard without going through the verify-email handoff.
+type SeedIdentity = {
+  email: string;
+  password: string;
+  displayName: string;
+};
+
+// seedVerifiedUserWithCredentials idempotently provisions the given
+// identity and flips email_verified_at on so the next login lands them
+// straight on the dashboard without going through the verify-email
+// handoff. Also tears down any MFA factors left behind by a prior run so
+// the "Add authenticator app" button is visible on first paint.
 //
-// Also tears down any MFA factors left behind by a prior run so the
-// "Add authenticator app" button is visible on first paint.
-export const seedVerifiedUser = async (): Promise<void> => {
+// Parameterized (rather than hardcoded to TEST_USER) so specs that
+// mutate credentials in a way TEST_USER can't safely absorb - e.g.
+// completing a real password reset, which permanently changes the
+// account's password - seed a disposable identity of their own instead
+// of fighting over TEST_USER's fixed password with every other spec.
+export const seedVerifiedUserWithCredentials = async (
+  identity: SeedIdentity
+): Promise<void> => {
   const client = getClient();
   try {
     await client.register({
-      email: TEST_USER.email,
-      password: TEST_USER.password,
-      displayName: TEST_USER.displayName,
+      email: identity.email,
+      password: identity.password,
+      displayName: identity.displayName,
       returnTo: 'http://localhost:3000/dashboard',
     });
   } catch (err) {
@@ -97,11 +110,11 @@ export const seedVerifiedUser = async (): Promise<void> => {
     // canary that screams first.
     const { rows } = await pg.query<{ id: string }>(
       'SELECT id FROM users WHERE email = $1',
-      [TEST_USER.email]
+      [identity.email]
     );
     if (rows.length === 0) {
       throw new Error(
-        `seedVerifiedUser: user ${TEST_USER.email} not found after Register — is pact-auth wired to the right DB?`
+        `seedVerifiedUserWithCredentials: user ${identity.email} not found after Register - is pact-auth wired to the right DB?`
       );
     }
     const userId = rows[0].id;
@@ -131,6 +144,30 @@ export const seedVerifiedUser = async (): Promise<void> => {
     await pg.query(`DELETE FROM recovery_codes WHERE user_id = $1`, [userId]);
     await pg.query(`DELETE FROM mfa_factors WHERE user_id = $1`, [userId]);
   });
+};
+
+// seedVerifiedUser is the TEST_USER-bound convenience wrapper every
+// existing spec uses. Specs that need their own identity (see the
+// docstring above) call seedVerifiedUserWithCredentials directly instead.
+export const seedVerifiedUser = (): Promise<void> =>
+  seedVerifiedUserWithCredentials(TEST_USER);
+
+// requestPasswordResetForEmail mints a real reset token via pact-auth's
+// gRPC RequestPasswordReset, the same call the /forgot-password route
+// handler makes server-side. We call it directly (instead of driving the
+// browser through /forgot-password) because RequestPasswordReset validates
+// `returnTo`'s origin against PACT_OAUTH_RETURN_TO_ALLOWLIST, and specs may
+// run their browser against a dev-server port (e.g. 3100) that isn't on
+// that allowlist. The returned token is an origin-independent signed
+// opaque value (see internal/signedtoken in pact-auth) - minting it via a
+// pre-approved origin like localhost:3000 and then redeeming it in a
+// browser on a different port is exactly what an email link does anyway.
+export const requestPasswordResetForEmail = async (
+  email: string,
+  returnTo = 'http://localhost:3000/reset-password'
+): Promise<void> => {
+  const client = getClient();
+  await client.requestPasswordReset({ email, returnTo });
 };
 
 // resetMfaState wipes all MFA-related rows for the test user, regardless

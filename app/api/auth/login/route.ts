@@ -3,19 +3,23 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
 import {
+  MFA_TOKEN_COOKIE,
+  MFA_TOKEN_TTL_SECONDS,
+  shortLivedCookieOptions,
+} from '@/src/framework/auth/pact_auth/cookies';
+import {
   AUTH_ERROR_CODES,
   mapPactAuthError,
 } from '@/src/framework/auth/pact_auth/errors';
+import {
+  mockMfaRequiredResponse,
+  MOCK_MFA_LOGIN_EMAIL,
+} from '@/src/framework/auth/pact_auth/mock';
+import { isMock } from '@/src/framework/helpers/environment';
 
 export const runtime = 'nodejs';
 
 const SESSION_COOKIE = 'pact_session';
-const MFA_TOKEN_COOKIE = 'pact_mfa_token';
-// pact-auth issues challenge tokens with a 5-minute TTL (see
-// internal/mfa/service.go::challengeTTL). We cap the cookie to the same
-// window so a stale browser tab can't sit forever on the step-up form
-// holding a token that's already invalid server-side.
-const MFA_TOKEN_TTL_SECONDS = 5 * 60;
 
 type LoginBody = { email?: unknown; password?: unknown };
 
@@ -35,6 +39,14 @@ export const POST = async (req: NextRequest) => {
       { error: 'email and password required' },
       { status: 400 }
     );
+  }
+
+  // Dev:mock has no gRPC layer to fake pact-auth against - see
+  // src/framework/auth/pact_auth/mock.ts. A well-known sentinel email lets a
+  // developer demo the MFA step-up branch without pact-auth running; any
+  // other email still goes through the real call below, unchanged.
+  if (isMock() && email === MOCK_MFA_LOGIN_EMAIL) {
+    return mockMfaRequiredResponse();
   }
 
   let resp: Awaited<ReturnType<ReturnType<typeof getPactAuthClient>['login']>>;
@@ -67,11 +79,7 @@ export const POST = async (req: NextRequest) => {
     res.cookies.set({
       name: MFA_TOKEN_COOKIE,
       value: resp.mfaToken,
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-      maxAge: MFA_TOKEN_TTL_SECONDS,
+      ...shortLivedCookieOptions(MFA_TOKEN_TTL_SECONDS),
     });
 
     return res;

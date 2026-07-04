@@ -2,6 +2,11 @@ import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import {
+  MFA_TOKEN_COOKIE,
+  MFA_TOKEN_TTL_SECONDS,
+  shortLivedCookieOptions,
+} from '@/src/framework/auth/pact_auth/cookies';
 import { rebaseReturnTo } from '@/src/framework/auth/pact_auth/return_to';
 import { isMock } from '@/src/framework/helpers/environment';
 
@@ -9,19 +14,12 @@ export const runtime = 'nodejs';
 
 const SESSION_COOKIE = 'pact_session';
 const STATE_COOKIE = 'pact_oauth_state';
-const MFA_TOKEN_COOKIE = 'pact_mfa_token';
 // Carries the rebased return_to target across the /login/mfa step-up so
 // the user lands back on their original deep link (not just /dashboard)
 // once they clear the second factor. See auth.proto's HandleCallbackResponse
 // comment: "return_to is still populated so the caller can resume the
 // post-login redirect once the second factor is verified."
 const OAUTH_RETURN_TO_COOKIE = 'pact_oauth_return_to';
-// pact-auth issues MFA challenge tokens with a 5-minute TTL (see
-// internal/mfa/service.go::challengeTTL — same constant the password-login
-// route mirrors as MFA_TOKEN_TTL_SECONDS). Both step-up cookies share it so
-// a stale tab can't sit on a step-up form backed by state that's already
-// invalid server-side.
-const MFA_TOKEN_TTL_SECONDS = 5 * 60;
 const FALLBACK_RETURN_TO = '/dashboard';
 
 const ALLOWED_PROVIDERS = new Set(['github', 'google', 'meta']);
@@ -188,17 +186,6 @@ const failed = (req: NextRequest, reason: string) => {
 
   return res;
 };
-
-// Shared options for the two short-lived step-up cookies (mfa token +
-// pending return_to). Both are one-shot, httpOnly, and capped to the same
-// TTL as pact-auth's MFA challenge.
-const shortLivedCookieOptions = (maxAge: number) => ({
-  httpOnly: true,
-  sameSite: 'lax' as const,
-  secure: process.env.NODE_ENV === 'production',
-  path: '/',
-  maxAge,
-});
 
 // The state cookie is one-shot: burn it on every exit path (success,
 // MFA step-up, or failure) so a replayed callback URL can't reuse it.
