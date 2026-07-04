@@ -363,11 +363,7 @@ async function main() {
   if (existsSync(TEMP_DIR)) await rm(TEMP_DIR, { recursive: true });
 
   console.log('\n💅 Formatting...');
-  try {
-    run(`pnpm exec prettier --write "${OUTPUT_DIR}/**/*.ts"`);
-  } catch {
-    // Optional
-  }
+  run(`pnpm exec prettier --write "${OUTPUT_DIR}/**/*.ts"`);
 
   console.log('\n✨ Complete!\n');
 }
