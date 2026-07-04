@@ -23,33 +23,6 @@ test.describe('Classifier console', () => {
     await page.goto('/classifier');
     await expect(page.getByTestId('classifier-workbench')).toBeVisible();
 
-    // Guard against a pre-existing MSW bootstrap race (not introduced by
-    // PACT-322): the browser-side mock service worker registers
-    // asynchronously (MSWProvider fires init() from a fire-and-forget
-    // useEffect), while the classifier-record-card rows checked below are
-    // also served by the Node-side MSW integration wired in
-    // instrumentation.ts, so they can render before the browser SW has
-    // finished activating. Poll a throwaway /v1/check call until it comes
-    // back mocked (200) so every test below only interacts once the browser
-    // SW is actually ready -- mirrors the same guard in redactor.spec.ts /
-    // consensus.spec.ts (shared app-wide bootstrap code, not part of this
-    // console).
-    await expect(async () => {
-      const status = await page.evaluate(async () => {
-        const res = await fetch('/api/pact/gateway/v1/check', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'msw-readiness-probe',
-            kind: 'output',
-          }),
-        });
-
-        return res.status;
-      });
-      expect(status).toBe(200);
-    }).toPass({ timeout: 10_000 });
-
     // Wait for the first seeded record, not just the container -- the
     // container renders before hydration finishes and before the SWR fetch
     // resolves, so interacting immediately after it appears would race

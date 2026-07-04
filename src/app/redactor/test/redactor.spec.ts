@@ -13,39 +13,6 @@ test.describe('Redactor console', () => {
     await page.goto('/redactor');
     await expect(page.getByTestId('redactor-workbench')).toBeVisible();
 
-    // Guard against a pre-existing MSW bootstrap race (not introduced by
-    // PACT-324): the browser-side mock service worker registers
-    // asynchronously (MSWProvider fires init() from a fire-and-forget
-    // useEffect), while the redactor-record-card rows checked below are
-    // also served by the Node-side MSW integration wired in
-    // instrumentation.ts, so they can render before the browser SW has
-    // finished activating. A one-shot useSWRMutation call -- the ad-hoc
-    // test panel's "Run test" button -- fired in that window slips past
-    // the SW, hits the real (absent) gateway proxy, and surfaces a
-    // client-visible error instead of the mocked response. Poll a
-    // throwaway /v1/check call until it comes back mocked (200) so every
-    // test below only interacts once the browser SW is actually ready --
-    // this mirrors real usage, since no human clicks within milliseconds
-    // of page load. Flagged as a follow-up to restore MSWProvider's
-    // ready-gate (its waitUntilReady option is a deprecated no-op in the
-    // installed msw version); not fixed here since it is shared
-    // app-wide bootstrap code, not part of the redactor console.
-    await expect(async () => {
-      const status = await page.evaluate(async () => {
-        const res = await fetch('/api/pact/gateway/v1/check', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'msw-readiness-probe',
-            kind: 'output',
-          }),
-        });
-
-        return res.status;
-      });
-      expect(status).toBe(200);
-    }).toPass({ timeout: 10_000 });
-
     // Wait for the first seeded record, not just the container -- the
     // container renders before hydration finishes and before the SWR fetch
     // resolves, so interacting immediately after it appears would race

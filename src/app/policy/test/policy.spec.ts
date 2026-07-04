@@ -17,28 +17,6 @@ test.describe('Policy console', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/policy');
     await expect(page.getByTestId('policy-events-feed')).toBeVisible();
-
-    // Guard against a pre-existing MSW bootstrap race (not introduced by
-    // PACT-326, see the identical comment in classifier.spec.ts /
-    // redactor.spec.ts): poll a throwaway /v1/check call until it comes
-    // back mocked (200) so every test below only interacts once the
-    // browser SW is actually ready.
-    await expect(async () => {
-      const status = await page.evaluate(async () => {
-        const res = await fetch('/api/pact/gateway/v1/check', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: 'msw-readiness-probe',
-            kind: 'output',
-          }),
-        });
-
-        return res.status;
-      });
-      expect(status).toBe(200);
-    }).toPass({ timeout: 10_000 });
-
     await expect(page.getByTestId('policy-event-row').first()).toBeVisible();
   });
 
