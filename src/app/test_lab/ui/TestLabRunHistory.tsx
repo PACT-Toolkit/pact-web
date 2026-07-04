@@ -32,7 +32,7 @@ const TestLabRunRow = ({ run }: { run: TestRun }) => {
   };
 
   return (
-    <div className="flex flex-col text-xs">
+    <div className="flex flex-col text-xs" data-testid="test-lab-run-row">
       <div className="flex items-center gap-3 px-4 py-2.5">
         <button
           type="button"
@@ -72,7 +72,10 @@ const TestLabRunRow = ({ run }: { run: TestRun }) => {
             </code>
           )}
           {!open && (
-            <span className="min-w-0 flex-1 truncate font-mono text-muted-foreground">
+            <span
+              data-testid="test-lab-run-row-input"
+              className="min-w-0 flex-1 truncate font-mono text-muted-foreground"
+            >
               {run.input}
             </span>
           )}
@@ -120,7 +123,7 @@ const TestLabRunRow = ({ run }: { run: TestRun }) => {
 };
 
 export const TestLabRunHistory = ({ history }: { history: TestRun[] }) => (
-  <Card>
+  <Card data-testid="test-lab-run-history">
     <CardHeader className="pb-3">
       <CardTitle className="text-base">Test Run History</CardTitle>
       <CardDescription>

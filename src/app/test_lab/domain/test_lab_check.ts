@@ -1,4 +1,9 @@
 import {
+  type BenchmarkSaveCorpusRequest,
+  type BenchmarkSaveTestLabRunRequest,
+  type BenchmarkTestLabRunBody,
+} from '@/src/__codegen__/rest/benchmark';
+import {
   type CheckCheckRequest,
   type CheckCheckResponse,
 } from '@/src/__codegen__/rest/check';
@@ -51,40 +56,24 @@ export interface TestRun {
   timestamp: string;
 }
 
-// ─── persisted run types (API shape) ─────────────────────────────────────────
-
-export interface TestLabRunRecord {
-  id: string;
-  content: string;
-  attack_type: string;
-  decision: 'allow' | 'block';
-  reason: string;
-  filter_rule_id: string;
-  latency_ms: number;
-  request_id: string;
-  created_at: number; // Unix seconds (UTC)
-}
-
-export interface TestLabRunsResponse {
-  runs: TestLabRunRecord[];
-  total: number;
-}
-
-export interface SaveRunPayload {
-  content: string;
-  attack_type: string;
-  decision: 'allow' | 'block';
-  reason: string;
-  filter_rule_id: string;
-  latency_ms: number;
-  request_id: string;
-}
+// ─── persisted run + corpus types (gateway API shape) ────────────────────────
+//
+// PACT-465 repoints Test Lab's "Save to corpus" and run-history save/list
+// onto the gateway's POST /v1/benchmark/corpus and GET+POST
+// /v1/benchmark/testlab/runs (schema/benchmark, pulled from pact-gateway).
+// The gateway resolves the actor from the session server-side -- callers
+// never send an actor, unlike the retired X-Pact-Actor direct-proxy path.
+// The generated wire types are re-exported under the domain vocabulary the
+// Test Lab UI already used pre-migration.
+export type TestLabRunRecord = BenchmarkTestLabRunBody;
+export type SaveRunPayload = BenchmarkSaveTestLabRunRequest;
+export type SaveCorpusPayload = BenchmarkSaveCorpusRequest;
 
 export const toTestRun = (r: TestLabRunRecord): TestRun => ({
   id: r.id,
   input: r.content,
   attackType: r.attack_type,
-  decision: r.decision,
+  decision: r.decision as 'allow' | 'block',
   reason: r.reason || undefined,
   filterRuleId: r.filter_rule_id || undefined,
   latencyMs: r.latency_ms,

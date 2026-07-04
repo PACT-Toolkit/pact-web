@@ -2,7 +2,7 @@
   "repo": "pact-gateway",
   "path": "/api/swagger/benchmark.yaml",
   "branch": "master",
-  "baseUrl": "/api/pact/benchmark/v1",
-  "stripPathPrefix": "/v1/benchmark",
+  "baseUrl": "/api/pact/gateway/v1",
+  "stripPathPrefix": "/v1",
   "production": false
 }

@@ -1,6 +1,6 @@
 import { Database } from 'lucide-react';
 
-import  { type SaveState } from '@/src/app/test_lab/ui/types';
+import { type SaveState } from '@/src/app/test_lab/ui/types';
 
 export const TestLabResultNode = ({
   decision,
@@ -16,6 +16,8 @@ export const TestLabResultNode = ({
   saveState: SaveState;
 }) => (
   <div
+    data-testid="test-lab-result"
+    data-decision={decision}
     className={`flex w-32 shrink-0 flex-col gap-1.5 rounded-lg border-2 p-3 transition-all duration-500 ${
       decision === 'block'
         ? 'border-destructive bg-destructive/5'
@@ -29,15 +31,20 @@ export const TestLabResultNode = ({
     </span>
     {decision && (
       <span
+        data-testid="test-lab-result-decision"
         className={`text-sm font-bold ${
-          decision === 'block' ? 'text-destructive' : 'text-green-600 dark:text-green-400'
+          decision === 'block'
+            ? 'text-destructive'
+            : 'text-green-600 dark:text-green-400'
         }`}
       >
         {decision.toUpperCase()}
       </span>
     )}
     {reason && (
-      <span className="break-all font-mono text-xs text-muted-foreground">{reason}</span>
+      <span className="break-all font-mono text-xs text-muted-foreground">
+        {reason}
+      </span>
     )}
     {latency !== undefined && (
       <span className="text-xs text-muted-foreground">{latency}ms total</span>
@@ -45,6 +52,7 @@ export const TestLabResultNode = ({
     {decision === 'block' && (
       <button
         type="button"
+        data-testid="test-lab-save-to-corpus"
         onClick={onSave}
         disabled={saveState === 'saving' || saveState === 'saved'}
         className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"

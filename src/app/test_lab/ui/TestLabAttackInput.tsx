@@ -54,7 +54,7 @@ export const TestLabAttackInput = ({
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2">
-          {chips.map(t => (
+          {chips.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -71,16 +71,26 @@ export const TestLabAttackInput = ({
         </div>
 
         <textarea
+          data-testid="test-lab-attack-input"
           value={inputText}
-          onChange={e => onInputChange(e.target.value)}
+          onChange={(e) => onInputChange(e.target.value)}
           placeholder="Enter a prompt to test against the filter pipeline…"
           rows={4}
           className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
 
         <div className="flex items-center gap-3">
-          <input ref={fileRef} type="file" className="hidden" onChange={e => void handleFileUpload(e)} />
-          <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+          <input
+            ref={fileRef}
+            type="file"
+            className="hidden"
+            onChange={(e) => void handleFileUpload(e)}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileRef.current?.click()}
+          >
             <Upload className="mr-1.5 h-3.5 w-3.5" />
             Attach file
           </Button>
@@ -105,7 +115,9 @@ export const TestLabAttackInput = ({
           )}
           {status === 'error' && (
             <span className="text-xs text-destructive">
-              {isMock() ? 'Mock handler failed' : 'Request failed — is pact-gateway running?'}
+              {isMock()
+                ? 'Mock handler failed'
+                : 'Request failed — is pact-gateway running?'}
             </span>
           )}
         </div>

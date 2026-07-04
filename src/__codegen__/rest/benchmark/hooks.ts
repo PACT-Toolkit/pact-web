@@ -17,26 +17,30 @@ import type { AxiosError, AxiosRequestConfig } from 'axios';
 import type {
   BenchmarkGetJobResponse,
   BenchmarkListRunsResponse,
+  BenchmarkListTestLabRunsResponse,
   BenchmarkSaveCorpusRequest,
   BenchmarkSaveCorpusResponse,
+  BenchmarkSaveTestLabRunRequest,
+  BenchmarkSaveTestLabRunResponse,
   BenchmarkSubmitJobRequest,
   BenchmarkSubmitJobResponse,
   GetBenchmarkJobParams,
   ListBenchmarkRunsParams,
+  ListBenchmarkTestLabRunsParams,
 } from './types';
 
 import {
-  saveBenchmarkCorpusResponse201,
-  saveBenchmarkCorpusResponse400,
-  saveBenchmarkCorpusResponse401,
-  saveBenchmarkCorpusResponse502,
-  saveBenchmarkCorpusResponseSuccess,
-  saveBenchmarkCorpusResponseError,
-  getSaveBenchmarkCorpusUrl,
-  saveBenchmarkCorpusResponse,
-  saveBenchmarkCorpus,
-  getSaveBenchmarkCorpusMutationFetcher,
-  getSaveBenchmarkCorpusMutationKey,
+  saveBenchmarkCorpusEntryResponse201,
+  saveBenchmarkCorpusEntryResponse400,
+  saveBenchmarkCorpusEntryResponse401,
+  saveBenchmarkCorpusEntryResponse502,
+  saveBenchmarkCorpusEntryResponseSuccess,
+  saveBenchmarkCorpusEntryResponseError,
+  getSaveBenchmarkCorpusEntryUrl,
+  saveBenchmarkCorpusEntryResponse,
+  saveBenchmarkCorpusEntry,
+  getSaveBenchmarkCorpusEntryMutationFetcher,
+  getSaveBenchmarkCorpusEntryMutationKey,
   submitBenchmarkJobResponse202,
   submitBenchmarkJobResponse400,
   submitBenchmarkJobResponse401,
@@ -69,29 +73,52 @@ import {
   listBenchmarkRunsResponse,
   listBenchmarkRuns,
   getListBenchmarkRunsKey,
+  listBenchmarkTestLabRunsResponse200,
+  listBenchmarkTestLabRunsResponse400,
+  listBenchmarkTestLabRunsResponse401,
+  listBenchmarkTestLabRunsResponse502,
+  listBenchmarkTestLabRunsResponseSuccess,
+  listBenchmarkTestLabRunsResponseError,
+  getListBenchmarkTestLabRunsUrl,
+  listBenchmarkTestLabRunsResponse,
+  listBenchmarkTestLabRuns,
+  getListBenchmarkTestLabRunsKey,
+  saveBenchmarkTestLabRunResponse201,
+  saveBenchmarkTestLabRunResponse400,
+  saveBenchmarkTestLabRunResponse401,
+  saveBenchmarkTestLabRunResponse502,
+  saveBenchmarkTestLabRunResponseSuccess,
+  saveBenchmarkTestLabRunResponseError,
+  getSaveBenchmarkTestLabRunUrl,
+  saveBenchmarkTestLabRunResponse,
+  saveBenchmarkTestLabRun,
+  getSaveBenchmarkTestLabRunMutationFetcher,
+  getSaveBenchmarkTestLabRunMutationKey,
 } from './fetchers';
 
-export type SaveBenchmarkCorpusMutationResult = NonNullable<
-  Awaited<ReturnType<typeof saveBenchmarkCorpus>>
+export type SaveBenchmarkCorpusEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveBenchmarkCorpusEntry>>
 >;
 
 /**
- * @summary Save a corpus for reuse in benchmark runs
+ * @summary Save one Test Lab corpus entry
  */
-export const useSaveBenchmarkCorpus = <TError = Promise<string>>(options?: {
+export const useSaveBenchmarkCorpusEntry = <
+  TError = Promise<string>,
+>(options?: {
   swr?: SWRMutationConfiguration<
-    Awaited<ReturnType<typeof saveBenchmarkCorpus>>,
+    Awaited<ReturnType<typeof saveBenchmarkCorpusEntry>>,
     TError,
     Key,
     BenchmarkSaveCorpusRequest,
-    Awaited<ReturnType<typeof saveBenchmarkCorpus>>
+    Awaited<ReturnType<typeof saveBenchmarkCorpusEntry>>
   > & { swrKey?: string };
   fetch?: RequestInit;
 }) => {
   const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
 
-  const swrKey = swrOptions?.swrKey ?? getSaveBenchmarkCorpusMutationKey();
-  const swrFn = getSaveBenchmarkCorpusMutationFetcher(fetchOptions);
+  const swrKey = swrOptions?.swrKey ?? getSaveBenchmarkCorpusEntryMutationKey();
+  const swrFn = getSaveBenchmarkCorpusEntryMutationFetcher(fetchOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -200,6 +227,73 @@ export const useListBenchmarkRuns = <TError = Promise<string>>(
     swrFn,
     swrOptions
   );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type ListBenchmarkTestLabRunsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listBenchmarkTestLabRuns>>
+>;
+
+/**
+ * @summary List Test Lab run history
+ */
+export const useListBenchmarkTestLabRuns = <TError = Promise<string>>(
+  params?: ListBenchmarkTestLabRunsParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof listBenchmarkTestLabRuns>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+    fetch?: RequestInit;
+  }
+) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getListBenchmarkTestLabRunsKey(params) : null));
+  const swrFn = () => listBenchmarkTestLabRuns(params, fetchOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type SaveBenchmarkTestLabRunMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveBenchmarkTestLabRun>>
+>;
+
+/**
+ * @summary Save one Test Lab run-history entry
+ */
+export const useSaveBenchmarkTestLabRun = <TError = Promise<string>>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof saveBenchmarkTestLabRun>>,
+    TError,
+    Key,
+    BenchmarkSaveTestLabRunRequest,
+    Awaited<ReturnType<typeof saveBenchmarkTestLabRun>>
+  > & { swrKey?: string };
+  fetch?: RequestInit;
+}) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getSaveBenchmarkTestLabRunMutationKey();
+  const swrFn = getSaveBenchmarkTestLabRunMutationFetcher(fetchOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
   return {
     swrKey,

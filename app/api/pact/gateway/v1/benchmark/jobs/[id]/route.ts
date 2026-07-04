@@ -1,14 +1,17 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-// Route handler proxy for GET /api/pact/benchmark/v1/jobs/{id} → pact-gateway
-// /v1/benchmark/jobs/{id} (poll a bulk-test job's status and result).
+// Route handler proxy for GET /api/pact/gateway/v1/benchmark/jobs/{id} →
+// pact-gateway /v1/benchmark/jobs/{id} (poll a bulk-test job's status and
+// result).
 //
-// The benchmark surface is reached through the gateway (auth-gated,
-// rate-limited), not by hitting pact-benchmark's internal port directly. In
-// mock mode MSW intercepts the browser fetch before it reaches Next.js, so this
-// handler is only hit in real mode. Translates the pact_session cookie → Bearer
-// header that pact-gateway's authMiddleware expects, and propagates a rotated
-// session back to the browser cookie (same pattern as
+// Relocated from /api/pact/benchmark/v1/jobs/{id} under PACT-465 -- see
+// app/api/pact/gateway/v1/benchmark/jobs/route.ts's docblock. Logic is
+// unchanged: still reached through the gateway (auth-gated, rate-limited),
+// not pact-benchmark's internal port directly. In mock mode MSW intercepts
+// the browser fetch before it reaches Next.js, so this handler is only hit in
+// real mode. Translates the pact_session cookie → Bearer header that
+// pact-gateway's authMiddleware expects, and propagates a rotated session
+// back to the browser cookie (same pattern as
 // app/api/pact/gateway/v1/rules/route.ts).
 
 const GATEWAY_URL = process.env.PACT_GATEWAY_URL ?? 'http://localhost:8080';
