@@ -120,6 +120,23 @@ export default defineConfig({
       },
     },
   },
+  filter: {
+    input: '.rest-codegen-temp/filter.openapi.yaml',
+    output: {
+      mode: 'split',
+      target: 'src/__codegen__/rest/filter/hooks.ts',
+      schemas: 'src/__codegen__/rest/filter/types',
+      client: 'swr',
+      baseUrl: '/api/pact/gateway/v1',
+      override: {
+        query: {
+          useQuery: true,
+          useMutation: true,
+          signal: true,
+        },
+      },
+    },
+  },
   policy: {
     input: '.rest-codegen-temp/policy.openapi.yaml',
     output: {

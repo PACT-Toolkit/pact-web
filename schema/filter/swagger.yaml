@@ -1,0 +1,193 @@
+basePath: /
+definitions:
+    filter.ListPacksResponse:
+        properties:
+            packs:
+                items:
+                    $ref: '#/definitions/filter.LoadedPackResponse'
+                type: array
+        required:
+            - packs
+        type: object
+    filter.LoadedPackResponse:
+        properties:
+            engineKind:
+                description: '"regex" | "vector" | "literal" | "unknown"'
+                type: string
+            id:
+                type: string
+            loadedAt:
+                type: string
+            name:
+                type: string
+            ruleCount:
+                type: integer
+            source:
+                description: '"built_in" | "policy_synced" | "unknown"'
+                type: string
+            version:
+                type: string
+        required:
+            - engineKind
+            - id
+            - loadedAt
+            - name
+            - source
+        type: object
+    filter.MatchedSpan:
+        properties:
+            end:
+                type: integer
+            start:
+                type: integer
+            text:
+                type: string
+        type: object
+    filter.TestRuleRequest:
+        properties:
+            action:
+                description: '"" | "block" | "log"'
+                type: string
+            confidence:
+                type: number
+            content:
+                type: string
+            description:
+                type: string
+            kind:
+                description: '"input" | "output" | "external_content"'
+                type: string
+            pattern:
+                type: string
+            ruleId:
+                type: string
+            tags:
+                items:
+                    type: string
+                type: array
+            verdict:
+                description: '"hostile" | "suspicious"'
+                type: string
+        required:
+            - content
+            - kind
+            - pattern
+            - verdict
+        type: object
+    filter.TestRuleResponse:
+        properties:
+            confidence:
+                type: number
+            latencyMs:
+                type: integer
+            matchedSpan:
+                $ref: '#/definitions/filter.MatchedSpan'
+            normalizedInput:
+                type: string
+            reason:
+                type: string
+            ruleId:
+                type: string
+            sanitized:
+                type: boolean
+            sanitizedInput:
+                type: string
+            shadow:
+                type: boolean
+            verdict:
+                type: string
+        required:
+            - verdict
+        type: object
+host: localhost:8080
+info:
+    contact: {}
+    description: Public REST entrypoint for the PACT safety pipeline.
+    title: pact-gateway
+    version: 0.1.0
+paths:
+    /v1/filter/packs:
+        get:
+            operationId: listLoadedPacks
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/filter.ListPacksResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "502":
+                    description: upstream error
+                    schema:
+                        type: string
+                "503":
+                    description: service unavailable
+                    schema:
+                        type: string
+                "504":
+                    description: request timeout
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: List loaded rule packs and engines
+            tags:
+                - filter
+    /v1/filter/test-rule:
+        post:
+            consumes:
+                - application/json
+            operationId: testRule
+            parameters:
+                - description: Candidate rule and sample content
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/filter.TestRuleRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/filter.TestRuleResponse'
+                "400":
+                    description: missing required field or invalid value
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "502":
+                    description: upstream error
+                    schema:
+                        type: string
+                "503":
+                    description: service unavailable
+                    schema:
+                        type: string
+                "504":
+                    description: request timeout
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Test a candidate rule against a sample
+            tags:
+                - filter
+schemes:
+    - http
+    - https
+securityDefinitions:
+    Bearer:
+        description: 'Opaque pact-auth session token. Format: <uuid>.<base64-hmac>.'
+        in: header
+        name: Authorization
+        type: apiKey
+swagger: "2.0"

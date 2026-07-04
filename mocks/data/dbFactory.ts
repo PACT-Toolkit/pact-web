@@ -19,6 +19,7 @@ import { createConsensusMockData } from '@/src/app/consensus/mock/data/consensus
 import {
   createFilterMockData,
   mockDecisionEvent,
+  reapplyPersistedFalsePositiveFlags,
 } from '@/src/app/filter/mock/data/filter';
 import { createRedactorMockData } from '@/src/app/redactor/mock/data/redactor';
 import {
@@ -63,3 +64,8 @@ createRedactorMockData(db);
 createClassifierMockData(db);
 createTestLabMockData(db);
 createTestLabRunsMockData(db);
+// Must run last -- re-applies any is_false_positive flags a previous
+// dev:mock session persisted to sessionStorage (PACT-325), which requires
+// every decisions-producing seeder above to have already run so the rows
+// they might reference exist.
+reapplyPersistedFalsePositiveFlags(db);

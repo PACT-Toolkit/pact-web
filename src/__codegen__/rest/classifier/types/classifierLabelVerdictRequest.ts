@@ -7,7 +7,7 @@
  */
 
 export interface ClassifierLabelVerdictRequest {
-  content?: string;
+  content: string;
   correctionLabel?: string;
   note?: string;
   operatorLabel?: string;
