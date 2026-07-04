@@ -98,6 +98,14 @@ const enrollTotpFromSettings = async (
   await page.waitForURL('**/dashboard');
 
   await page.goto('/settings/security');
+  // A freshly seeded identity hits this route for the first time in the
+  // browser, so the settings page's client bundle is still hydrating when
+  // the goto() 'load' event fires. Clicking totp-add before hydration
+  // finishes lands on the DOM node but never reaches React's handler, so
+  // the enroll panel (and therefore totp-begin) never renders and the next
+  // click times out waiting for it. Waiting for the network to go idle
+  // gives hydration time to complete first.
+  await page.waitForLoadState('networkidle');
   await visibleTestId(page, 'totp-add').click();
   await visibleTestId(page, 'totp-begin').click();
 
