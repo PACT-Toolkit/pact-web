@@ -4,6 +4,7 @@ import {
   type Profile,
 } from '@/src/__codegen__/rest/account';
 import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type FileRecord } from '@/src/__codegen__/rest/files';
 import {
   createAccountMockData,
   mockConsent,
@@ -16,6 +17,10 @@ import {
 } from '@/src/app/audit/mock/data/audit';
 import { createClassifierMockData } from '@/src/app/classifier/mock/data/classifier';
 import { createConsensusMockData } from '@/src/app/consensus/mock/data/consensus';
+import {
+  createFilesMockData,
+  mockFileRecord,
+} from '@/src/app/files/mock/data/files';
 import {
   createFilterMockData,
   mockDecisionEvent,
@@ -42,6 +47,7 @@ export const db = {
   auditAccountEvents: new MockRepository<AuditEvent>(mockAuditEvent),
   auditFilesEvents: new MockRepository<AuditEvent>(mockAuditEvent),
   decisions: new MockRepository<AuditEvent>(mockDecisionEvent),
+  files: new MockRepository<FileRecord>(mockFileRecord),
   testLabRuns: new MockRepository<TestLabRunRecord>(mockTestLabRun),
 };
 
@@ -62,6 +68,7 @@ createRedactorMockData(db);
 // Fourth seeder appending to the shared db.decisions repository (PACT-322);
 // see classifier.ts's header comment for its distinct offset scheme.
 createClassifierMockData(db);
+createFilesMockData(db);
 createTestLabMockData(db);
 createTestLabRunsMockData(db);
 // Must run last -- re-applies any is_false_positive flags a previous

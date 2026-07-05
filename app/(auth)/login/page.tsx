@@ -1,11 +1,20 @@
 import { redirect } from 'next/navigation';
 
 import { AuthLoginForm } from '@/src/app/auth';
+import { safeNextPath } from '@/src/app/auth/ui/verify-email/safe_next_path';
 import { validateSessionFromCookies } from '@/src/framework/auth/pact_auth/session';
 
 type SearchParams = {
   oauth_error?: string | string[];
   erased?: string | string[];
+  // Set by httpClient's 401 interceptor (src/framework/http/axios.ts) so a
+  // session that expires mid-session can send the user back to the page
+  // they were on instead of always landing on /dashboard. Validated with
+  // safeNextPath - see that module for the open-redirect rationale. Not
+  // threaded through the MFA step-up branch (AuthLoginMfaChallengeForm
+  // always resumes at /dashboard for the password-login path - see its
+  // docblock).
+  return_to?: string | string[];
 };
 
 const OAUTH_ERROR_MESSAGES: Record<string, string> = {
@@ -32,12 +41,13 @@ const LoginPage = async ({
     redirect('/dashboard');
   }
 
-  const { oauth_error, erased } = await searchParams;
+  const { oauth_error, erased, return_to } = await searchParams;
   const errKey = Array.isArray(oauth_error) ? oauth_error[0] : oauth_error;
   const oauthError = errKey
     ? (OAUTH_ERROR_MESSAGES[errKey] ?? 'OAuth sign-in failed. Try again.')
     : null;
   const erasedConfirmed = (Array.isArray(erased) ? erased[0] : erased) === '1';
+  const returnTo = safeNextPath(return_to);
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
@@ -51,7 +61,7 @@ const LoginPage = async ({
             run their own deletion asynchronously.
           </div>
         )}
-        <AuthLoginForm initialError={oauthError} />
+        <AuthLoginForm initialError={oauthError} returnTo={returnTo} />
       </div>
     </div>
   );

@@ -9,13 +9,3 @@ export const humanSize = (bytes: number) => {
 
   return `${(bytes / (1024 * 1024)).toFixed(2)} MiB`;
 };
-
-// Local-only enrichment of the server list:
-//   - downloadUrl is minted per-row by calling GET /v1/files/{id}
-//     for any row whose server status is "ready".
-//   - error/busy are pure UI flags.
-export type RowExtras = {
-  downloadUrl?: string;
-  error?: string;
-  busy?: boolean;
-};

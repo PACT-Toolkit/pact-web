@@ -70,6 +70,7 @@ export const TestLabWorkbench = () => {
   const [selectedLayer, setSelectedLayer] = useState<string | null>(null);
   const [result, setResult] = useState<CheckResponse | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
+  const [historySaveError, setHistorySaveError] = useState(false);
   const { data: historyResponse, mutate: mutateHistory } =
     useListBenchmarkTestLabRuns(undefined, {
       swr: { revalidateOnFocus: false, revalidateOnReconnect: false },
@@ -180,6 +181,7 @@ export const TestLabWorkbench = () => {
           latency_ms: payload.latency_ms ?? 0,
           request_id: payload.request_id,
         };
+        setHistorySaveError(false);
         void mutateHistory(
           async (current) => {
             const response = await saveBenchmarkTestLabRun(payload);
@@ -192,10 +194,10 @@ export const TestLabWorkbench = () => {
           {
             optimisticData: (current) =>
               withOptimisticRun(current, optimisticRecord),
-            rollbackOnError: false,
+            rollbackOnError: true,
             revalidate: true,
           }
-        );
+        ).catch(() => setHistorySaveError(true));
       }
     },
     [inputText, attackType, mutateHistory]
@@ -264,6 +266,13 @@ export const TestLabWorkbench = () => {
           onPassthrough={(layerId) => void runCheck([layerId])}
           onSaveToCorpus={() => void handleSaveToCorpus()}
         />
+      )}
+
+      {historySaveError && (
+        <p role="alert" className="text-sm text-destructive">
+          Could not save this run to history. The pipeline result above is still
+          valid; only the history record failed to persist.
+        </p>
       )}
 
       {history.length > 0 && <TestLabRunHistory history={history} />}

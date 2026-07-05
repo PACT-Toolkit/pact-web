@@ -31,7 +31,11 @@ httpClient.interceptors.response.use(
       error.response?.status === 401 &&
       typeof window !== 'undefined'
     ) {
-      window.location.href = '/login';
+      // Preserve the page the user was on so /login can send them back
+      // after signing in, instead of always landing on the default
+      // post-login destination.
+      const returnTo = `${window.location.pathname}${window.location.search}`;
+      window.location.href = `/login?return_to=${encodeURIComponent(returnTo)}`;
     }
 
     return Promise.reject(error);
