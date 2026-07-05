@@ -41,12 +41,19 @@ import { cn } from '@/src/lib/utils';
 
 type LoginFormProps = React.ComponentProps<'div'> & {
   initialError?: string | null;
+  // Where to send the user after a successful password or passkey sign-in.
+  // Defaults to /dashboard when the caller has nothing more specific (see
+  // app/(auth)/login/page.tsx, which resolves this via safeNextPath so it's
+  // always a safe same-origin path by the time it gets here). Not used on
+  // the MFA step-up branch - see AuthLoginMfaChallengeForm's docblock.
+  returnTo?: string;
 };
 
 type ServerError = { code: string | null; message: string };
 
 export const AuthLoginForm = ({
   initialError,
+  returnTo = '/dashboard',
   className,
   ...props
 }: LoginFormProps) => {
@@ -73,7 +80,7 @@ export const AuthLoginForm = ({
 
         return;
       }
-      router.push('/dashboard');
+      router.push(returnTo);
     },
     onError: (err: unknown) => {
       if (err instanceof ApiError) {
@@ -108,7 +115,7 @@ export const AuthLoginForm = ({
         });
         if (cancelled) return;
         markPasskeyEnrolledLocally();
-        router.push('/dashboard');
+        router.push(returnTo);
       } catch (err) {
         if (err instanceof PasskeyError && err.code !== 'cancelled') {
           setServerError({ code: null, message: err.message });
@@ -120,7 +127,7 @@ export const AuthLoginForm = ({
       cancelled = true;
       conditionalAbort.current?.abort();
     };
-  }, [router]);
+  }, [router, returnTo]);
 
   const onPasskeyClick = async () => {
     setServerError(null);
@@ -129,7 +136,7 @@ export const AuthLoginForm = ({
     try {
       await signInWithPasskey();
       markPasskeyEnrolledLocally();
-      router.push('/dashboard');
+      router.push(returnTo);
     } catch (err) {
       setPending(false);
       if (err instanceof PasskeyError) {
