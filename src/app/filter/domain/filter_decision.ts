@@ -1,6 +1,15 @@
 // pact.decisions payloadJson shape.
-// Defined here because the gateway owns this schema (kafka/producer.go)
-// and there is no codegen for it today.
+//
+// Re-exported from the audit feature's domain module rather than redeclared
+// (PACT-426) -- the filter console used to hand-roll its own narrower
+// DecisionPayload copy here, which had drifted from the real
+// pact-gateway/internal/kafka/producer.go shape (it modeled `filter_rule_id`
+// as a top-level field; the real wire shape nests it at `filter.rule_id`,
+// see contracts/pact.decisions.schema.json). Reusing the audit feature's
+// generated-backed type (cross-feature domain imports are allowed by the
+// app/app boundary rule in eslint.config.mjs, same pattern as
+// consensus_record.ts / classifier_record.ts / redactor_record.ts) means the
+// filter console can never diverge from it again.
 //
 // PACT-474 note: this used to carry an overlaid is_false_positive?: boolean
 // client-side signal, stamped onto payloadJson as a stand-in for durable
@@ -8,13 +17,12 @@
 // pact-audit's decision-annotations store (PACT-464) and is read back via
 // POST /v1/audit/annotations/query, keyed on requestId, not embedded in
 // this payload. See filter_false_positive.ts.
-export interface DecisionPayload {
-  request_id: string;
-  decision: 'allow' | 'block';
-  reason?: string;
-  filter_rule_id?: string;
-  latency_ms: number;
-}
+import { parseDecisionPayload } from '@/src/app/audit/domain/audit_decision_payload';
+
+export type {
+  DecisionPayload,
+  FilterDecision,
+} from '@/src/app/audit/domain/audit_decision_payload';
 
 export const PAGE_SIZE = 25;
 
@@ -31,10 +39,4 @@ export const formatTimestamp = (iso: string) => {
   });
 };
 
-export const parsePayload = (raw: string): DecisionPayload | null => {
-  try {
-    return JSON.parse(raw) as DecisionPayload;
-  } catch {
-    return null;
-  }
-};
+export const parsePayload = parseDecisionPayload;

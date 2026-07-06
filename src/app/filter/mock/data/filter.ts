@@ -6,16 +6,10 @@ import {
   type QueryDecisionStatsResponse,
 } from '@/src/__codegen__/rest/audit';
 import { type FilterLoadedPackResponse } from '@/src/__codegen__/rest/filter';
-
-export interface DecisionPayload {
-  request_id: string;
-  user_id?: string;
-  decision: 'allow' | 'block';
-  reason?: string;
-  filter_rule_id?: string;
-  latency_ms: number;
-  created_at: string;
-}
+import {
+  parseDecisionPayload,
+  type DecisionPayload,
+} from '@/src/app/audit/domain/audit_decision_payload';
 
 // Stateless fixture for GET /v1/filter/packs (no CRUD needed -- see
 // pact-mock-data's "stateless mock data" pattern). One pack per engine kind
@@ -63,14 +57,6 @@ export const mockDecisionEvent = (
   ...overrides,
 });
 
-const parseDecisionPayload = (raw: string): DecisionPayload | null => {
-  try {
-    return JSON.parse(raw) as DecisionPayload;
-  } catch {
-    return null;
-  }
-};
-
 const topRuleCounts = (
   counts: Record<string, number>,
   limit = 3
@@ -85,12 +71,12 @@ const topRuleCounts = (
  * computes the exact GET /v1/audit/stats shape over the mock decisions
  * repository so mock mode exercises the same contract as pact-gateway.
  *
- * The mock DecisionPayload only models the filter stage (decision,
- * filter_rule_id, reason); it never populates the nested classifier/
- * redactor/consensus objects the real gateway payload carries, so those
- * two stages come back genuinely empty here -- same as they always have
- * in mock mode, since the pre-existing client-side aggregation read those
- * same (never-populated) fields.
+ * The mock payloads only model the filter stage (decision, filter.rule_id,
+ * reason); they never populate the nested classifier/redactor/consensus
+ * objects the real gateway payload carries, so those two stages come back
+ * genuinely empty here -- same as they always have in mock mode, since the
+ * pre-existing client-side aggregation read those same (never-populated)
+ * fields.
  */
 export const computeDecisionStats = (
   events: AuditEvent[],
@@ -118,7 +104,7 @@ export const computeDecisionStats = (
 
     if (payload.decision === 'block') {
       blocked++;
-      const ruleId = payload.filter_rule_id ?? payload.reason;
+      const ruleId = payload.filter?.rule_id ?? payload.reason;
       if (ruleId) ruleCounts[ruleId] = (ruleCounts[ruleId] ?? 0) + 1;
     }
   }
@@ -194,7 +180,7 @@ export const createFilterMockData = (db: DB): void => {
     request_id: 'req-a1b2c3',
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id: 'inject-003',
+    filter: { verdict: 'hostile', rule_id: 'inject-003' },
     latency_ms: 4,
     created_at: '',
   });
@@ -208,7 +194,7 @@ export const createFilterMockData = (db: DB): void => {
     request_id: 'req-g7h8i9',
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id: 'role-001',
+    filter: { verdict: 'hostile', rule_id: 'role-001' },
     latency_ms: 5,
     created_at: '',
   });
@@ -222,7 +208,7 @@ export const createFilterMockData = (db: DB): void => {
     request_id: 'req-m4n5o6',
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id: 'inject-005',
+    filter: { verdict: 'hostile', rule_id: 'inject-005' },
     latency_ms: 6,
     created_at: '',
   });
@@ -236,7 +222,7 @@ export const createFilterMockData = (db: DB): void => {
     request_id: 'req-s1t2u3',
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id: 'inject-003',
+    filter: { verdict: 'hostile', rule_id: 'inject-003' },
     latency_ms: 4,
     created_at: '',
   });
@@ -244,7 +230,7 @@ export const createFilterMockData = (db: DB): void => {
     request_id: 'req-v4w5x6',
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id: 'role-005',
+    filter: { verdict: 'hostile', rule_id: 'role-005' },
     latency_ms: 3,
     created_at: '',
   });
@@ -258,7 +244,7 @@ export const createFilterMockData = (db: DB): void => {
     request_id: 'req-b1c2d3',
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id: 'inject-011',
+    filter: { verdict: 'hostile', rule_id: 'inject-011' },
     latency_ms: 5,
     created_at: '',
   });
@@ -272,7 +258,7 @@ export const createFilterMockData = (db: DB): void => {
     request_id: 'req-h7i8j9',
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id: 'inject-016',
+    filter: { verdict: 'hostile', rule_id: 'inject-016' },
     latency_ms: 4,
     created_at: '',
   });
@@ -286,7 +272,7 @@ export const createFilterMockData = (db: DB): void => {
     request_id: 'req-n4o5p6',
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id: 'jailbreak-001',
+    filter: { verdict: 'hostile', rule_id: 'jailbreak-001' },
     latency_ms: 7,
     created_at: '',
   });
@@ -300,7 +286,7 @@ export const createFilterMockData = (db: DB): void => {
     request_id: 'req-t1u2v3',
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id: 'inject-012',
+    filter: { verdict: 'hostile', rule_id: 'inject-012' },
     latency_ms: 4,
     created_at: '',
   });
@@ -308,7 +294,7 @@ export const createFilterMockData = (db: DB): void => {
     request_id: 'req-w4x5y6',
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id: 'inject-003',
+    filter: { verdict: 'hostile', rule_id: 'inject-003' },
     latency_ms: 5,
     created_at: '',
   });
@@ -322,8 +308,10 @@ export const createFilterMockData = (db: DB): void => {
     request_id: 'req-c1d2e3',
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id:
-      BLOCKED_RULES[Math.floor(Math.random() * BLOCKED_RULES.length)],
+    filter: {
+      verdict: 'hostile',
+      rule_id: BLOCKED_RULES[Math.floor(Math.random() * BLOCKED_RULES.length)],
+    },
     latency_ms: 4,
     created_at: '',
   });

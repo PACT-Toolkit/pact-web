@@ -19,7 +19,7 @@ const event = (overrides: Partial<AuditEvent>): AuditEvent => ({
   payloadJson: JSON.stringify({
     request_id: 'req-1',
     decision: 'block',
-    filter_rule_id: 'inject-003',
+    filter: { rule_id: 'inject-003' },
     latency_ms: 4,
   }),
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -31,7 +31,7 @@ describe('buildFilterFalsePositiveLabelRequest', () => {
     const request = buildFilterFalsePositiveLabelRequest('req-1', {
       request_id: 'req-1',
       decision: 'block',
-      filter_rule_id: 'inject-003',
+      filter: { rule_id: 'inject-003' },
       latency_ms: 4,
     });
 

@@ -32,7 +32,22 @@ export const STATS_REFRESH_MS = 30_000;
 
 // Labels that mean "no injection detected". Compared case-insensitively so the
 // stub engine ("benign") and DeBERTa ("BENIGN") both fold into the benign set.
-const BENIGN_LABELS = new Set(['benign', 'none', 'safe', 'clean', '']);
+//
+// classifier.label is an open set by design in the pact.decisions schema
+// (src/__codegen__/schema/pact-decisions -- ClassifierDecision.label has no
+// enum; pact-classifier owns the label vocabulary and can add heads without
+// a gateway schema change), so this list cannot be sourced from a schema
+// enum the way decision/filter.verdict/redactor.verdict are. It is instead
+// the single exported source of truth pact-web maintains for "which labels
+// count as benign" -- pact-audit's SQL-side stats aggregate mirrors this
+// same list (PACT-426); if either side adds a label here, update the other.
+export const BENIGN_CLASSIFIER_LABELS = new Set([
+  'benign',
+  'none',
+  'safe',
+  'clean',
+  '',
+]);
 
 // The dashboard's headline stats, straight from GET /v1/audit/stats. Derived
 // from the generated response types rather than redeclared, so the UI can
@@ -91,7 +106,7 @@ const isFilterFlagged = (dp: DecisionPayload): boolean => {
 };
 
 const isBenignLabel = (label: string): boolean =>
-  BENIGN_LABELS.has(label.toLowerCase());
+  BENIGN_CLASSIFIER_LABELS.has(label.toLowerCase());
 
 const isClassifierTagged = (dp: DecisionPayload): boolean =>
   Boolean(dp.classifier?.label) && !isBenignLabel(dp.classifier?.label ?? '');

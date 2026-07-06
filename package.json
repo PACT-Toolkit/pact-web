@@ -39,7 +39,8 @@
     "prettier:write": "prettier --write .",
     "rest:codegen": "node scripts/rest-codegen.mjs",
     "proto:gen": "node scripts/proto-codegen.mjs",
-    "api:update": "node scripts/api-download.mjs && pnpm run rest:codegen",
+    "schema:codegen": "node scripts/schema-codegen.mjs",
+    "api:update": "node scripts/api-download.mjs && pnpm run rest:codegen && pnpm run schema:codegen",
     "vercel:link": "vercel link"
   },
   "dependencies": {
@@ -94,6 +95,7 @@
     "globals": "17.6.0",
     "husky": "9.1.7",
     "jsdom": "29.1.1",
+    "json-schema-to-typescript": "^15.0.4",
     "lint-staged": "17.0.7",
     "msw": "2.14.6",
     "orval": "8.12.3",

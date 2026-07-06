@@ -1,0 +1,391 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/PACT-Toolkit/pact-gateway/contracts/pact.decisions.schema.json",
+  "title": "pact.decisions",
+  "description": "Canonical wire schema for the pact.decisions Kafka topic, mirroring internal/kafka/producer.go DecisionEvent. Field names and required/optional status are frozen per ENGINEERING.md - pact-audit pins this shape. additionalProperties is false at every level so an accidental field rename or addition fails validation instead of silently passing through as unrecognised JSONB.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_uuid", "request_id", "decision", "latency_ms", "created_at"],
+  "properties": {
+    "event_uuid": {
+      "type": "string",
+      "description": "Autopopulated by PublishDecision when the caller leaves it empty; always present on the wire."
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string",
+      "description": "SHA-256 fingerprint of the bearer token - never the token itself."
+    },
+    "client_ip": {
+      "type": "string"
+    },
+    "user_agent": {
+      "type": "string"
+    },
+    "conversation_id": {
+      "type": "string"
+    },
+    "content": {
+      "$ref": "#/$defs/contentRef"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["allow", "block"],
+      "description": "Closed set - pipeline.DecisionKind (internal/pipeline/types.go) only ever produces these two values."
+    },
+    "reason": {
+      "type": "string",
+      "description": "Free-form diagnostic reason string (e.g. filter_hostile, classifier_tagged, external_ref_blocked). Open set by design - new reason codes are added without a schema change; engine attribution is derived from the reason prefix, not enumerated here."
+    },
+    "engine": {
+      "type": "string",
+      "enum": ["filter", "classifier", "consensus", "redactor", "policy", "sandbox", "gateway", "cel"],
+      "description": "Closed set derived from the reason-prefix switches in check.emitDecisionEvent, proxy.emitProxyDecisionEvent, and middleware.auditCheckRejections: filter, classifier, consensus, redactor, policy, sandbox (check-path indirect-injection block), gateway (pre-pipeline rejection, e.g. body-too-large, decode failure) and cel (PACT-335 tier-3 CEL rule escalated allow to block)."
+    },
+    "filter": {
+      "$ref": "#/$defs/filterDecision"
+    },
+    "classifier": {
+      "$ref": "#/$defs/classifierDecision"
+    },
+    "consensus": {
+      "$ref": "#/$defs/consensusDecision"
+    },
+    "redactor": {
+      "$ref": "#/$defs/redactorDecision"
+    },
+    "policy": {
+      "$ref": "#/$defs/policyDecision"
+    },
+    "spotlight": {
+      "$ref": "#/$defs/spotlightDecision"
+    },
+    "external_refs": {
+      "$ref": "#/$defs/externalRefDecision"
+    },
+    "routing": {
+      "$ref": "#/$defs/routingDecision"
+    },
+    "cel": {
+      "$ref": "#/$defs/celDecision"
+    },
+    "latency_ms": {
+      "type": "integer"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "contentRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Hash reference to the request content. Absent on requests whose body was never decoded (e.g. pre-pipeline rejections).",
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "description": "Hex-encoded SHA-256 of the request content."
+        },
+        "bytes": {
+          "type": "integer"
+        }
+      }
+    },
+    "filterDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": ["safe", "suspicious", "hostile", "unknown"],
+          "description": "Closed set per pipeline.Decision.FilterVerdict doc comment (internal/pipeline/types.go)."
+        },
+        "rule_id": {
+          "type": "string"
+        },
+        "shadow": {
+          "type": "boolean",
+          "description": "True when the match was a dry-run shadow rule."
+        },
+        "enforce_mode": {
+          "type": "string",
+          "enum": ["shadow", "enforce"],
+          "description": "Staged-enforcement mode (PACT-257 vector enforcement); pipeline.EnforceModeShadow / EnforceModeEnforce."
+        }
+      }
+    },
+    "classifierDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Model-reported label. Open set by design - pact-classifier owns the label vocabulary and can add heads without a gateway schema change."
+        },
+        "score": {
+          "type": "number"
+        },
+        "enforce_mode": {
+          "type": "string",
+          "enum": ["shadow", "enforce"],
+          "description": "Staged-enforcement mode (PACT-257 classifier enforcement)."
+        },
+        "engine": {
+          "type": "string",
+          "description": "Free-form model/checkpoint tag (e.g. stub-v1, deberta-prompt-injection-v2@abcd1234). Open set - mirrors classifierpb.ClassifyResponse.model_version."
+        }
+      }
+    },
+    "modelVote": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["backend_id", "label", "score"],
+      "properties": {
+        "backend_id": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string",
+          "description": "Open set - same per-backend label vocabulary as classifier.label."
+        },
+        "score": {
+          "type": "number"
+        }
+      }
+    },
+    "consensusDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quorum_reached"],
+      "description": "Present only when classifier_score < PACT_CONSENSUS_THRESHOLD (stage 2.5 ran).",
+      "properties": {
+        "label": {
+          "type": "string",
+          "description": "Open set - same label vocabulary as classifier.label."
+        },
+        "confidence": {
+          "type": "number"
+        },
+        "quorum_reached": {
+          "type": "boolean",
+          "description": "No omitempty on the Go field - always present within an emitted consensus object, even when false."
+        },
+        "backend_count": {
+          "type": "integer"
+        },
+        "skipped": {
+          "type": "boolean",
+          "description": "True on a transport-error fail-open."
+        },
+        "votes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/modelVote"
+          }
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["shadow"],
+          "description": "PACT-432. Present only when the vote ran as a background completion off the /v1/check hot path; absent (not \"inline\") when the vote ran inline - kafka.ConsensusDecision.Mode is only ever set to \"shadow\"."
+        },
+        "skipped_reason": {
+          "type": "string",
+          "description": "PACT-432. Machine-readable cause of skipped=true: consensus_timeout, consensus_error (shadow-mode vote failures), or shadow_saturated (completion pool full). Open set by design, and not populated on the pre-existing inline-mode transport-error fail-open (skipped=true with no reason) to keep that path's wire output unchanged."
+        }
+      }
+    },
+    "redactedSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": {
+          "type": "integer"
+        },
+        "end": {
+          "type": "integer"
+        },
+        "label": {
+          "type": "string",
+          "description": "Detector name (e.g. EMAIL, CREDIT_CARD). Open set - the redactor owns the detector vocabulary."
+        }
+      }
+    },
+    "redactorDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": ["pass_through", "redacted", "unknown"],
+          "description": "Closed set per pipeline.Decision.RedactorVerdict doc comment (internal/pipeline/types.go)."
+        },
+        "spans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/redactedSpan"
+          }
+        }
+      }
+    },
+    "policyDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": ["allowed", "denied", "unknown"],
+          "description": "Closed set per pipeline.Decision.PolicyVerdict doc comment. The empty string is also a valid pipeline value (skipped - no token presented) but that case never constructs a policy sub-object at all, so it never appears on the wire."
+        },
+        "agent_id": {
+          "type": "string"
+        },
+        "tool_id": {
+          "type": "string"
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "expires_at_unix": {
+          "type": "integer"
+        },
+        "tool_mitigation_mode": {
+          "type": "string",
+          "enum": ["observe", "block", "redact", "block_only"],
+          "description": "Closed set per pipeline.Decision.ToolMitigationMode doc comment (PACT-304/PACT-247). The empty string is also valid but is dropped by omitempty, so it never appears on the wire."
+        }
+      }
+    },
+    "spotlightDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_count"],
+      "description": "Present when spotlight_chunks were wrapped, or when stripping was detected in an output check.",
+      "properties": {
+        "marker_format": {
+          "type": "string",
+          "enum": ["delim", "xml", "json"]
+        },
+        "source_count": {
+          "type": "integer",
+          "description": "No omitempty on the Go field - always present within an emitted spotlight object; 0 is distinct from absent."
+        },
+        "marker_in_output": {
+          "type": "boolean",
+          "description": "True when a kind=output content check contained the spotlight closing-marker prefix."
+        }
+      }
+    },
+    "externalRefVerdict": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Caller-supplied provenance tag for the reference (e.g. rag:1, tool:web). Open set - defined by the /v1/check caller, not the gateway."
+        },
+        "host": {
+          "type": "string"
+        },
+        "url_sha256": {
+          "type": "string"
+        },
+        "verdict": {
+          "type": "string",
+          "enum": ["clean", "hostile", "unfetchable", "skipped", "blocked", "mitigated"],
+          "description": "Closed set - internal/sandbox/sandbox.go Verdict* constants."
+        },
+        "reason": {
+          "type": "string"
+        }
+      }
+    },
+    "externalRefDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "scanned", "blocked"],
+      "description": "Indirect-injection sandbox result (PACT-236). Present only on the check path when the request declared external references and the sandbox ran; the proxy path never sets this.",
+      "properties": {
+        "source": {
+          "type": "string",
+          "const": "external_ref",
+          "description": "Constant provenance tag; no omitempty on the Go field."
+        },
+        "scanned": {
+          "type": "integer"
+        },
+        "blocked": {
+          "type": "integer"
+        },
+        "mitigated": {
+          "type": "integer"
+        },
+        "verdicts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/externalRefVerdict"
+          }
+        }
+      }
+    },
+    "routingDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Which upstream served a proxied request (PACT-336). Set only on the proxy output-scan event, after a successful forward; never carries base_url or an API key.",
+      "properties": {
+        "upstream_id": {
+          "type": "string",
+          "description": "Stable per-account upstream id; empty means the global fallback upstream."
+        },
+        "provider": {
+          "type": "string",
+          "description": "Admin-configured upstream provider tag (e.g. openai, openai-compatible). Open set - operators can register arbitrary provider names."
+        },
+        "attempts": {
+          "type": "integer"
+        },
+        "failed_over": {
+          "type": "boolean",
+          "description": "True when attempts > 1."
+        }
+      }
+    },
+    "celDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Decisive tier-3 CEL rule outcome (PACT-335). Present only when the CEL stage ran and either at least one active rule fired or the stage recorded a skip reason - a stage that ran and evaluated zero rules to true, with no budget exhaustion, is omitted entirely.",
+      "properties": {
+        "rule_id": {
+          "type": "string"
+        },
+        "rule_name": {
+          "type": "string"
+        },
+        "outcome": {
+          "type": "string",
+          "enum": ["log", "redact", "block"],
+          "description": "Closed set - celeval.Outcome* constants. Only \"block\" ever escalates decision/reason; \"redact\" and \"log\" are audit-only (CEL runs after the redactor stage, so there is nothing left to redact)."
+        },
+        "fired_count": {
+          "type": "integer",
+          "description": "Total number of active rules whose expression evaluated to true, which may exceed 1 even though only the decisive (highest-severity) rule is named above."
+        },
+        "skipped_reason": {
+          "type": "string",
+          "enum": ["cel_stage_timeout", "cel_rule_timeout", "cel_rule_error"],
+          "description": "Closed set - celeval.SkipReason* constants. Present only when the stage could not fully evaluate every active rule (fail-open): cel_stage_timeout/cel_rule_timeout are budget exhaustion, cel_rule_error covers both a CEL runtime error and an expression that evaluated cleanly to a non-boolean value. Absent when every active rule was attempted regardless of outcome."
+        }
+      }
+    }
+  }
+}

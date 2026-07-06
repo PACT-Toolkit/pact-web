@@ -18,7 +18,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   // Confident benign: allowed straight through.
   (index) => ({
     decision: 'allow',
-    engine: 'gateway-v1',
+    engine: 'classifier',
     classifier: {
       label: 'benign',
       score: 0.97,
@@ -30,7 +30,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   (index) => ({
     decision: 'block',
     reason: 'classifier_prompt_injection',
-    engine: 'gateway-v1',
+    engine: 'classifier',
     classifier: {
       label: 'prompt_injection',
       score: 0.94,
@@ -42,7 +42,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   (index) => ({
     decision: 'block',
     reason: 'classifier_jailbreak',
-    engine: 'gateway-v1',
+    engine: 'classifier',
     classifier: {
       label: 'jailbreak',
       score: 0.91,
@@ -54,7 +54,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   // the classifier, is responsible for masking it).
   (index) => ({
     decision: 'allow',
-    engine: 'gateway-v1',
+    engine: 'classifier',
     classifier: {
       label: 'sensitive',
       score: 0.88,
@@ -66,7 +66,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   // for this checkpoint yet, still confident enough to skip consensus.
   (index) => ({
     decision: 'allow',
-    engine: 'gateway-v1',
+    engine: 'classifier',
     classifier: {
       label: 'unknown',
       score: 0.86,

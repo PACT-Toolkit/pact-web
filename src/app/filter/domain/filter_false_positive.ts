@@ -42,7 +42,7 @@ export const buildFilterFalsePositiveLabelRequest = (
   payload: DecisionPayload | null
 ): ClassifierLabelVerdictRequest => ({
   requestId,
-  content: `[content unavailable -- pact.decisions audit rows never retain raw content] rule=${payload?.filter_rule_id ?? 'n/a'} reason=${payload?.reason ?? 'n/a'}`,
+  content: `[content unavailable -- pact.decisions audit rows never retain raw content] rule=${payload?.filter?.rule_id ?? 'n/a'} reason=${payload?.reason ?? 'n/a'}`,
   predictedLabel: 'unknown',
   operatorLabel: 'false_positive',
   source: FALSE_POSITIVE_SOURCE,

@@ -13,7 +13,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   (index) => ({
     decision: 'block',
     reason: 'consensus_jailbreak',
-    engine: 'gateway-v1',
+    engine: 'consensus',
     classifier: {
       label: 'jailbreak',
       score: 0.58,
@@ -36,7 +36,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   (index) => ({
     decision: 'block',
     reason: 'consensus_split',
-    engine: 'gateway-v1',
+    engine: 'consensus',
     classifier: {
       label: 'suspicious',
       score: 0.5,
@@ -59,7 +59,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   (index) => ({
     decision: 'allow',
     reason: 'consensus_no_quorum',
-    engine: 'gateway-v1',
+    engine: 'consensus',
     classifier: {
       label: 'suspicious',
       score: 0.52,
@@ -82,7 +82,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   (index) => ({
     decision: 'allow',
     reason: 'consensus_fail_open',
-    engine: 'gateway-v1',
+    engine: 'consensus',
     classifier: {
       label: 'suspicious',
       score: 0.53,
@@ -90,6 +90,11 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
     },
     consensus: {
       label: 'suspicious',
+      // No omitempty on the real kafka.ConsensusDecision.QuorumReached field
+      // (see contracts/pact.decisions.schema.json's consensusDecision doc
+      // comment) -- a skip/fail-open payload still carries quorum_reached on
+      // the wire, defaulted false, not omitted.
+      quorum_reached: false,
       skipped: true,
     },
     latency_ms: 205 + index,
@@ -99,7 +104,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   (index) => ({
     decision: 'block',
     reason: 'consensus_low_confidence',
-    engine: 'gateway-v1',
+    engine: 'consensus',
     classifier: {
       label: 'jailbreak',
       score: 0.55,
@@ -123,7 +128,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   (index) => ({
     decision: 'allow',
     reason: 'consensus_confirmed_safe',
-    engine: 'gateway-v1',
+    engine: 'consensus',
     classifier: {
       label: 'suspicious',
       score: 0.5,
