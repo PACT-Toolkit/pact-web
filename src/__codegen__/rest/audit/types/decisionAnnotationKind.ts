@@ -27,30 +27,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from './annotateDecisionRequest';
-export * from './annotateDecisionRequestKind';
-export * from './annotateDecisionResponse';
-export * from './auditEvent';
-export * from './badRequestResponse';
-export * from './decisionAnnotation';
-export * from './decisionAnnotationKind';
-export * from './decisionStatsClassifier';
-export * from './decisionStatsFilter';
-export * from './decisionStatsLabelCount';
-export * from './decisionStatsRedactor';
-export * from './error';
-export * from './forbiddenResponse';
-export * from './listDecisionAnnotationsRequest';
-export * from './listDecisionAnnotationsResponse';
-export * from './plainTextBadRequestResponse';
-export * from './plainTextUnauthorizedResponse';
-export * from './policyEvent';
-export * from './policyInfo';
-export * from './queryAuditEventsParams';
-export * from './queryAuditEventsResponse';
-export * from './queryDecisionStatsParams';
-export * from './queryDecisionStatsResponse';
-export * from './queryPolicyEventsParams';
-export * from './queryPolicyEventsResponse';
-export * from './tooManyRequestsResponse';
-export * from './unauthorizedResponse';
+export type DecisionAnnotationKind =
+  (typeof DecisionAnnotationKind)[keyof typeof DecisionAnnotationKind];
+
+export const DecisionAnnotationKind = {
+  false_positive: 'false_positive',
+} as const;

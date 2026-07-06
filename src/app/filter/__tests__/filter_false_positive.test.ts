@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import { type AuditEvent } from '@/src/__codegen__/rest/audit';
 import {
-  applyOptimisticFalsePositiveFlag,
+  applyOptimisticAnnotationFlag,
+  buildAnnotateDecisionRequest,
+  buildDecisionAnnotationsQueryKey,
   buildFilterFalsePositiveLabelRequest,
+  extractFlaggedFalsePositiveRequestIds,
   isFlaggedFalsePositive,
   resolveFlagRequestId,
 } from '@/src/app/filter/domain/filter_false_positive';
@@ -77,60 +80,93 @@ describe('resolveFlagRequestId', () => {
   });
 });
 
-describe('isFlaggedFalsePositive', () => {
-  it('is true only when is_false_positive is exactly true', () => {
-    expect(
-      isFlaggedFalsePositive({
-        request_id: 'r',
-        decision: 'block',
-        latency_ms: 1,
-        is_false_positive: true,
-      })
-    ).toBe(true);
-    expect(
-      isFlaggedFalsePositive({
-        request_id: 'r',
-        decision: 'block',
-        latency_ms: 1,
-      })
-    ).toBe(false);
-    expect(isFlaggedFalsePositive(null)).toBe(false);
+describe('buildAnnotateDecisionRequest', () => {
+  it('builds a false_positive annotation request for the given requestId', () => {
+    expect(buildAnnotateDecisionRequest('req-1')).toEqual({
+      requestId: 'req-1',
+      kind: 'false_positive',
+    });
   });
 });
 
-describe('applyOptimisticFalsePositiveFlag', () => {
-  it('flips only the matching event and leaves others untouched', () => {
-    const flagged = event({ id: 'evt-flag-me' });
-    const other = event({ id: 'evt-other', requestId: 'req-other' });
-
-    const current = {
-      status: 200 as const,
-      data: { events: [flagged, other], total: 2 },
-      headers: new Headers(),
-    };
-
-    const updated = applyOptimisticFalsePositiveFlag(current, 'evt-flag-me');
-    const events = updated?.status === 200 ? updated.data.events : [];
-    const updatedFlagged = events.find((e) => e.id === 'evt-flag-me');
-    const updatedOther = events.find((e) => e.id === 'evt-other');
-
-    expect(updatedFlagged?.payloadJson).toContain('"is_false_positive":true');
-    expect(updatedOther?.payloadJson).toBe(other.payloadJson);
+describe('buildDecisionAnnotationsQueryKey', () => {
+  it('returns null when there are no request ids to look up', () => {
+    expect(buildDecisionAnnotationsQueryKey([])).toBeNull();
   });
 
-  it('passes through unchanged when there is no cached data yet', () => {
-    expect(
-      applyOptimisticFalsePositiveFlag(undefined, 'evt-1')
-    ).toBeUndefined();
+  it('returns a stable key including every request id when there is at least one', () => {
+    expect(buildDecisionAnnotationsQueryKey(['req-1', 'req-2'])).toEqual([
+      'filter-decision-annotations',
+      'req-1',
+      'req-2',
+    ]);
+  });
+});
+
+describe('extractFlaggedFalsePositiveRequestIds', () => {
+  it('collects requestIds for false_positive annotations only', () => {
+    const flagged = extractFlaggedFalsePositiveRequestIds({
+      annotations: [
+        {
+          requestId: 'req-1',
+          kind: 'false_positive',
+          actor: 'user-1',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    });
+
+    expect(flagged.has('req-1')).toBe(true);
+    expect(flagged.size).toBe(1);
   });
 
-  it('passes through unchanged on a non-200 cached response', () => {
+  it('returns an empty set when data is undefined', () => {
+    expect(extractFlaggedFalsePositiveRequestIds(undefined).size).toBe(0);
+  });
+});
+
+describe('isFlaggedFalsePositive', () => {
+  it('is true only when requestId is present in the flagged set', () => {
+    const flagged = new Set(['req-1']);
+
+    expect(isFlaggedFalsePositive(flagged, 'req-1')).toBe(true);
+    expect(isFlaggedFalsePositive(flagged, 'req-2')).toBe(false);
+    expect(isFlaggedFalsePositive(flagged, undefined)).toBe(false);
+  });
+});
+
+describe('applyOptimisticAnnotationFlag', () => {
+  it('appends a synthetic false_positive annotation for the given requestId', () => {
+    const current = { annotations: [] };
+
+    const updated = applyOptimisticAnnotationFlag(current, 'req-1');
+
+    expect(updated?.annotations).toHaveLength(1);
+    expect(updated?.annotations[0]?.requestId).toBe('req-1');
+    expect(updated?.annotations[0]?.kind).toBe('false_positive');
+  });
+
+  it('does not duplicate an existing false_positive annotation for the same requestId', () => {
     const current = {
-      status: 401 as const,
-      data: { error: 'missing or invalid session' },
-      headers: new Headers(),
+      annotations: [
+        {
+          requestId: 'req-1',
+          kind: 'false_positive' as const,
+          actor: 'user-1',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
     };
 
-    expect(applyOptimisticFalsePositiveFlag(current, 'evt-1')).toBe(current);
+    const updated = applyOptimisticAnnotationFlag(current, 'req-1');
+
+    expect(updated).toBe(current);
+  });
+
+  it('builds a fresh single-entry response when there is no cached data yet', () => {
+    const updated = applyOptimisticAnnotationFlag(undefined, 'req-1');
+
+    expect(updated.annotations).toHaveLength(1);
+    expect(updated.annotations[0]?.requestId).toBe('req-1');
   });
 });

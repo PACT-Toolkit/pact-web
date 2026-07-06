@@ -94,7 +94,7 @@ export const buildEnforcementPatch = (
 // applyOptimisticEnforcementPatch merges a pending patch into the cached GET
 // /v1/config response so the panel reflects the new mode before the request
 // resolves. Only merges on top of a known-good 200 snapshot -- an error
-// response is left untouched, matching applyOptimisticFalsePositiveFlag's
+// response is left untouched, matching applyOptimisticAnnotationFlag's
 // guard in filter_false_positive.ts. rollbackOnError (wired at the call
 // site) reverts this if the request fails.
 export const applyOptimisticEnforcementPatch = (
