@@ -38,7 +38,7 @@
     "prettier:check": "prettier --check .",
     "prettier:write": "prettier --write .",
     "rest:codegen": "node scripts/rest-codegen.mjs",
-    "proto:gen": "buf generate",
+    "proto:gen": "node scripts/proto-codegen.mjs",
     "api:update": "node scripts/api-download.mjs && pnpm run rest:codegen",
     "vercel:link": "vercel link"
   },
