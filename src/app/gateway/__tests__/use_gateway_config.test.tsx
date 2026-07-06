@@ -21,8 +21,8 @@ const createWrapper = () => {
 };
 
 // The mock-mode default (src/app/gateway/mock/data/gateway.ts's
-// GATEWAY_CONFIG_MOCK) sets sandboxEnabled/diagnosticsEnabled to true so the
-// Playwright suite can demonstrate a live hostile-external_ref verdict and a
+// mockGatewayConfig seed) sets sandboxEnabled/diagnosticsEnabled to true so
+// the Playwright suite can demonstrate a live hostile-external_ref verdict and a
 // causal-span BLOCK example without any setup step. Real dev deployments
 // default SANDBOX_ENABLED to false (pact-gateway internal/app/config.go), and
 // GatewaySandboxPanel/GatewayDiagnosticsPanel each render an explicit

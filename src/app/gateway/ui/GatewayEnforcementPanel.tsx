@@ -4,13 +4,12 @@ import { RefreshCw } from 'lucide-react';
 
 import {
   consensusThresholdLabel,
-  enforceModeLabel,
-  isEnforcing,
   requestTimeoutLabel,
   sandboxIsolationLabel,
   spotlightFormatLabel,
 } from '@/src/app/gateway/domain/gateway_config';
 import { useGatewayConfig } from '@/src/app/gateway/domain/use_gateway_config';
+import { GatewayEnforcementControls } from '@/src/app/gateway/ui/GatewayEnforcementControls';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -19,22 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
-
-const modeBadgeClass = (mode?: string): string =>
-  isEnforcing(mode)
-    ? 'bg-destructive/10 text-destructive'
-    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400';
-
-const ModeBadge = ({ label, mode }: { label: string; mode?: string }) => (
-  <div className="flex flex-col gap-1 rounded-lg border p-4">
-    <span className="text-xs text-muted-foreground">{label}</span>
-    <span
-      className={`w-fit rounded px-1.5 py-0.5 font-mono text-sm font-semibold ${modeBadgeClass(mode)}`}
-    >
-      {enforceModeLabel(mode)}
-    </span>
-  </div>
-);
 
 const InfoTile = ({ label, value }: { label: string; value: string }) => (
   <div className="flex flex-col gap-1 rounded-lg border p-4">
@@ -50,6 +33,13 @@ const InfoTile = ({ label, value }: { label: string; value: string }) => (
 // spotlight) gate their disabled states on. Auto-refreshes every 15s so an
 // operator who flips an env var and restarts the gateway sees it reflected
 // here without a manual page reload.
+//
+// Classifier/vector enforce mode and consensus mode are live-writable via
+// PACT-472's PATCH /v1/config/enforcement (PACT-473) -- see
+// GatewayEnforcementControls for the segmented controls, optimistic write,
+// and confirm-before-enforce flow. This override is not persisted: a
+// gateway restart reverts to its env defaults, which the controls' footer
+// text states explicitly.
 export const GatewayEnforcementPanel = () => {
   const { config, error, isLoading, isValidating, mutate } = useGatewayConfig();
 
@@ -64,9 +54,9 @@ export const GatewayEnforcementPanel = () => {
             <div className="flex flex-col gap-1">
               <CardTitle>Enforcement posture</CardTitle>
               <CardDescription>
-                Live pipeline configuration from GET /v1/config. Read-only --
-                flipping shadow/enforce here is a follow-up (PACT-327 scoped
-                this console to visibility only).
+                Live pipeline configuration from GET /v1/config. Classifier,
+                vector filter, and consensus mode are writable below via the
+                gateway&apos;s runtime enforcement API.
               </CardDescription>
             </div>
             <Button
@@ -101,14 +91,7 @@ export const GatewayEnforcementPanel = () => {
               className="grid grid-cols-2 gap-4 sm:grid-cols-4"
               data-testid="gateway-config-grid"
             >
-              <ModeBadge
-                label="Classifier"
-                mode={config.classifierEnforceMode}
-              />
-              <ModeBadge
-                label="Vector filter"
-                mode={config.vectorEnforceMode}
-              />
+              <GatewayEnforcementControls config={config} mutate={mutate} />
               <InfoTile
                 label="Consensus threshold"
                 value={consensusThresholdLabel(config.consensusThreshold)}

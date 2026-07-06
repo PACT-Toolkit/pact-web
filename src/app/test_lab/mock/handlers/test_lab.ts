@@ -8,7 +8,6 @@ import {
 } from '@/src/__codegen__/rest/check';
 import {
   computeCausalSpans,
-  GATEWAY_CONFIG_MOCK,
   runSandboxProbe,
   runSpotlightProbe,
   sandboxBlocked,
@@ -36,6 +35,13 @@ export const handlers: RequestHandler[] = [
 
     await new Promise((r) => setTimeout(r, 120 + Math.random() * 80));
 
+    // Reads the single stateful db.gatewayConfig row (PACT-473 made this
+    // stateful so PATCH /v1/config/enforcement has something to mutate) --
+    // sandboxEnabled/diagnosticsEnabled/spotlightFormat aren't PATCH-writable
+    // fields, so this is equivalent to the old static-constant read, just
+    // sourced from the one shared row instead of a second copy.
+    const gatewayConfig = db.gatewayConfig.findFirst(() => true)!;
+
     const filterBypassed = bypass.includes('filter');
     const filterResult = filterBypassed ? null : runFilter(content);
     const shouldRunClassifier =
@@ -50,7 +56,7 @@ export const handlers: RequestHandler[] = [
     // both allowed -- see gateway_sandbox.ts's docblock.
     const externalRefsResult = runSandboxProbe(
       body.external_refs,
-      Boolean(GATEWAY_CONFIG_MOCK.sandboxEnabled)
+      Boolean(gatewayConfig.sandboxEnabled)
     );
 
     const decision =
@@ -85,7 +91,7 @@ export const handlers: RequestHandler[] = [
       filterResult?.decision === 'block'
         ? filterMatchPattern(content)
         : undefined,
-      Boolean(GATEWAY_CONFIG_MOCK.diagnosticsEnabled),
+      Boolean(gatewayConfig.diagnosticsEnabled),
       decision === 'block'
     );
 
@@ -95,7 +101,7 @@ export const handlers: RequestHandler[] = [
       decision === 'allow'
         ? runSpotlightProbe(
             body.spotlight_chunks,
-            GATEWAY_CONFIG_MOCK.spotlightFormat ?? 'delim'
+            gatewayConfig.spotlightFormat ?? 'delim'
           )
         : undefined;
 

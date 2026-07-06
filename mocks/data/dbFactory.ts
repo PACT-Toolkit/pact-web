@@ -4,6 +4,7 @@ import {
   type Profile,
 } from '@/src/__codegen__/rest/account';
 import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type ConfigConfigResponse } from '@/src/__codegen__/rest/config';
 import { type FileRecord } from '@/src/__codegen__/rest/files';
 import {
   createAccountMockData,
@@ -26,6 +27,10 @@ import {
   mockDecisionEvent,
   reapplyPersistedFalsePositiveFlags,
 } from '@/src/app/filter/mock/data/filter';
+import {
+  createGatewayConfigMockData,
+  mockGatewayConfig,
+} from '@/src/app/gateway/mock/data/gateway';
 import { createRedactorMockData } from '@/src/app/redactor/mock/data/redactor';
 import {
   type AttackExample,
@@ -48,6 +53,7 @@ export const db = {
   auditFilesEvents: new MockRepository<AuditEvent>(mockAuditEvent),
   decisions: new MockRepository<AuditEvent>(mockDecisionEvent),
   files: new MockRepository<FileRecord>(mockFileRecord),
+  gatewayConfig: new MockRepository<ConfigConfigResponse>(mockGatewayConfig),
   testLabRuns: new MockRepository<TestLabRunRecord>(mockTestLabRun),
 };
 
@@ -69,6 +75,9 @@ createRedactorMockData(db);
 // see classifier.ts's header comment for its distinct offset scheme.
 createClassifierMockData(db);
 createFilesMockData(db);
+// No ordering dependency -- gatewayConfig is its own singleton entity, not
+// part of the shared db.decisions repository the seeders above append to.
+createGatewayConfigMockData(db);
 createTestLabMockData(db);
 createTestLabRunsMockData(db);
 // Must run last -- re-applies any is_false_positive flags a previous

@@ -1,8 +1,12 @@
 // Mock-mode simulation for the /gateway console. This is the shared source
 // of truth for two things:
 //
-//   1. GET /v1/config's canned response (owned by this module's
-//      GATEWAY_CONFIG_MOCK, read by src/app/gateway/mock/handlers/gateway.ts).
+//   1. GET /v1/config's stateful response (owned by this module's
+//      mockGatewayConfig instantiator + createGatewayConfigMockData seeder,
+//      read/written by src/app/gateway/mock/handlers/gateway.ts via
+//      db.gatewayConfig). Stateful (not a plain constant) since PACT-473's
+//      PATCH /v1/config/enforcement needs a session-scoped value to mutate
+//      -- see dbFactory.ts's singleton-entity convention.
 //   2. The sandbox/diagnostics/spotlight simulation logic the shared /v1/check
 //      handler (src/app/test_lab/mock/handlers/test_lab.ts) calls into --
 //      same pattern as that handler already importing
@@ -13,7 +17,7 @@
 //      handler's mock data rather than registering a second, competing
 //      handler for the same route.
 //
-// GATEWAY_CONFIG_MOCK intentionally sets sandboxEnabled: true and
+// The seeded config intentionally sets sandboxEnabled: true and
 // diagnosticsEnabled: true so the mock demo can show a live hostile
 // external_ref verdict and a causal-span BLOCK example without any manual
 // setup step -- real dev deployments default SANDBOX_ENABLED to false (see
@@ -22,6 +26,7 @@
 // render. use_gateway_config.test.tsx exercises that branch via an MSW
 // override (Playwright has no per-test handler override mechanism in this
 // repo -- see that test file's docblock).
+import { type DB } from '@/mocks/data/dbFactory';
 import {
   type CheckCausalSpanInfo,
   type CheckExternalRef,
@@ -32,9 +37,12 @@ import {
 } from '@/src/__codegen__/rest/check';
 import { type ConfigConfigResponse } from '@/src/__codegen__/rest/config';
 
-export const GATEWAY_CONFIG_MOCK: ConfigConfigResponse = {
+export const mockGatewayConfig = (
+  overrides: Partial<ConfigConfigResponse>
+): ConfigConfigResponse => ({
   classifierEnforceMode: 'enforce',
   vectorEnforceMode: 'enforce',
+  consensusMode: 'inline',
   consensusThreshold: 0.55,
   sandboxEnabled: true,
   sandboxIsolation: 'namespace',
@@ -42,6 +50,14 @@ export const GATEWAY_CONFIG_MOCK: ConfigConfigResponse = {
   diagnosticsEnabled: true,
   spotlightFormat: 'xml',
   requestTimeoutSeconds: 30,
+  ...overrides,
+});
+
+// createGatewayConfigMockData seeds the single db.gatewayConfig row this
+// session reads and (via PATCH /v1/config/enforcement) mutates. Singleton
+// entity -- exactly one row, same convention as db.accountProfile.
+export const createGatewayConfigMockData = (db: DB): void => {
+  db.gatewayConfig.create({});
 };
 
 // ─── sandbox simulation ───────────────────────────────────────────────────
