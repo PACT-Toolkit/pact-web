@@ -1,7 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 
 import { type DB } from '@/mocks/data/dbFactory';
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import {
+  type AuditEvent,
+  type DecisionAnnotation,
+} from '@/src/__codegen__/rest/audit';
 import { type AccountPayload } from '@/src/app/audit/domain/audit_account_payload';
 import { type AuthPayload } from '@/src/app/audit/domain/audit_auth_payload';
 import { type FilesPayload } from '@/src/app/audit/domain/audit_files_payload';
@@ -20,6 +23,20 @@ export const mockAuditEvent = (overrides: Partial<AuditEvent>): AuditEvent => ({
   eventId: '',
   requestId: '',
   payloadJson: '',
+  createdAt: new Date().toISOString(),
+  ...overrides,
+});
+
+// db.auditAnnotations backs the decision-annotations proxy (PACT-464/
+// PACT-474): POST /v1/audit/annotations creates rows here, POST
+// /v1/audit/annotations/query reads them back. See audit.ts's mock handlers
+// for both.
+export const mockDecisionAnnotation = (
+  overrides: Partial<DecisionAnnotation>
+): DecisionAnnotation => ({
+  requestId: '',
+  kind: 'false_positive',
+  actor: MOCK_USER_ID,
   createdAt: new Date().toISOString(),
   ...overrides,
 });
@@ -220,4 +237,69 @@ export const createAuditMockData = (db: DB): void => {
     purpose: 'export',
     status: 'deleted',
   });
+};
+
+// PACT-474's decision-annotations flag needs to survive a real page reload
+// to be a meaningful E2E check, but `db` itself cannot -- it's a plain
+// module-scope object re-created from these seeders every time this module
+// re-evaluates, which happens on every full navigation in the browser (the
+// Node-side MSW instance behind instrumentation.ts is a *different*,
+// SSR-only db that client-side orval/SWR fetches never reach). The
+// annotations mock handlers (mock/handlers/audit.ts) only ever read/write
+// through db.auditAnnotations -- this module-private localStorage mirror
+// exists solely so createDecisionAnnotationsMockData can put the durable
+// rows back after a reload re-seeds `db` from zero. It is not read anywhere
+// else and has no bearing on the real gateway, which persists annotations
+// in pact-audit's own store instead of browser storage.
+const DECISION_ANNOTATION_STORAGE_KEY =
+  'pact-mock-decision-annotation-request-ids';
+
+const readPersistedDecisionAnnotationRequestIds = (): string[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(DECISION_ANNOTATION_STORAGE_KEY);
+
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch {
+    // Private-browsing/quota-exceeded/corrupt-JSON edge cases -- losing
+    // reload-persistence in the mock demo is harmless, so fail open to "no
+    // flags yet" rather than throwing.
+    return [];
+  }
+};
+
+// Called by mock/handlers/audit.ts's annotateDecision handler right after it
+// creates a new db.auditAnnotations row, so the flag can be re-applied
+// after the next reseed.
+export const persistDecisionAnnotationRequestId = (requestId: string): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    const ids = new Set(readPersistedDecisionAnnotationRequestIds());
+    ids.add(requestId);
+    window.localStorage.setItem(
+      DECISION_ANNOTATION_STORAGE_KEY,
+      JSON.stringify([...ids])
+    );
+  } catch {
+    // Same fail-open reasoning as the read side above.
+  }
+};
+
+// Called once from dbFactory.ts after createAuditMockData has run, so
+// db.auditAnnotations starts a fresh dev:mock session with every annotation
+// a previous session created still in place. Idempotent against
+// createAuditMockData/handler-created rows -- skips a requestId that
+// already has a matching db.auditAnnotations row instead of duplicating it.
+export const createDecisionAnnotationsMockData = (db: DB): void => {
+  for (const requestId of readPersistedDecisionAnnotationRequestIds()) {
+    const exists = db.auditAnnotations.findFirst(
+      (annotation) =>
+        annotation.requestId === requestId &&
+        annotation.kind === 'false_positive' &&
+        annotation.actor === MOCK_USER_ID
+    );
+    if (!exists) {
+      db.auditAnnotations.create({ requestId });
+    }
+  }
 };

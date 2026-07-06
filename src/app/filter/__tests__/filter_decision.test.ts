@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  parsePayload,
-  withFalsePositiveFlag,
-} from '@/src/app/filter/domain/filter_decision';
+import { parsePayload } from '@/src/app/filter/domain/filter_decision';
 
-describe('withFalsePositiveFlag', () => {
-  it('stamps is_false_positive: true onto a valid payload', () => {
+describe('parsePayload', () => {
+  it('parses a valid pact.decisions payload', () => {
     const raw = JSON.stringify({
       request_id: 'req-1',
       decision: 'block',
@@ -14,17 +11,15 @@ describe('withFalsePositiveFlag', () => {
       latency_ms: 4,
     });
 
-    const updated = withFalsePositiveFlag(raw);
-    const parsed = parsePayload(updated);
+    const parsed = parsePayload(raw);
 
-    expect(parsed?.is_false_positive).toBe(true);
     expect(parsed?.request_id).toBe('req-1');
+    expect(parsed?.decision).toBe('block');
     expect(parsed?.filter_rule_id).toBe('inject-003');
+    expect(parsed?.latency_ms).toBe(4);
   });
 
-  it('leaves the raw string unchanged when it is not valid JSON', () => {
-    const raw = 'not json';
-
-    expect(withFalsePositiveFlag(raw)).toBe(raw);
+  it('returns null for a string that is not valid JSON', () => {
+    expect(parsePayload('not json')).toBeNull();
   });
 });

@@ -2,11 +2,13 @@
 
 import { Lock, RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import useSWR from 'swr';
 
 import {
-  type AuditEvent,
-  type queryAuditEventsResponse,
+  useAnnotateDecision,
   useQueryAuditEvents,
+  type AuditEvent,
+  type ListDecisionAnnotationsResponse,
 } from '@/src/__codegen__/rest/audit';
 import { useLabelVerdict } from '@/src/__codegen__/rest/classifier';
 import {
@@ -16,8 +18,12 @@ import {
 } from '@/src/app/filter/domain/filter_decision';
 import { useFilterDecisionStats } from '@/src/app/filter/domain/filter_decision_stats';
 import {
-  applyOptimisticFalsePositiveFlag,
+  applyOptimisticAnnotationFlag,
+  buildAnnotateDecisionRequest,
+  buildDecisionAnnotationsQueryKey,
   buildFilterFalsePositiveLabelRequest,
+  extractFlaggedFalsePositiveRequestIds,
+  fetchDecisionAnnotations,
   isFlaggedFalsePositive,
   resolveFlagRequestId,
 } from '@/src/app/filter/domain/filter_false_positive';
@@ -59,6 +65,7 @@ export const FilterDecisionsWorkbench = () => {
   );
 
   const { trigger: submitFalsePositiveLabel } = useLabelVerdict();
+  const { trigger: submitAnnotateDecision } = useAnnotateDecision();
 
   const allEvents: AuditEvent[] = useMemo(
     () => (data?.status === 200 ? data.data.events : []),
@@ -80,25 +87,55 @@ export const FilterDecisionsWorkbench = () => {
     (localPage + 1) * PAGE_SIZE
   );
 
-  // Persists a "false positive" flag via gateway's POST /v1/classifier/label
-  // (PACT-318 proxy, wired here under PACT-325 part 3). Optimistically flips
-  // the row's payload before the request settles; rolls back on failure. See
-  // filter_false_positive.ts's docblock for why this is a one-way action
-  // (there is no unlabel endpoint) and for the known reload-persistence gap
-  // against a real gateway.
+  // One batched read per page of visible rows (PACT-474), not one read per
+  // row -- gathers every distinct requestId currently on screen and looks
+  // them all up in a single POST /v1/audit/annotations/query call.
+  const pageRequestIds = useMemo(() => {
+    const ids = pageEvents
+      .map((evt) => resolveFlagRequestId(evt, parsePayload(evt.payloadJson)))
+      .filter((id): id is string => Boolean(id));
+
+    return Array.from(new Set(ids)).sort();
+  }, [pageEvents]);
+
+  const annotationsKey = useMemo(
+    () => buildDecisionAnnotationsQueryKey(pageRequestIds),
+    [pageRequestIds]
+  );
+
+  const { data: annotationsData, mutate: mutateAnnotations } =
+    useSWR<ListDecisionAnnotationsResponse>(
+      annotationsKey,
+      fetchDecisionAnnotations,
+      { revalidateOnFocus: false }
+    );
+
+  const flaggedRequestIds = useMemo(
+    () => extractFlaggedFalsePositiveRequestIds(annotationsData),
+    [annotationsData]
+  );
+
+  // Persists a "false positive" flag two ways (PACT-474): a durable
+  // annotation via gateway's POST /v1/audit/annotations (PACT-464 proxy),
+  // which is what backs the row's flagged state, and the pre-existing
+  // POST /v1/classifier/label write (PACT-318/PACT-325) that feeds
+  // pact-classifier's fine-tune corpus -- a distinct purpose, kept as-is.
+  // Optimistically inserts into the annotations cache before either request
+  // settles; rolls back on failure. See filter_false_positive.ts's docblock
+  // for why this is a one-way action -- there is no un-flag endpoint.
   const handleFlagFP = async (
     event: AuditEvent,
     payload: DecisionPayload | null
   ) => {
-    if (isFlaggedFalsePositive(payload) || flaggingEventId === event.id) {
+    const requestId = resolveFlagRequestId(event, payload);
+    if (
+      !requestId ||
+      isFlaggedFalsePositive(flaggedRequestIds, requestId) ||
+      flaggingEventId === event.id ||
+      !annotationsKey
+    ) {
       return;
     }
-
-    const requestId = resolveFlagRequestId(event, payload);
-    // Nothing to optimistically flip if the list hasn't loaded yet -- the
-    // flag button only renders once a row exists, so this is defensive, not
-    // a reachable path in practice.
-    if (!requestId || !data || data.status !== 200) return;
 
     setFlaggingEventId(event.id);
     setFailedEventIds((prev) => {
@@ -109,28 +146,33 @@ export const FilterDecisionsWorkbench = () => {
       return next;
     });
 
-    const submit = async (): Promise<queryAuditEventsResponse | undefined> => {
-      const response = await submitFalsePositiveLabel(
-        buildFilterFalsePositiveLabelRequest(requestId, payload)
-      );
-      if (response.status !== 200) {
-        throw new Error(`label verdict request failed (${response.status})`);
+    const submit = async (): Promise<
+      ListDecisionAnnotationsResponse | undefined
+    > => {
+      const [labelResponse, annotateResponse] = await Promise.all([
+        submitFalsePositiveLabel(
+          buildFilterFalsePositiveLabelRequest(requestId, payload)
+        ),
+        submitAnnotateDecision(buildAnnotateDecisionRequest(requestId)),
+      ]);
+      if (labelResponse.status !== 200) {
+        throw new Error(
+          `label verdict request failed (${labelResponse.status})`
+        );
+      }
+      if (annotateResponse.status !== 200) {
+        throw new Error(
+          `annotate decision request failed (${annotateResponse.status})`
+        );
       }
 
       return undefined;
     };
 
     try {
-      await mutate(submit(), {
-        // SWR's optimisticData signature wants a concrete response back, not
-        // `| undefined`. current is only undefined if the cache emptied out
-        // between the guard above and this callback running (a race, not a
-        // steady state); data (this render's known-200 snapshot) is the
-        // correct fallback for that edge rather than fabricating a value.
+      await mutateAnnotations(submit(), {
         optimisticData: (current) =>
-          applyOptimisticFalsePositiveFlag(current, event.id) ??
-          current ??
-          data,
+          applyOptimisticAnnotationFlag(current, requestId),
         rollbackOnError: true,
         populateCache: false,
         revalidate: true,
@@ -256,12 +298,16 @@ export const FilterDecisionsWorkbench = () => {
             <div className="flex flex-col divide-y rounded-md border">
               {pageEvents.map((evt) => {
                 const payload = parsePayload(evt.payloadJson);
+                const requestId = resolveFlagRequestId(evt, payload);
 
                 return (
                   <FilterDecisionRow
                     key={evt.id}
                     event={evt}
-                    isFlagged={isFlaggedFalsePositive(payload)}
+                    isFlagged={isFlaggedFalsePositive(
+                      flaggedRequestIds,
+                      requestId
+                    )}
                     isFlagging={flaggingEventId === evt.id}
                     flagFailed={failedEventIds.has(evt.id)}
                     onFlagFP={() => void handleFlagFP(evt, payload)}

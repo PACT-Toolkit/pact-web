@@ -6,7 +6,6 @@ import {
   type QueryDecisionStatsResponse,
 } from '@/src/__codegen__/rest/audit';
 import { type FilterLoadedPackResponse } from '@/src/__codegen__/rest/filter';
-import { withFalsePositiveFlag } from '@/src/app/filter/domain/filter_decision';
 
 export interface DecisionPayload {
   request_id: string;
@@ -16,7 +15,6 @@ export interface DecisionPayload {
   filter_rule_id?: string;
   latency_ms: number;
   created_at: string;
-  is_false_positive?: boolean;
 }
 
 // Stateless fixture for GET /v1/filter/packs (no CRUD needed -- see
@@ -335,63 +333,4 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 3,
     created_at: '',
   });
-};
-
-// PACT-325's persisted-FP-flag loop needs to survive a real page reload to
-// be a meaningful E2E check, but `db` itself cannot -- it's a plain
-// module-scope object re-created from these seeders every time this module
-// re-evaluates, which happens on every full navigation in the browser (the
-// Node-side MSW instance behind instrumentation.ts is a *different*, SSR-only
-// db that client-side orval/SWR fetches never reach). sessionStorage is the
-// one thing that outlives a reload within the same tab, so it's used here
-// purely as a dev:mock demo aid -- it has no bearing on the real gateway,
-// which has no read-back for LabelVerdict at all (see
-// filter_false_positive.ts's docblock).
-const FALSE_POSITIVE_STORAGE_KEY = 'pact-mock-false-positive-request-ids';
-
-const readPersistedFalsePositiveRequestIds = (): string[] => {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.sessionStorage.getItem(FALSE_POSITIVE_STORAGE_KEY);
-
-    return raw ? (JSON.parse(raw) as string[]) : [];
-  } catch {
-    // Private-browsing/quota-exceeded/corrupt-JSON edge cases -- losing
-    // reload-persistence in the mock demo is harmless, so fail open to "no
-    // flags yet" rather than throwing.
-    return [];
-  }
-};
-
-// Called by the classifier mock handler (PACT-325 part 3) right after it
-// stamps is_false_positive onto the live db.decisions row, so the flag can
-// be re-applied after the next reseed.
-export const persistFalsePositiveRequestId = (requestId: string): void => {
-  if (typeof window === 'undefined') return;
-  try {
-    const ids = new Set(readPersistedFalsePositiveRequestIds());
-    ids.add(requestId);
-    window.sessionStorage.setItem(
-      FALSE_POSITIVE_STORAGE_KEY,
-      JSON.stringify([...ids])
-    );
-  } catch {
-    // Same fail-open reasoning as the read side above.
-  }
-};
-
-// Called once from dbFactory.ts after every decisions-producing seeder has
-// run (filter/consensus/redactor/classifier all append to db.decisions), so
-// every request id a previous session may have flagged has a row to match
-// against.
-export const reapplyPersistedFalsePositiveFlags = (db: DB): void => {
-  for (const requestId of readPersistedFalsePositiveRequestIds()) {
-    db.decisions.update(
-      (event) => event.requestId === requestId,
-      (event) => ({
-        ...event,
-        payloadJson: withFalsePositiveFlag(event.payloadJson),
-      })
-    );
-  }
 };

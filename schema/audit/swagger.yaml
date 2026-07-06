@@ -172,6 +172,68 @@ paths:
         "400": { $ref: "#/responses/BadRequest" }
         "401": { $ref: "#/responses/Unauthorized" }
 
+  /annotations:
+    post:
+      summary: Record an operator annotation on a decision
+      description: |
+        Persists a "false positive" flag (the only supported kind today)
+        against a decision's requestId. Actor is derived server-side from
+        the caller's session -- the request body carries no actor field,
+        so a caller can never annotate on another operator's behalf.
+
+        Idempotent create (PACT-464): annotating the same (requestId,
+        kind, actor) twice is not an error; created is false on the
+        repeat. There is no corresponding delete/un-flag RPC (PACT-466)
+        -- once flagged, always flagged.
+
+        The real gateway response also echoes a partial annotation object
+        (requestId/kind/actor, no createdAt); this contract intentionally
+        omits it (PACT-474) since a caller needs the createdAt field for
+        anything durable and must re-read via /annotations/query to get
+        it -- created is the only field pact-web relies on here.
+      operationId: annotateDecision
+      tags: [audit]
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema: { $ref: "#/definitions/AnnotateDecisionRequest" }
+      responses:
+        "200":
+          description: OK
+          schema: { $ref: "#/definitions/AnnotateDecisionResponse" }
+        "400": { $ref: "#/responses/PlainTextBadRequest" }
+        "401": { $ref: "#/responses/PlainTextUnauthorized" }
+
+  /annotations/query:
+    post:
+      summary: Batch-read operator annotations for a set of decisions
+      description: |
+        Answers "which of these request ids has an operator already
+        annotated, and how" for a page of decisions. POST-for-query is
+        deliberate: up to 200 request ids do not fit safely in a query
+        string. Not offset-paginated -- callers pass the exact set of
+        request ids they are rendering and get back every matching
+        annotation in one round trip. requestIds must contain 1-200
+        entries.
+
+        The RPC backing this endpoint also accepts a kinds filter, but
+        pact-gateway does not expose it in this JSON contract -- filter
+        by kind client-side if a second kind is ever introduced.
+      operationId: listDecisionAnnotations
+      tags: [audit]
+      parameters:
+        - name: body
+          in: body
+          required: true
+          schema: { $ref: "#/definitions/ListDecisionAnnotationsRequest" }
+      responses:
+        "200":
+          description: OK
+          schema: { $ref: "#/definitions/ListDecisionAnnotationsResponse" }
+        "400": { $ref: "#/responses/PlainTextBadRequest" }
+        "401": { $ref: "#/responses/PlainTextUnauthorized" }
+
 definitions:
   AuditEvent:
     type: object
@@ -385,6 +447,67 @@ definitions:
     properties:
       error: { type: string }
 
+  # AnnotateDecision / ListDecisionAnnotations (PACT-464/PACT-474) are
+  # pact-gateway's newest audit paths, and unlike every other path in this
+  # file their error bodies are plain text (http.Error), not the JSON
+  # {error: string} shape the Error definition above models. Do not point
+  # these definitions' error responses at #/definitions/Error.
+  AnnotateDecisionRequest:
+    type: object
+    required: [requestId, kind]
+    properties:
+      requestId:
+        type: string
+        description: Gateway-assigned correlation id to annotate.
+      kind:
+        type: string
+        enum: [false_positive]
+        description: Annotation kind. Only false_positive is supported today.
+
+  AnnotateDecisionResponse:
+    type: object
+    required: [created]
+    properties:
+      created:
+        type: boolean
+        description: |
+          False when the (requestId, kind, actor) triple already existed
+          (idempotent repeat) -- see pact-audit's AnnotateDecision doc
+          comment (PACT-464). See the /annotations path description for
+          why the real gateway's fuller response shape is intentionally
+          not modeled here.
+
+  ListDecisionAnnotationsRequest:
+    type: object
+    required: [requestIds]
+    properties:
+      requestIds:
+        type: array
+        items: { type: string }
+        description: 1-200 gateway-assigned correlation ids to look up.
+
+  DecisionAnnotation:
+    type: object
+    required: [requestId, kind, actor, createdAt]
+    properties:
+      requestId: { type: string }
+      kind: { type: string, enum: [false_positive] }
+      actor:
+        type: string
+        description: User id of the operator who created the annotation.
+      createdAt: { type: string, format: date-time }
+
+  ListDecisionAnnotationsResponse:
+    type: object
+    required: [annotations]
+    properties:
+      annotations:
+        type: array
+        items: { $ref: "#/definitions/DecisionAnnotation" }
+        description: |
+          One entry per requested id that has a matching annotation;
+          ids with none are simply absent (not null-filled).
+
 responses:
   BadRequest:
     description: Invalid request
@@ -398,3 +521,9 @@ responses:
   TooManyRequests:
     description: Per-IP rate limit exceeded
     schema: { $ref: "#/definitions/Error" }
+  PlainTextBadRequest:
+    description: Invalid request (plain text body, not JSON)
+    schema: { type: string }
+  PlainTextUnauthorized:
+    description: Missing or invalid session (plain text body, not JSON)
+    schema: { type: string }

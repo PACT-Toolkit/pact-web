@@ -3,7 +3,10 @@ import {
   type Preferences,
   type Profile,
 } from '@/src/__codegen__/rest/account';
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import {
+  type AuditEvent,
+  type DecisionAnnotation,
+} from '@/src/__codegen__/rest/audit';
 import { type ConfigConfigResponse } from '@/src/__codegen__/rest/config';
 import { type FileRecord } from '@/src/__codegen__/rest/files';
 import {
@@ -14,7 +17,9 @@ import {
 } from '@/src/app/account/mock/data/profile';
 import {
   createAuditMockData,
+  createDecisionAnnotationsMockData,
   mockAuditEvent,
+  mockDecisionAnnotation,
 } from '@/src/app/audit/mock/data/audit';
 import { createClassifierMockData } from '@/src/app/classifier/mock/data/classifier';
 import { createConsensusMockData } from '@/src/app/consensus/mock/data/consensus';
@@ -25,7 +30,6 @@ import {
 import {
   createFilterMockData,
   mockDecisionEvent,
-  reapplyPersistedFalsePositiveFlags,
 } from '@/src/app/filter/mock/data/filter';
 import {
   createGatewayConfigMockData,
@@ -48,6 +52,9 @@ export const db = {
   accountPreferences: new MockRepository<Preferences>(mockPreferences),
   accountConsents: new MockRepository<Consent>(mockConsent),
   attackExamples: new MockRepository<AttackExample>(mockAttackExample),
+  auditAnnotations: new MockRepository<DecisionAnnotation>(
+    mockDecisionAnnotation
+  ),
   auditAuthEvents: new MockRepository<AuditEvent>(mockAuditEvent),
   auditAccountEvents: new MockRepository<AuditEvent>(mockAuditEvent),
   auditFilesEvents: new MockRepository<AuditEvent>(mockAuditEvent),
@@ -61,6 +68,11 @@ export type DB = typeof db;
 
 createAccountMockData(db);
 createAuditMockData(db);
+// No ordering dependency on the decisions-producing seeders below --
+// annotations are independent rows keyed on requestId (PACT-464/PACT-474),
+// looked up by whatever the caller passes, not tied to a decision row
+// existing in db.decisions.
+createDecisionAnnotationsMockData(db);
 createFilterMockData(db);
 // Must run after createFilterMockData -- both seeders append rows to the
 // shared db.decisions repository (see consensus.ts's header comment).
@@ -80,8 +92,3 @@ createFilesMockData(db);
 createGatewayConfigMockData(db);
 createTestLabMockData(db);
 createTestLabRunsMockData(db);
-// Must run last -- re-applies any is_false_positive flags a previous
-// dev:mock session persisted to sessionStorage (PACT-325), which requires
-// every decisions-producing seeder above to have already run so the rows
-// they might reference exist.
-reapplyPersistedFalsePositiveFlags(db);

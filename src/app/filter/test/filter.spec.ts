@@ -10,12 +10,16 @@ import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 // - FilterTestRuleSandbox runs POST /v1/filter/test-rule (pact-gateway
 //   PACT-451): paste a candidate rule + sample, see whether it matches,
 //   with no side effects (nothing persisted or audited).
-// - FilterDecisionRow's flag button now persists via gateway's classifier
-//   LabelVerdict proxy (PACT-318) with an optimistic SWR update; this repo's
-//   dev:mock stands in for pact-gateway's missing read-back surface by
-//   stamping the flag onto the matching decision row (see
-//   filter_false_positive.ts's docblock for the full write-up), which is
-//   what makes the reload-persistence check below meaningful in mock mode.
+// - FilterDecisionRow's flag button persists a false-positive flag via
+//   gateway's decision-annotations proxy (PACT-464/PACT-474,
+//   POST /v1/audit/annotations) with an optimistic SWR update, and reads
+//   flags back via a single batched POST /v1/audit/annotations/query call
+//   per page of visible rows rather than one call per row. It also fires
+//   the pre-existing classifier LabelVerdict write (PACT-318/PACT-325) as a
+//   distinct, parallel action feeding the fine-tune corpus. See
+//   filter_false_positive.ts's docblock for the full write-up, including
+//   why the flag has no un-flag control (PACT-464/PACT-466: idempotent
+//   create only, no delete RPC).
 test.describe('Filter console', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/filter');
@@ -126,6 +130,41 @@ test.describe('Filter console', () => {
       'Flagged as false positive'
     );
     await expect(flagButtonAfterReload).toBeDisabled();
+  });
+
+  test('a single batched annotations read renders flags across multiple previously-flagged rows', async ({
+    page,
+  }) => {
+    const flagButtons = page.getByTestId('filter-decision-flag-fp');
+    const flaggableCount = await flagButtons.count();
+    // Meaningless as a "batch, not per-row" check with fewer than two
+    // flaggable rows on the page.
+    expect(flaggableCount).toBeGreaterThan(1);
+
+    await flagButtons.nth(0).click();
+    await expect(flagButtons.nth(0)).toBeDisabled();
+    await flagButtons.nth(1).click();
+    await expect(flagButtons.nth(1)).toBeDisabled();
+
+    let annotationsQueryCalls = 0;
+    page.on('request', (request) => {
+      if (request.url().includes('/v1/audit/annotations/query')) {
+        annotationsQueryCalls++;
+      }
+    });
+
+    await page.reload();
+    await expect(page.getByTestId('filter-packs-panel')).toBeVisible();
+
+    const flagButtonsAfterReload = page.getByTestId('filter-decision-flag-fp');
+    await expect(flagButtonsAfterReload.nth(0)).toBeDisabled();
+    await expect(flagButtonsAfterReload.nth(1)).toBeDisabled();
+
+    // PACT-474 requirement: one POST /v1/audit/annotations/query call per
+    // page of visible rows, not one per row -- strictly fewer calls than
+    // flaggable rows on the page proves the read is batched.
+    expect(annotationsQueryCalls).toBeGreaterThan(0);
+    expect(annotationsQueryCalls).toBeLessThan(flaggableCount);
   });
 
   test('has no accessibility violations', async ({ page }) => {

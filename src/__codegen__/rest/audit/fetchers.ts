@@ -32,8 +32,14 @@ import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { Key } from 'swr';
 
 import type {
+  AnnotateDecisionRequest,
+  AnnotateDecisionResponse,
   BadRequestResponse,
   ForbiddenResponse,
+  ListDecisionAnnotationsRequest,
+  ListDecisionAnnotationsResponse,
+  PlainTextBadRequestResponse,
+  PlainTextUnauthorizedResponse,
   QueryAuditEventsParams,
   QueryAuditEventsResponse,
   QueryDecisionStatsParams,
@@ -295,3 +301,170 @@ export const queryPolicyEvents = async (
 
 export const getQueryPolicyEventsKey = (params?: QueryPolicyEventsParams) =>
   [`/v1/audit/policy-events`, ...(params ? [params] : [])] as const;
+
+export type annotateDecisionResponse200 = {
+  data: AnnotateDecisionResponse;
+  status: 200;
+};
+
+export type annotateDecisionResponse400 = {
+  data: PlainTextBadRequestResponse;
+  status: 400;
+};
+
+export type annotateDecisionResponse401 = {
+  data: PlainTextUnauthorizedResponse;
+  status: 401;
+};
+
+export type annotateDecisionResponseSuccess = annotateDecisionResponse200 & {
+  headers: Headers;
+};
+
+export type annotateDecisionResponseError = (
+  | annotateDecisionResponse400
+  | annotateDecisionResponse401
+) & {
+  headers: Headers;
+};
+
+export type annotateDecisionResponse =
+  | annotateDecisionResponseSuccess
+  | annotateDecisionResponseError;
+
+export const getAnnotateDecisionUrl = () => {
+  return `/v1/audit/annotations`;
+};
+
+/**
+ * Persists a "false positive" flag (the only supported kind today)
+ * against a decision's requestId. Actor is derived server-side from
+ * the caller's session -- the request body carries no actor field,
+ * so a caller can never annotate on another operator's behalf.
+ *
+ * Idempotent create (PACT-464): annotating the same (requestId,
+ * kind, actor) twice is not an error; created is false on the
+ * repeat. There is no corresponding delete/un-flag RPC (PACT-466)
+ * -- once flagged, always flagged.
+ *
+ * The real gateway response also echoes a partial annotation object
+ * (requestId/kind/actor, no createdAt); this contract intentionally
+ * omits it (PACT-474) since a caller needs the createdAt field for
+ * anything durable and must re-read via /annotations/query to get
+ * it -- created is the only field pact-web relies on here.
+ *
+ * @summary Record an operator annotation on a decision
+ */
+export const annotateDecision = async (
+  annotateDecisionRequest: AnnotateDecisionRequest,
+  options?: RequestInit
+): Promise<annotateDecisionResponse> => {
+  const res = await fetch(getAnnotateDecisionUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(annotateDecisionRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: annotateDecisionResponse['data'] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as annotateDecisionResponse;
+};
+
+export const getAnnotateDecisionMutationFetcher = (options?: RequestInit) => {
+  return (_: Key, { arg }: { arg: AnnotateDecisionRequest }) => {
+    return annotateDecision(arg, options);
+  };
+};
+
+export const getAnnotateDecisionMutationKey = () =>
+  [`/v1/audit/annotations`] as const;
+
+export type listDecisionAnnotationsResponse200 = {
+  data: ListDecisionAnnotationsResponse;
+  status: 200;
+};
+
+export type listDecisionAnnotationsResponse400 = {
+  data: PlainTextBadRequestResponse;
+  status: 400;
+};
+
+export type listDecisionAnnotationsResponse401 = {
+  data: PlainTextUnauthorizedResponse;
+  status: 401;
+};
+
+export type listDecisionAnnotationsResponseSuccess =
+  listDecisionAnnotationsResponse200 & {
+    headers: Headers;
+  };
+
+export type listDecisionAnnotationsResponseError = (
+  | listDecisionAnnotationsResponse400
+  | listDecisionAnnotationsResponse401
+) & {
+  headers: Headers;
+};
+
+export type listDecisionAnnotationsResponse =
+  | listDecisionAnnotationsResponseSuccess
+  | listDecisionAnnotationsResponseError;
+
+export const getListDecisionAnnotationsUrl = () => {
+  return `/v1/audit/annotations/query`;
+};
+
+/**
+ * Answers "which of these request ids has an operator already
+ * annotated, and how" for a page of decisions. POST-for-query is
+ * deliberate: up to 200 request ids do not fit safely in a query
+ * string. Not offset-paginated -- callers pass the exact set of
+ * request ids they are rendering and get back every matching
+ * annotation in one round trip. requestIds must contain 1-200
+ * entries.
+ *
+ * The RPC backing this endpoint also accepts a kinds filter, but
+ * pact-gateway does not expose it in this JSON contract -- filter
+ * by kind client-side if a second kind is ever introduced.
+ *
+ * @summary Batch-read operator annotations for a set of decisions
+ */
+export const listDecisionAnnotations = async (
+  listDecisionAnnotationsRequest: ListDecisionAnnotationsRequest,
+  options?: RequestInit
+): Promise<listDecisionAnnotationsResponse> => {
+  const res = await fetch(getListDecisionAnnotationsUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(listDecisionAnnotationsRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: listDecisionAnnotationsResponse['data'] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as listDecisionAnnotationsResponse;
+};
+
+export const getListDecisionAnnotationsMutationFetcher = (
+  options?: RequestInit
+) => {
+  return (_: Key, { arg }: { arg: ListDecisionAnnotationsRequest }) => {
+    return listDecisionAnnotations(arg, options);
+  };
+};
+
+export const getListDecisionAnnotationsMutationKey = () =>
+  [`/v1/audit/annotations/query`] as const;

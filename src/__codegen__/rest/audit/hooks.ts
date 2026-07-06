@@ -29,13 +29,21 @@
  * OpenAPI spec version: 0.1.0
  */
 import useSwr from 'swr';
+import useSWRMutation from 'swr/mutation';
 import type { Key, SWRConfiguration } from 'swr';
+import type { SWRMutationConfiguration } from 'swr/mutation';
 
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 
 import type {
+  AnnotateDecisionRequest,
+  AnnotateDecisionResponse,
   BadRequestResponse,
   ForbiddenResponse,
+  ListDecisionAnnotationsRequest,
+  ListDecisionAnnotationsResponse,
+  PlainTextBadRequestResponse,
+  PlainTextUnauthorizedResponse,
   QueryAuditEventsParams,
   QueryAuditEventsResponse,
   QueryDecisionStatsParams,
@@ -76,6 +84,26 @@ import {
   queryPolicyEventsResponse,
   queryPolicyEvents,
   getQueryPolicyEventsKey,
+  annotateDecisionResponse200,
+  annotateDecisionResponse400,
+  annotateDecisionResponse401,
+  annotateDecisionResponseSuccess,
+  annotateDecisionResponseError,
+  getAnnotateDecisionUrl,
+  annotateDecisionResponse,
+  annotateDecision,
+  getAnnotateDecisionMutationFetcher,
+  getAnnotateDecisionMutationKey,
+  listDecisionAnnotationsResponse200,
+  listDecisionAnnotationsResponse400,
+  listDecisionAnnotationsResponse401,
+  listDecisionAnnotationsResponseSuccess,
+  listDecisionAnnotationsResponseError,
+  getListDecisionAnnotationsUrl,
+  listDecisionAnnotationsResponse,
+  listDecisionAnnotations,
+  getListDecisionAnnotationsMutationFetcher,
+  getListDecisionAnnotationsMutationKey,
 } from './fetchers';
 
 export type QueryAuditEventsQueryResult = NonNullable<
@@ -192,6 +220,70 @@ export const useQueryPolicyEvents = <
     swrFn,
     swrOptions
   );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type AnnotateDecisionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof annotateDecision>>
+>;
+
+/**
+ * @summary Record an operator annotation on a decision
+ */
+export const useAnnotateDecision = <
+  TError = Promise<PlainTextBadRequestResponse | PlainTextUnauthorizedResponse>,
+>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof annotateDecision>>,
+    TError,
+    Key,
+    AnnotateDecisionRequest,
+    Awaited<ReturnType<typeof annotateDecision>>
+  > & { swrKey?: string };
+  fetch?: RequestInit;
+}) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getAnnotateDecisionMutationKey();
+  const swrFn = getAnnotateDecisionMutationFetcher(fetchOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type ListDecisionAnnotationsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof listDecisionAnnotations>>
+>;
+
+/**
+ * @summary Batch-read operator annotations for a set of decisions
+ */
+export const useListDecisionAnnotations = <
+  TError = Promise<PlainTextBadRequestResponse | PlainTextUnauthorizedResponse>,
+>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof listDecisionAnnotations>>,
+    TError,
+    Key,
+    ListDecisionAnnotationsRequest,
+    Awaited<ReturnType<typeof listDecisionAnnotations>>
+  > & { swrKey?: string };
+  fetch?: RequestInit;
+}) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getListDecisionAnnotationsMutationKey();
+  const swrFn = getListDecisionAnnotationsMutationFetcher(fetchOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
   return {
     swrKey,
