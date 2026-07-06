@@ -1,6 +1,6 @@
 {
-  "repo": "pact-gateway",
-  "path": "/contracts/pact.decisions.schema.json",
+  "repo": "pact-contracts",
+  "path": "/decisions/pact.decisions.schema.json",
   "branch": "master",
   "production": false,
   "schemaFile": "pact.decisions.schema.json"

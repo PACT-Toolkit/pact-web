@@ -154,15 +154,15 @@ src/app/{feature}/
 
 Some backend contracts are not REST/OpenAPI-shaped - e.g. the `pact.decisions`
 Kafka payload, whose canonical shape is a JSON Schema (draft 2020-12) file in
-pact-gateway (`contracts/pact.decisions.schema.json`). These use
+pact-contracts (`decisions/pact.decisions.schema.json`). These use
 `schema/{name}/services.config.json` with a `schemaFile` key so `pnpm api:update`
 vendors the raw file (instead of `swagger.yaml`) without pulling it into the
 orval/swagger2openapi REST pipeline:
 
 ```json
 {
-  "repo": "pact-gateway",
-  "path": "/contracts/pact.decisions.schema.json",
+  "repo": "pact-contracts",
+  "path": "/decisions/pact.decisions.schema.json",
   "branch": "master",
   "production": false,
   "schemaFile": "pact.decisions.schema.json"
@@ -176,7 +176,7 @@ so the vendored schema and its generated types are always regenerated
 together. CI regenerates from the committed vendored schema file (no network
 access) and fails the build on any diff, catching the case where the schema
 file changed but the generated types weren't regenerated. It does not
-independently re-fetch from pact-gateway in CI - that only happens locally via
+independently re-fetch from pact-contracts in CI - that only happens locally via
 `pnpm api:update`, same as every other vendored spec in `schema/`.
 
 ---

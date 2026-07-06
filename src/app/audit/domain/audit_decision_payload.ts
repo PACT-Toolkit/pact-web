@@ -23,7 +23,7 @@ export type {
 };
 
 // Shape of kafka.DecisionEvent fields surfaced in the audit UI, generated
-// from pact-gateway's contracts/pact.decisions.schema.json (PACT-426) --
+// from pact-contracts' decisions/pact.decisions.schema.json (PACT-426) --
 // see src/__codegen__/schema/pact-decisions/. Matches pact-gateway
 // internal/kafka/producer.go; decoded lazily.
 //

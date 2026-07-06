@@ -91,9 +91,9 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
     consensus: {
       label: 'suspicious',
       // No omitempty on the real kafka.ConsensusDecision.QuorumReached field
-      // (see contracts/pact.decisions.schema.json's consensusDecision doc
-      // comment) -- a skip/fail-open payload still carries quorum_reached on
-      // the wire, defaulted false, not omitted.
+      // (see pact-contracts' decisions/pact.decisions.schema.json's
+      // consensusDecision doc comment) -- a skip/fail-open payload still
+      // carries quorum_reached on the wire, defaulted false, not omitted.
       quorum_reached: false,
       skipped: true,
     },
