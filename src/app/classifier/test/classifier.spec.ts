@@ -128,14 +128,6 @@ test.describe('Classifier console', () => {
 
   test('has no accessibility violations', async ({ page }) => {
     const results = await makeAxeBuilder(page).analyze();
-    // Pre-existing "region" violation, out of scope for PACT-427 (which fixed
-    // the duplicate <main> landmark). Same filter/rationale as audit.spec.ts:
-    // the shadcn Sidebar primitive lacks a nav landmark. Remove once that's
-    // fixed in a follow-up ticket.
-    const SIDEBAR_A11Y_FOLLOW_UP = new Set(['region']);
-    const violations = results.violations.filter(
-      (violation) => !SIDEBAR_A11Y_FOLLOW_UP.has(violation.id)
-    );
-    expect(violations).toEqual([]);
+    expect(results.violations).toEqual([]);
   });
 });
