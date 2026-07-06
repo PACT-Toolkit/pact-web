@@ -5,9 +5,9 @@
 // DecisionPayload copy here, which had drifted from the real
 // pact-gateway/internal/kafka/producer.go shape (it modeled `filter_rule_id`
 // as a top-level field; the real wire shape nests it at `filter.rule_id`,
-// see contracts/pact.decisions.schema.json). Reusing the audit feature's
-// generated-backed type (cross-feature domain imports are allowed by the
-// app/app boundary rule in eslint.config.mjs, same pattern as
+// see pact-contracts' decisions/pact.decisions.schema.json). Reusing the
+// audit feature's generated-backed type (cross-feature domain imports are
+// allowed by the app/app boundary rule in eslint.config.mjs, same pattern as
 // consensus_record.ts / classifier_record.ts / redactor_record.ts) means the
 // filter console can never diverge from it again.
 //

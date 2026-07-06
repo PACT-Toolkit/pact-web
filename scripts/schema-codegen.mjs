@@ -5,7 +5,7 @@
  *
  * Generates TypeScript types from the vendored pact.decisions JSON Schema
  * (schema/pact-decisions/pact.decisions.schema.json, mirrored from
- * pact-gateway's contracts/pact.decisions.schema.json via `pnpm api:update`).
+ * pact-contracts' decisions/pact.decisions.schema.json via `pnpm api:update`).
  *
  * Usage: node scripts/schema-codegen.mjs
  */
@@ -27,7 +27,7 @@ const OUTPUT_DIR = join(ROOT, 'src/__codegen__/schema/pact-decisions');
 const run = (cmd) => execSync(cmd, { stdio: 'inherit', cwd: ROOT });
 
 const bannerFor = (file) => `/**
- * Auto-generated from pact-gateway's contracts/pact.decisions.schema.json
+ * Auto-generated from pact-contracts' decisions/pact.decisions.schema.json
  * (vendored at schema/pact-decisions/pact.decisions.schema.json).
  * Do not edit ${file} manually - run \`pnpm schema:codegen\` to regenerate.
  */
