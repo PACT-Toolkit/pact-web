@@ -24,8 +24,8 @@ export type {
 
 // Shape of kafka.DecisionEvent fields surfaced in the audit UI, generated
 // from pact-contracts' decisions/pact.decisions.schema.json (PACT-426) --
-// see src/__codegen__/schema/pact-decisions/. Matches pact-gateway
-// internal/kafka/producer.go; decoded lazily.
+// see src/__codegen__/schema/pact-decisions/. Matches the shared Go event
+// structs in pact-contracts' decisions/types.go; decoded lazily.
 //
 // Partial<>, not the bare generated PactDecisions: the wire schema marks
 // event_uuid/request_id/decision/latency_ms/created_at as required (they are
