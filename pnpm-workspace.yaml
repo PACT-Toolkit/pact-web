@@ -10,3 +10,7 @@ overrides:
   esbuild: '^0.28.1'
   tar: '^7.5.16'
   '@tootallnate/once': '^2.0.1'
+  '@vercel/node>undici': '^6.27.0'
+  js-yaml: '^4.2.0'
+  '@vercel/python-analysis>minimatch': '^10.2.3'
+  '@vercel/backends>srvx': '^0.11.13'
