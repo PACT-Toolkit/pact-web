@@ -95,25 +95,21 @@ test.describe('Audit activity log', () => {
 
   test('has no accessibility violations', async ({ page }) => {
     const results = await makeAxeBuilder(page).analyze();
-    // These are pre-existing app-shell landmark issues, not introduced by
-    // PACT-369: every app/(app)/*/page.tsx (including audit and consensus)
-    // wraps its content in its own <main>, while the shared
-    // app/(app)/layout.tsx's SidebarInset already renders an outer
-    // <main data-slot="sidebar-inset">, producing a nested/duplicate-landmark
-    // violation plus "content not contained by landmarks" hits on the
-    // sidebar nav. This spec is the first to run axe against a route under
-    // that shared layout, so it is the first to surface it. Filtered here
-    // and flagged as a follow-up; remove this filter once the shell is
-    // fixed (likely: change the per-page <main> wrappers to <div>, since
-    // SidebarInset already owns the page's <main> landmark).
-    const SHELL_A11Y_FOLLOW_UP = new Set([
-      'landmark-no-duplicate-main',
-      'landmark-unique',
-      'landmark-main-is-top-level',
-      'region',
-    ]);
+    // PACT-427 fixed the duplicate <main> landmark (landmark-no-duplicate-main /
+    // landmark-unique / landmark-main-is-top-level) by changing per-page <main>
+    // wrappers to <div>, since app/(app)/layout.tsx's SidebarInset already owns
+    // the page's <main> landmark. One violation remains and is a separate,
+    // pre-existing issue out of scope for that fix: the shadcn Sidebar
+    // primitive (src/components/ui/sidebar.tsx) renders its nav content in a
+    // plain <div data-slot="sidebar">, not a <nav> or other landmark-bearing
+    // element, so axe's "region" rule flags every sidebar link/label as "not
+    // contained by landmarks". Filtered here pending a follow-up ticket to add
+    // a nav landmark to the Sidebar component. Same filter applied in
+    // classifier.spec.ts / consensus.spec.ts / filter.spec.ts / gateway.spec.ts
+    // / policy.spec.ts / redactor.spec.ts / test_lab.spec.ts.
+    const SIDEBAR_A11Y_FOLLOW_UP = new Set(['region']);
     const violations = results.violations.filter(
-      (violation) => !SHELL_A11Y_FOLLOW_UP.has(violation.id)
+      (violation) => !SIDEBAR_A11Y_FOLLOW_UP.has(violation.id)
     );
     expect(violations).toEqual([]);
   });

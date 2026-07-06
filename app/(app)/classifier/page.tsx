@@ -1,7 +1,7 @@
 import { ClassifierTestPanel, ClassifierWorkbench } from '@/src/app/classifier';
 
 const ClassifierPage = () => (
-  <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-8">
+  <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-8">
     <header className="flex flex-col gap-1">
       <h1 className="text-2xl font-semibold">Classifier</h1>
       <p className="text-sm text-muted-foreground">
@@ -13,7 +13,7 @@ const ClassifierPage = () => (
     </header>
     <ClassifierWorkbench />
     <ClassifierTestPanel />
-  </main>
+  </div>
 );
 
 export default ClassifierPage;
