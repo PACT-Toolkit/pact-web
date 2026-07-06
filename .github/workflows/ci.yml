@@ -30,6 +30,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check pact.decisions schema codegen is up to date
+        run: |
+          pnpm run schema:codegen
+          git diff --exit-code -- schema/pact-decisions src/__codegen__/schema
+
       - name: Type check
         run: pnpm run lint:typescript
 

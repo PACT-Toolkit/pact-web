@@ -42,9 +42,9 @@ export const FilterDecisionRow = ({
           >
             {payload?.decision ?? '—'}
           </span>
-          {(payload?.filter_rule_id ?? payload?.reason) && (
+          {(payload?.filter?.rule_id ?? payload?.reason) && (
             <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-              {payload?.filter_rule_id ?? payload?.reason}
+              {payload?.filter?.rule_id ?? payload?.reason}
             </span>
           )}
           <span className="truncate font-mono text-xs text-muted-foreground">

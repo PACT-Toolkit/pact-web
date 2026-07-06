@@ -7,7 +7,7 @@ describe('parsePayload', () => {
     const raw = JSON.stringify({
       request_id: 'req-1',
       decision: 'block',
-      filter_rule_id: 'inject-003',
+      filter: { rule_id: 'inject-003' },
       latency_ms: 4,
     });
 
@@ -15,7 +15,7 @@ describe('parsePayload', () => {
 
     expect(parsed?.request_id).toBe('req-1');
     expect(parsed?.decision).toBe('block');
-    expect(parsed?.filter_rule_id).toBe('inject-003');
+    expect(parsed?.filter?.rule_id).toBe('inject-003');
     expect(parsed?.latency_ms).toBe(4);
   });
 

@@ -47,17 +47,22 @@ export const runRedactor = (
 // a pact.decisions payload carrying a `redactor` sub-object (see
 // redactor_record.ts) -- pact-gateway has no dedicated redactor endpoint.
 const SCENARIOS: ((index: number) => DecisionPayload)[] = [
-  // Pass-through: no PII detected.
+  // Pass-through: no PII detected. No `engine` -- pact-gateway's
+  // decisionevent.PopulateSubObjects only attributes an engine when the
+  // reason carries a stage prefix, the classifier set a label, or the
+  // redactor verdict is "redacted"; a clean pass-through with an allow
+  // decision and no reason matches none of those, so the real wire payload
+  // never carries this field for this scenario either.
   (index) => ({
     decision: 'allow',
-    engine: 'gateway-v1',
     redactor: { verdict: 'pass_through', spans: [] },
     latency_ms: 40 + index,
   }),
-  // Single email address redacted.
+  // Single email address redacted -- RedactorVerdict == "redacted" attributes
+  // engine: 'redactor'.
   (index) => ({
     decision: 'allow',
-    engine: 'gateway-v1',
+    engine: 'redactor',
     redactor: {
       verdict: 'redacted',
       spans: [{ start: 14, end: 34, label: 'EMAIL' }],
@@ -67,7 +72,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   // Multiple PII types redacted in one response.
   (index) => ({
     decision: 'allow',
-    engine: 'gateway-v1',
+    engine: 'redactor',
     redactor: {
       verdict: 'redacted',
       spans: [
@@ -79,11 +84,13 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
   }),
   // Redacted alongside a blocked filter decision -- the redactor stage
   // still runs even when the request was ultimately blocked upstream.
+  // engine: 'filter', not 'redactor' -- the reason's "filter_" prefix wins
+  // engine attribution ahead of the redactor-verdict check (see the switch
+  // order in pact-gateway's decisionevent.PopulateSubObjects).
   (index) => ({
     decision: 'block',
     reason: 'filter_hostile',
-    filter_rule_id: 'inject-003',
-    engine: 'gateway-v1',
+    engine: 'filter',
     filter: { verdict: 'hostile', rule_id: 'inject-003' },
     redactor: {
       verdict: 'redacted',
@@ -91,10 +98,10 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
     },
     latency_ms: 8 + index,
   }),
-  // Pass-through on a longer, benign request.
+  // Pass-through on a longer, benign request. No `engine`, same reasoning as
+  // the first scenario.
   (index) => ({
     decision: 'allow',
-    engine: 'gateway-v1',
     redactor: { verdict: 'pass_through', spans: [] },
     latency_ms: 35 + index,
   }),

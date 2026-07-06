@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Download swagger specs from GitHub for each service in schema/.
+ * Download swagger specs (and other vendored contract files) from GitHub for
+ * each service in schema/.
  *
  * Each schema/{service}/services.config.json must exist with:
  *   { "repo": "pact-backend", "path": "/api/swagger.yaml", "production": false }
@@ -12,6 +13,12 @@
  *                     in-repo rather than pulled from a producing service. No
  *                     service uses this today (benchmark moved to the gateway's
  *                     per-tag slice); kept for specs with no upstream source.
+ * schemaFile: "name.json" - the downloaded content is written to
+ *                     schema/{service}/{schemaFile} instead of the default
+ *                     swagger.yaml. Used for vendored non-OpenAPI contracts
+ *                     (e.g. schema/pact-decisions' JSON Schema file, consumed
+ *                     by `pnpm schema:codegen` rather than orval) so they
+ *                     stay outside rest-codegen.mjs's swagger.yaml scan.
  *
  * Requires GITHUB_TOKEN (or GIT_TOKEN) in env with read access to the PACT-Toolkit org.
  */
@@ -109,9 +116,10 @@ async function main() {
   const results = await Promise.allSettled(
     configs.map(async ({ service, config }) => {
       const spec = await downloadSpec(service, config);
+      const filename = config.schemaFile ?? 'swagger.yaml';
 
       await mkdir(join(SCHEMA_DIR, service), { recursive: true });
-      await writeFile(join(SCHEMA_DIR, service, 'swagger.yaml'), spec);
+      await writeFile(join(SCHEMA_DIR, service, filename), spec);
       console.log(`  ✅ ${service}`);
 
       return { service, production: config.production ?? false };

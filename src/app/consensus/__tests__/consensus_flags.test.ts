@@ -8,7 +8,10 @@ import {
   isNoQuorum,
   isSplit,
 } from '@/src/app/consensus/domain/consensus_flags';
-import { type ConsensusSubObject } from '@/src/app/consensus/domain/consensus_record';
+import {
+  type ConsensusSubObject,
+  type ConsensusVote,
+} from '@/src/app/consensus/domain/consensus_record';
 
 describe('isSplit', () => {
   it('returns false when votes is undefined', () => {
@@ -45,10 +48,13 @@ describe('isSplit', () => {
 
   it('excludes votes with a missing label from the distinct-label count', () => {
     // Only one vote actually carries a label -- can't call this split even
-    // though there are two entries.
+    // though there are two entries. The generated ModelVote type requires
+    // `label` (schema-enforced, always present on the wire), so the
+    // label-less fixture below needs a cast to construct this defensive,
+    // "never expected in practice" case isSplit's own comment calls out.
     expect(
       isSplit([
-        { backend_id: 'b1', score: 0.9 },
+        { backend_id: 'b1', score: 0.9 } as ConsensusVote,
         { backend_id: 'b2', label: 'benign', score: 0.7 },
       ])
     ).toBe(false);
@@ -75,7 +81,10 @@ describe('isNoQuorum', () => {
   });
 
   it('returns false when quorum_reached is absent (older payload)', () => {
-    expect(isNoQuorum({})).toBe(false);
+    // Cast needed: the generated ConsensusDecision type requires
+    // quorum_reached (no `omitempty` on the wire field it's generated from),
+    // but this test covers payloads predating that field's introduction.
+    expect(isNoQuorum({} as ConsensusSubObject)).toBe(false);
   });
 
   it('returns false when consensus itself is undefined', () => {
