@@ -8,11 +8,16 @@
  * OpenAPI spec version: 0.1.0
  */
 import useSwr from 'swr';
+import useSWRMutation from 'swr/mutation';
 import type { Key, SWRConfiguration } from 'swr';
+import type { SWRMutationConfiguration } from 'swr/mutation';
 
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 
-import type { ConfigConfigResponse } from './types';
+import type {
+  ConfigConfigResponse,
+  ConfigEnforcementPatchRequest,
+} from './types';
 
 import {
   getConfigResponse200,
@@ -24,6 +29,18 @@ import {
   getConfigResponse,
   getConfig,
   getGetConfigKey,
+  patchEnforcementResponse200,
+  patchEnforcementResponse400,
+  patchEnforcementResponse401,
+  patchEnforcementResponse403,
+  patchEnforcementResponse429,
+  patchEnforcementResponseSuccess,
+  patchEnforcementResponseError,
+  getPatchEnforcementUrl,
+  patchEnforcementResponse,
+  patchEnforcement,
+  getPatchEnforcementMutationFetcher,
+  getPatchEnforcementMutationKey,
 } from './fetchers';
 
 export type GetConfigQueryResult = NonNullable<
@@ -52,6 +69,36 @@ export const useGetConfig = <TError = Promise<string>>(options?: {
     swrFn,
     swrOptions
   );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type PatchEnforcementMutationResult = NonNullable<
+  Awaited<ReturnType<typeof patchEnforcement>>
+>;
+
+/**
+ * @summary Flip runtime enforcement mode
+ */
+export const usePatchEnforcement = <TError = Promise<string>>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof patchEnforcement>>,
+    TError,
+    Key,
+    ConfigEnforcementPatchRequest,
+    Awaited<ReturnType<typeof patchEnforcement>>
+  > & { swrKey?: string };
+  fetch?: RequestInit;
+}) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getPatchEnforcementMutationKey();
+  const swrFn = getPatchEnforcementMutationFetcher(fetchOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
   return {
     swrKey,

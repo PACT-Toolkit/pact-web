@@ -2,14 +2,15 @@ import { expect, test } from '@playwright/test';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
-// Covers PACT-327: /gateway control panel exposing the gateway's live
-// behavior across four read-only sections.
+// Covers PACT-327 (read-only sandbox/diagnostics/spotlight probes) and
+// PACT-473 (live shadow/enforce toggles on the enforcement panel).
 //
 // - GatewayEnforcementPanel reads GET /v1/config (pact-gateway PACT-320,
-//   PR #88): classifier/vector enforce mode, consensus threshold, sandbox
-//   enabled/isolation, diagnostics enabled, spotlight format, request
-//   timeout. The shadow<->enforce toggle is explicitly out of scope (noted
-//   follow-on in the issue) -- this console is read-only.
+//   PR #88) and writes classifier/vector enforce mode + consensus mode
+//   through PATCH /v1/config/enforcement (pact-gateway PACT-472) via
+//   GatewayEnforcementControls's segmented controls -- see that component's
+//   docblock. classifierEnforceMode/vectorEnforceMode only ever take
+//   "shadow"/"enforce" (no "off"); consensusMode takes "inline"/"shadow".
 // - GatewaySandboxPanel/GatewayDiagnosticsPanel/GatewaySpotlightPanel each
 //   run an ad-hoc /v1/check probe (same shape as ClassifierTestPanel /
 //   RedactorTestPanel) since their fields (purified_content, causal_spans,
@@ -42,6 +43,89 @@ test.describe('Gateway console', () => {
     await expect(refreshButton).toBeEnabled();
     await refreshButton.click();
     await expect(page.getByTestId('gateway-config-grid')).toBeVisible();
+  });
+
+  test('renders the non-persistence caveat for the runtime enforcement controls', async ({
+    page,
+  }) => {
+    const footer = page.getByTestId('gateway-enforcement-controls-footer');
+    await expect(footer).toContainText('gateway restart resets these to');
+  });
+
+  test('flipping consensus mode to shadow applies immediately with no confirmation', async ({
+    page,
+  }) => {
+    const consensusControl = page.getByTestId('gateway-consensus-mode-control');
+    await expect(
+      consensusControl.getByRole('radio', { name: 'Inline' })
+    ).toHaveAttribute('aria-checked', 'true');
+
+    await consensusControl.getByRole('radio', { name: 'Shadow' }).click();
+
+    await expect(page.getByRole('alertdialog')).toHaveCount(0);
+    await expect(
+      consensusControl.getByRole('radio', { name: 'Shadow' })
+    ).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('flipping classifier mode to enforce requires confirmation, and cancel leaves it unchanged', async ({
+    page,
+  }) => {
+    // Mock-mode default seeds classifierEnforceMode: 'enforce' already, so
+    // flip to shadow first to exercise the "currently enforce -> shadow ->
+    // back to enforce" round trip against a known starting value.
+    const classifierControl = page.getByTestId(
+      'gateway-classifier-mode-control'
+    );
+    await classifierControl.getByRole('radio', { name: 'Shadow' }).click();
+    await expect(
+      classifierControl.getByRole('radio', { name: 'Shadow' })
+    ).toHaveAttribute('aria-checked', 'true');
+
+    await classifierControl.getByRole('radio', { name: 'Enforce' }).click();
+
+    const dialog = page.getByRole('alertdialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('Classifier enforcement');
+    await expect(dialog).toContainText('Shadow');
+    await expect(dialog).toContainText('Enforce');
+
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(
+      classifierControl.getByRole('radio', { name: 'Shadow' })
+    ).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('confirming the enforce flip applies the change and survives a poll cycle', async ({
+    page,
+  }) => {
+    const vectorControl = page.getByTestId('gateway-vector-mode-control');
+    await vectorControl.getByRole('radio', { name: 'Shadow' }).click();
+    await expect(
+      vectorControl.getByRole('radio', { name: 'Shadow' })
+    ).toHaveAttribute('aria-checked', 'true');
+
+    await vectorControl.getByRole('radio', { name: 'Enforce' }).click();
+
+    const dialog = page.getByRole('alertdialog');
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Switch to Enforce' }).click();
+    await expect(dialog).toHaveCount(0);
+
+    await expect(
+      vectorControl.getByRole('radio', { name: 'Enforce' })
+    ).toHaveAttribute('aria-checked', 'true');
+
+    // Refresh (same request the 15s poll fires) to confirm the write is
+    // reflected on the next GET /v1/config, not just the optimistic update.
+    const refreshButton = page
+      .getByTestId('gateway-enforcement-panel')
+      .getByRole('button', { name: 'Refresh' });
+    await refreshButton.click();
+    await expect(
+      vectorControl.getByRole('radio', { name: 'Enforce' })
+    ).toHaveAttribute('aria-checked', 'true');
   });
 
   test('sandbox panel probe surfaces at least one hostile external_ref verdict', async ({

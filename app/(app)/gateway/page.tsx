@@ -12,10 +12,8 @@ const GatewayPage = () => {
         <header className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold">Gateway control panel</h1>
           <p className="text-sm text-muted-foreground">
-            Read-only console over the gateway&apos;s live behavior: current
-            enforcement posture, sandbox verdicts, diagnostics, and
-            spotlighting. Flipping shadow/enforce mode from here is a follow-up,
-            not part of this console.
+            Live console over the gateway&apos;s behavior: enforcement posture
+            (writable below), sandbox verdicts, diagnostics, and spotlighting.
           </p>
         </header>
         <GatewayEnforcementPanel />

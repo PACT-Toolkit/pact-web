@@ -7,6 +7,14 @@ definitions:
                     ClassifierEnforceMode is "shadow" or "enforce". In shadow mode the
                     classifier tag is recorded but never promotes to a block verdict.
                 type: string
+            consensusMode:
+                description: |-
+                    ConsensusMode is "inline" or "shadow" (PACT-432). Inline blocks the
+                    /v1/check response until pact-consensus votes; shadow defers the vote
+                    to a background completion. Added alongside the runtime enforcement
+                    write surface (PACT-472) so GET reflects the full live posture that
+                    PATCH /v1/config/enforcement can change.
+                type: string
             consensusThreshold:
                 description: |-
                     ConsensusThreshold is the classifier score below which pact-consensus
@@ -50,6 +58,18 @@ definitions:
                     SUSPICIOUS verdict (vector engine path).
                 type: string
         type: object
+    config.EnforcementPatchRequest:
+        properties:
+            classifierEnforceMode:
+                description: ClassifierEnforceMode, if present, must be "shadow" or "enforce".
+                type: string
+            consensusMode:
+                description: ConsensusMode, if present, must be "inline" or "shadow".
+                type: string
+            vectorEnforceMode:
+                description: VectorEnforceMode, if present, must be "shadow" or "enforce".
+                type: string
+        type: object
 host: localhost:8080
 info:
     contact: {}
@@ -78,6 +98,46 @@ paths:
             security:
                 - Bearer: []
             summary: Get live enforcement config
+            tags:
+                - config
+    /v1/config/enforcement:
+        patch:
+            consumes:
+                - application/json
+            operationId: patchEnforcement
+            parameters:
+                - description: Fields to change; fields omitted from the body are left unchanged
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/config.EnforcementPatchRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/config.ConfigResponse'
+                "400":
+                    description: unknown enforcement mode value
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "403":
+                    description: missing required permission
+                    schema:
+                        type: string
+                "429":
+                    description: rate limit exceeded
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Flip runtime enforcement mode
             tags:
                 - config
 schemes:

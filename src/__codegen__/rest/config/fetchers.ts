@@ -10,7 +10,10 @@ import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 import type { Key } from 'swr';
 
-import type { ConfigConfigResponse } from './types';
+import type {
+  ConfigConfigResponse,
+  ConfigEnforcementPatchRequest,
+} from './types';
 
 export type getConfigResponse200 = {
   data: ConfigConfigResponse;
@@ -68,3 +71,82 @@ export const getConfig = async (
 };
 
 export const getGetConfigKey = () => [`/api/pact/gateway/v1/config`] as const;
+
+export type patchEnforcementResponse200 = {
+  data: ConfigConfigResponse;
+  status: 200;
+};
+
+export type patchEnforcementResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type patchEnforcementResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type patchEnforcementResponse403 = {
+  data: string;
+  status: 403;
+};
+
+export type patchEnforcementResponse429 = {
+  data: string;
+  status: 429;
+};
+
+export type patchEnforcementResponseSuccess = patchEnforcementResponse200 & {
+  headers: Headers;
+};
+
+export type patchEnforcementResponseError = (
+  | patchEnforcementResponse400
+  | patchEnforcementResponse401
+  | patchEnforcementResponse403
+  | patchEnforcementResponse429
+) & {
+  headers: Headers;
+};
+
+export type patchEnforcementResponse =
+  | patchEnforcementResponseSuccess
+  | patchEnforcementResponseError;
+
+export const getPatchEnforcementUrl = () => {
+  return `/api/pact/gateway/v1/config/enforcement`;
+};
+
+/**
+ * @summary Flip runtime enforcement mode
+ */
+export const patchEnforcement = async (
+  configEnforcementPatchRequest: ConfigEnforcementPatchRequest,
+  options?: RequestInit
+): Promise<patchEnforcementResponse> => {
+  const res = await fetch(getPatchEnforcementUrl(), {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(configEnforcementPatchRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: patchEnforcementResponse['data'] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as patchEnforcementResponse;
+};
+
+export const getPatchEnforcementMutationFetcher = (options?: RequestInit) => {
+  return (_: Key, { arg }: { arg: ConfigEnforcementPatchRequest }) => {
+    return patchEnforcement(arg, options);
+  };
+};
+
+export const getPatchEnforcementMutationKey = () =>
+  [`/api/pact/gateway/v1/config/enforcement`] as const;

@@ -10,6 +10,12 @@ export interface ConfigConfigResponse {
   /** ClassifierEnforceMode is "shadow" or "enforce". In shadow mode the
    * classifier tag is recorded but never promotes to a block verdict. */
   classifierEnforceMode?: string;
+  /** ConsensusMode is "inline" or "shadow" (PACT-432). Inline blocks the
+   * /v1/check response until pact-consensus votes; shadow defers the vote
+   * to a background completion. Added alongside the runtime enforcement
+   * write surface (PACT-472) so GET reflects the full live posture that
+   * PATCH /v1/config/enforcement can change. */
+  consensusMode?: string;
   /** ConsensusThreshold is the classifier score below which pact-consensus
    * is consulted. Scores in [0, threshold) go to consensus; scores in
    * [threshold, 1] pass straight through. */
