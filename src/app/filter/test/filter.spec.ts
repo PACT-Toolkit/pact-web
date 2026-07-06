@@ -169,18 +169,13 @@ test.describe('Filter console', () => {
 
   test('has no accessibility violations', async ({ page }) => {
     const results = await makeAxeBuilder(page).analyze();
-    // Pre-existing app-shell landmark issues, not introduced by PACT-325 --
-    // same filter already applied in gateway.spec.ts / classifier.spec.ts /
-    // redactor.spec.ts / policy.spec.ts / consensus.spec.ts. Remove once the
-    // shell is fixed.
-    const SHELL_A11Y_FOLLOW_UP = new Set([
-      'landmark-no-duplicate-main',
-      'landmark-unique',
-      'landmark-main-is-top-level',
-      'region',
-    ]);
+    // Pre-existing "region" violation, out of scope for PACT-427 (which fixed
+    // the duplicate <main> landmark). Same filter/rationale as audit.spec.ts:
+    // the shadcn Sidebar primitive lacks a nav landmark. Remove once that's
+    // fixed in a follow-up ticket.
+    const SIDEBAR_A11Y_FOLLOW_UP = new Set(['region']);
     const violations = results.violations.filter(
-      (violation) => !SHELL_A11Y_FOLLOW_UP.has(violation.id)
+      (violation) => !SIDEBAR_A11Y_FOLLOW_UP.has(violation.id)
     );
     expect(violations).toEqual([]);
   });

@@ -13,7 +13,7 @@ const SecuritySettingsPage = async () => {
   ]);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-8">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-8">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">Sign-in methods</h1>
         <p className="text-sm text-muted-foreground">
@@ -28,7 +28,7 @@ const SecuritySettingsPage = async () => {
         passkeys={passkeys}
         identities={identities}
       />
-    </main>
+    </div>
   );
 };
 
