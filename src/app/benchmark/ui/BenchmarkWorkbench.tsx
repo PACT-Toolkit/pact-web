@@ -7,6 +7,7 @@ import {
   useGetBenchmarkJob,
 } from '@/src/__codegen__/rest/benchmark';
 import { BenchmarkComparison } from '@/src/app/benchmark/ui/BenchmarkComparison';
+import { BenchmarkCorpusLibraryCard } from '@/src/app/benchmark/ui/BenchmarkCorpusLibraryCard';
 import { BenchmarkJobProgress } from '@/src/app/benchmark/ui/BenchmarkJobProgress';
 import { BenchmarkResultsTable } from '@/src/app/benchmark/ui/BenchmarkResultsTable';
 import { BenchmarkTrendChart } from '@/src/app/benchmark/ui/BenchmarkTrendChart';
@@ -68,6 +69,8 @@ export const BenchmarkWorkbench = () => {
       <BenchmarkTrendChart />
 
       <BenchmarkComparison />
+
+      <BenchmarkCorpusLibraryCard />
 
       <BenchmarkUploadForm
         onSubmit={handleSubmit}

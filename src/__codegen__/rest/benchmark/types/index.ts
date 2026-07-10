@@ -7,6 +7,8 @@
  */
 
 export * from './benchmarkBenchmarkRunBody';
+export * from './benchmarkCorpusDatasetSummaryBody';
+export * from './benchmarkCorpusLibrarySummaryResponse';
 export * from './benchmarkGetJobResponse';
 export * from './benchmarkJobResultBody';
 export * from './benchmarkJobRowBody';

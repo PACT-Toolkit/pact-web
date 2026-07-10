@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
 import {
+  MOCK_CORPUS_DATASETS,
+  MOCK_CORPUS_LIBRARY_TOTAL_ROWS,
   MOCK_ROWS,
   MOCK_RUNS,
   TOTAL_ROWS,
@@ -99,5 +101,12 @@ export const handlers: RequestHandler[] = [
         result: { ...state.result, rows: page },
       });
     }
+  ),
+
+  http.get(`${MSW_PACT_BASE}/gateway/v1/benchmark/corpus/library`, () =>
+    HttpResponse.json({
+      total_rows: MOCK_CORPUS_LIBRARY_TOTAL_ROWS,
+      datasets: MOCK_CORPUS_DATASETS,
+    })
   ),
 ];
