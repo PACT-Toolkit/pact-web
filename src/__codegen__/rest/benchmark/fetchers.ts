@@ -11,6 +11,7 @@ import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { Key } from 'swr';
 
 import type {
+  BenchmarkCorpusLibrarySummaryResponse,
   BenchmarkGetJobResponse,
   BenchmarkListRunsResponse,
   BenchmarkListTestLabRunsResponse,
@@ -102,6 +103,70 @@ export const getSaveBenchmarkCorpusEntryMutationFetcher = (
 
 export const getSaveBenchmarkCorpusEntryMutationKey = () =>
   [`/api/pact/gateway/v1/benchmark/corpus`] as const;
+
+export type getBenchmarkCorpusLibrarySummaryResponse200 = {
+  data: BenchmarkCorpusLibrarySummaryResponse;
+  status: 200;
+};
+
+export type getBenchmarkCorpusLibrarySummaryResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type getBenchmarkCorpusLibrarySummaryResponse502 = {
+  data: string;
+  status: 502;
+};
+
+export type getBenchmarkCorpusLibrarySummaryResponseSuccess =
+  getBenchmarkCorpusLibrarySummaryResponse200 & {
+    headers: Headers;
+  };
+
+export type getBenchmarkCorpusLibrarySummaryResponseError = (
+  | getBenchmarkCorpusLibrarySummaryResponse401
+  | getBenchmarkCorpusLibrarySummaryResponse502
+) & {
+  headers: Headers;
+};
+
+export type getBenchmarkCorpusLibrarySummaryResponse =
+  | getBenchmarkCorpusLibrarySummaryResponseSuccess
+  | getBenchmarkCorpusLibrarySummaryResponseError;
+
+export const getGetBenchmarkCorpusLibrarySummaryUrl = () => {
+  return `/api/pact/gateway/v1/benchmark/corpus/library`;
+};
+
+/**
+ * Aggregate stats grouped by source dataset, served from
+ * pact-benchmark's corpus_library table. An empty library is
+ * a valid response with total_rows 0.
+ * @summary Get corpus library summary
+ */
+export const getBenchmarkCorpusLibrarySummary = async (
+  options?: RequestInit
+): Promise<getBenchmarkCorpusLibrarySummaryResponse> => {
+  const res = await fetch(getGetBenchmarkCorpusLibrarySummaryUrl(), {
+    ...options,
+    method: 'GET',
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: getBenchmarkCorpusLibrarySummaryResponse['data'] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as getBenchmarkCorpusLibrarySummaryResponse;
+};
+
+export const getGetBenchmarkCorpusLibrarySummaryKey = () =>
+  [`/api/pact/gateway/v1/benchmark/corpus/library`] as const;
 
 export type submitBenchmarkJobResponse202 = {
   data: BenchmarkSubmitJobResponse;

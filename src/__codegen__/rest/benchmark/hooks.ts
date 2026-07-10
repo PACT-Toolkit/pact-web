@@ -15,6 +15,7 @@ import type { SWRMutationConfiguration } from 'swr/mutation';
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 
 import type {
+  BenchmarkCorpusLibrarySummaryResponse,
   BenchmarkGetJobResponse,
   BenchmarkListRunsResponse,
   BenchmarkListTestLabRunsResponse,
@@ -41,6 +42,15 @@ import {
   saveBenchmarkCorpusEntry,
   getSaveBenchmarkCorpusEntryMutationFetcher,
   getSaveBenchmarkCorpusEntryMutationKey,
+  getBenchmarkCorpusLibrarySummaryResponse200,
+  getBenchmarkCorpusLibrarySummaryResponse401,
+  getBenchmarkCorpusLibrarySummaryResponse502,
+  getBenchmarkCorpusLibrarySummaryResponseSuccess,
+  getBenchmarkCorpusLibrarySummaryResponseError,
+  getGetBenchmarkCorpusLibrarySummaryUrl,
+  getBenchmarkCorpusLibrarySummaryResponse,
+  getBenchmarkCorpusLibrarySummary,
+  getGetBenchmarkCorpusLibrarySummaryKey,
   submitBenchmarkJobResponse202,
   submitBenchmarkJobResponse400,
   submitBenchmarkJobResponse401,
@@ -121,6 +131,42 @@ export const useSaveBenchmarkCorpusEntry = <
   const swrFn = getSaveBenchmarkCorpusEntryMutationFetcher(fetchOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type GetBenchmarkCorpusLibrarySummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBenchmarkCorpusLibrarySummary>>
+>;
+
+/**
+ * @summary Get corpus library summary
+ */
+export const useGetBenchmarkCorpusLibrarySummary = <
+  TError = Promise<string>,
+>(options?: {
+  swr?: SWRConfiguration<
+    Awaited<ReturnType<typeof getBenchmarkCorpusLibrarySummary>>,
+    TError
+  > & { swrKey?: Key; enabled?: boolean };
+  fetch?: RequestInit;
+}) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getGetBenchmarkCorpusLibrarySummaryKey() : null));
+  const swrFn = () => getBenchmarkCorpusLibrarySummary(fetchOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions
+  );
 
   return {
     swrKey,

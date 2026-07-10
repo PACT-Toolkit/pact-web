@@ -34,6 +34,40 @@ definitions:
             - ran_at
             - row_count
         type: object
+    benchmark.CorpusDatasetSummaryBody:
+        properties:
+            allow_rows:
+                type: integer
+            block_rows:
+                type: integer
+            category:
+                type: string
+            license:
+                type: string
+            source_dataset:
+                type: string
+            total_rows:
+                type: integer
+        required:
+            - allow_rows
+            - block_rows
+            - category
+            - license
+            - source_dataset
+            - total_rows
+        type: object
+    benchmark.CorpusLibrarySummaryResponse:
+        properties:
+            datasets:
+                items:
+                    $ref: '#/definitions/benchmark.CorpusDatasetSummaryBody'
+                type: array
+            total_rows:
+                type: integer
+        required:
+            - datasets
+            - total_rows
+        type: object
     benchmark.GetJobResponse:
         properties:
             error:
@@ -258,6 +292,33 @@ paths:
             security:
                 - Bearer: []
             summary: Save one Test Lab corpus entry
+            tags:
+                - benchmark
+    /v1/benchmark/corpus/library:
+        get:
+            description: |-
+                Aggregate stats grouped by source dataset, served from
+                pact-benchmark's corpus_library table. An empty library is
+                a valid response with total_rows 0.
+            operationId: getBenchmarkCorpusLibrarySummary
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/benchmark.CorpusLibrarySummaryResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "502":
+                    description: upstream error
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Get corpus library summary
             tags:
                 - benchmark
     /v1/benchmark/jobs:

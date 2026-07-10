@@ -1,3 +1,4 @@
+import { type BenchmarkCorpusDataset } from '@/src/app/benchmark/domain/benchmark_corpus_library';
 import { type RowResult } from '@/src/app/benchmark/domain/benchmark_job';
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
 
@@ -126,3 +127,87 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     ran_at: NOW - 2 * DAY,
   },
 ];
+
+// Mirrors the real pact-benchmark corpus_library table as verified end-to-end
+// against the gateway's GET /v1/benchmark/corpus/library (PACT-483). Rows are
+// listed in the server's sort order (total_rows desc, source_dataset asc) --
+// the mock handler serves this array as-is, it does not re-sort.
+export const MOCK_CORPUS_DATASETS: BenchmarkCorpusDataset[] = [
+  {
+    source_dataset: 'hackaprompt/hackaprompt-dataset',
+    license: 'research-only',
+    category: 'prompt-hacking',
+    total_rows: 377850,
+    block_rows: 377850,
+    allow_rows: 0,
+  },
+  {
+    source_dataset: 'Lakera/mosscap_prompt_injection',
+    license: 'MIT',
+    category: 'password-extraction',
+    total_rows: 171247,
+    block_rows: 171247,
+    allow_rows: 0,
+  },
+  {
+    source_dataset: 'HuggingFaceH4/ultrachat_200k',
+    license: 'MIT',
+    category: 'benign-chat',
+    total_rows: 23109,
+    block_rows: 0,
+    allow_rows: 23109,
+  },
+  {
+    source_dataset: 'fka/awesome-chatgpt-prompts',
+    license: 'CC0-1.0',
+    category: 'benign-roleplay',
+    total_rows: 1993,
+    block_rows: 0,
+    allow_rows: 1993,
+  },
+  {
+    source_dataset: 'deepset/prompt-injections',
+    license: 'unspecified',
+    category: 'mixed-injection',
+    total_rows: 662,
+    block_rows: 263,
+    allow_rows: 399,
+  },
+  {
+    source_dataset: 'beratcmn/turkish-prompt-injections',
+    license: 'unspecified',
+    category: 'mixed-injection',
+    total_rows: 604,
+    block_rows: 257,
+    allow_rows: 347,
+  },
+  {
+    source_dataset: 'rubend18/ChatGPT-Jailbreak-Prompts',
+    license: 'unspecified',
+    category: 'jailbreak',
+    total_rows: 69,
+    block_rows: 69,
+    allow_rows: 0,
+  },
+  {
+    source_dataset: 'imoxto/prompt_injection_cleaned_dataset',
+    license: 'research-only',
+    category: 'prompt-hacking',
+    total_rows: 64,
+    block_rows: 64,
+    allow_rows: 0,
+  },
+  {
+    source_dataset: 'cgoosen/prompt_injection_password_or_secret',
+    license: 'unspecified',
+    category: 'password-extraction',
+    total_rows: 45,
+    block_rows: 36,
+    allow_rows: 9,
+  },
+];
+
+export const MOCK_CORPUS_LIBRARY_TOTAL_ROWS = MOCK_CORPUS_DATASETS.reduce(
+  (sum, dataset) => sum + dataset.total_rows,
+  0
+);
