@@ -45,6 +45,10 @@ export interface PactDecisions {
   cel?: CelDecision;
   latency_ms: number;
   created_at: string;
+  /**
+   * Caller-declared attribution of synthetic vs real traffic (e.g. "benchmark"). This is attribution, not authorization - it carries no access-control weight and must never be used to grant or deny a request. Omitted entirely when the caller did not declare a traffic source.
+   */
+  traffic_source?: string;
 }
 /**
  * Hash reference to the request content. Absent on requests whose body was never decoded (e.g. pre-pipeline rejections).
