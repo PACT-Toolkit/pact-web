@@ -80,6 +80,11 @@
     "created_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "traffic_source": {
+      "type": "string",
+      "pattern": "^[a-z0-9_-]{1,32}$",
+      "description": "Caller-declared attribution of synthetic vs real traffic (e.g. \"benchmark\"). This is attribution, not authorization - it carries no access-control weight and must never be used to grant or deny a request. Omitted entirely when the caller did not declare a traffic source."
     }
   },
   "$defs": {
