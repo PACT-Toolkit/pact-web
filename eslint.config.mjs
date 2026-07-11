@@ -148,6 +148,39 @@ const config = [
   },
   prettier,
   {
+    // Headless-domain enforcement (PACT-572): domain/ holds pure logic, API
+    // contracts, and hooks without JSX. Rendering never happens in domain/.
+    files: ['src/app/*/domain/**/*.tsx'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Program',
+          message:
+            'domain/ is headless: no .tsx files. Move rendering into ui/; domain/ files are always .ts (React hooks without JSX are fine).',
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/app/*/domain/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'JSXElement',
+          message:
+            'domain/ is headless: no JSX. Move rendering into ui/; domain/ may still hold React hooks that return plain values.',
+        },
+        {
+          selector: 'JSXFragment',
+          message:
+            'domain/ is headless: no JSX fragments. Move rendering into ui/; domain/ may still hold React hooks that return plain values.',
+        },
+      ],
+    },
+  },
+  {
     files: ['mocks/**/*', 'src/**/mock/**/*'],
     languageOptions: {
       globals: { ...globals.node },

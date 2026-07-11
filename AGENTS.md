@@ -64,7 +64,7 @@ Available skills:
 
 ## Architecture
 
-PACT Web is a Next.js 16 app (React 18) using **pnpm** as the package manager.
+PACT Web is a Next.js 16 app (React 19) using **pnpm** as the package manager.
 
 ### Module Hierarchy (ESLint-enforced)
 
@@ -100,20 +100,23 @@ Every feature lives in `src/app/{feature_name}/`:
 
 ```
 src/app/{feature}/
-├── data/                    # Data layer
-│   └── __codegen__/         # Auto-generated REST hooks (DO NOT EDIT)
-├── domain/                  # Business logic
-│   ├── *_context.tsx        # React contexts
-│   └── *_validation_schema.ts
+├── domain/                  # Business logic - headless (see pact-domain-layer skill)
+│   ├── *_validation_schema.ts
+│   └── use_*.ts             # React hooks without JSX are allowed here
 ├── mock/                    # MSW mocking
 │   ├── data/                # Mock data factories
 │   └── handlers/            # MSW request handlers
-├── test/                    # E2E tests (Playwright) & unit tests (Vitest)
+├── test/                    # E2E tests (Playwright) & unit tests (Vitest) - canonical test-folder name
 │   └── *.spec.ts / *.test.ts
 ├── ui/                      # React components
 │   └── {sub_feature}/       # Nested by sub-feature
 └── index.ts                 # Barrel exports (public API)
 ```
+
+There is no per-feature `data/` or `__codegen__/` folder - generated REST hooks live centrally in `src/__codegen__/rest/{service}/` (see "Data Layer" below), not inside individual feature folders.
+
+`test/` is the canonical test-folder name for both Playwright specs and Vitest unit tests.
+Some features still have a leftover `__tests__/` folder from before this was settled; those are being folded into `test/` as a separate mechanical cleanup, not documented here as an alternative convention.
 
 ---
 
