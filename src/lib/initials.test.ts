@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { computeInitials } from '../domain/initials';
+import { computeInitials } from './initials';
 
 describe('computeInitials', () => {
   describe('from displayName', () => {
