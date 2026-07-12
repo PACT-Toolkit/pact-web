@@ -331,7 +331,7 @@ describe('applyMockLayers - PACT-580 matches by MockLayer.name, not array positi
   });
 });
 
-describe("parseCheckResponse — PACT-576 parse-don't-cast against the regenerated literal-union contract", () => {
+describe("parseCheckResponse - PACT-576 parse-don't-cast against the regenerated literal-union contract", () => {
   const validResponse = (): Record<string, unknown> => ({
     request_id: 'req-1',
     decision: 'allow',
@@ -375,7 +375,7 @@ describe("parseCheckResponse — PACT-576 parse-don't-cast against the regenerat
     expect(parsed.spotlight?.chunks?.[0].trust).toBe('untrusted');
   });
 
-  it('leaves classifier.label unvalidated (open by design — no closed set on the wire)', () => {
+  it('leaves classifier.label unvalidated (open by design - no closed set on the wire)', () => {
     const parsed = parseCheckResponse({
       ...validResponse(),
       classifier: { label: 'some-future-label-the-model-adds' },
@@ -475,7 +475,7 @@ describe("parseCheckResponse — PACT-576 parse-don't-cast against the regenerat
     ).toThrow(/external_refs\.refs/);
   });
 
-  it('tolerates undefined optional sub-objects — only decision/latency_ms/request_id are required', () => {
+  it('tolerates undefined optional sub-objects - only decision/latency_ms/request_id are required', () => {
     // filter/redactor/classifier/external_refs/spotlight are all optional on
     // the wire (a fast filter-only block never runs the classifier stage).
     expect(() => parseCheckResponse(validResponse())).not.toThrow();
