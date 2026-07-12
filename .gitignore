@@ -32,6 +32,8 @@
 !scripts/**/*
 !env/
 !env/**/*
+!docs/
+!docs/**/*
 
 # Include these files
 !.editorconfig
