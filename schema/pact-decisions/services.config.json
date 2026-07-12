@@ -1,7 +1,15 @@
 {
   "repo": "pact-contracts",
-  "path": "/decisions/pact.decisions.schema.json",
   "branch": "master",
   "production": false,
-  "schemaFile": "pact.decisions.schema.json"
+  "files": [
+    {
+      "path": "/decisions/pact.decisions.schema.json",
+      "schemaFile": "pact.decisions.schema.json"
+    },
+    {
+      "path": "/decisions/benign_labels.json",
+      "schemaFile": "benign_labels.json"
+    }
+  ]
 }

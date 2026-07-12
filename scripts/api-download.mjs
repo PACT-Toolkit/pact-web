@@ -19,6 +19,12 @@
  *                     (e.g. schema/pact-decisions' JSON Schema file, consumed
  *                     by `pnpm schema:codegen` rather than orval) so they
  *                     stay outside rest-codegen.mjs's swagger.yaml scan.
+ * files: [{ "path": ..., "schemaFile": ... }, ...] - for a service that
+ *                     vendors more than one file from the same repo (e.g.
+ *                     schema/pact-decisions also pulls decisions/benign_labels.json
+ *                     alongside the JSON Schema). Takes precedence over the
+ *                     single path/schemaFile pair above when present; repo,
+ *                     branch and production still apply to every file.
  *
  * Requires GITHUB_TOKEN (or GIT_TOKEN) in env with read access to the PACT-Toolkit org.
  */
@@ -50,8 +56,7 @@ const getAuthHeaders = () => {
   };
 };
 
-const downloadSpec = async (service, config) => {
-  const { repo, path, branch = 'main' } = config;
+const downloadFile = async (service, repo, path, branch) => {
   const url = `${GITHUB_API}/repos/${GITHUB_ORG}/${repo}/contents${path}?ref=${branch}`;
   const res = await fetch(url, { headers: getAuthHeaders() });
 
@@ -69,6 +74,11 @@ const downloadSpec = async (service, config) => {
 
   return Buffer.from(json.content, 'base64').toString('utf-8');
 };
+
+// A config's `files` array takes precedence; otherwise fall back to the
+// single legacy path/schemaFile pair (defaulting schemaFile to swagger.yaml).
+const targetsFor = (config) =>
+  config.files ?? [{ path: config.path, schemaFile: config.schemaFile }];
 
 async function main() {
   console.log('📥 Downloading API schemas\n');
@@ -115,11 +125,17 @@ async function main() {
 
   const results = await Promise.allSettled(
     configs.map(async ({ service, config }) => {
-      const spec = await downloadSpec(service, config);
-      const filename = config.schemaFile ?? 'swagger.yaml';
+      const { repo, branch = 'main' } = config;
 
       await mkdir(join(SCHEMA_DIR, service), { recursive: true });
-      await writeFile(join(SCHEMA_DIR, service, filename), spec);
+
+      for (const { path, schemaFile } of targetsFor(config)) {
+        const spec = await downloadFile(service, repo, path, branch);
+        const filename = schemaFile ?? 'swagger.yaml';
+
+        await writeFile(join(SCHEMA_DIR, service, filename), spec);
+      }
+
       console.log(`  ✅ ${service}`);
 
       return { service, production: config.production ?? false };
