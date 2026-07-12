@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseDecisionPayload } from '@/src/app/audit/domain/audit_decision_payload';
+import { parseDecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // Production-shaped sample of a pact.decisions event payload that the
 // audit feed receives via /v1/audit/events. Mirrors the JSON pact-gateway's

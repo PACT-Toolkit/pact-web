@@ -49,7 +49,7 @@ Files inside `domain/` use snake_case: `{feature}_{concern}.ts`.
 | File | Owns |
 |---|---|
 | `test_lab_check.ts` | Gateway API types, layer inference helpers, pipeline constants |
-| `audit_decision_payload.ts` | `DecisionPayload` shape, `parseDecisionPayload` parser |
+| `audit_event_variant.ts` | Audit topic registry, discriminated `AuditEventVariant` decoding |
 | `account_validation_schema.ts` | Yup schemas, derived form types |
 
 One file per concern - don't create a catch-all `types.ts` in `domain/`.

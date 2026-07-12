@@ -1,5 +1,5 @@
 import { type DB } from '@/mocks/data/dbFactory';
-import { type DecisionPayload } from '@/src/app/audit/domain/audit_decision_payload';
+import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // Consensus scenario templates, one per flag consensus_flags.ts can raise
 // (SPLIT / NO QUORUM / FAIL-OPEN / LOW CONFIDENCE) plus a clean, unflagged

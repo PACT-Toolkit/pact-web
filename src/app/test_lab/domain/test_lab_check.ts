@@ -54,7 +54,7 @@ export type CheckInput = CheckCheckRequest & { _bypass_layers?: string[] };
 // ─── response parsing (PACT-576) ───────────────────────────────────────────────
 //
 // parse-don't-cast, mirroring parseDecisionPayload in
-// src/app/audit/domain/audit_decision_payload.ts: validate the wire shape
+// src/lib/decisions/decision_payload.ts: validate the wire shape
 // instead of trusting an unchecked `as CheckResponse` cast on the parsed JSON
 // body. TS types are erased at runtime -- a literal-union field like
 // `decision` still needs an explicit value check to actually catch a

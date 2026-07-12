@@ -2,13 +2,12 @@ import { type AuditEvent } from '@/src/__codegen__/rest/audit';
 import {
   type DecisionPayload,
   parseDecisionPayload,
-} from '@/src/app/audit/domain/audit_decision_payload';
+} from '@/src/lib/decisions/decision_payload';
 
 // Re-derived from DecisionPayload rather than redeclared, so the redactor
-// feature never drifts from the audit feature's decode of pact-gateway's
-// kafka.DecisionEvent.Redactor sub-object (see audit_decision_payload.ts).
-// Cross-feature domain imports are allowed by the app/app boundary rule in
-// eslint.config.mjs (same pattern as consensus_record.ts).
+// feature never drifts from the canonical decode of pact-gateway's
+// kafka.DecisionEvent.Redactor sub-object (see
+// src/lib/decisions/decision_payload.ts).
 export type RedactorSubObject = NonNullable<DecisionPayload['redactor']>;
 export type RedactorSpan = NonNullable<RedactorSubObject['spans']>[number];
 
@@ -29,8 +28,8 @@ export interface RedactorRecord {
   redactor: RedactorSubObject;
   // Whole-pipeline engine tag (kafka.DecisionEvent.Engine). Not a
   // redactor-specific field -- the redactor sub-object itself carries no
-  // engine of its own (see audit_decision_payload.ts, where only the
-  // classifier sub-object and the top-level payload have an `engine`).
+  // engine of its own (see src/lib/decisions/decision_payload.ts, where only
+  // the classifier sub-object and the top-level payload have an `engine`).
   // Additive; absent on older payloads.
   engine?: string;
   // Whole /v1/check pipeline latency in ms, NOT a redactor-stage-specific

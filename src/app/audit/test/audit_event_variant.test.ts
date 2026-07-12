@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  AUDIT_TOPIC_OPTIONS,
+  AUDIT_TOPIC_REGISTRY,
   decodeAuditEventVariant,
   prettyPayload,
 } from '@/src/app/audit/domain/audit_event_variant';
@@ -74,6 +76,49 @@ describe('decodeAuditEventVariant', () => {
   it('falls back to unknown on a JSON primitive payload', () => {
     const v = decodeAuditEventVariant('pact.files', '42');
     expect(v.kind).toBe('unknown');
+  });
+});
+
+describe('AUDIT_TOPIC_REGISTRY', () => {
+  it('decodes every registered topic to its matching variant kind', () => {
+    // One representative payload per registered topic, exercising the
+    // registry lookup path in decodeAuditEventVariant end to end (PACT-581)
+    // rather than just the decoder in isolation.
+    const samples: Record<keyof typeof AUDIT_TOPIC_REGISTRY, string> = {
+      'pact.auth': JSON.stringify({ event_id: 'login_succeeded' }),
+      'pact.account': JSON.stringify({ event_id: 'consent_recorded' }),
+      'pact.files': JSON.stringify({ event_type: 'file_ready' }),
+      'pact.decisions': JSON.stringify({ decision: 'allow' }),
+    };
+
+    for (const topic of Object.keys(AUDIT_TOPIC_REGISTRY) as Array<
+      keyof typeof AUDIT_TOPIC_REGISTRY
+    >) {
+      const variant = decodeAuditEventVariant(topic, samples[topic]);
+      expect(variant.kind).toBe(AUDIT_TOPIC_REGISTRY[topic].kind);
+    }
+  });
+});
+
+describe('AUDIT_TOPIC_OPTIONS', () => {
+  it('preserves the exact pre-PACT-581 dropdown order and labels', () => {
+    // Frozen expectation of AuditWorkbench's hand-written TOPIC_OPTIONS
+    // before it was derived from AUDIT_TOPIC_REGISTRY -- guards against the
+    // registry-driven dropdown silently reordering or relabeling.
+    expect(AUDIT_TOPIC_OPTIONS).toEqual([
+      { value: '', label: 'All topics' },
+      { value: 'pact.auth', label: 'pact.auth (sign-in / passkey / MFA)' },
+      {
+        value: 'pact.account',
+        label: 'pact.account (profile / consents / GDPR)',
+      },
+      { value: 'pact.files', label: 'pact.files (upload lifecycle)' },
+      {
+        value: 'pact.decisions',
+        label: 'pact.decisions (allow / block calls)',
+      },
+      { value: 'pact.policy', label: 'pact.policy (not yet available)' },
+    ]);
   });
 });
 

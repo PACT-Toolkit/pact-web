@@ -9,7 +9,7 @@ import { type FilterLoadedPackResponse } from '@/src/__codegen__/rest/filter';
 import {
   parseDecisionPayload,
   type DecisionPayload,
-} from '@/src/app/audit/domain/audit_decision_payload';
+} from '@/src/lib/decisions/decision_payload';
 
 // Stateless fixture for GET /v1/filter/packs (no CRUD needed -- see
 // pact-mock-data's "stateless mock data" pattern). One pack per engine kind

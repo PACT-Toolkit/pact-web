@@ -1,10 +1,10 @@
 import { Shield } from 'lucide-react';
 
 import { type AuditEvent } from '@/src/__codegen__/rest/audit';
-import { type DecisionPayload } from '@/src/app/audit/domain/audit_decision_payload';
 import { prettyPayload } from '@/src/app/audit/domain/audit_event_variant';
 import { AuditDecisionInsights } from '@/src/app/audit/ui/AuditDecisionInsights';
 import { AuditRowShell } from '@/src/app/audit/ui/AuditRowShell';
+import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // Row renderer for pact.decisions -- the allow/block engine calls. Badges
 // surface the decision itself plus the reason and classifier label, since
