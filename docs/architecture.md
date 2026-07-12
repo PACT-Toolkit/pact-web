@@ -27,7 +27,7 @@ flowchart TB
     user -->|logged-out flows| authroutes
     user -->|console| approutes
     authroutes -->|form posts| authapi
-    authapi -->|"StartLogin / Register / ... (Connect RPC)"| auth
+    authapi -->|"StartLogin / Register<br/>/ ... (Connect RPC)"| auth
     approutes -->|requireSession per request| session
     session -->|ValidateSession| auth
     approutes -->|compose| features
@@ -161,14 +161,17 @@ stateDiagram-v2
     mfa_challenge --> active : factor verified
     authenticating --> active : cookie set
     authenticating --> logged_out : bad credentials
-    active --> active : ValidateSession ok per request
-    active --> rotated : near-expiry call returns new token pair
-    rotated --> active : cookie replaced transparently
-    active --> logged_out : logout / expiry / revocation - fail-closed redirect
+    active --> active : ValidateSession ok per<br/>request
+    active --> rotated : near-expiry call<br/>returns new token pair
+    rotated --> active : cookie replaced<br/>transparently
+    active --> logged_out : logout / expiry /<br/>revocation -<br/>fail-closed redirect
     note right of active
-        every server render revalidates -
-        the cookie is an opaque handle,
-        never a trusted identity
+        every server
+        render revalidates -
+        the cookie is an
+        opaque handle,
+        never a trusted
+        identity
     end note
 ```
 
@@ -176,18 +179,18 @@ stateDiagram-v2
 
 ```mermaid
 stateDiagram-v2
-    [*] --> composing : prompt + attack type chosen
-    composing --> running : check submitted via the proxy
-    running --> running : per-layer verdicts fill in (filter, classifier, ...)
+    [*] --> composing : prompt + attack type<br/>chosen
+    composing --> running : check submitted via<br/>the proxy
+    running --> running : per-layer verdicts<br/>fill in (filter,<br/>classifier, ...)
     running --> decided_allow : pipeline allows
     running --> decided_block : a layer blocks
-    running --> failed : gateway unreachable / non-2xx
-    decided_allow --> saved : optionally saved to the corpus
+    running --> failed : gateway unreachable /<br/>non-2xx
+    decided_allow --> saved : optionally saved to<br/>the corpus
     decided_block --> saved
     saved --> [*]
     decided_allow --> [*]
     decided_block --> [*]
-    failed --> [*] : error surfaced, run kept in history
+    failed --> [*] : error surfaced, run<br/>kept in history
 ```
 
 The run machine lives in the test-lab feature's domain layer (extraction in progress) so the dashboard quick-probe and the full workbench share one implementation instead of drifting copies.
