@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyLiveLayers,
+  applyMockLayers,
   BLANK_LAYERS,
   type CheckResponse,
+  type MockLayer,
 } from '@/src/app/test_lab/domain/test_lab_check';
 
 // Helper: pretend the user pressed "Run" — BLANK_LAYERS starts pending.
@@ -238,6 +240,91 @@ describe('applyLiveLayers — PACT-252 structural /v1/check fields', () => {
       []
     );
     expect(out[0].decision).toBe('allow');
+    expect(out[1].decision).toBe('allow');
+  });
+});
+
+describe('applyMockLayers - PACT-580 matches by MockLayer.name, not array position', () => {
+  const mockLayer = (
+    over: Partial<MockLayer> & Pick<MockLayer, 'name' | 'decision'>
+  ): MockLayer => ({
+    ...over,
+  });
+
+  it('matches each mock layer to its pipeline stage by name in the normal (in-order) case', () => {
+    const out = applyMockLayers(
+      startingLayers(),
+      [
+        mockLayer({
+          name: 'filter',
+          decision: 'allow',
+          reason: 'No rule match',
+        }),
+        mockLayer({
+          name: 'classifier',
+          decision: 'block',
+          label: 'jailbreak',
+        }),
+      ],
+      []
+    );
+    expect(out[0].decision).toBe('allow');
+    expect(out[0].reason).toBe('No rule match');
+    expect(out[1].decision).toBe('block');
+    expect(out[1].classifierLabel).toBe('jailbreak');
+  });
+
+  it('still matches correctly when the mock payload lists layers out of order', () => {
+    const out = applyMockLayers(
+      startingLayers(),
+      [
+        mockLayer({
+          name: 'classifier',
+          decision: 'block',
+          label: 'jailbreak',
+        }),
+        mockLayer({
+          name: 'filter',
+          decision: 'allow',
+          reason: 'No rule match',
+        }),
+      ],
+      []
+    );
+    expect(out[0].id).toBe('filter');
+    expect(out[0].decision).toBe('allow');
+    expect(out[0].reason).toBe('No rule match');
+    expect(out[1].id).toBe('classifier');
+    expect(out[1].decision).toBe('block');
+    expect(out[1].classifierLabel).toBe('jailbreak');
+  });
+
+  it('marks a stage skip when the mock payload omits that stage entirely', () => {
+    const out = applyMockLayers(
+      startingLayers(),
+      [mockLayer({ name: 'filter', decision: 'allow' })],
+      []
+    );
+    expect(out[0].decision).toBe('allow');
+    expect(out[1].decision).toBe('skip');
+  });
+
+  it('leaves a bypassed layer untouched even if a mock entry with its name is present', () => {
+    const prev = startingLayers().map((l) =>
+      l.id === 'filter'
+        ? { ...l, bypassed: true, decision: 'skip' as const }
+        : l
+    );
+    const out = applyMockLayers(
+      prev,
+      [
+        mockLayer({ name: 'filter', decision: 'allow' }),
+        mockLayer({ name: 'classifier', decision: 'allow' }),
+      ],
+      ['filter']
+    );
+    expect(out[0].bypassed).toBe(true);
+    expect(out[0].decision).toBe('skip');
     expect(out[1].decision).toBe('allow');
   });
 });

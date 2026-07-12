@@ -4,14 +4,11 @@ import { ArrowUpRight, BookmarkPlus, Play } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
-import { useSaveBenchmarkCorpusEntry } from '@/src/__codegen__/rest/benchmark';
 import { checkContent } from '@/src/__codegen__/rest/check';
 import { AuditDecisionInsights } from '@/src/app/audit/ui/AuditDecisionInsights';
 import { checkResponseToDecisionPayload } from '@/src/app/dashboard/domain/dashboard_probe';
-import {
-  type CheckResponse,
-  type SaveCorpusPayload,
-} from '@/src/app/test_lab/domain/test_lab_check';
+import { type CheckResponse } from '@/src/app/test_lab/domain/test_lab_check';
+import { useSaveToCorpus } from '@/src/app/test_lab/domain/use_save_to_corpus';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -23,7 +20,10 @@ import {
 import { isMock, isProduction } from '@/src/framework/helpers/environment';
 
 type ProbeStatus = 'idle' | 'running' | 'done' | 'error';
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
+// Probes always tag saved corpus entries as 'custom' -- unlike Test Lab's
+// full workbench, the quick probe has no attack-type chip picker.
+const PROBE_ATTACK_TYPE = 'custom';
 
 type DashboardQuickProbeProps = {
   // onProbeComplete lets the parent revalidate the shared pipeline-stats cache
@@ -38,14 +38,17 @@ export const DashboardQuickProbe = ({
   const [inputText, setInputText] = useState('');
   const [status, setStatus] = useState<ProbeStatus>('idle');
   const [result, setResult] = useState<CheckResponse | null>(null);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
-  const { trigger: saveCorpusEntry } = useSaveBenchmarkCorpusEntry();
+  const {
+    saveState: saveStatus,
+    saveToCorpus: saveResultToCorpus,
+    resetSaveState,
+  } = useSaveToCorpus();
 
   const runProbe = async () => {
     if (!inputText.trim()) return;
     setStatus('running');
     setResult(null);
-    setSaveStatus('idle');
+    resetSaveState();
 
     try {
       const response = await checkContent({
@@ -63,26 +66,12 @@ export const DashboardQuickProbe = ({
     }
   };
 
-  const saveToCorpus = async () => {
-    if (!result || !inputText.trim()) return;
-    setSaveStatus('saving');
-
-    try {
-      const payload: SaveCorpusPayload = {
-        content: inputText,
-        attack_type: 'custom',
-        reason: result.reason,
-        filter_rule_id: result.filter_rule_id,
-      };
-      const response = await saveCorpusEntry(payload);
-      if (response.status !== 201) {
-        throw new Error(`save to corpus failed (${response.status})`);
-      }
-      setSaveStatus('saved');
-    } catch {
-      setSaveStatus('error');
-    }
-  };
+  const saveToCorpus = () =>
+    saveResultToCorpus({
+      inputText,
+      attackType: PROBE_ATTACK_TYPE,
+      result,
+    });
 
   const blocked = result?.decision === 'block';
 
