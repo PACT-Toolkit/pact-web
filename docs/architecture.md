@@ -88,9 +88,9 @@ classDiagram
         typed check-response parsing replaces casts (planned)
     }
 
-    requireSession --> validateSessionFromCookies
-    validateSessionFromCookies --> Session
-    proxyToGateway --> ProxyToGatewayOptions
+    requireSession ..> validateSessionFromCookies
+    validateSessionFromCookies ..> Session
+    proxyToGateway ..> ProxyToGatewayOptions
     FeatureSlice --> GeneratedRestClient : data via
     FeatureSlice --> DecisionSchema : decision payloads
 ```
@@ -110,10 +110,11 @@ sequenceDiagram
 
     B->>L: credentials
     L->>R: POST
-    R->>A: StartLogin (Connect RPC)
+    R->>A: Login (Connect RPC)
     alt MFA required
         A-->>R: challenge
-        R-->>B: MFA step (factor selection + verify)
+        R-->>L: MFA required
+        L-->>B: MFA step (factor selection + verify)
     else success
         A-->>R: session + refresh token pair
         R-->>B: Set-Cookie pact_session, redirect
@@ -143,9 +144,11 @@ sequenceDiagram
     CORE->>GW: forward request
     GW-->>CORE: response (+ x-pact-new-session/refresh/expiry headers near expiry)
     alt rotation headers present
-        CORE-->>C: response + Set-Cookie (rotated pact_session)
+        CORE-->>PR: response + Set-Cookie (rotated pact_session)
+        PR-->>C: response + Set-Cookie (rotated pact_session)
     else
-        CORE-->>C: response unchanged
+        CORE-->>PR: response unchanged
+        PR-->>C: response unchanged
     end
 ```
 
@@ -159,6 +162,7 @@ stateDiagram-v2
     logged_out --> authenticating : login submit
     authenticating --> mfa_challenge : factor required
     mfa_challenge --> active : factor verified
+    mfa_challenge --> logged_out : challenge expired /<br/>cancelled
     authenticating --> active : cookie set
     authenticating --> logged_out : bad credentials
     active --> active : ValidateSession ok per<br/>request
@@ -190,7 +194,7 @@ stateDiagram-v2
     saved --> [*]
     decided_allow --> [*]
     decided_block --> [*]
-    failed --> [*] : error surfaced, run<br/>kept in history
+    failed --> [*] : error surfaced, run<br/>kept in history<br/>(planned)
 ```
 
 The run machine lives in the test-lab feature's domain layer (extraction in progress) so the dashboard quick-probe and the full workbench share one implementation instead of drifting copies.
