@@ -2,13 +2,12 @@ import { type AuditEvent } from '@/src/__codegen__/rest/audit';
 import {
   type DecisionPayload,
   parseDecisionPayload,
-} from '@/src/app/audit/domain/audit_decision_payload';
+} from '@/src/lib/decisions/decision_payload';
 
 // Re-derived from DecisionPayload rather than redeclared, so the classifier
-// feature never drifts from the audit feature's decode of pact-gateway's
-// kafka.DecisionEvent.Classifier sub-object (see audit_decision_payload.ts).
-// Cross-feature domain imports are allowed by the app/app boundary rule in
-// eslint.config.mjs (same pattern as consensus_record.ts / redactor_record.ts).
+// feature never drifts from the canonical decode of pact-gateway's
+// kafka.DecisionEvent.Classifier sub-object (see
+// src/lib/decisions/decision_payload.ts).
 //
 // Note: the sub-object carries only label, score, and engine -- there is no
 // enforce_mode (or any per-verdict enforcement-mode) field on the wire.

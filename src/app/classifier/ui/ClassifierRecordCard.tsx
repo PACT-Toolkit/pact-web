@@ -18,8 +18,8 @@ const formatTimestamp = (iso: string) => {
 
 // Any label other than "benign" is treated as flagged for badge coloring --
 // the classifier sub-object's label is a free-form string on the wire (see
-// audit_decision_payload.ts), not a closed enum this console can exhaustively
-// switch over.
+// src/lib/decisions/decision_payload.ts), not a closed enum this console can
+// exhaustively switch over.
 const isFlaggedLabel = (label?: string) => Boolean(label) && label !== 'benign';
 
 // One classifier-stage verdict: label badge, confidence score, engine tag,

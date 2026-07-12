@@ -2,13 +2,11 @@ import { type AuditEvent } from '@/src/__codegen__/rest/audit';
 import {
   type DecisionPayload,
   parseDecisionPayload,
-} from '@/src/app/audit/domain/audit_decision_payload';
+} from '@/src/lib/decisions/decision_payload';
 
 // Re-derived from DecisionPayload rather than redeclared, so the consensus
-// feature never drifts from the audit feature's decode of pact-gateway's
-// kafka.ConsensusDecision (see audit_decision_payload.ts). Cross-feature
-// domain imports are allowed by the app/app boundary rule in
-// eslint.config.mjs.
+// feature never drifts from the canonical decode of pact-gateway's
+// kafka.ConsensusDecision (see src/lib/decisions/decision_payload.ts).
 export type ConsensusSubObject = NonNullable<DecisionPayload['consensus']>;
 export type ConsensusVote = NonNullable<ConsensusSubObject['votes']>[number];
 

@@ -56,7 +56,7 @@ async function main() {
   // `title` ("pact.decisions") whenever one is present, ignoring the `name`
   // argument below -- it resolves to PactDecisions regardless of what's
   // passed here. The app-facing DecisionPayload alias lives one layer up, in
-  // src/app/audit/domain/audit_decision_payload.ts.
+  // src/lib/decisions/decision_payload.ts.
   const body = await compile(schema, 'PactDecisions', {
     bannerComment: '',
     additionalProperties: false,

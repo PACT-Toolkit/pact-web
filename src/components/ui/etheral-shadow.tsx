@@ -107,6 +107,8 @@ export const Component = ({
         }
       };
     }
+
+    return undefined;
   }, [animationEnabled, animationDuration, hueRotateMotionValue]);
 
   return (

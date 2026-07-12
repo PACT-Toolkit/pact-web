@@ -9,13 +9,13 @@ import {
 } from '@/src/__codegen__/rest/audit';
 import { BENIGN_LABELS } from '@/src/__codegen__/schema/pact-decisions';
 import {
-  type DecisionPayload,
-  parseDecisionPayload,
-} from '@/src/app/audit/domain/audit_decision_payload';
-import {
   decisionStatsPollingConfig,
   isDecisionStatsForbidden,
 } from '@/src/app/audit/domain/audit_decision_stats_access';
+import {
+  type DecisionPayload,
+  parseDecisionPayload,
+} from '@/src/lib/decisions/decision_payload';
 
 // Number of most-recent pact.decisions events the live stream window holds.
 // Only feeds DashboardLiveDecisions now -- the headline stat widgets get

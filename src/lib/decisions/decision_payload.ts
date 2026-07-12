@@ -11,7 +11,7 @@ import {
 
 // Re-exported so consumers that only need a sub-object's shape (e.g. a cast
 // off a different wire contract, see dashboard_probe.ts) don't have to reach
-// past this domain module into the generated codegen directory directly.
+// past this module into the generated codegen directory directly.
 export type {
   ClassifierDecision,
   ConsensusDecision,
@@ -45,6 +45,12 @@ export type {
 // REST response (OpenAPI-generated, a distinct wire contract); the audit
 // feed consumes pact.decisions JSONB payloads (this schema). See PACT-426's
 // "out of scope" note -- the two are never unified.
+//
+// Promoted out of the audit feature slice into src/lib (PACT-581): every
+// pact.decisions-shaped feature (audit itself, classifier, consensus,
+// dashboard, filter, redactor) reads this vocabulary, so it lives in the
+// framework-agnostic shared layer rather than being a cross-feature
+// exception onto the audit slice.
 export type DecisionPayload = Partial<PactDecisions>;
 
 export const parseDecisionPayload = (raw: string): DecisionPayload | null => {

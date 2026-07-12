@@ -1,5 +1,5 @@
-import { type DecisionPayload } from '@/src/app/audit/domain/audit_decision_payload';
 import { type CheckResponse } from '@/src/app/test_lab/domain/test_lab_check';
+import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // Maps a /v1/check response onto the audit DecisionPayload so the probe
 // result reuses AuditDecisionInsights - the exact renderer the live stream and

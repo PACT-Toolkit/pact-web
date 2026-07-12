@@ -1,6 +1,6 @@
 import { type DB } from '@/mocks/data/dbFactory';
 import { type CheckRedactedSpan } from '@/src/__codegen__/rest/check';
-import { type DecisionPayload } from '@/src/app/audit/domain/audit_decision_payload';
+import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // PII detection patterns backing both this file's own seed rows and the
 // mocked /v1/check response (test_lab/mock/handlers/test_lab.ts imports

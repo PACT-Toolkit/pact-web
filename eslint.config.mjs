@@ -148,22 +148,22 @@ const config = [
               ],
             },
             // ── Grandfathered cross-feature imports (PACT-573) ──────────
-            // These are the only 9 cross-feature import pairs that exist at
+            // These are the only 7 cross-feature import pairs that exist at
             // HEAD. New cross-feature imports beyond this closed list must
             // not be added here - extract shared code into a proper shared
             // layer instead, or route through an explicit public API.
             //
-            // classifier/consensus/dashboard/filter/redactor -> audit: the
+            // consensus/filter/dashboard -> audit: each imports something
+            // from the audit slice unrelated to the decision vocabulary
+            // (ConsensusRawPayloadToggle's prettyPayload, filter's
+            // audit_decision_stats_access, dashboard's AuditRow /
+            // AuditDecisionInsights components / audit_decision_stats_access).
+            // classifier and redactor used to appear here too, for the
             // shared decision-vocabulary types and helpers (DecisionPayload,
-            // parseDecisionPayload, etc.) currently live in the audit slice.
-            // Promoting them out of audit into a shared layer is tracked in
-            // a separate issue - do not move them as part of this change.
-            {
-              from: { type: 'feature', captured: { feature: 'classifier' } },
-              allow: [
-                { to: { type: 'feature', captured: { feature: 'audit' } } },
-              ],
-            },
+            // parseDecisionPayload, etc.) that lived in the audit slice -
+            // that vocabulary is promoted to src/lib/decisions (PACT-581),
+            // which every feature may import unconditionally, so those two
+            // pairs are gone from this closed list.
             {
               from: { type: 'feature', captured: { feature: 'consensus' } },
               allow: [
@@ -184,12 +184,6 @@ const config = [
             },
             {
               from: { type: 'feature', captured: { feature: 'filter' } },
-              allow: [
-                { to: { type: 'feature', captured: { feature: 'audit' } } },
-              ],
-            },
-            {
-              from: { type: 'feature', captured: { feature: 'redactor' } },
               allow: [
                 { to: { type: 'feature', captured: { feature: 'audit' } } },
               ],
@@ -231,7 +225,13 @@ const config = [
             },
             {
               from: { type: 'lib' },
-              allow: [{ to: { type: 'lib' } }],
+              allow: [
+                { to: { type: 'lib' } },
+                // Generated types are leaves too, and src/lib/decisions
+                // (PACT-581) needs the pact-decisions codegen schema to
+                // define the shared DecisionPayload vocabulary.
+                { to: { type: 'codegen' } },
+              ],
             },
             {
               from: { type: 'mocks' },

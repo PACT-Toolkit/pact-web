@@ -4,7 +4,10 @@ import { RefreshCw, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { useQueryAuditEvents } from '@/src/__codegen__/rest/audit';
-import { decodeAuditEventVariant } from '@/src/app/audit/domain/audit_event_variant';
+import {
+  AUDIT_TOPIC_OPTIONS,
+  decodeAuditEventVariant,
+} from '@/src/app/audit/domain/audit_event_variant';
 import {
   localDateTimeToUnixSeconds,
   matchesActorFilter,
@@ -31,22 +34,6 @@ const PAGE_SIZE = 50;
 // Rows are still append-only/immutable -- polling just surfaces new rows,
 // it never mutates an existing one.
 const REFRESH_INTERVAL_MS = 30_000;
-
-// Every topic pact-audit is queryable over today. "All topics" is a real
-// server-side option -- pact-audit's QueryEvents only applies a topic
-// predicate `if f.Topic != ""` (internal/store/events.go buildWhere), so
-// omitting topic returns rows across every topic the caller can see, not
-// an error. pact.policy is listed for discoverability even though
-// pact-audit doesn't consume that topic yet (PACT-306/308); selecting it
-// today always yields an honest empty result, never a crash.
-const TOPIC_OPTIONS = [
-  { value: '', label: 'All topics' },
-  { value: 'pact.auth', label: 'pact.auth (sign-in / passkey / MFA)' },
-  { value: 'pact.account', label: 'pact.account (profile / consents / GDPR)' },
-  { value: 'pact.files', label: 'pact.files (upload lifecycle)' },
-  { value: 'pact.decisions', label: 'pact.decisions (allow / block calls)' },
-  { value: 'pact.policy', label: 'pact.policy (not yet available)' },
-];
 
 export const AuditWorkbench = () => {
   const [topic, setTopic] = useState<string>('');
@@ -159,7 +146,7 @@ export const AuditWorkbench = () => {
             className="h-9 rounded-md border bg-background px-3 text-sm"
             data-testid="audit-topic-select"
           >
-            {TOPIC_OPTIONS.map((opt) => (
+            {AUDIT_TOPIC_OPTIONS.map((opt) => (
               <option key={opt.value || '__all__'} value={opt.value}>
                 {opt.label}
               </option>

@@ -1,6 +1,6 @@
-import { type DecisionPayload } from '@/src/app/audit/domain/audit_decision_payload';
+import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
-export { parseDecisionPayload } from '@/src/app/audit/domain/audit_decision_payload';
+export { parseDecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // Short hex preview for fingerprints/hashes: the full value lives in a title
 // tooltip and in the raw payload below. 12 chars is plenty to eyeball-match two

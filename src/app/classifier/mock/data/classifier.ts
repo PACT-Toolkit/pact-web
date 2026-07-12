@@ -1,5 +1,5 @@
 import { type DB } from '@/mocks/data/dbFactory';
-import { type DecisionPayload } from '@/src/app/audit/domain/audit_decision_payload';
+import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // Classifier scenario templates seeded onto the shared db.decisions
 // repository, mirroring redactor.ts's/consensus.ts's approach: a classifier
