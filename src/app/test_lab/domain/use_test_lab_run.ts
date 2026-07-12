@@ -13,6 +13,7 @@ import {
   BLANK_LAYERS,
   type CheckInput,
   type CheckResponse,
+  parseCheckResponse,
   type SaveRunPayload,
   type TestLabRunRecord,
   toTestRun,
@@ -115,7 +116,7 @@ export function useTestLabRun() {
         if (response.status !== 200) {
           throw new Error(`check failed (${response.status})`);
         }
-        data = response.data as CheckResponse;
+        data = parseCheckResponse(response.data);
       } catch {
         setLayers((prev) =>
           prev.map((l) =>

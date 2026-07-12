@@ -5,7 +5,9 @@ import {
   applyMockLayers,
   BLANK_LAYERS,
   type CheckResponse,
+  CheckResponseParseError,
   type MockLayer,
+  parseCheckResponse,
 } from '@/src/app/test_lab/domain/test_lab_check';
 
 // Helper: pretend the user pressed "Run" — BLANK_LAYERS starts pending.
@@ -326,5 +328,156 @@ describe('applyMockLayers - PACT-580 matches by MockLayer.name, not array positi
     expect(out[0].bypassed).toBe(true);
     expect(out[0].decision).toBe('skip');
     expect(out[1].decision).toBe('allow');
+  });
+});
+
+describe("parseCheckResponse - PACT-576 parse-don't-cast against the regenerated literal-union contract", () => {
+  const validResponse = (): Record<string, unknown> => ({
+    request_id: 'req-1',
+    decision: 'allow',
+    latency_ms: 12,
+  });
+
+  it('accepts a minimal valid response (only the required wire fields)', () => {
+    const parsed = parseCheckResponse(validResponse());
+    expect(parsed.decision).toBe('allow');
+    expect(parsed.request_id).toBe('req-1');
+    expect(parsed.latency_ms).toBe(12);
+  });
+
+  it('accepts a full response exercising every closed-set field the generated contract covers', () => {
+    const raw = {
+      ...validResponse(),
+      decision: 'block',
+      filter: { verdict: 'hostile', rule_id: 'RULE-1' },
+      redactor: {
+        verdict: 'redacted',
+        spans: [{ start: 0, end: 3, label: 'X' }],
+      },
+      classifier: { label: 'jailbreak', score: 0.9 },
+      external_refs: {
+        refs: [
+          { source: 'a', verdict: 'mitigated' },
+          { source: 'b', verdict: 'clean' },
+        ],
+      },
+      spotlight: {
+        format: 'xml',
+        chunks: [{ source: 'rag:doc#1', trust: 'untrusted', wrapped: '<x/>' }],
+      },
+    };
+    const parsed = parseCheckResponse(raw);
+    expect(parsed.decision).toBe('block');
+    expect(parsed.filter?.verdict).toBe('hostile');
+    expect(parsed.redactor?.verdict).toBe('redacted');
+    expect(parsed.external_refs?.refs?.[0].verdict).toBe('mitigated');
+    expect(parsed.spotlight?.format).toBe('xml');
+    expect(parsed.spotlight?.chunks?.[0].trust).toBe('untrusted');
+  });
+
+  it('leaves classifier.label unvalidated (open by design - no closed set on the wire)', () => {
+    const parsed = parseCheckResponse({
+      ...validResponse(),
+      classifier: { label: 'some-future-label-the-model-adds' },
+    });
+    expect(parsed.classifier?.label).toBe('some-future-label-the-model-adds');
+  });
+
+  it('rejects a non-object payload', () => {
+    expect(() => parseCheckResponse(null)).toThrow(CheckResponseParseError);
+    expect(() => parseCheckResponse('allow')).toThrow(CheckResponseParseError);
+    expect(() => parseCheckResponse([1, 2, 3])).toThrow(
+      CheckResponseParseError
+    );
+  });
+
+  it('rejects a decision outside the allow|block closed set', () => {
+    expect(() =>
+      parseCheckResponse({ ...validResponse(), decision: 'maybe' })
+    ).toThrow(CheckResponseParseError);
+  });
+
+  it('rejects a missing decision', () => {
+    const raw = validResponse();
+    delete raw.decision;
+    expect(() => parseCheckResponse(raw)).toThrow(/decision/);
+  });
+
+  it('rejects a filter.verdict outside the safe|suspicious|hostile|unknown closed set', () => {
+    expect(() =>
+      parseCheckResponse({
+        ...validResponse(),
+        filter: { verdict: 'definitely-hostile' },
+      })
+    ).toThrow(/filter\.verdict/);
+  });
+
+  it('rejects a redactor.verdict outside the pass_through|redacted|unknown closed set', () => {
+    expect(() =>
+      parseCheckResponse({
+        ...validResponse(),
+        redactor: { verdict: 'scrubbed' },
+      })
+    ).toThrow(/redactor\.verdict/);
+  });
+
+  it('rejects an external_refs.refs[].verdict outside its closed set', () => {
+    expect(() =>
+      parseCheckResponse({
+        ...validResponse(),
+        external_refs: { refs: [{ source: 'a', verdict: 'suspicious' }] },
+      })
+    ).toThrow(/external_refs\.refs\[0\]\.verdict/);
+  });
+
+  it('rejects a spotlight.format outside the delim|xml|json closed set', () => {
+    expect(() =>
+      parseCheckResponse({
+        ...validResponse(),
+        spotlight: { format: 'yaml' },
+      })
+    ).toThrow(/spotlight\.format/);
+  });
+
+  it('rejects a spotlight.chunks[].trust outside the trusted|user|untrusted closed set', () => {
+    expect(() =>
+      parseCheckResponse({
+        ...validResponse(),
+        spotlight: { chunks: [{ source: 'x', trust: 'unknown' }] },
+      })
+    ).toThrow(/spotlight\.chunks\[0\]\.trust/);
+  });
+
+  it('rejects a missing required field (latency_ms)', () => {
+    const raw = validResponse();
+    delete raw.latency_ms;
+    expect(() => parseCheckResponse(raw)).toThrow(/latency_ms/);
+  });
+
+  it('rejects a missing required field (request_id)', () => {
+    const raw = validResponse();
+    delete raw.request_id;
+    expect(() => parseCheckResponse(raw)).toThrow(/request_id/);
+  });
+
+  it('rejects a non-object filter sub-object', () => {
+    expect(() =>
+      parseCheckResponse({ ...validResponse(), filter: 'hostile' })
+    ).toThrow(/filter/);
+  });
+
+  it('rejects a non-array external_refs.refs', () => {
+    expect(() =>
+      parseCheckResponse({
+        ...validResponse(),
+        external_refs: { refs: 'not-an-array' },
+      })
+    ).toThrow(/external_refs\.refs/);
+  });
+
+  it('tolerates undefined optional sub-objects - only decision/latency_ms/request_id are required', () => {
+    // filter/redactor/classifier/external_refs/spotlight are all optional on
+    // the wire (a fast filter-only block never runs the classifier stage).
+    expect(() => parseCheckResponse(validResponse())).not.toThrow();
   });
 });

@@ -34,6 +34,7 @@ import {
   type CheckExternalRefsInfo,
   type CheckSpotlightChunk,
   type CheckSpotlightInfo,
+  CheckSpotlightInfoFormat,
 } from '@/src/__codegen__/rest/check';
 import { type ConfigConfigResponse } from '@/src/__codegen__/rest/config';
 
@@ -123,8 +124,26 @@ export const sandboxBlocked = (info: CheckExternalRefsInfo | undefined) =>
 
 // ─── spotlight simulation ─────────────────────────────────────────────────
 
+const SPOTLIGHT_FORMATS: ReadonlySet<string> = new Set(
+  Object.values(CheckSpotlightInfoFormat)
+);
+
+// gatewayConfig.spotlightFormat (this mock handler's only caller passes it
+// through here) is a plain string on the wire -- schema/config's swagger
+// slice doesn't `enum:`-tag SpotlightFormat the way PACT-576 tagged
+// check.CheckResponse's fields, so it isn't statically guaranteed to be one
+// of the three values check.CheckResponse.spotlight.format actually allows.
+// Every mock response this handler emits is validated client-side by
+// parseCheckResponse (test_lab_check.ts), so an out-of-set value here would
+// throw in dev:mock, not just mistype a field -- fall back to 'delim' rather
+// than propagate whatever the config seed happened to contain.
+const toSpotlightFormat = (format: string): CheckSpotlightInfoFormat =>
+  SPOTLIGHT_FORMATS.has(format)
+    ? (format as CheckSpotlightInfoFormat)
+    : 'delim';
+
 const wrapChunk = (
-  format: string,
+  format: CheckSpotlightInfoFormat,
   source: string,
   trust: string,
   content: string
@@ -145,14 +164,16 @@ export function runSpotlightProbe(
 ): CheckSpotlightInfo | undefined {
   if (!chunks || chunks.length === 0) return undefined;
 
+  const resolvedFormat = toSpotlightFormat(format);
+
   return {
-    format,
+    format: resolvedFormat,
     source_count: chunks.length,
     chunks: chunks.map((c) => ({
       source: c.source,
       trust: c.trust,
       wrapped: wrapChunk(
-        format,
+        resolvedFormat,
         c.source ?? '',
         c.trust ?? '',
         c.content ?? ''

@@ -5,11 +5,11 @@
  * Public REST entrypoint for the PACT safety pipeline.
  * OpenAPI spec version: 0.1.0
  */
+import type { CheckExternalRefInfoVerdict } from './checkExternalRefInfoVerdict';
 
 export interface CheckExternalRefInfo {
   host?: string;
   purified_content?: string;
   source?: string;
-  /** "clean" | "hostile" | "unfetchable" | "mitigated" */
-  verdict?: string;
+  verdict?: CheckExternalRefInfoVerdict;
 }

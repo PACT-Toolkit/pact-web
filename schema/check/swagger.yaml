@@ -40,6 +40,15 @@ definitions:
                 items:
                     $ref: '#/definitions/check.SpotlightChunk'
                 type: array
+            traffic_source:
+                description: |-
+                    TrafficSource is the caller's own declaration of synthetic vs real
+                    traffic (e.g. "benchmark"), mirrored verbatim onto the pact.decisions
+                    audit event (PACT-484). Attribution only - it carries no access-control
+                    weight and is never used to grant or deny a request. Optional; when
+                    present it must match ^[a-z0-9_-]{1,32}$, the same pattern the
+                    decisions schema enforces on the audit event.
+                type: string
         required:
             - content
             - kind
@@ -49,7 +58,9 @@ definitions:
             classifier:
                 $ref: '#/definitions/check.ClassifierInfo'
             decision:
-                description: '"allow" | "block"'
+                enum:
+                    - allow
+                    - block
                 type: string
             diagnostics:
                 $ref: '#/definitions/check.DiagnosticsInfo'
@@ -76,6 +87,12 @@ definitions:
         type: object
     check.ClassifierInfo:
         properties:
+            engine:
+                description: |-
+                    Engine is the exercised classifier model version as echoed by
+                    pact-classifier; absent when the classifier stage did not run or did
+                    not report one.
+                type: string
             label:
                 type: string
             score:
@@ -104,7 +121,13 @@ definitions:
             source:
                 type: string
             verdict:
-                description: '"clean" | "hostile" | "unfetchable" | "mitigated"'
+                enum:
+                    - clean
+                    - hostile
+                    - unfetchable
+                    - skipped
+                    - blocked
+                    - mitigated
                 type: string
         type: object
     check.ExternalRefsInfo:
@@ -128,7 +151,11 @@ definitions:
                 description: true when the match was a dry-run / shadow rule
                 type: boolean
             verdict:
-                description: '"safe" | "suspicious" | "hostile" | "unknown"'
+                enum:
+                    - safe
+                    - suspicious
+                    - hostile
+                    - unknown
                 type: string
         type: object
     check.RedactedSpan:
@@ -150,7 +177,10 @@ definitions:
                     $ref: '#/definitions/check.RedactedSpan'
                 type: array
             verdict:
-                description: '"pass_through" | "redacted" | "unknown"'
+                enum:
+                    - pass_through
+                    - redacted
+                    - unknown
                 type: string
         type: object
     check.SpotlightChunk:
@@ -161,7 +191,10 @@ definitions:
                 description: e.g. "rag:doc#42", "tool:search", "url:https://…"
                 type: string
             trust:
-                description: '"trusted" | "user" | "untrusted"'
+                enum:
+                    - trusted
+                    - user
+                    - untrusted
                 type: string
         type: object
     check.SpotlightInfo:
@@ -171,7 +204,10 @@ definitions:
                     $ref: '#/definitions/check.WrappedChunk'
                 type: array
             format:
-                description: '"delim" | "xml" | "json"'
+                enum:
+                    - delim
+                    - xml
+                    - json
                 type: string
             header:
                 description: system-prompt fragment; only when SPOTLIGHT_INJECT_HEADER=true
@@ -184,6 +220,10 @@ definitions:
             source:
                 type: string
             trust:
+                enum:
+                    - trusted
+                    - user
+                    - untrusted
                 type: string
             wrapped:
                 description: nonce-tagged marker envelope ready for LLM injection
@@ -202,7 +242,7 @@ paths:
                 - application/json
             operationId: checkContent
             parameters:
-                - description: Content and kind (input|output); optional conversation_id
+                - description: Content and kind (input|output); optional conversation_id, traffic_source
                   in: body
                   name: body
                   required: true

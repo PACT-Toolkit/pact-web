@@ -7,7 +7,10 @@ import { useState } from 'react';
 import { checkContent } from '@/src/__codegen__/rest/check';
 import { AuditDecisionInsights } from '@/src/app/audit/ui/AuditDecisionInsights';
 import { checkResponseToDecisionPayload } from '@/src/app/dashboard/domain/dashboard_probe';
-import { type CheckResponse } from '@/src/app/test_lab/domain/test_lab_check';
+import {
+  type CheckResponse,
+  parseCheckResponse,
+} from '@/src/app/test_lab/domain/test_lab_check';
 import { useSaveToCorpus } from '@/src/app/test_lab/domain/use_save_to_corpus';
 import { Button } from '@/src/components/ui/button';
 import {
@@ -58,7 +61,7 @@ export const DashboardQuickProbe = ({
       if (response.status !== 200) {
         throw new Error(`probe failed (${response.status})`);
       }
-      setResult(response.data as CheckResponse);
+      setResult(parseCheckResponse(response.data));
       setStatus('done');
       onProbeComplete?.();
     } catch {

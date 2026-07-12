@@ -5,11 +5,11 @@
  * Public REST entrypoint for the PACT safety pipeline.
  * OpenAPI spec version: 0.1.0
  */
+import type { CheckSpotlightChunkTrust } from './checkSpotlightChunkTrust';
 
 export interface CheckSpotlightChunk {
   content?: string;
   /** e.g. "rag:doc#42", "tool:search", "url:https://…" */
   source?: string;
-  /** "trusted" | "user" | "untrusted" */
-  trust?: string;
+  trust?: CheckSpotlightChunkTrust;
 }

@@ -28,4 +28,11 @@ export interface CheckCheckRequest {
   /** SpotlightChunks is an optional list of third-party content chunks the host
    * wants spotlight-wrapped before LLM injection. Populated on allow path only. */
   spotlight_chunks?: CheckSpotlightChunk[];
+  /** TrafficSource is the caller's own declaration of synthetic vs real
+   * traffic (e.g. "benchmark"), mirrored verbatim onto the pact.decisions
+   * audit event (PACT-484). Attribution only - it carries no access-control
+   * weight and is never used to grant or deny a request. Optional; when
+   * present it must match ^[a-z0-9_-]{1,32}$, the same pattern the
+   * decisions schema enforces on the audit event. */
+  traffic_source?: string;
 }

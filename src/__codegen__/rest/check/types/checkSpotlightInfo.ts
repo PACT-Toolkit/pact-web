@@ -5,12 +5,12 @@
  * Public REST entrypoint for the PACT safety pipeline.
  * OpenAPI spec version: 0.1.0
  */
+import type { CheckSpotlightInfoFormat } from './checkSpotlightInfoFormat';
 import type { CheckWrappedChunk } from './checkWrappedChunk';
 
 export interface CheckSpotlightInfo {
   chunks?: CheckWrappedChunk[];
-  /** "delim" | "xml" | "json" */
-  format?: string;
+  format?: CheckSpotlightInfoFormat;
   /** system-prompt fragment; only when SPOTLIGHT_INJECT_HEADER=true */
   header?: string;
   source_count?: number;
