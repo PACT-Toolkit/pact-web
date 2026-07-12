@@ -1,9 +1,11 @@
 ---
 name: gitmoji
-description: Pick the right gitmoji and write a commit message in this repo's style — emoji prefix + lowercase imperative subject, optional body. Use when crafting commit messages, running `git commit`, reviewing a draft commit, or when the user asks for a commit message.
+description: Pick the right gitmoji and write a commit message in pact-web's style — emoji prefix + lowercase imperative subject, optional body. Use ONLY for commits in pact-web; every other repo uses plain subjects with no emoji.
 ---
 
 # Gitmoji Commit Messages
+
+**Scope: pact-web only.** This convention applies to this repository and nowhere else - in any other repo, write plain subjects with no emoji, even if that repo's history contains stray gitmoji commits.
 
 This repo uses [gitmoji](https://gitmoji.dev/) emoji prefixes on commit subjects. One emoji, then a single space, then a lowercase imperative subject. No conventional-commits scope (`feat:`, `fix:`) — the emoji replaces it.
 
