@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/PACT-Toolkit/pact-account/contracts/pact.account.schema.json",
+  "title": "pact.account",
+  "description": "Canonical wire schema for the pact.account Kafka topic, mirroring internal/kafka/producer.go AccountEvent. Field names and required/optional status are frozen per ENGINEERING.md - every consumer of this topic pins this shape. additionalProperties is false so an accidental field rename or addition fails validation instead of silently passing through as unrecognised JSON.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "created_at"],
+  "properties": {
+    "event_uuid": {
+      "type": "string",
+      "description": "Per-event dedup key. Auto-filled by Producer.Publish when the caller leaves it empty (and always set explicitly on the transactional-outbox path), but omitempty on the Go struct means a caller that marshals an AccountEvent directly can still produce a wire event missing this key."
+    },
+    "event_id": {
+      "type": "string",
+      "enum": ["user_erasure_requested", "consent_recorded", "profile_updated", "preferences_updated"],
+      "description": "Closed set - pact-account's internal/kafka.EvtXxx constants only ever produce these four values."
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "document": {
+      "type": "string",
+      "description": "Compliance document identifier (e.g. privacy_policy, terms_of_service). Set together with version and granted on consent_recorded events; recorded for evidence per GDPR Art. 7(1)."
+    },
+    "version": {
+      "type": "string",
+      "description": "Version of document the consent applies to. Set together with document and granted on consent_recorded events."
+    },
+    "granted": {
+      "type": "boolean",
+      "description": "Whether consent was granted. Carries omitempty on the Go struct, so false is dropped from the wire exactly like an unset value - consumers MUST treat an absent granted key as false, not as \"unknown\". Set together with document and version on consent_recorded events."
+    }
+  }
+}

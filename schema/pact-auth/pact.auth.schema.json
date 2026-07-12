@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/PACT-Toolkit/pact-auth/contracts/pact.auth.schema.json",
+  "title": "pact.auth",
+  "description": "Canonical wire schema for the pact.auth Kafka topic, mirroring internal/kafka/producer.go AuthEvent. Field names and required/optional status are frozen - pact-notify and pact-account pin this shape. additionalProperties is false at the top level so an accidental field rename or addition fails validation instead of silently passing through unrecognised.",
+  "$comment": "PACT-515 removed the raw wire auth token from this event. There is deliberately no top-level 'token' property, and one must never be reintroduced: a leaked or over-retained pact.auth topic would otherwise hand out live, usable credentials. token_id is the non-secret auth_tokens row id; the notification consumer exchanges it for the wire token at render time via AuthService.GetEmailToken, so the secret only ever exists in-memory on pact-auth and pact-notify, never at rest in Kafka or a consumer's audit log.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "created_at"],
+  "properties": {
+    "event_uuid": {
+      "type": "string",
+      "description": "Autopopulated by pact-auth's EnqueueEvent when the caller leaves it empty; used by downstream consumers as the dedup key."
+    },
+    "event_id": {
+      "type": "string",
+      "enum": [
+        "login_started",
+        "login_succeeded",
+        "login_failed",
+        "login_unverified",
+        "register_succeeded",
+        "email_verification_requested",
+        "email_verified",
+        "password_set_link_requested",
+        "password_reset_requested",
+        "password_changed"
+      ],
+      "description": "Closed set - pact-auth's internal/kafka/producer.go Evt* constants (this module's auth.Evt* constants) only ever produce these ten values."
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string",
+      "description": "OAuth provider name (e.g. google, github). Open set - pact-auth can register a new OAuth provider without a schema change. Absent on password-flow events."
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email + password flow field. Only set on relevant events (email_verification_requested / password_*_link_requested / etc.)."
+    },
+    "token_id": {
+      "type": "string",
+      "description": "The non-secret auth_tokens row id, not the wire token itself (PACT-515). See this schema's top-level $comment."
+    },
+    "return_to": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "method": {
+      "type": "string",
+      "enum": ["password", "oauth"],
+      "description": "Closed set - mirrors pact-auth's producer.go inline comment (\"password\" | \"oauth\"); this module's auth.MethodPassword / auth.MethodOAuth constants."
+    },
+    "ip": {
+      "type": "string"
+    },
+    "display_name": {
+      "type": "string",
+      "description": "Profile seed value captured at sign-up (or first OAuth login). Set on register_succeeded so pact-account can materialise the profile row with useful initial values; absent on every other event."
+    },
+    "avatar_url": {
+      "type": "string",
+      "description": "Profile seed value, same population rule as display_name."
+    }
+  }
+}

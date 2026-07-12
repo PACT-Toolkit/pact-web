@@ -78,7 +78,9 @@ describe('audit event-label drift guard', () => {
     const unlabelled = db.auditAuthEvents
       .getAll()
       .map((event) => decodeAuthPayload(event.payloadJson)?.event_id)
-      .filter((eventId): eventId is string => Boolean(eventId))
+      .filter((eventId): eventId is NonNullable<typeof eventId> =>
+        Boolean(eventId)
+      )
       .filter((eventId) => !(eventId in AUTH_EVENT_LABELS));
 
     expect(unlabelled).toEqual([]);
@@ -88,7 +90,9 @@ describe('audit event-label drift guard', () => {
     const unlabelled = db.auditAccountEvents
       .getAll()
       .map((event) => decodeAccountPayload(event.payloadJson)?.event_id)
-      .filter((eventId): eventId is string => Boolean(eventId))
+      .filter((eventId): eventId is NonNullable<typeof eventId> =>
+        Boolean(eventId)
+      )
       .filter((eventId) => !(eventId in ACCOUNT_EVENT_LABELS));
 
     expect(unlabelled).toEqual([]);
@@ -98,7 +102,9 @@ describe('audit event-label drift guard', () => {
     const unlabelled = db.auditFilesEvents
       .getAll()
       .map((event) => decodeFilesPayload(event.payloadJson)?.event_type)
-      .filter((eventType): eventType is string => Boolean(eventType))
+      .filter((eventType): eventType is NonNullable<typeof eventType> =>
+        Boolean(eventType)
+      )
       .filter((eventType) => !(eventType in FILES_EVENT_LABELS));
 
     expect(unlabelled).toEqual([]);
@@ -108,11 +114,13 @@ describe('audit event-label drift guard', () => {
   // label at least once so /audit's dev:mock view is never missing a
   // topic's badge variety.
   it('the mock seeder exercises every AUTH_EVENT_LABELS key at least once', () => {
-    const seeded = new Set(
+    const seeded = new Set<string>(
       db.auditAuthEvents
         .getAll()
         .map((event) => decodeAuthPayload(event.payloadJson)?.event_id)
-        .filter((eventId): eventId is string => Boolean(eventId))
+        .filter((eventId): eventId is NonNullable<typeof eventId> =>
+          Boolean(eventId)
+        )
     );
 
     expect(
@@ -121,11 +129,13 @@ describe('audit event-label drift guard', () => {
   });
 
   it('the mock seeder exercises every ACCOUNT_EVENT_LABELS key at least once', () => {
-    const seeded = new Set(
+    const seeded = new Set<string>(
       db.auditAccountEvents
         .getAll()
         .map((event) => decodeAccountPayload(event.payloadJson)?.event_id)
-        .filter((eventId): eventId is string => Boolean(eventId))
+        .filter((eventId): eventId is NonNullable<typeof eventId> =>
+          Boolean(eventId)
+        )
     );
 
     expect(
@@ -134,11 +144,13 @@ describe('audit event-label drift guard', () => {
   });
 
   it('the mock seeder exercises every FILES_EVENT_LABELS key at least once', () => {
-    const seeded = new Set(
+    const seeded = new Set<string>(
       db.auditFilesEvents
         .getAll()
         .map((event) => decodeFilesPayload(event.payloadJson)?.event_type)
-        .filter((eventType): eventType is string => Boolean(eventType))
+        .filter((eventType): eventType is NonNullable<typeof eventType> =>
+          Boolean(eventType)
+        )
     );
 
     expect(

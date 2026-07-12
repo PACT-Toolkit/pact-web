@@ -1,0 +1,11 @@
+{
+  "repo": "pact-contracts",
+  "branch": "master",
+  "production": false,
+  "files": [
+    {
+      "path": "/account/pact.account.schema.json",
+      "schemaFile": "pact.account.schema.json"
+    }
+  ]
+}

@@ -171,11 +171,16 @@ export const createAuditMockData = (db: DB): void => {
     event_id: 'password_changed',
     user_id: MOCK_USER_ID,
   });
+  // Method is closed to "password" | "oauth" on the wire (pact-auth's
+  // producer.go / this schema's method enum -- passkey/WebAuthn sign-in
+  // does not publish a pact.auth event today), so this second
+  // login_succeeded variant demonstrates the oauth method instead of the
+  // password one above.
   seedAuth(3 * hour + 7 * min, 'req-auth-g7', {
     event_id: 'login_succeeded',
     user_id: MOCK_USER_ID,
-    method: 'passkey',
-    provider: 'webauthn',
+    method: 'oauth',
+    provider: 'google',
   });
 
   // pact.account -- covers every ACCOUNT_EVENT_LABELS key at least once.

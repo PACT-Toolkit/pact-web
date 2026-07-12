@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/PACT-Toolkit/pact-files/contracts/pact.files.schema.json",
+  "title": "pact.files",
+  "description": "Canonical wire schema for the pact.files Kafka topic, mirroring pact-files' internal/events/producer.go FileEvent. Field names and required/optional status are frozen - pact-audit pins this shape. additionalProperties is false at every level so an accidental field rename or addition fails validation instead of silently passing through as unrecognised JSONB. NOTE: on this topic event_id is the per-event dedup UUID and event_type carries the semantic event name - the opposite of the pact.auth/pact.account topic conventions.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "event_type", "file_id", "status", "created_at"],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "description": "Per-event dedup UUID, freshly minted for every published event (uuid.NewString()). Does NOT name the event kind - see event_type."
+    },
+    "event_type": {
+      "type": "string",
+      "enum": ["file_ready", "file_rejected", "file_deleted"],
+      "description": "Semantic event name - closed set. Every buildOutboxPayload call site in pact-files uses one of these three; a terminal lifecycle transition emits exactly one such event."
+    },
+    "user_id": {
+      "type": "string"
+    },
+    "file_id": {
+      "type": "string"
+    },
+    "filename": {
+      "type": "string"
+    },
+    "content_type": {
+      "type": "string"
+    },
+    "size_bytes": {
+      "type": "integer"
+    },
+    "purpose": {
+      "type": "string",
+      "description": "Caller-declared upload purpose tag (e.g. \"avatar\"). Open set by design."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["ready", "rejected", "deleted"],
+      "description": "Closed set - the terminal file status this event announces, matching event_type. pact-files' file.Status type also has pending/processing values, but only a terminal transition ever publishes a pact.files event, so those two never appear on the wire."
+    },
+    "storage_key": {
+      "type": "string"
+    },
+    "thumbnail_key": {
+      "type": "string"
+    },
+    "extras": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Event-specific metadata that does not warrant its own wire field. Open set by design - known keys today: \"reason\" (file_rejected, e.g. mime_mismatch/virus/size_exceeded), \"actor\" (file_deleted, \"user\" | \"ttl\"), \"mime\" (file_ready, detected MIME type)."
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}
