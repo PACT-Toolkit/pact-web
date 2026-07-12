@@ -42,6 +42,19 @@ flowchart TB
     AuthClient -->|h2c gRPC| Auth
 ```
 
+This topology (BFF-in-route-handlers, httpOnly-cookie-to-Bearer, contract-first
+codegen, SWR-only data layer, MSW mock-first) is settled; ongoing hardening builds on
+it rather than reshaping it:
+decision values become closed enums in the gateway OpenAPI slice so codegen emits
+literal unions, runtime-parsed at every boundary instead of `as`-cast (an unknown
+verdict renders as an explicit unknown state, never fail-open allow), the
+`pact.auth`/`pact.account`/`pact.files` audit payload shapes are vendored from
+pact-contracts schema modules exactly like `pact.decisions`, the decision vocabulary
+moves out of the audit slice into a shared location, eslint-boundaries covers the full
+tree with `no-unknown-files`, the domain/slice conventions are machine-enforced, and
+per-group plus global error boundaries keep the shell alive through feature render
+errors.
+
 Notes on what each edge is, verified against the code:
 
 - **Gateway proxy routes** - `app/api/pact/[...path]/route.ts` (catch-all for classifier/filter/policy/config/benchmark/rules) and the explicit `app/v1/{account,audit,files}/[...path]/route.ts` routes all call the shared `proxyToGateway()` helper (`src/lib/proxy/proxy_to_gateway.ts`).
