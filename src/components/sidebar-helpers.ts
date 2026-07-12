@@ -1,6 +1,6 @@
 import { type Profile } from '@/src/__codegen__/rest/account';
-import { computeInitials } from '@/src/app/account/domain/initials';
 import { type NavUserData } from '@/src/components/nav-user';
+import { computeInitials } from '@/src/lib/initials';
 
 export const buildNavUser = (
   userId: string,

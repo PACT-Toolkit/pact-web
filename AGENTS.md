@@ -68,24 +68,64 @@ PACT Web is a Next.js 16 app (React 19) using **pnpm** as the package manager.
 
 ### Module Hierarchy (ESLint-enforced)
 
-```
-pages → app → framework
-              ↓
-           contexts
-```
+`eslint-plugin-boundaries` classifies every file under `src/` and the root
+`app/` router into one of seven element types and enforces the allow-matrix
+below (`boundaries/dependencies` in `eslint.config.mjs`).
+`boundaries/no-unknown-files` additionally errors on any file that doesn't
+match one of these element patterns or the ignore list, so new top-level
+folders must be classified explicitly, not left to fall through silently.
 
-| From        | Can Import                     |
-| ----------- | ------------------------------ |
-| `app`       | `app`, `contexts`, `framework` |
-| `contexts`  | `contexts`, `framework`        |
-| `framework` | `framework` only               |
-| `pages`     | `app` only                     |
+| Type         | Location                    | Notes                                                                                                     |
+| ------------ | --------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `router`     | `app/**` (repo root)        | The Next.js app router - route segments, layouts, route handlers. Distinct from the `feature` type below. |
+| `feature`    | `src/app/{feature}/**`      | One instance per feature slice; captures `feature` so same-feature imports can be expressed generically.  |
+| `components` | `src/components/**`         | Shared UI kit and sidebar composition, including `src/components/ui`.                                     |
+| `framework`  | `src/framework/{module}/**` | Cross-cutting infrastructure (auth, http, msw, swr, theme, motion, hooks, helpers).                       |
+| `lib`        | `src/lib/**`                | Framework-agnostic leaf utilities with no feature or UI knowledge.                                        |
+| `codegen`    | `src/__codegen__/**`        | Orval/buf-generated REST, proto, and JSON-Schema clients. Never edit by hand.                             |
+| `mocks`      | `mocks/**` (repo root)      | Central MSW wiring that aggregates each feature's `mock/` modules for `dev:mock`.                         |
 
-**Forbidden:**
+| From         | Can import                                                                  |
+| ------------ | --------------------------------------------------------------------------- |
+| `router`     | `router`, `feature`, `components`, `framework`, `lib`                       |
+| `feature`    | the same feature only, `components`, `framework`, `lib`, `codegen`, `mocks` |
+| `components` | `components`, `lib`, `framework`, `codegen`                                 |
+| `framework`  | `framework`, `components`, `lib`, `codegen`, `mocks`                        |
+| `lib`        | `lib` only                                                                  |
+| `mocks`      | `mocks`, `feature`, `codegen`, `framework`                                  |
+| `codegen`    | nothing (leaf)                                                              |
 
-- `contexts` → `app` (contexts cannot depend on features)
-- `framework` → `app`, `contexts` (framework is the lowest level)
-- `app` → `pages` (features don't know about routing)
+**Same-feature rule:** a file in `src/app/audit/**` may import from anywhere
+else in `src/app/audit/**`, but not from `src/app/policy/**` - each feature is
+its own boundary.
+Cross-feature imports are disallowed by default.
+
+**Grandfathered cross-feature imports (tracked debt, PACT-573):** nine
+cross-feature import pairs pre-date this enforcement and are explicitly
+allow-listed rather than broken:
+
+- `classifier`, `consensus`, `dashboard`, `filter`, `redactor` → `audit` -
+  these five features consume the shared decision-vocabulary types
+  (`DecisionPayload` and friends) that currently live in the `audit` slice.
+  Promoting that vocabulary out of `audit` into a proper shared layer is
+  tracked separately; do not add new consumers to this list without doing
+  that extraction first.
+- `dashboard` → `benchmark`, `dashboard` → `test_lab`
+- `test_lab` → `gateway`, `test_lab` → `redactor`
+
+Do not add new cross-feature imports beyond this closed list.
+If two features need to share code, extract it into `components`, `lib`, or
+a headless module - do not add another feature-to-feature edge.
+
+**Framework → mocks:** `src/framework/msw/msw_provider.tsx` dynamically
+imports the root `mocks/` entrypoint to bootstrap MSW in `dev:mock` mode
+(guarded by `isMock()`, dynamic so mocks stay out of the production bundle).
+This is the one `framework → mocks` edge and is allowed explicitly; do not
+add a second one without equally strong justification.
+
+**Tests are exempt.** `**/*.test.*`, `**/*.spec.*`, and `src/test/**` are in
+`boundaries/ignore`, so unit and e2e-support files may cross any boundary
+freely (fixtures, cross-feature test helpers, etc.).
 
 ### Path Aliases
 
