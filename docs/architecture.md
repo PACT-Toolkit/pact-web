@@ -6,35 +6,40 @@ Like the README diagram, these show the target architecture the project is conve
 ## Component diagram (C4 L3)
 
 ```mermaid
-C4Component
-    title pact-web - Components
-    Container_Boundary(web, "pact-web (Next.js)") {
-        Component(authroutes, "(auth) route group", "app/(auth)", "login, register, forgot/reset password, verify email - rendered logged-out")
-        Component(approutes, "(app) route group", "app/(app)", "dashboard, test-lab, per-service consoles (filter, redactor, policy, audit, files, benchmark, classifier, consensus, gateway), settings - every layout validates the session server-side")
-        Component(authapi, "Auth route handlers", "app/api/auth/*", "login / logout / mfa / password flows; call pact-auth over Connect RPC and set the pact_session cookie")
-        Component(proxy, "Gateway edge proxies", "app/api/pact/* + app/v1/* via src/lib/proxy/proxy_to_gateway.ts", "One shared core: translates the pact_session cookie into Authorization: Bearer, forwards to pact-gateway, propagates rotated session tokens back as cookies")
-        Component(session, "Session validation", "src/framework/auth/pact_auth/session.ts", "requireSession / validateSessionFromCookies - calls pact-auth ValidateSession on every invocation, fail-closed; middleware cookie checks are an optimization, not the barrier")
-        Component(features, "Feature slices", "src/app/<feature>/{domain, ui, mock, test}", "One slice per console; domain/ is headless (types, helpers, hooks), ui/ renders, mock/ seeds MSW, test/ is canonical for tests")
-        Component(codegen, "Generated clients", "src/__codegen__/{proto, rest, schema}", "Connect client for pact-auth; per-tag REST fetchers generated from the gateway OpenAPI spec; vendored decision-schema artifacts - never hand-edited")
-        Component(msw, "MSW mock layer", "src/framework/msw", "dev:mock runs the full UI against handlers seeded from feature mock/ modules; fetch gate holds requests until the worker is ready")
-        Component(fw, "Framework", "src/framework/{http, swr, theme, motion, helpers}", "Axios base, SWR config, theming, motion presets, environment helpers")
-    }
-    System_Ext(user, "Console user", "browser")
-    System_Ext(gw, "pact-gateway", "REST API")
-    System_Ext(auth, "pact-auth", "Connect RPC")
+flowchart TB
+    user(["<b>Console user</b><br/><i>browser</i>"]):::person
 
-    Rel(user, authroutes, "logged-out flows")
-    Rel(user, approutes, "console")
-    Rel(authroutes, authapi, "form posts")
-    Rel(authapi, auth, "StartLogin / Register / ...", "Connect RPC")
-    Rel(approutes, session, "requireSession per request")
-    Rel(session, auth, "ValidateSession", "Connect RPC")
-    Rel(approutes, features, "compose")
-    Rel(features, codegen, "generated hooks/fetchers")
-    Rel(codegen, proxy, "fetch /api/pact/*")
-    Rel(proxy, gw, "Bearer-authenticated REST")
-    Rel(features, msw, "handlers in dev:mock")
-    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+    subgraph web["pact-web (Next.js)"]
+        authroutes["<b>(auth) route group</b><br/><i>app/(auth)</i><br/>login, register, forgot/reset password,<br/>verify email - rendered logged-out"]:::comp
+        approutes["<b>(app) route group</b><br/><i>app/(app)</i><br/>dashboard, test-lab, per-service consoles (filter, redactor,<br/>policy, audit, files, benchmark, classifier, consensus, gateway),<br/>settings - every layout validates the session server-side"]:::comp
+        authapi["<b>Auth route handlers</b><br/><i>app/api/auth/*</i><br/>login / logout / mfa / password flows; call pact-auth over<br/>Connect RPC and set the pact_session cookie"]:::comp
+        proxy["<b>Gateway edge proxies</b><br/><i>app/api/pact/* + app/v1/* via src/lib/proxy/proxy_to_gateway.ts</i><br/>one shared core: translates the pact_session cookie into<br/>Authorization: Bearer, forwards to pact-gateway, propagates<br/>rotated session tokens back as cookies"]:::comp
+        session["<b>Session validation</b><br/><i>src/framework/auth/pact_auth/session.ts</i><br/>requireSession / validateSessionFromCookies - calls pact-auth<br/>ValidateSession on every invocation, fail-closed; middleware<br/>cookie checks are an optimization, not the barrier"]:::comp
+        features["<b>Feature slices</b><br/><i>src/app/{feature}/{domain, ui, mock, test}</i><br/>one slice per console; domain/ is headless (types, helpers,<br/>hooks), ui/ renders, mock/ seeds MSW, test/ is canonical for tests"]:::comp
+        codegen["<b>Generated clients</b><br/><i>src/__codegen__/{proto, rest, schema}</i><br/>Connect client for pact-auth; per-tag REST fetchers generated<br/>from the gateway OpenAPI spec; vendored decision-schema<br/>artifacts - never hand-edited"]:::comp
+        msw["<b>MSW mock layer</b><br/><i>src/framework/msw</i><br/>dev:mock runs the full UI against handlers seeded from<br/>feature mock/ modules; fetch gate holds requests<br/>until the worker is ready"]:::comp
+        fw["<b>Framework</b><br/><i>src/framework/{http, swr, theme, motion, helpers}</i><br/>Axios base, SWR config, theming, motion<br/>presets, environment helpers"]:::comp
+    end
+
+    gw["<b>pact-gateway</b><br/><i>REST API</i>"]:::ext
+    auth["<b>pact-auth</b><br/><i>Connect RPC</i>"]:::ext
+
+    user -->|logged-out flows| authroutes
+    user -->|console| approutes
+    authroutes -->|form posts| authapi
+    authapi -->|"StartLogin / Register / ... (Connect RPC)"| auth
+    approutes -->|requireSession per request| session
+    session -->|ValidateSession| auth
+    approutes -->|compose| features
+    features -->|generated hooks/fetchers| codegen
+    codegen -->|fetch /api/pact/*| proxy
+    proxy -->|Bearer-authenticated REST| gw
+    features -->|handlers in dev:mock| msw
+
+    classDef person fill:#08427b,stroke:#052e56,color:#ffffff
+    classDef comp fill:#85bbf0,stroke:#5d82a8,color:#000000
+    classDef ext fill:#8a8a8a,stroke:#666666,color:#ffffff
+    style web fill:none,stroke:#444444,stroke-dasharray:5 5
 ```
 
 ## Class diagram (C4 L4) - session and proxy core
