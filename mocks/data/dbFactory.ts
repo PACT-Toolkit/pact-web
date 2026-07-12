@@ -14,7 +14,7 @@ import {
   mockConsent,
   mockPreferences,
   mockProfile,
-} from '@/src/app/account/mock/data/profile';
+} from '@/src/app/account/mock/data/account';
 import {
   createAuditMockData,
   createDecisionAnnotationsMockData,

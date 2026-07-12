@@ -1,4 +1,4 @@
-import { AccountSettingsNav } from '@/src/app/account/ui/settings/AccountSettingsNav';
+import { AccountSettingsNav } from '@/src/app/account';
 
 const AccountSettingsLayout = ({ children }: { children: React.ReactNode }) => {
   return (

@@ -1,4 +1,4 @@
-import { FilesWorkbench } from '@/src/app/files/ui/FilesWorkbench';
+import { FilesWorkbench } from '@/src/app/files';
 
 const FilesPage = () => {
   return (
