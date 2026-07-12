@@ -9,6 +9,7 @@ import {
   type PolicyRule,
   RuleActionError,
 } from '@/src/app/policy/domain/policy_rule';
+import { usePolicyRuleActions } from '@/src/app/policy/domain/use_policy_rule_actions';
 import { usePolicyRules } from '@/src/app/policy/domain/use_policy_rules';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
@@ -54,7 +55,16 @@ const deferred = <T,>() => {
 const findRule = (rules: PolicyRule[], id: string): PolicyRule | undefined =>
   rules.find((r) => r.id === id);
 
-describe('usePolicyRules publish/revoke', () => {
+// usePolicyRuleActions writes through the same SWR cache entry usePolicyRules
+// reads (both key off getListRulesKey()), so combining them in one harness
+// hook exercises the split exactly as RuleEditor.tsx does, without changing
+// any assertion below.
+const usePolicyRulesWithActions = () => ({
+  ...usePolicyRules(),
+  ...usePolicyRuleActions(),
+});
+
+describe('usePolicyRules + usePolicyRuleActions - publish/revoke', () => {
   it('flips the row status optimistically before the request resolves', async () => {
     const seeded = await seedRule('hook-optimistic-publish');
     const gate = deferred<void>();
@@ -74,7 +84,7 @@ describe('usePolicyRules publish/revoke', () => {
       )
     );
 
-    const { result } = renderHook(() => usePolicyRules(), {
+    const { result } = renderHook(() => usePolicyRulesWithActions(), {
       wrapper: createWrapper(),
     });
 
@@ -115,7 +125,7 @@ describe('usePolicyRules publish/revoke', () => {
       )
     );
 
-    const { result } = renderHook(() => usePolicyRules(), {
+    const { result } = renderHook(() => usePolicyRulesWithActions(), {
       wrapper: createWrapper(),
     });
 
@@ -147,7 +157,7 @@ describe('usePolicyRules publish/revoke', () => {
       )
     );
 
-    const { result } = renderHook(() => usePolicyRules(), {
+    const { result } = renderHook(() => usePolicyRulesWithActions(), {
       wrapper: createWrapper(),
     });
 
@@ -183,7 +193,7 @@ describe('usePolicyRules publish/revoke', () => {
     // B must be published before it can be revoked.
     await fetch(`${BASE}/${ruleB.id}/publish`, { method: 'POST' });
 
-    const { result } = renderHook(() => usePolicyRules(), {
+    const { result } = renderHook(() => usePolicyRulesWithActions(), {
       wrapper: createWrapper(),
     });
 

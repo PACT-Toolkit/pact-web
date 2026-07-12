@@ -1,5 +1,7 @@
 'use client';
 
+import { Fragment } from 'react';
+
 import {
   Card,
   CardContent,
@@ -13,16 +15,14 @@ import { TestLabInputNode } from './TestLabInputNode';
 import { TestLabLayerDetail } from './TestLabLayerDetail';
 import { TestLabLayerNode } from './TestLabLayerNode';
 import { TestLabResultNode } from './TestLabResultNode';
-import { type LayerState, type SaveState } from './types';
+import { type LayerState, type PipelineResult, type SaveState } from './types';
 
 export const TestLabPipelineCard = ({
   inputText,
   layers,
   activeIdx,
   selectedLayer,
-  resultDecision,
-  resultLatencyMs,
-  resultReason,
+  result,
   saveState,
   isRunning,
   onSelectLayer,
@@ -34,9 +34,7 @@ export const TestLabPipelineCard = ({
   layers: LayerState[];
   activeIdx: number;
   selectedLayer: string | null;
-  resultDecision?: 'allow' | 'block';
-  resultLatencyMs?: number;
-  resultReason?: string;
+  result?: PipelineResult;
   saveState: SaveState;
   isRunning: boolean;
   onSelectLayer: (id: string | null) => void;
@@ -44,8 +42,7 @@ export const TestLabPipelineCard = ({
   onPassthrough: (layerId: string) => void;
   onSaveToCorpus: () => void;
 }) => {
-  const selectedLayerState = layers.find(l => l.id === selectedLayer) ?? null;
-  const connector1Dim = layers[0].decision === 'block' && !layers[0].bypassed;
+  const selectedLayerState = layers.find((l) => l.id === selectedLayer) ?? null;
 
   return (
     <Card>
@@ -58,25 +55,31 @@ export const TestLabPipelineCard = ({
       <CardContent>
         <div className="flex items-center gap-0 overflow-x-auto pb-1">
           <TestLabInputNode text={inputText} />
-          <TestLabConnector active={activeIdx === 0} dim={false} />
-          <TestLabLayerNode
-            layer={layers[0]}
-            isActive={activeIdx === 0}
-            isSelected={selectedLayer === 'filter'}
-            onSelect={() => onSelectLayer(selectedLayer === 'filter' ? null : 'filter')}
-          />
-          <TestLabConnector active={activeIdx === 1} dim={connector1Dim} />
-          <TestLabLayerNode
-            layer={layers[1]}
-            isActive={activeIdx === 1}
-            isSelected={selectedLayer === 'classifier'}
-            onSelect={() => onSelectLayer(selectedLayer === 'classifier' ? null : 'classifier')}
-          />
+          {layers.map((layer, i) => (
+            <Fragment key={layer.id}>
+              <TestLabConnector
+                active={activeIdx === i}
+                dim={
+                  i > 0 &&
+                  layers[i - 1].decision === 'block' &&
+                  !layers[i - 1].bypassed
+                }
+              />
+              <TestLabLayerNode
+                layer={layer}
+                isActive={activeIdx === i}
+                isSelected={selectedLayer === layer.id}
+                onSelect={() =>
+                  onSelectLayer(selectedLayer === layer.id ? null : layer.id)
+                }
+              />
+            </Fragment>
+          ))}
           <TestLabConnector active={false} dim={false} />
           <TestLabResultNode
-            decision={resultDecision}
-            latency={resultLatencyMs}
-            reason={resultReason}
+            decision={result?.decision}
+            latency={result?.latencyMs}
+            reason={result?.reason}
             onSave={onSaveToCorpus}
             saveState={saveState}
           />

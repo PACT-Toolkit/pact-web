@@ -3,16 +3,15 @@
 import { Loader2, RefreshCw } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-import {
-  confirmFileUpload,
-  type FileRecord,
-  requestFileUpload,
-  useListFiles,
-} from '@/src/__codegen__/rest/files';
+import { type FileRecord, useListFiles } from '@/src/__codegen__/rest/files';
 import {
   isTerminal,
   POLL_INTERVAL_MS,
 } from '@/src/app/files/domain/files_upload';
+import {
+  type UploadFileFailure,
+  uploadFile,
+} from '@/src/app/files/domain/upload_file';
 import { FilesRow } from '@/src/app/files/ui/FilesRow';
 import { Button } from '@/src/components/ui/button';
 import {
@@ -23,6 +22,28 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
+
+// uploadFailureMessage maps a protocol-level upload failure onto the
+// user-facing copy shown under the file picker -- upload_file.ts holds the
+// protocol (which step failed, with what status), this maps it to words.
+const uploadFailureMessage = (failure: UploadFileFailure): string => {
+  if (failure.step === 'presign') {
+    return failure.status === 401
+      ? 'You are signed out.'
+      : failure.status === 429
+        ? 'Too many uploads - slow down.'
+        : 'Could not request an upload URL.';
+  }
+  if (failure.step === 'put') {
+    return `Upload failed (HTTP ${failure.status}).`;
+  }
+
+  return failure.status === 401
+    ? 'You are signed out.'
+    : failure.status === 404
+      ? 'File not found.'
+      : 'Could not confirm the upload.';
+};
 
 export const FilesWorkbench = () => {
   const [uploading, setUploading] = useState(false);
@@ -67,45 +88,9 @@ export const FilesWorkbench = () => {
     setUploading(true);
     setUploadError(null);
     try {
-      const presign = await requestFileUpload({
-        filename: file.name,
-        contentType: file.type || 'application/octet-stream',
-        sizeBytes: file.size,
-        purpose: 'attachment',
-      });
-      if (presign.status !== 201) {
-        setUploadError(
-          presign.status === 401
-            ? 'You are signed out.'
-            : presign.status === 429
-              ? 'Too many uploads — slow down.'
-              : 'Could not request an upload URL.'
-        );
-
-        return;
-      }
-      const { fileId, uploadUrl } = presign.data;
-
-      const put = await fetch(uploadUrl, {
-        method: 'PUT',
-        headers: { 'Content-Type': file.type || 'application/octet-stream' },
-        body: file,
-      });
-      if (!put.ok) {
-        setUploadError(`Upload failed (HTTP ${put.status}).`);
-
-        return;
-      }
-
-      const confirm = await confirmFileUpload(fileId);
-      if (confirm.status !== 200) {
-        setUploadError(
-          confirm.status === 401
-            ? 'You are signed out.'
-            : confirm.status === 404
-              ? 'File not found.'
-              : 'Could not confirm the upload.'
-        );
+      const result = await uploadFile(file);
+      if (!result.ok) {
+        setUploadError(uploadFailureMessage(result.failure));
 
         return;
       }

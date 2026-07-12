@@ -9,6 +9,7 @@ import {
   type RuleStatus,
   parseScopes,
 } from '@/src/app/policy/domain/policy_rule';
+import { usePolicyRuleActions } from '@/src/app/policy/domain/use_policy_rule_actions';
 import { usePolicyRules } from '@/src/app/policy/domain/use_policy_rules';
 import { Button } from '@/src/components/ui/button';
 import {
@@ -193,16 +194,8 @@ const PolicyRuleRow = ({
 };
 
 export const RuleEditor = () => {
-  const {
-    rules,
-    isLoading,
-    isValidating,
-    error,
-    createRule,
-    publishRule,
-    revokeRule,
-    refresh,
-  } = usePolicyRules();
+  const { rules, isLoading, isValidating, error, refresh } = usePolicyRules();
+  const { createRule, publishRule, revokeRule } = usePolicyRuleActions();
 
   const [name, setName] = useState('');
   const [packYaml, setPackYaml] = useState('');

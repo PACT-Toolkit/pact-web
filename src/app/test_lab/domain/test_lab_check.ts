@@ -90,22 +90,40 @@ export const STATIC_CHIPS: AttackChip[] = [
   { id: 'custom', label: 'Custom', example: '' },
 ];
 
-export const BLANK_LAYERS: LayerState[] = [
-  { id: 'filter', label: 'Filter', decision: 'pending' },
-  { id: 'classifier', label: 'Classifier', decision: 'pending' },
+// LayerDefinition is the single source of truth for which pipeline stages the
+// Test Lab visualises, in display order. BLANK_LAYERS and the stage count
+// used elsewhere (e.g. TestLabPipelineCard's rendering) derive from this list
+// rather than hard-coding the current two stages.
+export interface LayerDefinition {
+  id: string;
+  label: string;
+}
+
+export const LAYER_DEFINITIONS: LayerDefinition[] = [
+  { id: 'filter', label: 'Filter' },
+  { id: 'classifier', label: 'Classifier' },
 ];
+
+export const BLANK_LAYERS: LayerState[] = LAYER_DEFINITIONS.map((def) => ({
+  ...def,
+  decision: 'pending' as LayerDecision,
+}));
 
 // ─── layer inference (mock path) ──────────────────────────────────────────────
 // Used when the gateway returns _mock_layers (dev:mock only).
 
+// Matches mock layers onto pipeline stages by MockLayer.name (which the mock
+// handler always sets to the stage id, e.g. 'filter'/'classifier') rather
+// than array position, so the mapping stays correct even if the mock payload
+// omits a stage or returns them out of order.
 export const applyMockLayers = (
   prev: LayerState[],
   mockLayers: MockLayer[],
   bypassLayers: string[]
 ): LayerState[] =>
-  prev.map((l, i) => {
+  prev.map((l) => {
     if (bypassLayers.includes(l.id)) return l;
-    const ml = mockLayers[i];
+    const ml = mockLayers.find((m) => m.name === l.id);
     if (!ml) return { ...l, decision: 'skip' as LayerDecision };
 
     return {

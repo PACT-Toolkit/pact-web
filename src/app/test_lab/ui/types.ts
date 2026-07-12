@@ -8,8 +8,16 @@ export interface AttackChip {
   example: string;
 }
 
-
 export type SaveState = 'idle' | 'saving' | 'saved' | 'error';
+
+// PipelineResult is TestLabPipelineCard's collapsed view of the /v1/check
+// result it renders on the Result node -- visual-state shape, not the wire
+// CheckResponse itself.
+export interface PipelineResult {
+  decision: 'allow' | 'block';
+  latencyMs: number;
+  reason?: string;
+}
 
 export interface LayerState {
   id: string;
