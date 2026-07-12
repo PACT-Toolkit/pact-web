@@ -46,7 +46,7 @@ export const requireSession = async (): Promise<Session> => {
 export const validateSessionFromCookies = async (): Promise<Session | null> => {
   if (isMock()) {
     // Auto-login in `pnpm run dev:mock` — no cookie required, no pact-auth
-    // roundtrip. Mirrors lunar/terra-web's getTokenFromRequest mock path.
+    // roundtrip.
     return { userId: MOCK_USER_ID, expiresAt: MOCK_SESSION_EXPIRES_AT };
   }
 

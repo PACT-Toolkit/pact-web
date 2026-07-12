@@ -4,8 +4,7 @@
 //
 // Today PACT has only one functional role surface (single Ada Lovelace
 // account), so this exists primarily as the cookie/helper plumbing that
-// future role-gated features can read. Mirrors lunar/terra-web's
-// `mock_user_type` helper.
+// future role-gated features can read.
 
 export type MockUserType = 'admin' | 'auditor' | 'developer';
 
