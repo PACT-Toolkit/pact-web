@@ -17,6 +17,41 @@ import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 import { filterMatchPattern, runClassifier, runFilter } from '../data/test_lab';
 
+const TEST_LAB_RUN_DECISION_VALUES = new Set(['allow', 'block']);
+
+// validateSaveTestLabRunBody mirrors pact-gateway's POST
+// /v1/benchmark/testlab/runs validation. content/decision presence is
+// checked at the gateway's HTTP handler layer (internal/features/benchmark/
+// handler.go's saveTestLabRun: `req.Content == "" || req.Decision == ""`),
+// which returns exactly "content and decision are required". A present but
+// invalid decision value clears that check and instead fails one layer
+// deeper, in pact-benchmark's SaveTestLabRun gRPC handler
+// (grpcserver.py: `request.decision not in ("allow", "block")`) -- that
+// comes back through the gateway's generic gRPC-error body mapper
+// (boundary.GRPCErrorBody) as "invalid request" rather than the specific
+// message, since gRPC error text isn't surfaced verbatim over the wire.
+const validateSaveTestLabRunBody = (
+  body: Record<string, unknown>
+): string | undefined => {
+  if (!body.content || !body.decision) {
+    return 'content and decision are required';
+  }
+  if (!TEST_LAB_RUN_DECISION_VALUES.has(body.decision as string)) {
+    return 'invalid request';
+  }
+
+  return undefined;
+};
+
+// validateSaveCorpusBody mirrors pact-gateway's POST /v1/benchmark/corpus
+// validation (internal/features/benchmark/handler.go's saveCorpus:
+// `req.Content == ""` -> "content is required"). No other field is
+// required on either the gateway's SaveCorpusRequest or pact-benchmark's
+// deeper SaveCorpusEntry gRPC check (_require_content in grpcserver.py).
+const validateSaveCorpusBody = (
+  body: Record<string, unknown>
+): string | undefined => (body.content ? undefined : 'content is required');
+
 export const handlers: RequestHandler[] = [
   http.get(`${MSW_PACT_BASE}/benchmark/v1/corpus/examples`, () =>
     HttpResponse.json(db.attackExamples.getAll())
@@ -161,14 +196,23 @@ export const handlers: RequestHandler[] = [
   // PACT-465: corpus save + run-history save/list moved from the direct
   // pact-benchmark proxy (${MSW_PACT_BASE}/benchmark/v1/...) onto the gateway
   // edge proxy, matching the schema/benchmark orval group's new baseUrl.
-  http.post(`${MSW_PACT_BASE}/gateway/v1/benchmark/corpus`, async () => {
-    await new Promise((r) => setTimeout(r, 60));
+  http.post(
+    `${MSW_PACT_BASE}/gateway/v1/benchmark/corpus`,
+    async ({ request }) => {
+      const body = (await request.json()) as Record<string, unknown>;
+      const validationError = validateSaveCorpusBody(body);
+      if (validationError) {
+        return HttpResponse.json(validationError, { status: 400 });
+      }
 
-    return HttpResponse.json(
-      { id: uuidv4(), status: 'created' },
-      { status: 201 }
-    );
-  }),
+      await new Promise((r) => setTimeout(r, 60));
+
+      return HttpResponse.json(
+        { id: uuidv4(), status: 'created' },
+        { status: 201 }
+      );
+    }
+  ),
 
   http.get(
     `${MSW_PACT_BASE}/gateway/v1/benchmark/testlab/runs`,
@@ -187,11 +231,16 @@ export const handlers: RequestHandler[] = [
     `${MSW_PACT_BASE}/gateway/v1/benchmark/testlab/runs`,
     async ({ request }) => {
       const body = (await request.json()) as Record<string, unknown>;
+      const validationError = validateSaveTestLabRunBody(body);
+      if (validationError) {
+        return HttpResponse.json(validationError, { status: 400 });
+      }
+
       const run = db.testLabRuns.create({
         id: uuidv4(),
-        content: String(body.content ?? ''),
+        content: String(body.content),
         attack_type: String(body.attack_type ?? 'custom'),
-        decision: body.decision === 'block' ? 'block' : 'allow',
+        decision: body.decision as 'allow' | 'block',
         reason: String(body.reason ?? ''),
         filter_rule_id: String(body.filter_rule_id ?? ''),
         latency_ms: Number(body.latency_ms ?? 0),
