@@ -20,6 +20,7 @@ export const TestLabAttackInput = ({
   onInputChange,
   attackType,
   chips,
+  chipsError = false,
   onChipSelect,
   status,
   onRun,
@@ -29,6 +30,7 @@ export const TestLabAttackInput = ({
   onInputChange: (text: string) => void;
   attackType: string;
   chips: AttackChip[];
+  chipsError?: boolean;
   onChipSelect: (id: string, example: string) => void;
   status: RunStatus;
   onRun: () => void;
@@ -69,6 +71,11 @@ export const TestLabAttackInput = ({
             </button>
           ))}
         </div>
+        {chipsError && (
+          <p role="alert" className="text-xs text-destructive">
+            Could not load attack examples.
+          </p>
+        )}
 
         <textarea
           data-testid="test-lab-attack-input"
