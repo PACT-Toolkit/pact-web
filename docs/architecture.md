@@ -712,7 +712,8 @@ sequenceDiagram
         L-->>B: MFA step (factor selection + verify)
     else success
         A-->>R: session + refresh token pair
-        R-->>B: Set-Cookie pact_session, redirect
+        R-->>L: Set-Cookie pact_session
+        L-->>B: redirect to /dashboard
     end
     B->>P: GET /dashboard
     P->>A: ValidateSession (requireSession)
