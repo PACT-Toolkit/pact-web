@@ -181,7 +181,7 @@ stateDiagram-v2
 stateDiagram-v2
     [*] --> composing : prompt + attack type<br/>chosen
     composing --> running : check submitted via<br/>the proxy
-    running --> running : per-layer verdicts<br/>fill in (filter,<br/>classifier, ...)
+    running --> running : per-layer<br/>verdicts fill in
     running --> decided_allow : pipeline allows
     running --> decided_block : a layer blocks
     running --> failed : gateway unreachable /<br/>non-2xx
