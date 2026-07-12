@@ -7,6 +7,7 @@ import {
   useQueryAuditEvents,
   useQueryDecisionStats,
 } from '@/src/__codegen__/rest/audit';
+import { BENIGN_LABELS } from '@/src/__codegen__/schema/pact-decisions';
 import {
   type DecisionPayload,
   parseDecisionPayload,
@@ -37,17 +38,16 @@ export const STATS_REFRESH_MS = 30_000;
 // (src/__codegen__/schema/pact-decisions -- ClassifierDecision.label has no
 // enum; pact-classifier owns the label vocabulary and can add heads without
 // a gateway schema change), so this list cannot be sourced from a schema
-// enum the way decision/filter.verdict/redactor.verdict are. It is instead
-// the single exported source of truth pact-web maintains for "which labels
-// count as benign" -- pact-audit's SQL-side stats aggregate mirrors this
-// same list (PACT-426); if either side adds a label here, update the other.
-export const BENIGN_CLASSIFIER_LABELS = new Set([
-  'benign',
-  'none',
-  'safe',
-  'clean',
-  '',
-]);
+// enum the way decision/filter.verdict/redactor.verdict are. The canonical
+// vocabulary instead lives in pact-contracts (decisions/benign_labels.json,
+// vendored at schema/pact-decisions/benign_labels.json and re-exported as
+// BENIGN_LABELS via `pnpm schema:codegen`) -- pact-audit's Go-side
+// decisions.BenignClassifierLabels is the same list, drift-tested against
+// the same contract (PACT-574). Lowercased here to honor the contract's
+// case-insensitive matching rule explicitly at the comparison boundary.
+export const BENIGN_CLASSIFIER_LABELS = new Set(
+  BENIGN_LABELS.map((label) => label.toLowerCase())
+);
 
 // The dashboard's headline stats, straight from GET /v1/audit/stats. Derived
 // from the generated response types rather than redeclared, so the UI can
@@ -105,8 +105,11 @@ const isFilterFlagged = (dp: DecisionPayload): boolean => {
   return v === 'suspicious' || v === 'hostile';
 };
 
+// An absent or empty classifier.label also counts as benign - this is the
+// contract's own $comment rule (2), a consumer-side presence check that is
+// deliberately not an entry in BENIGN_LABELS itself.
 const isBenignLabel = (label: string): boolean =>
-  BENIGN_CLASSIFIER_LABELS.has(label.toLowerCase());
+  label === '' || BENIGN_CLASSIFIER_LABELS.has(label.toLowerCase());
 
 const isClassifierTagged = (dp: DecisionPayload): boolean =>
   Boolean(dp.classifier?.label) && !isBenignLabel(dp.classifier?.label ?? '');
