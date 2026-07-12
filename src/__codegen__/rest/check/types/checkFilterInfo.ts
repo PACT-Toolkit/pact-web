@@ -5,11 +5,11 @@
  * Public REST entrypoint for the PACT safety pipeline.
  * OpenAPI spec version: 0.1.0
  */
+import type { CheckFilterInfoVerdict } from './checkFilterInfoVerdict';
 
 export interface CheckFilterInfo {
   rule_id?: string;
   /** true when the match was a dry-run / shadow rule */
   shadow?: boolean;
-  /** "safe" | "suspicious" | "hostile" | "unknown" */
-  verdict?: string;
+  verdict?: CheckFilterInfoVerdict;
 }

@@ -5,6 +5,7 @@
  * Public REST entrypoint for the PACT safety pipeline.
  * OpenAPI spec version: 0.1.0
  */
+import type { CheckCheckResponseDecision } from './checkCheckResponseDecision';
 import type { CheckClassifierInfo } from './checkClassifierInfo';
 import type { CheckDiagnosticsInfo } from './checkDiagnosticsInfo';
 import type { CheckExternalRefsInfo } from './checkExternalRefsInfo';
@@ -14,8 +15,7 @@ import type { CheckSpotlightInfo } from './checkSpotlightInfo';
 
 export interface CheckCheckResponse {
   classifier?: CheckClassifierInfo;
-  /** "allow" | "block" */
-  decision: string;
+  decision: CheckCheckResponseDecision;
   diagnostics?: CheckDiagnosticsInfo;
   external_refs?: CheckExternalRefsInfo;
   filter?: CheckFilterInfo;

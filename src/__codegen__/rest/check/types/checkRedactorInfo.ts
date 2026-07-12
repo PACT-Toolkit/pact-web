@@ -6,9 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CheckRedactedSpan } from './checkRedactedSpan';
+import type { CheckRedactorInfoVerdict } from './checkRedactorInfoVerdict';
 
 export interface CheckRedactorInfo {
   spans?: CheckRedactedSpan[];
-  /** "pass_through" | "redacted" | "unknown" */
-  verdict?: string;
+  verdict?: CheckRedactorInfoVerdict;
 }

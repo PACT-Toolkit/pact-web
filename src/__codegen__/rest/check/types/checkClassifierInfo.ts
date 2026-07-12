@@ -7,6 +7,10 @@
  */
 
 export interface CheckClassifierInfo {
+  /** Engine is the exercised classifier model version as echoed by
+   * pact-classifier; absent when the classifier stage did not run or did
+   * not report one. */
+  engine?: string;
   label?: string;
   score?: number;
 }

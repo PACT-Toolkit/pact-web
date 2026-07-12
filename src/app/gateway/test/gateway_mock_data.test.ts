@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { type CheckSpotlightChunk } from '@/src/__codegen__/rest/check';
 import {
   computeCausalSpans,
   runSandboxProbe,
@@ -84,10 +85,12 @@ describe('runSpotlightProbe', () => {
   });
 
   it('wraps each chunk in the requested format and counts sources', () => {
-    const info = runSpotlightProbe(
-      [{ source: 'rag:doc#1', trust: 'trusted', content: 'hello' }],
-      'xml'
-    );
+    const chunk: CheckSpotlightChunk = {
+      source: 'rag:doc#1',
+      trust: 'trusted',
+      content: 'hello',
+    };
+    const info = runSpotlightProbe([chunk], 'xml');
 
     expect(info?.format).toBe('xml');
     expect(info?.source_count).toBe(1);
@@ -96,7 +99,9 @@ describe('runSpotlightProbe', () => {
   });
 
   it('wraps in delim and json formats distinctly', () => {
-    const chunks = [{ source: 's', trust: 'user', content: 'c' }];
+    const chunks: CheckSpotlightChunk[] = [
+      { source: 's', trust: 'user', content: 'c' },
+    ];
 
     expect(runSpotlightProbe(chunks, 'delim')?.chunks?.[0].wrapped).toContain(
       '>>>'

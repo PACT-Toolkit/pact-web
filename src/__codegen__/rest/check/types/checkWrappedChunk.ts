@@ -5,10 +5,11 @@
  * Public REST entrypoint for the PACT safety pipeline.
  * OpenAPI spec version: 0.1.0
  */
+import type { CheckWrappedChunkTrust } from './checkWrappedChunkTrust';
 
 export interface CheckWrappedChunk {
   source?: string;
-  trust?: string;
+  trust?: CheckWrappedChunkTrust;
   /** nonce-tagged marker envelope ready for LLM injection */
   wrapped?: string;
 }
