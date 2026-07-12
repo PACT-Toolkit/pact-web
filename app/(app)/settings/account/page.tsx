@@ -1,4 +1,4 @@
-import { AccountSettingsProfileForm } from '@/src/app/account/ui/settings/AccountSettingsProfileForm';
+import { AccountSettingsProfileForm } from '@/src/app/account';
 
 const AccountProfilePage = () => {
   return <AccountSettingsProfileForm />;

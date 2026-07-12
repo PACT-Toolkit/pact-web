@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { safeNextPath } from './safe_next_path';
+import { safeNextPath } from '../domain/safe_next_path';
 
 describe('safeNextPath', () => {
   it('falls back to /dashboard for missing input', () => {

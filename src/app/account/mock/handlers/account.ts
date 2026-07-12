@@ -11,7 +11,7 @@ import {
 } from '@/src/__codegen__/rest/account';
 import { getMockUserType } from '@/src/framework/helpers/mock_user_type';
 
-import { MOCK_USER_ID, profilePersonaFor } from '../data/profile';
+import { MOCK_USER_ID, profilePersonaFor } from '../data/account';
 
 // applyMask mirrors pact-account's update_mask semantics: only fields
 // listed in `mask` are written to `target`. Implemented here so the

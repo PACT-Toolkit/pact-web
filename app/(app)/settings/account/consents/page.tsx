@@ -1,4 +1,4 @@
-import { AccountSettingsConsentsList } from '@/src/app/account/ui/settings/AccountSettingsConsentsList';
+import { AccountSettingsConsentsList } from '@/src/app/account';
 
 const AccountConsentsPage = () => {
   return <AccountSettingsConsentsList />;

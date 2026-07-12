@@ -1,8 +1,8 @@
 import { CircleCheckBig } from 'lucide-react';
 import Link from 'next/link';
 
+import { safeNextPath } from '@/src/app/auth/domain/safe_next_path';
 import { AuthVerifyEmailNotifier } from '@/src/app/auth/ui/verify-email/AuthVerifyEmailNotifier';
-import { safeNextPath } from '@/src/app/auth/ui/verify-email/safe_next_path';
 import { Button } from '@/src/components/ui/button';
 import { FieldDescription } from '@/src/components/ui/field';
 

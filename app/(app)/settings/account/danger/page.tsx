@@ -1,4 +1,4 @@
-import { AccountSettingsDangerZoneCard } from '@/src/app/account/ui/settings/AccountSettingsDangerZoneCard';
+import { AccountSettingsDangerZoneCard } from '@/src/app/account';
 
 const AccountDangerPage = () => {
   return <AccountSettingsDangerZoneCard />;

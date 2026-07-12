@@ -7,13 +7,26 @@ import {
 import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
 import { type MockUserType } from '@/src/framework/helpers/mock_user_type';
 
-const PROFILE_BY_USER_TYPE: Record<MockUserType, { displayName: string; bio: string }> = {
-  admin: { displayName: 'Ada Lovelace', bio: 'Platform admin — full policy and audit access.' },
-  auditor: { displayName: 'Audrey Ito', bio: 'Auditor — read-only access to decisions and audit trail.' },
-  developer: { displayName: 'Dev Patel', bio: 'Developer — test lab and benchmark workflows.' },
+const PROFILE_BY_USER_TYPE: Record<
+  MockUserType,
+  { displayName: string; bio: string }
+> = {
+  admin: {
+    displayName: 'Ada Lovelace',
+    bio: 'Platform admin — full policy and audit access.',
+  },
+  auditor: {
+    displayName: 'Audrey Ito',
+    bio: 'Auditor — read-only access to decisions and audit trail.',
+  },
+  developer: {
+    displayName: 'Dev Patel',
+    bio: 'Developer — test lab and benchmark workflows.',
+  },
 };
 
-export const profilePersonaFor = (userType: MockUserType) => PROFILE_BY_USER_TYPE[userType];
+export const profilePersonaFor = (userType: MockUserType) =>
+  PROFILE_BY_USER_TYPE[userType];
 
 export { MOCK_USER_ID };
 
@@ -29,7 +42,9 @@ export const mockProfile = (overrides: Partial<Profile>): Profile => ({
   ...overrides,
 });
 
-export const mockPreferences = (overrides: Partial<Preferences>): Preferences => ({
+export const mockPreferences = (
+  overrides: Partial<Preferences>
+): Preferences => ({
   userId: MOCK_USER_ID,
   marketingEmail: false,
   productEmail: true,
@@ -45,9 +60,15 @@ export const mockConsent = (overrides: Partial<Consent>): Consent => ({
   ...overrides,
 });
 
-export const createAccountMockData = (db: DB, userType: MockUserType = 'admin'): void => {
+export const createAccountMockData = (
+  db: DB,
+  userType: MockUserType = 'admin'
+): void => {
   const persona = PROFILE_BY_USER_TYPE[userType];
-  db.accountProfile.create({ displayName: persona.displayName, bio: persona.bio });
+  db.accountProfile.create({
+    displayName: persona.displayName,
+    bio: persona.bio,
+  });
   db.accountPreferences.create({});
   db.accountConsents.create({
     document: 'terms_of_service',

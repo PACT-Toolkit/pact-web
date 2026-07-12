@@ -116,7 +116,6 @@ src/app/{feature}/
 There is no per-feature `data/` or `__codegen__/` folder - generated REST hooks live centrally in `src/__codegen__/rest/{service}/` (see "Data Layer" below), not inside individual feature folders.
 
 `test/` is the canonical test-folder name for both Playwright specs and Vitest unit tests.
-Some features still have a leftover `__tests__/` folder from before this was settled; those are being folded into `test/` as a separate mechanical cleanup, not documented here as an alternative convention.
 
 ---
 

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { AuthLoginForm } from '@/src/app/auth';
-import { safeNextPath } from '@/src/app/auth/ui/verify-email/safe_next_path';
+import { safeNextPath } from '@/src/app/auth/domain/safe_next_path';
 import { validateSessionFromCookies } from '@/src/framework/auth/pact_auth/session';
 
 type SearchParams = {
