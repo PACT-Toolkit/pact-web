@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import useSWR from 'swr';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
@@ -23,6 +22,7 @@ import {
   type TestLabRunRecord,
   toTestRun,
 } from '@/src/app/test_lab/domain/test_lab_check';
+import { useTestLabCorpusExamples } from '@/src/app/test_lab/domain/use_test_lab_corpus_examples';
 import { TestLabAttackInput } from '@/src/app/test_lab/ui/TestLabAttackInput';
 import { TestLabPipelineCard } from '@/src/app/test_lab/ui/TestLabPipelineCard';
 import { TestLabRunHistory } from '@/src/app/test_lab/ui/TestLabRunHistory';
@@ -33,7 +33,6 @@ import {
   type RunStatus,
   type SaveState,
 } from '@/src/app/test_lab/ui/types';
-import { httpClient } from '@/src/framework/http';
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -80,17 +79,10 @@ export const TestLabWorkbench = () => {
       ? historyResponse.data.runs.map(toTestRun)
       : [];
   const { trigger: saveCorpusEntry } = useSaveBenchmarkCorpusEntry();
-  const { data: exampleChips } = useSWR<AttackChip[]>(
-    '/api/pact/benchmark/v1/corpus/examples',
-    (url: string) =>
-      httpClient
-        .get<AttackChip[]>(url)
-        .then((r) => r.data)
-        .catch(() => []),
-    { revalidateOnFocus: false, revalidateOnReconnect: false }
-  );
+  const { examples: exampleChips, error: exampleChipsError } =
+    useTestLabCorpusExamples();
 
-  const chips: AttackChip[] = [...(exampleChips ?? []), ...STATIC_CHIPS];
+  const chips: AttackChip[] = [...exampleChips, ...STATIC_CHIPS];
 
   const runCheck = useCallback(
     async (bypassLayers: string[] = []) => {
@@ -230,6 +222,7 @@ export const TestLabWorkbench = () => {
         onInputChange={setInputText}
         attackType={attackType}
         chips={chips}
+        chipsError={Boolean(exampleChipsError)}
         onChipSelect={(id, example) => {
           setAttackType(id);
           if (example) setInputText(example);

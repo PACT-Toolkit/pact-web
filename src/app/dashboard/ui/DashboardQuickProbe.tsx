@@ -4,13 +4,14 @@ import { ArrowUpRight, BookmarkPlus, Play } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
+import { useSaveBenchmarkCorpusEntry } from '@/src/__codegen__/rest/benchmark';
 import { checkContent } from '@/src/__codegen__/rest/check';
 import { AuditDecisionInsights } from '@/src/app/audit/ui/AuditDecisionInsights';
+import { checkResponseToDecisionPayload } from '@/src/app/dashboard/domain/dashboard_probe';
 import {
-  CORPUS_ENDPOINT,
-  checkResponseToDecisionPayload,
-} from '@/src/app/dashboard/domain/dashboard_probe';
-import { type CheckResponse } from '@/src/app/test_lab/domain/test_lab_check';
+  type CheckResponse,
+  type SaveCorpusPayload,
+} from '@/src/app/test_lab/domain/test_lab_check';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -20,7 +21,6 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { isMock, isProduction } from '@/src/framework/helpers/environment';
-import { httpClient } from '@/src/framework/http';
 
 type ProbeStatus = 'idle' | 'running' | 'done' | 'error';
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
@@ -39,6 +39,7 @@ export const DashboardQuickProbe = ({
   const [status, setStatus] = useState<ProbeStatus>('idle');
   const [result, setResult] = useState<CheckResponse | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const { trigger: saveCorpusEntry } = useSaveBenchmarkCorpusEntry();
 
   const runProbe = async () => {
     if (!inputText.trim()) return;
@@ -67,12 +68,16 @@ export const DashboardQuickProbe = ({
     setSaveStatus('saving');
 
     try {
-      await httpClient.post(CORPUS_ENDPOINT, {
+      const payload: SaveCorpusPayload = {
         content: inputText,
         attack_type: 'custom',
         reason: result.reason,
         filter_rule_id: result.filter_rule_id,
-      });
+      };
+      const response = await saveCorpusEntry(payload);
+      if (response.status !== 201) {
+        throw new Error(`save to corpus failed (${response.status})`);
+      }
       setSaveStatus('saved');
     } catch {
       setSaveStatus('error');

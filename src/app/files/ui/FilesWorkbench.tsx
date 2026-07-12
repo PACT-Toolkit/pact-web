@@ -4,6 +4,7 @@ import { Loader2, RefreshCw } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import {
+  confirmFileUpload,
   type FileRecord,
   requestFileUpload,
   useListFiles,
@@ -22,7 +23,6 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
-import { httpClient } from '@/src/framework/http';
 
 export const FilesWorkbench = () => {
   const [uploading, setUploading] = useState(false);
@@ -97,7 +97,18 @@ export const FilesWorkbench = () => {
         return;
       }
 
-      await httpClient.post(`/v1/files/${fileId}/confirm`);
+      const confirm = await confirmFileUpload(fileId);
+      if (confirm.status !== 200) {
+        setUploadError(
+          confirm.status === 401
+            ? 'You are signed out.'
+            : confirm.status === 404
+              ? 'File not found.'
+              : 'Could not confirm the upload.'
+        );
+
+        return;
+      }
 
       await mutate();
     } catch (err) {
