@@ -117,14 +117,13 @@ See the `swr-best-practices` and `pact-react-patterns` skills for the rules on w
 There is no `.env.example` in this repo; environment is layered per-mode in `env/*.env`, loaded by `env-cmd` (see [Scripts](#scripts)).
 Values as of this writing:
 
-| Variable                         | `env/local.env` (mock)   | `env/local-real.env` (real) | `env/demo.env`                            |
-| -------------------------------- | ------------------------ | --------------------------- | ----------------------------------------- |
-| `NEXT_PUBLIC_API_MOCKING`        | `enabled`                | `disabled`                  | `disabled`                                |
-| `PACT_GATEWAY_URL`               | `http://localhost:8080`  | `http://localhost:8110`     | `https://api-demo.pact.example.com`       |
-| `PACT_BENCHMARK_URL`             | `http://localhost:10093` | `http://localhost:10093`    | `https://benchmark-demo.pact.example.com` |
-| `PACT_AUTH_GRPC_ADDR`            | `http://localhost:9090`  | `http://localhost:9090`     | `https://auth-demo.pact.example.com:443`  |
-| `NEXT_PUBLIC_VERCEL_ENVIRONMENT` | `development`            | `development`               | `preview`                                 |
-| `NEXT_PUBLIC_MSW_DEBUG`          | `true`                   | `false`                     | (unset)                                   |
+| Variable                         | `env/local.env` (mock)  | `env/local-real.env` (real) | `env/demo.env`                           |
+| -------------------------------- | ----------------------- | --------------------------- | ---------------------------------------- |
+| `NEXT_PUBLIC_API_MOCKING`        | `enabled`               | `disabled`                  | `disabled`                               |
+| `PACT_GATEWAY_URL`               | `http://localhost:8080` | `http://localhost:8110`     | `https://api-demo.pact.example.com`      |
+| `PACT_AUTH_GRPC_ADDR`            | `http://localhost:9090` | `http://localhost:9090`     | `https://auth-demo.pact.example.com:443` |
+| `NEXT_PUBLIC_VERCEL_ENVIRONMENT` | `development`           | `development`               | `preview`                                |
+| `NEXT_PUBLIC_MSW_DEBUG`          | `true`                  | `false`                     | (unset)                                  |
 
 `env/local.env`'s `PACT_GATEWAY_URL` value is unused while mocking is enabled (nothing reaches the network) but is left pointed at pact-gateway's default port for parity.
 `env/local-real.env`'s `:8110` matches pact-gateway's canonical dev HTTP port; `:9090` matches pact-auth's canonical gRPC port.
