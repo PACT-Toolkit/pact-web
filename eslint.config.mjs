@@ -137,7 +137,7 @@ const config = [
                 {
                   to: {
                     type: 'feature',
-                    captured: { feature: '${from.feature}' },
+                    captured: { feature: '{{from.feature}}' },
                   },
                 },
                 { to: { type: 'components' } },
