@@ -9,9 +9,13 @@
 export interface BenchmarkSaveTestLabRunRequest {
   attack_type?: string;
   content: string;
-  decision: string;
+  decision?: string;
+  /** Error is the short failure summary; only meaningful when Status is "error". */
+  error?: string;
   filter_rule_id?: string;
   latency_ms?: number;
   reason?: string;
   request_id?: string;
+  /** Status is "ok" or "error"; empty defaults to "ok". */
+  status?: string;
 }

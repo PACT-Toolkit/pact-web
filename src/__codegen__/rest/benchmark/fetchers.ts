@@ -541,6 +541,9 @@ export const getSaveBenchmarkTestLabRunUrl = () => {
 };
 
 /**
+ * Status defaults to "ok" when omitted. An "ok" run requires a
+ * non-empty decision; an "error" run may omit decision and
+ * instead carries a short error summary.
  * @summary Save one Test Lab run-history entry
  */
 export const saveBenchmarkTestLabRun = async (

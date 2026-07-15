@@ -8,6 +8,8 @@ import {
   CheckResponseParseError,
   type MockLayer,
   parseCheckResponse,
+  type TestLabRunRecord,
+  toTestRun,
 } from '@/src/app/test_lab/domain/test_lab_check';
 
 // Helper: pretend the user pressed "Run" — BLANK_LAYERS starts pending.
@@ -479,5 +481,82 @@ describe("parseCheckResponse - PACT-576 parse-don't-cast against the regenerated
     // filter/redactor/classifier/external_refs/spotlight are all optional on
     // the wire (a fast filter-only block never runs the classifier stage).
     expect(() => parseCheckResponse(validResponse())).not.toThrow();
+  });
+});
+
+describe('toTestRun - PACT-595 persisted failed runs', () => {
+  const baseRecord = (
+    over: Partial<TestLabRunRecord> = {}
+  ): TestLabRunRecord => ({
+    id: 'run-1',
+    content: 'hello world',
+    attack_type: 'benign',
+    decision: 'allow',
+    reason: '',
+    filter_rule_id: '',
+    latency_ms: 42,
+    request_id: 'req-1',
+    created_at: 1000,
+    ...over,
+  });
+
+  it('maps an ok/allow row to status=ok with the allow decision', () => {
+    const run = toTestRun(baseRecord({ decision: 'allow' }));
+    expect(run.status).toBe('ok');
+    if (run.status !== 'ok') throw new Error('expected status=ok');
+    expect(run.decision).toBe('allow');
+  });
+
+  it('maps an ok/block row to status=ok with the block decision and reason/rule', () => {
+    const run = toTestRun(
+      baseRecord({
+        decision: 'block',
+        reason: 'filter_hostile',
+        filter_rule_id: 'role-005',
+      })
+    );
+    expect(run.status).toBe('ok');
+    if (run.status !== 'ok') throw new Error('expected status=ok');
+    expect(run.decision).toBe('block');
+    expect(run.reason).toBe('filter_hostile');
+    expect(run.filterRuleId).toBe('role-005');
+  });
+
+  it('maps a status=error row to status=error and surfaces the error summary, without a decision', () => {
+    const run = toTestRun(
+      baseRecord({
+        status: 'error',
+        decision: '',
+        error: 'check failed (503)',
+      })
+    );
+    expect(run.status).toBe('error');
+    expect('decision' in run).toBe(false);
+    if (run.status === 'error') {
+      expect(run.error).toBe('check failed (503)');
+    }
+  });
+
+  it('does not cast an empty decision string into the allow|block closed set for a status=error row', () => {
+    const run = toTestRun(
+      baseRecord({ status: 'error', decision: '', error: 'timeout' })
+    );
+    expect(run.status).toBe('error');
+    // TestRun's 'error' branch has no `decision` property at all -- this
+    // guards against a regression that widens the type back to a plain
+    // optional field defaulting to an invalid cast.
+    expect((run as { decision?: unknown }).decision).toBeUndefined();
+  });
+
+  it('treats an undefined status as ok (back-compat for rows written before failed-run support)', () => {
+    const run = toTestRun(baseRecord({ status: undefined, decision: 'block' }));
+    expect(run.status).toBe('ok');
+    if (run.status !== 'ok') throw new Error('expected status=ok');
+    expect(run.decision).toBe('block');
+  });
+
+  it('falls back to status=error when status is ok/unset but decision is missing (defensive, should not happen on real data)', () => {
+    const run = toTestRun(baseRecord({ status: undefined, decision: '' }));
+    expect(run.status).toBe('error');
   });
 });

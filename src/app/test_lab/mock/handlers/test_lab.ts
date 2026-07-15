@@ -18,22 +18,30 @@ import { MSW_PACT_BASE } from '@/src/framework/msw';
 import { filterMatchPattern, runClassifier, runFilter } from '../data/test_lab';
 
 const TEST_LAB_RUN_DECISION_VALUES = new Set(['allow', 'block']);
+const TEST_LAB_RUN_STATUS_VALUES = new Set(['ok', 'error']);
 
 // validateSaveTestLabRunBody mirrors pact-gateway's POST
-// /v1/benchmark/testlab/runs validation. content/decision presence is
-// checked at the gateway's HTTP handler layer (internal/features/benchmark/
-// handler.go's saveTestLabRun: `req.Content == "" || req.Decision == ""`),
-// which returns exactly "content and decision are required". A present but
-// invalid decision value clears that check and instead fails one layer
-// deeper, in pact-benchmark's SaveTestLabRun gRPC handler
-// (grpcserver.py: `request.decision not in ("allow", "block")`) -- that
-// comes back through the gateway's generic gRPC-error body mapper
-// (boundary.GRPCErrorBody) as "invalid request" rather than the specific
-// message, since gRPC error text isn't surfaced verbatim over the wire.
+// /v1/benchmark/testlab/runs validation (PACT-595: failed-run support,
+// schema/benchmark/swagger.yaml SaveTestLabRunRequest). content is always
+// required (internal/features/benchmark/handler.go's saveTestLabRun:
+// `req.Content == ""` -> "content is required"). Status defaults to "ok"
+// when omitted; an "ok" run still requires a non-empty decision from the
+// allow/block closed set (checked one layer deeper, in pact-benchmark's
+// SaveTestLabRun gRPC handler), while an "error" run may omit decision
+// entirely and instead carries a short error summary.
 const validateSaveTestLabRunBody = (
   body: Record<string, unknown>
 ): string | undefined => {
-  if (!body.content || !body.decision) {
+  if (!body.content) {
+    return 'content is required';
+  }
+  const status = (body.status as string) || 'ok';
+  if (!TEST_LAB_RUN_STATUS_VALUES.has(status)) {
+    return 'invalid request';
+  }
+  if (status === 'error') return undefined;
+
+  if (!body.decision) {
     return 'content and decision are required';
   }
   if (!TEST_LAB_RUN_DECISION_VALUES.has(body.decision as string)) {
@@ -236,11 +244,15 @@ export const handlers: RequestHandler[] = [
         return HttpResponse.json(validationError, { status: 400 });
       }
 
+      const status = ((body.status as string) || 'ok') as 'ok' | 'error';
       const run = db.testLabRuns.create({
         id: uuidv4(),
         content: String(body.content),
         attack_type: String(body.attack_type ?? 'custom'),
-        decision: body.decision as 'allow' | 'block',
+        status,
+        decision:
+          status === 'error' ? '' : (body.decision as 'allow' | 'block'),
+        error: String(body.error ?? ''),
         reason: String(body.reason ?? ''),
         filter_rule_id: String(body.filter_rule_id ?? ''),
         latency_ms: Number(body.latency_ms ?? 0),

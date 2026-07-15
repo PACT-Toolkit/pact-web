@@ -79,6 +79,22 @@ test.describe('Test Lab', () => {
     await expect(saveButton).toBeDisabled();
   });
 
+  test('a previously failed run shows a FAILED badge and error summary, not a green ALLOW', async ({
+    page,
+  }) => {
+    // PACT-595: createTestLabRunsMockData seeds one status=error row
+    // (run-3) alongside the allow/block rows, so dev:mock exercises the
+    // failed-run history render without needing to trigger a live
+    // /v1/check failure first.
+    const failedRow = page
+      .getByTestId('test-lab-run-row')
+      .filter({ has: page.getByText('FAILED') });
+
+    await expect(failedRow).toHaveCount(1);
+    await expect(failedRow.getByText('check failed (503)')).toBeVisible();
+    await expect(failedRow.getByText('ALLOW')).toHaveCount(0);
+  });
+
   test('has no accessibility violations', async ({ page }) => {
     const results = await makeAxeBuilder(page).analyze();
     expect(results.violations).toEqual([]);
