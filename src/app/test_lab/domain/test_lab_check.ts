@@ -229,16 +229,30 @@ export const parseCheckResponse = (raw: unknown): CheckResponse => {
 
 // ─── domain record ────────────────────────────────────────────────────────────
 
-export interface TestRun {
+interface TestRunBase {
   id: string;
   input: string;
   attackType: string;
-  decision: 'allow' | 'block';
-  reason?: string;
-  filterRuleId?: string;
   latencyMs: number;
   timestamp: string;
 }
+
+// TestRun is a discriminated union on `status` rather than a single interface
+// with optional decision/error fields -- a failed run has no gateway
+// decision to report, and narrowing on `status` lets a consumer read
+// `run.decision` in the 'ok' branch without an unsafe cast of an empty wire
+// string into the 'allow' | 'block' closed set.
+export type TestRun =
+  | (TestRunBase & {
+      status: 'ok';
+      decision: 'allow' | 'block';
+      reason?: string;
+      filterRuleId?: string;
+    })
+  | (TestRunBase & {
+      status: 'error';
+      error?: string;
+    });
 
 // ─── persisted run + corpus types (gateway API shape) ────────────────────────
 //
@@ -253,16 +267,36 @@ export type TestLabRunRecord = BenchmarkTestLabRunBody;
 export type SaveRunPayload = BenchmarkSaveTestLabRunRequest;
 export type SaveCorpusPayload = BenchmarkSaveCorpusRequest;
 
-export const toTestRun = (r: TestLabRunRecord): TestRun => ({
-  id: r.id,
-  input: r.content,
-  attackType: r.attack_type,
-  decision: r.decision as 'allow' | 'block',
-  reason: r.reason || undefined,
-  filterRuleId: r.filter_rule_id || undefined,
-  latencyMs: r.latency_ms,
-  timestamp: new Date(r.created_at * 1000).toISOString(),
-});
+export const toTestRun = (r: TestLabRunRecord): TestRun => {
+  const base: TestRunBase = {
+    id: r.id,
+    input: r.content,
+    attackType: r.attack_type,
+    latencyMs: r.latency_ms,
+    timestamp: new Date(r.created_at * 1000).toISOString(),
+  };
+
+  if (r.status === 'error') {
+    return { ...base, status: 'error', error: r.error || undefined };
+  }
+
+  // Defensive: an 'ok' (or unset-status) row is only ever written by the
+  // gateway with a non-empty decision -- this branch should not be reached
+  // on real data. If it is, there is nothing meaningful to show as a
+  // verdict; treat it as a failed run rather than casting an empty/unknown
+  // string into the 'allow' | 'block' closed set.
+  if (r.decision !== 'allow' && r.decision !== 'block') {
+    return { ...base, status: 'error', error: r.error || undefined };
+  }
+
+  return {
+    ...base,
+    status: 'ok',
+    decision: r.decision,
+    reason: r.reason || undefined,
+    filterRuleId: r.filter_rule_id || undefined,
+  };
+};
 
 // ─── pipeline constants ───────────────────────────────────────────────────────
 

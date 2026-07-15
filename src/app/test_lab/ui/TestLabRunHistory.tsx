@@ -4,6 +4,7 @@ import { Check, ChevronDown, ChevronUp, Copy } from 'lucide-react';
 import { useState } from 'react';
 
 import { type TestRun } from '@/src/app/test_lab/domain/test_lab_check';
+import { TestLabRunVerdictBadge } from '@/src/app/test_lab/ui/TestLabRunVerdictBadge';
 import {
   Card,
   CardContent,
@@ -52,24 +53,26 @@ const TestLabRunRow = ({ run }: { run: TestRun }) => {
               aria-hidden
             />
           )}
-          <span
-            className={`shrink-0 rounded px-1.5 py-0.5 font-mono font-semibold ${
-              run.decision === 'block'
-                ? 'bg-destructive/10 text-destructive'
-                : 'bg-green-500/10 text-green-600 dark:text-green-400'
-            }`}
-          >
-            {run.decision.toUpperCase()}
-          </span>
-          {run.reason && (
-            <code className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
-              {run.reason}
-            </code>
-          )}
-          {run.filterRuleId && (
-            <code className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
-              {run.filterRuleId}
-            </code>
+          <TestLabRunVerdictBadge run={run} />
+          {run.status === 'error' ? (
+            run.error && (
+              <code className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+                {run.error}
+              </code>
+            )
+          ) : (
+            <>
+              {run.reason && (
+                <code className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+                  {run.reason}
+                </code>
+              )}
+              {run.filterRuleId && (
+                <code className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+                  {run.filterRuleId}
+                </code>
+              )}
+            </>
           )}
           {!open && (
             <span

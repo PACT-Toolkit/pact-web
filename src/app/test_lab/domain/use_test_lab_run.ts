@@ -69,6 +69,34 @@ export function useTestLabRun() {
       ? historyResponse.data.runs.map(toTestRun)
       : [];
 
+  // persistRun saves one Test Lab run (success or failed) via the same
+  // optimistic mutateHistory path. Best-effort: a save failure surfaces
+  // through historySaveError but is never allowed to mask whatever status
+  // the caller already set (a check failure must stay visible even if the
+  // follow-up save of that failure also fails).
+  const persistRun = useCallback(
+    (payload: SaveRunPayload, optimisticRecord: TestLabRunRecord) => {
+      setHistorySaveError(false);
+      void mutateHistory(
+        async (current) => {
+          const response = await saveBenchmarkTestLabRun(payload);
+          if (response.status !== 201) {
+            throw new Error(`save run failed (${response.status})`);
+          }
+
+          return withOptimisticRun(current, optimisticRecord);
+        },
+        {
+          optimisticData: (current) =>
+            withOptimisticRun(current, optimisticRecord),
+          rollbackOnError: true,
+          revalidate: true,
+        }
+      ).catch(() => setHistorySaveError(true));
+    },
+    [mutateHistory]
+  );
+
   const runCheck = useCallback(
     async (
       inputText: string,
@@ -105,6 +133,7 @@ export function useTestLabRun() {
       }
       setActiveIdx(-1);
 
+      const startedAt = Date.now();
       let data: CheckResponse;
       try {
         const body: CheckInput = {
@@ -117,7 +146,7 @@ export function useTestLabRun() {
           throw new Error(`check failed (${response.status})`);
         }
         data = parseCheckResponse(response.data);
-      } catch {
+      } catch (e) {
         setLayers((prev) =>
           prev.map((l) =>
             l.decision === 'pending'
@@ -126,6 +155,35 @@ export function useTestLabRun() {
           )
         );
         setStatus('error');
+
+        // Persist the failed run only when this run would have been
+        // persisted on success (a full pipeline run, not a bypass re-run) --
+        // same gate the success branch below uses.
+        if (bypassLayers.length === 0) {
+          const summary = e instanceof Error ? e.message : 'check failed';
+          const payload: SaveRunPayload = {
+            content: inputText,
+            attack_type: attackType,
+            status: 'error',
+            decision: '',
+            error: summary,
+            latency_ms: Date.now() - startedAt,
+          };
+          const optimisticRecord: TestLabRunRecord = {
+            id: uuidv4(),
+            created_at: Math.floor(Date.now() / 1000),
+            content: payload.content,
+            attack_type: payload.attack_type ?? attackType,
+            status: 'error',
+            decision: '',
+            error: summary,
+            reason: '',
+            filter_rule_id: '',
+            latency_ms: payload.latency_ms ?? 0,
+            request_id: '',
+          };
+          persistRun(payload, optimisticRecord);
+        }
 
         return;
       }
@@ -160,26 +218,10 @@ export function useTestLabRun() {
           latency_ms: payload.latency_ms ?? 0,
           request_id: payload.request_id,
         };
-        setHistorySaveError(false);
-        void mutateHistory(
-          async (current) => {
-            const response = await saveBenchmarkTestLabRun(payload);
-            if (response.status !== 201) {
-              throw new Error(`save run failed (${response.status})`);
-            }
-
-            return withOptimisticRun(current, optimisticRecord);
-          },
-          {
-            optimisticData: (current) =>
-              withOptimisticRun(current, optimisticRecord),
-            rollbackOnError: true,
-            revalidate: true,
-          }
-        ).catch(() => setHistorySaveError(true));
+        persistRun(payload, optimisticRecord);
       }
     },
-    [mutateHistory]
+    [persistRun]
   );
 
   const forceBlockLayer = useCallback((layerId: string) => {

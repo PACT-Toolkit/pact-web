@@ -10,10 +10,15 @@ export interface BenchmarkTestLabRunBody {
   attack_type: string;
   content: string;
   created_at: number;
-  decision: string;
+  decision?: string;
+  /** Error is the short failure summary when Status is "error"; empty otherwise. */
+  error?: string;
   filter_rule_id?: string;
   id: string;
   latency_ms: number;
   reason?: string;
   request_id?: string;
+  /** Status is "ok" or "error"; empty means "ok" for rows written before
+   * failed-run support existed. */
+  status?: string;
 }
