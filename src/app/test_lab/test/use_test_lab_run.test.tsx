@@ -1,24 +1,11 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { type ReactNode } from 'react';
-import { SWRConfig } from 'swr';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '@/mocks/server';
+import { SWRTestProvider } from '@/mocks/swr_test_provider';
 import { useTestLabRun } from '@/src/app/test_lab/domain/use_test_lab_run';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
-
-// Fresh SWR cache per render so one test's cached run-history entry never
-// bleeds into the next (mirrors use_gateway_config.test.tsx / use_policy_rules.test.tsx).
-const createWrapper = () => {
-  const Wrapper = ({ children }: { children: ReactNode }) => (
-    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
-      {children}
-    </SWRConfig>
-  );
-
-  return Wrapper;
-};
 
 // PACT-595: a failed /v1/check call is now persisted to run history instead
 // of being dropped, closing the gap where a real gateway outage left no
@@ -37,7 +24,7 @@ describe('useTestLabRun - PACT-595 persisted failed runs', () => {
     );
 
     const { result } = renderHook(() => useTestLabRun(), {
-      wrapper: createWrapper(),
+      wrapper: SWRTestProvider,
     });
 
     await waitFor(() =>
@@ -85,7 +72,7 @@ describe('useTestLabRun - PACT-595 persisted failed runs', () => {
     );
 
     const { result } = renderHook(() => useTestLabRun(), {
-      wrapper: createWrapper(),
+      wrapper: SWRTestProvider,
     });
 
     await waitFor(() =>

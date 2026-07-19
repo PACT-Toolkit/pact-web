@@ -1,20 +1,18 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { type ReactNode } from 'react';
-import { SWRConfig } from 'swr';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '@/mocks/server';
+import { SWRTestProvider } from '@/mocks/swr_test_provider';
 import { BenchmarkCorpusLibraryCard } from '@/src/app/benchmark/ui/BenchmarkCorpusLibraryCard';
 
-// Fresh SWR cache per render so one test's cached entries never bleed into
-// the next (mirrors dashboard_pipeline_stats.test.tsx).
 const renderCard = () =>
   render(
     (
-      <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
+      <SWRTestProvider>
         <BenchmarkCorpusLibraryCard />
-      </SWRConfig>
+      </SWRTestProvider>
     ) as ReactNode
   );
 

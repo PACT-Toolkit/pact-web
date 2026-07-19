@@ -1,28 +1,15 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { type ReactNode } from 'react';
-import { SWRConfig } from 'swr';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '@/mocks/server';
+import { SWRTestProvider } from '@/mocks/swr_test_provider';
 import { BENIGN_LABELS } from '@/src/__codegen__/schema/pact-decisions';
 import {
   BENIGN_CLASSIFIER_LABELS,
   decisionSeverity,
   useDashboardPipelineStats,
 } from '@/src/app/dashboard/domain/dashboard_pipeline_stats';
-
-// Fresh SWR cache per render so one test's cached entries never bleed into
-// the next (mirrors use_policy_rules.test.tsx / filter_decision_stats.test.tsx).
-const createWrapper = () => {
-  const Wrapper = ({ children }: { children: ReactNode }) => (
-    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
-      {children}
-    </SWRConfig>
-  );
-
-  return Wrapper;
-};
 
 describe('useDashboardPipelineStats - PACT-363 audit:stats 403 gate (PACT-377)', () => {
   it('exposes statsForbidden=true and empty stats on a 403, without touching the live decisions query', async () => {
@@ -36,7 +23,7 @@ describe('useDashboardPipelineStats - PACT-363 audit:stats 403 gate (PACT-377)',
     );
 
     const { result } = renderHook(() => useDashboardPipelineStats(false), {
-      wrapper: createWrapper(),
+      wrapper: SWRTestProvider,
     });
 
     await waitFor(() => expect(result.current.statsForbidden).toBe(true));
@@ -62,7 +49,7 @@ describe('useDashboardPipelineStats - PACT-363 audit:stats 403 gate (PACT-377)',
     );
 
     const { result } = renderHook(() => useDashboardPipelineStats(false), {
-      wrapper: createWrapper(),
+      wrapper: SWRTestProvider,
     });
 
     await waitFor(() => expect(result.current.statsForbidden).toBe(true));
@@ -74,7 +61,7 @@ describe('useDashboardPipelineStats - PACT-363 audit:stats 403 gate (PACT-377)',
 
   it('reports statsForbidden=false on 200', async () => {
     const { result } = renderHook(() => useDashboardPipelineStats(false), {
-      wrapper: createWrapper(),
+      wrapper: SWRTestProvider,
     });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
