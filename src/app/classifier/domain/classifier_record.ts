@@ -1,8 +1,9 @@
 import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import {
-  type DecisionPayload,
-  parseDecisionPayload,
-} from '@/src/lib/decisions/decision_payload';
+  extractStageRecords,
+  type StageRecordBase,
+} from '@/src/lib/decisions/extract_stage_records';
 
 // Re-derived from DecisionPayload rather than redeclared, so the classifier
 // feature never drifts from the canonical decode of pact-gateway's
@@ -18,15 +19,12 @@ export type ClassifierSubObject = NonNullable<DecisionPayload['classifier']>;
 // ConsensusRecord PAGE_SIZE, RedactorRecord PAGE_SIZE).
 export const PAGE_SIZE = 25;
 
-// One classifier-stage verdict: the audit event's identity/timing fields
-// paired with the decoded classifier sub-object. The classifier stage runs
-// on (almost) every /v1/check call (stage 2 of the pipeline), so this is
-// expected to track close to the full pact.decisions volume for a given
-// fetch window.
-export interface ClassifierRecord {
-  id: string;
-  createdAt: string;
-  requestId?: string;
+// One classifier-stage verdict: the shared audit-event identity/timing
+// fields paired with the decoded classifier sub-object. The classifier
+// stage runs on (almost) every /v1/check call (stage 2 of the pipeline),
+// so this is expected to track close to the full pact.decisions volume for
+// a given fetch window.
+export interface ClassifierRecord extends StageRecordBase {
   classifier: ClassifierSubObject;
   // Top-level pipeline decision (allow/block) for the same request --
   // useful context alongside the classifier's own label/score, since a
@@ -39,41 +37,20 @@ export interface ClassifierRecord {
   // fell below PACT_CONSENSUS_THRESHOLD. Derived, not a field on the wire
   // itself.
   consensusArbitrated: boolean;
-  // Whole /v1/check pipeline latency in ms, NOT a classifier-stage-specific
-  // duration -- pact-gateway does not emit a per-stage latency, only the
-  // end-to-end request latency (mirrors RedactorRecord.latencyMs's and
-  // ConsensusRecord.latencyMs's caveat).
-  latencyMs?: number;
-  // Raw JSONB payload string for the same event, in case a future pass
-  // wants a raw-payload fallback like ConsensusRawPayloadToggle's.
-  rawPayload: string;
 }
 
 // Only events whose decoded payload carries a `classifier` sub-object
-// become records -- everything else means the payload predates the
-// classifier pipeline stage or failed to decode. Malformed payload JSON
-// never throws: parseDecisionPayload returns null and the event is
-// skipped, same as a payload with no classifier block.
+// become records -- see extractStageRecords for the shared guard and
+// malformed-payload semantics.
 export const extractClassifierRecords = (
   events: AuditEvent[]
-): ClassifierRecord[] => {
-  const records: ClassifierRecord[] = [];
-
-  for (const event of events) {
-    const payload = parseDecisionPayload(event.payloadJson);
-    if (!payload?.classifier) continue;
-
-    records.push({
-      id: event.id,
-      createdAt: event.createdAt,
-      requestId: event.requestId,
-      classifier: payload.classifier,
+): ClassifierRecord[] =>
+  extractStageRecords(
+    events,
+    (payload) => payload.classifier,
+    (classifier, payload) => ({
+      classifier,
       decision: payload.decision,
       consensusArbitrated: Boolean(payload.consensus),
-      latencyMs: payload.latency_ms,
-      rawPayload: event.payloadJson,
-    });
-  }
-
-  return records;
-};
+    })
+  );
