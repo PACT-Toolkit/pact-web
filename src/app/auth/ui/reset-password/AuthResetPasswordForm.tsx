@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import useSWRMutation from 'swr/mutation';
 
 import { notifyPasswordResetCompleted } from '@/src/app/auth/domain/auth_broadcast';
 import {
@@ -56,16 +57,24 @@ export const AuthResetPasswordForm = ({
 
   const passwordRegister = register('password');
 
+  const resetMutation = useSWRMutation(
+    AUTH_KEYS.resetPassword,
+    resetPasswordFetcher,
+    {
+      onError: (err: unknown) => setServerError(apiErrorToFormError(err)),
+    }
+  );
+
   const onSubmit = async (data: ResetPasswordFormData) => {
     setServerError(null);
     let result: ResetPasswordResult;
     try {
-      result = await resetPasswordFetcher(AUTH_KEYS.resetPassword, {
-        arg: { token, password: data.password },
+      result = await resetMutation.trigger({
+        token,
+        password: data.password,
       });
-    } catch (err) {
-      setServerError(apiErrorToFormError(err));
-
+    } catch {
+      // handled in onError
       return;
     }
 
