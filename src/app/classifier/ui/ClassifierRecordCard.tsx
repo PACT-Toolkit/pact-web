@@ -1,20 +1,7 @@
 import { BrainCircuit, SplitSquareHorizontal } from 'lucide-react';
 
 import { type ClassifierRecord } from '@/src/app/classifier/domain/classifier_record';
-
-const formatTimestamp = (iso: string) => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-
-  return d.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 // Any label other than "benign" is treated as flagged for badge coloring --
 // the classifier sub-object's label is a free-form string on the wire (see

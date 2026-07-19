@@ -3,19 +3,7 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 
-const formatTimestamp = (iso: string) => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-
-  return d.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 // Shared chrome for every audit row, regardless of topic: the clickable
 // header (topic pill + per-topic badges + timestamp), the expand/collapse
