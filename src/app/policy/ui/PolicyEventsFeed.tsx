@@ -16,19 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
-
-const formatTimestamp = (iso: string) => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-
-  return d.toLocaleString(undefined, {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 // Live view over the caller's pact.policy decisions (GET
 // /v1/audit/policy-events, PACT-306): one row per capability-token
@@ -152,7 +140,7 @@ export const PolicyEventsFeed = () => {
                       </span>
                     )}
                     <span className="ml-auto text-xs text-muted-foreground">
-                      {formatTimestamp(evt.createdAt)}
+                      {formatTimestamp(evt.createdAt, 'compact')}
                     </span>
                   </div>
                 );
