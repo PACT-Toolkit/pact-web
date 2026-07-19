@@ -1,7 +1,5 @@
 'use client';
 
-import { RefreshCw } from 'lucide-react';
-
 import {
   consensusThresholdLabel,
   requestTimeoutLabel,
@@ -10,7 +8,7 @@ import {
 } from '@/src/app/gateway/domain/gateway_config';
 import { useGatewayConfig } from '@/src/app/gateway/domain/use_gateway_config';
 import { GatewayEnforcementControls } from '@/src/app/gateway/ui/GatewayEnforcementControls';
-import { Button } from '@/src/components/ui/button';
+import { RefreshButton } from '@/src/components/refresh-button';
 import {
   Card,
   CardContent,
@@ -59,18 +57,10 @@ export const GatewayEnforcementPanel = () => {
                 gateway&apos;s runtime enforcement API.
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void mutate()}
-              disabled={isValidating}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isValidating ? 'animate-spin' : ''}`}
-                aria-hidden
-              />
-              Refresh
-            </Button>
+            <RefreshButton
+              onRefresh={() => void mutate()}
+              busy={isValidating}
+            />
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

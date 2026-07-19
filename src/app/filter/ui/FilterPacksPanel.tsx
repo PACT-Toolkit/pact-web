@@ -1,6 +1,6 @@
 'use client';
 
-import { Layers, RefreshCw } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { useListLoadedPacks } from '@/src/__codegen__/rest/filter';
@@ -11,7 +11,7 @@ import {
   packSourceLabel,
   sortPacksByLoadedAt,
 } from '@/src/app/filter/domain/filter_packs';
-import { Button } from '@/src/components/ui/button';
+import { RefreshButton } from '@/src/components/refresh-button';
 import {
   Card,
   CardContent,
@@ -51,19 +51,11 @@ export const FilterPacksPanel = () => {
               /v1/filter/packs.
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void mutate()}
-            disabled={isValidating}
-            data-testid="filter-packs-refresh"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isValidating ? 'animate-spin' : ''}`}
-              aria-hidden
-            />
-            Refresh
-          </Button>
+          <RefreshButton
+            onRefresh={() => void mutate()}
+            busy={isValidating}
+            testId="filter-packs-refresh"
+          />
         </div>
       </CardHeader>
       <CardContent

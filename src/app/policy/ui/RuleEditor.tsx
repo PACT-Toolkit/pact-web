@@ -1,6 +1,5 @@
 'use client';
 
-import { RefreshCw } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
 import {
@@ -11,6 +10,7 @@ import {
 } from '@/src/app/policy/domain/policy_rule';
 import { usePolicyRuleActions } from '@/src/app/policy/domain/use_policy_rule_actions';
 import { usePolicyRules } from '@/src/app/policy/domain/use_policy_rules';
+import { RefreshButton } from '@/src/components/refresh-button';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -334,18 +334,10 @@ export const RuleEditor = () => {
                 Authored policy rules, newest first.
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void refresh()}
-              disabled={isValidating}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isValidating ? 'animate-spin' : ''}`}
-                aria-hidden
-              />
-              Refresh
-            </Button>
+            <RefreshButton
+              onRefresh={() => void refresh()}
+              busy={isValidating}
+            />
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { useQueryAuditEvents } from '@/src/__codegen__/rest/audit';
@@ -14,7 +14,7 @@ import {
 } from '@/src/app/audit/domain/audit_filters';
 import { AuditRow } from '@/src/app/audit/ui/AuditRow';
 import { PaginationFooter } from '@/src/components/pagination-footer';
-import { Button } from '@/src/components/ui/button';
+import { RefreshButton } from '@/src/components/refresh-button';
 import {
   Card,
   CardContent,
@@ -137,18 +137,7 @@ export const AuditWorkbench = () => {
               nothing here can be edited or deleted, even by you.
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void mutate()}
-            disabled={isValidating}
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isValidating ? 'animate-spin' : ''}`}
-              aria-hidden
-            />
-            Refresh
-          </Button>
+          <RefreshButton onRefresh={() => void mutate()} busy={isValidating} />
         </div>
         <div className="mt-4 flex flex-wrap items-end gap-2">
           <select

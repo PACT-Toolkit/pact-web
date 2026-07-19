@@ -1,10 +1,9 @@
 'use client';
 
-import { RefreshCw } from 'lucide-react';
 import { type ReactNode } from 'react';
 
 import { PaginationFooter } from '@/src/components/pagination-footer';
-import { Button } from '@/src/components/ui/button';
+import { RefreshButton } from '@/src/components/refresh-button';
 import {
   Card,
   CardContent,
@@ -72,18 +71,7 @@ export const DecisionsConsoleShell = ({
             <CardTitle>{title}</CardTitle>
             <CardDescription>{description}</CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={isValidating}
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isValidating ? 'animate-spin' : ''}`}
-              aria-hidden
-            />
-            Refresh
-          </Button>
+          <RefreshButton onRefresh={onRefresh} busy={isValidating} />
         </div>
         {headerExtra}
       </CardHeader>
