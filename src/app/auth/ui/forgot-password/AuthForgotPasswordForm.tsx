@@ -22,6 +22,11 @@ import {
   FieldLabel,
 } from '@/src/components/ui/field';
 import { Input } from '@/src/components/ui/input';
+import {
+  apiErrorToFormError,
+  AUTH_KEYS,
+  forgotPasswordFetcher,
+} from '@/src/framework/auth/pact_auth/web_mutations';
 import { cn } from '@/src/lib/utils';
 
 type Props = React.ComponentProps<'div'>;
@@ -51,30 +56,12 @@ export const AuthForgotPasswordForm = ({ className, ...props }: Props) => {
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setServerError(null);
-    let res: Response;
     try {
-      res = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: data.email }),
+      await forgotPasswordFetcher(AUTH_KEYS.forgotPassword, {
+        arg: { email: data.email },
       });
-    } catch {
-      setServerError({
-        code: null,
-        message: 'Network error. Please try again.',
-      });
-
-      return;
-    }
-    if (!res.ok) {
-      const payload = (await res.json().catch(() => null)) as {
-        code?: string;
-        error?: string;
-      } | null;
-      setServerError({
-        code: payload?.code ?? null,
-        message: payload?.error ?? 'Request failed. Please try again.',
-      });
+    } catch (err) {
+      setServerError(apiErrorToFormError(err));
 
       return;
     }

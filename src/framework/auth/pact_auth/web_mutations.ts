@@ -59,6 +59,10 @@ const postJson = async <TBody, TResp = void>(
 // hook call sites uniform with the rest of the app.
 export const AUTH_KEYS = {
   login: '/api/auth/login',
+  register: '/api/auth/register',
+  forgotPassword: '/api/auth/forgot-password',
+  resetPassword: '/api/auth/reset-password',
+  resendVerification: '/api/auth/resend-verification',
   passkeyRename: '/api/auth/passkey/rename',
   passkeyDelete: '/api/auth/passkey/delete',
   oauthUnlink: '/api/auth/oauth/unlink',
@@ -70,6 +74,17 @@ export const AUTH_KEYS = {
 } as const;
 
 // -- Mutation fetchers -----------------------------------------------------
+
+// Collapses a thrown fetcher error into the { code, message } shape the
+// auth forms keep in state: ApiError carries the route's { code, error }
+// body (postJson already applied the fallback message); anything else is a
+// network-level failure.
+export const apiErrorToFormError = (
+  err: unknown
+): { code: string | null; message: string } =>
+  err instanceof ApiError
+    ? { code: err.info?.code ?? null, message: err.message }
+    : { code: null, message: 'Network error. Please try again.' };
 
 export type LoginArg = { email: string; password: string };
 // When the user has a verified TOTP factor, pact-auth refuses to return a
@@ -85,6 +100,52 @@ export const loginFetcher = (
     url,
     arg,
     'Sign in failed. Please try again.'
+  );
+
+// The register route reads the proto wire name `display_name` (it also
+// accepts `displayName`; the form sends the wire name).
+export type RegisterArg = {
+  email: string;
+  password: string;
+  display_name: string;
+};
+export const registerFetcher = (
+  url: string,
+  { arg }: { arg: RegisterArg }
+): Promise<void> =>
+  postJson<RegisterArg>(url, arg, 'Registration failed. Please try again.');
+
+export type ForgotPasswordArg = { email: string };
+export const forgotPasswordFetcher = (
+  url: string,
+  { arg }: { arg: ForgotPasswordArg }
+): Promise<void> =>
+  postJson<ForgotPasswordArg>(url, arg, 'Request failed. Please try again.');
+
+export type ResendVerificationArg = { email: string };
+export const resendVerificationFetcher = (
+  url: string,
+  { arg }: { arg: ResendVerificationArg }
+): Promise<void> =>
+  postJson<ResendVerificationArg>(
+    url,
+    arg,
+    "Couldn't resend. Please try again later."
+  );
+
+// Mirrors LoginResult: when the resetting user still has a verified MFA
+// factor, pact-auth withholds the session and the form must bounce
+// through /login/mfa instead of navigating to /dashboard.
+export type ResetPasswordArg = { token: string; password: string };
+export type ResetPasswordResult = { mfaRequired?: boolean; userId?: string };
+export const resetPasswordFetcher = (
+  url: string,
+  { arg }: { arg: ResetPasswordArg }
+): Promise<ResetPasswordResult> =>
+  postJson<ResetPasswordArg, ResetPasswordResult>(
+    url,
+    arg,
+    'Reset failed. Please try again.'
   );
 
 export type RenamePasskeyArg = { passkeyId: string; label: string };
