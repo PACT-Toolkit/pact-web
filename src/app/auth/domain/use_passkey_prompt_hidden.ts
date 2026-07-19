@@ -18,7 +18,7 @@ import {
 //    no remount required (was a bug previously, where dismissing the
 //    dashboard CTA left the banner visible until next nav).
 //  - Each component is a thin "if (hidden) return null" wrapper instead
-//    of duplicating useHasMounted + useState + onEnrolled wiring.
+//    of duplicating its own mounted-state + useState + onEnrolled wiring.
 //
 // SSR snapshot is pessimistic (hidden=true) so the server never paints
 // the prompt — the post-hydration commit reveals it only if the
