@@ -28,8 +28,14 @@ test.describe('Redactor console', () => {
     const cards = page.getByTestId('redactor-record-card');
     await expect(cards.first()).toBeVisible();
     await expect(cards.first()).toContainText(/pass_through|redacted/);
-    await expect(cards.first()).toContainText('gateway-v1');
     await expect(cards.first()).toContainText(/\d+ spans?/);
+
+    // Engine attribution only exists on rows where a stage claimed the
+    // decision (see redactor.ts's scenario docblocks) -- a clean
+    // pass-through carries no engine, so assert the badge on a redacted
+    // row, which pact-gateway always attributes to the redactor engine.
+    const redactedCard = cards.filter({ hasText: 'redacted' }).first();
+    await expect(redactedCard).toContainText('redactor');
 
     const redactedCount = page.getByTestId('redactor-redacted-count');
     await expect(redactedCount).toBeVisible();
