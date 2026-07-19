@@ -2,12 +2,10 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { AuthLoginMfaChallengeForm } from '@/src/app/auth';
-
-const MFA_TOKEN_COOKIE = 'pact_mfa_token';
-// Set only by the OAuth callback route (app/v1/auth/callback/[provider])
-// when it hits the MFA gate. Absent for the password-login MFA path, which
-// always resumes at /dashboard.
-const OAUTH_RETURN_TO_COOKIE = 'pact_oauth_return_to';
+import {
+  MFA_TOKEN_COOKIE,
+  OAUTH_RETURN_TO_COOKIE,
+} from '@/src/framework/auth/pact_auth/cookies';
 
 const LoginMfaPage = async () => {
   const jar = await cookies();

@@ -2,12 +2,12 @@ import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import { OAUTH_STATE_COOKIE } from '@/src/framework/auth/pact_auth/cookies';
 import { defaultReturnTo } from '@/src/framework/auth/pact_auth/return_to';
 import { isMock } from '@/src/framework/helpers/environment';
 
 export const runtime = 'nodejs';
 
-const STATE_COOKIE = 'pact_oauth_state';
 const STATE_TTL_SECONDS = 600;
 
 const ALLOWED_PROVIDERS = new Set(['github', 'google', 'meta']);
@@ -43,7 +43,7 @@ export const GET = async (req: NextRequest) => {
     cb.searchParams.set('return_to', returnTo);
     const res = NextResponse.redirect(cb);
     res.cookies.set({
-      name: STATE_COOKIE,
+      name: OAUTH_STATE_COOKIE,
       value: 'mock-state-envelope',
       httpOnly: true,
       sameSite: 'lax',
@@ -70,7 +70,7 @@ export const GET = async (req: NextRequest) => {
 
   const res = NextResponse.redirect(resp.authorizationUrl);
   res.cookies.set({
-    name: STATE_COOKIE,
+    name: OAUTH_STATE_COOKIE,
     value: resp.state,
     httpOnly: true,
     sameSite: 'lax',

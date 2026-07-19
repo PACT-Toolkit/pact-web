@@ -1,12 +1,14 @@
 import { Code, ConnectError } from '@connectrpc/connect';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import {
+  getSessionToken,
+  notSignedInResponse,
+  sessionExpiredResponse,
+} from '@/src/framework/auth/pact_auth/route_helpers';
 
 export const runtime = 'nodejs';
-
-const SESSION_COOKIE = 'pact_session';
 
 // POST /api/auth/mfa/enroll/begin
 //
@@ -23,9 +25,9 @@ const SESSION_COOKIE = 'pact_session';
 // row server-side that pact-auth's enrollment quota and TTL clean up
 // — see internal/mfa/service.go.
 export const POST = async () => {
-  const sessionToken = (await cookies()).get(SESSION_COOKIE)?.value;
+  const sessionToken = await getSessionToken();
   if (!sessionToken) {
-    return NextResponse.json({ error: 'not signed in' }, { status: 401 });
+    return notSignedInResponse();
   }
 
   let resp: Awaited<
@@ -37,10 +39,7 @@ export const POST = async () => {
     if (err instanceof ConnectError) {
       switch (err.code) {
         case Code.Unauthenticated:
-          return NextResponse.json(
-            { error: 'session expired' },
-            { status: 401 }
-          );
+          return sessionExpiredResponse();
         case Code.ResourceExhausted:
           return NextResponse.json(
             {

@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { SESSION_COOKIE } from '@/src/lib/session_cookie';
+
 // Shared core of every pact-gateway edge proxy route in this app: translates
 // the pact_session cookie into the Authorization: Bearer header
 // pact-gateway's authMiddleware expects, forwards the request, and
@@ -23,7 +25,6 @@ import { type NextRequest, NextResponse } from 'next/server';
 // across all of them.
 
 const GATEWAY_URL = process.env.PACT_GATEWAY_URL ?? 'http://localhost:8080';
-const SESSION_COOKIE = 'pact_session';
 const REFRESH_HEADER = 'x-pact-refresh-token';
 const NEW_SESSION_HEADER = 'x-pact-new-session-token';
 const NEW_REFRESH_HEADER = 'x-pact-new-refresh-token';

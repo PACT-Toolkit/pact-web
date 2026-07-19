@@ -5,21 +5,18 @@ import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
 import {
   MFA_TOKEN_COOKIE,
   MFA_TOKEN_TTL_SECONDS,
+  OAUTH_RETURN_TO_COOKIE,
+  OAUTH_STATE_COOKIE,
+  SESSION_COOKIE,
+  sessionCookieOptions,
   shortLivedCookieOptions,
 } from '@/src/framework/auth/pact_auth/cookies';
+import { mockSessionCookie } from '@/src/framework/auth/pact_auth/mock';
 import { rebaseReturnTo } from '@/src/framework/auth/pact_auth/return_to';
 import { isMock } from '@/src/framework/helpers/environment';
 
 export const runtime = 'nodejs';
 
-const SESSION_COOKIE = 'pact_session';
-const STATE_COOKIE = 'pact_oauth_state';
-// Carries the rebased return_to target across the /login/mfa step-up so
-// the user lands back on their original deep link (not just /dashboard)
-// once they clear the second factor. See auth.proto's HandleCallbackResponse
-// comment: "return_to is still populated so the caller can resume the
-// post-login redirect once the second factor is verified."
-const OAUTH_RETURN_TO_COOKIE = 'pact_oauth_return_to';
 const FALLBACK_RETURN_TO = '/dashboard';
 
 const ALLOWED_PROVIDERS = new Set(['github', 'google', 'meta']);
@@ -54,7 +51,7 @@ export const GET = async (
     return failed(req, 'missing_code_or_state');
   }
 
-  const signedState = req.cookies.get(STATE_COOKIE)?.value;
+  const signedState = req.cookies.get(OAUTH_STATE_COOKIE)?.value;
   if (!signedState) {
     return failed(req, 'missing_state_cookie');
   }
@@ -68,17 +65,9 @@ export const GET = async (
       req.nextUrl.searchParams.get('return_to') || FALLBACK_RETURN_TO;
     const target = rebaseReturnTo(req, returnTo);
     const res = NextResponse.redirect(target);
+    res.cookies.set(mockSessionCookie());
     res.cookies.set({
-      name: SESSION_COOKIE,
-      value: 'mock-session-token',
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      path: '/',
-      maxAge: 60 * 60 * 24 * 365,
-    });
-    res.cookies.set({
-      name: STATE_COOKIE,
+      name: OAUTH_STATE_COOKIE,
       value: '',
       httpOnly: true,
       sameSite: 'lax',
@@ -165,11 +154,7 @@ export const GET = async (
   res.cookies.set({
     name: SESSION_COOKIE,
     value: resp.sessionToken,
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    expires: expiresAt,
+    ...sessionCookieOptions(expiresAt),
   });
   burnStateCookie(res);
 
@@ -191,7 +176,7 @@ const failed = (req: NextRequest, reason: string) => {
 // MFA step-up, or failure) so a replayed callback URL can't reuse it.
 const burnStateCookie = (res: NextResponse) => {
   res.cookies.set({
-    name: STATE_COOKIE,
+    name: OAUTH_STATE_COOKIE,
     value: '',
     httpOnly: true,
     sameSite: 'lax',

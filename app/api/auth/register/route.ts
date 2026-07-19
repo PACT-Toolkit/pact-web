@@ -4,6 +4,11 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
 import { mapPactAuthError } from '@/src/framework/auth/pact_auth/errors';
 import { defaultReturnTo } from '@/src/framework/auth/pact_auth/return_to';
+import {
+  invalidJsonResponse,
+  isString,
+  readJsonBody,
+} from '@/src/framework/auth/pact_auth/route_helpers';
 
 export const runtime = 'nodejs';
 
@@ -16,8 +21,6 @@ type RegisterBody = {
   display_name?: unknown;
   displayName?: unknown;
 };
-
-const isString = (v: unknown): v is string => typeof v === 'string';
 
 const pickDisplayName = (body: RegisterBody): string => {
   if (isString(body.display_name) && body.display_name)
@@ -41,11 +44,9 @@ const pickDisplayName = (body: RegisterBody): string => {
 //   ResourceExhausted → 429 (per-IP rate limit)
 //   anything else → 500 generic
 export const POST = async (req: NextRequest) => {
-  let body: RegisterBody;
-  try {
-    body = (await req.json()) as RegisterBody;
-  } catch {
-    return NextResponse.json({ error: 'invalid json' }, { status: 400 });
+  const body = await readJsonBody<RegisterBody>(req);
+  if (body === null) {
+    return invalidJsonResponse();
   }
 
   const { email, password, returnTo } = body;
