@@ -37,7 +37,7 @@ It must never hold JSX.
 | `'use client'`, but only on a hook file that needs browser APIs or React runtime state (e.g. `useSyncExternalStore` for `navigator.credentials`, a debounced fetch with `useState`) | React component definitions |
 | A React import, when the file is a hook | Rendering, even conditionally |
 
-Examples already in the codebase: `src/app/auth/domain/use_has_mounted.ts`, `use_passkey_prompt_hidden.ts`, `use_password_breach_warning.ts`, and `use_webauthn_supported.ts` are `'use client'` hooks with React imports and zero JSX - they belong in `domain/` under this rule.
+Examples already in the codebase: `src/app/auth/domain/use_passkey_prompt_hidden.ts`, `use_password_breach_warning.ts`, and `use_webauthn_supported.ts` are `'use client'` hooks with React imports and zero JSX - they belong in `domain/` under this rule.
 `src/app/benchmark/domain/use_benchmark_runs.ts`, `use_benchmark_corpus_library.ts`, `src/app/dashboard/domain/dashboard_pipeline_stats.ts`, and `src/app/policy/domain/use_policy_events.ts`, `use_policy_rules.ts` are plain (no `'use client'`) hooks wrapping generated SWR hooks - same rule, no directive needed because they don't touch browser-only APIs.
 
 This is machine-enforced: `eslint.config.mjs` forbids `.tsx` files and JSX syntax (`JSXElement`/`JSXFragment`) under `src/app/*/domain/**`.
