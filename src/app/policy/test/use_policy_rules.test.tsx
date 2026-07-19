@@ -1,10 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { type ReactNode } from 'react';
-import { SWRConfig } from 'swr';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '@/mocks/server';
+import { SWRTestProvider } from '@/mocks/swr_test_provider';
 import {
   type PolicyRule,
   RuleActionError,
@@ -14,19 +13,6 @@ import { usePolicyRules } from '@/src/app/policy/domain/use_policy_rules';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 const BASE = `http://localhost${MSW_PACT_BASE.replace('*', '')}/gateway/v1/rules`;
-
-// Fresh SWR cache per render so optimistic writes from one test never bleed
-// into the next. Both useSWR and the hook's useSWRConfig().mutate resolve to
-// this provider, so they share the same cache entry.
-const createWrapper = () => {
-  const Wrapper = ({ children }: { children: ReactNode }) => (
-    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
-      {children}
-    </SWRConfig>
-  );
-
-  return Wrapper;
-};
 
 // Seed a draft rule through the real create handler so each test owns a rule
 // with a known id (the shared in-memory store also holds rules from other
@@ -85,7 +71,7 @@ describe('usePolicyRules + usePolicyRuleActions - publish/revoke', () => {
     );
 
     const { result } = renderHook(() => usePolicyRulesWithActions(), {
-      wrapper: createWrapper(),
+      wrapper: SWRTestProvider,
     });
 
     await waitFor(() =>
@@ -126,7 +112,7 @@ describe('usePolicyRules + usePolicyRuleActions - publish/revoke', () => {
     );
 
     const { result } = renderHook(() => usePolicyRulesWithActions(), {
-      wrapper: createWrapper(),
+      wrapper: SWRTestProvider,
     });
 
     await waitFor(() =>
@@ -158,7 +144,7 @@ describe('usePolicyRules + usePolicyRuleActions - publish/revoke', () => {
     );
 
     const { result } = renderHook(() => usePolicyRulesWithActions(), {
-      wrapper: createWrapper(),
+      wrapper: SWRTestProvider,
     });
 
     await waitFor(() =>
@@ -194,7 +180,7 @@ describe('usePolicyRules + usePolicyRuleActions - publish/revoke', () => {
     await fetch(`${BASE}/${ruleB.id}/publish`, { method: 'POST' });
 
     const { result } = renderHook(() => usePolicyRulesWithActions(), {
-      wrapper: createWrapper(),
+      wrapper: SWRTestProvider,
     });
 
     await waitFor(() => {
