@@ -3,12 +3,15 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
 import { mapPactAuthError } from '@/src/framework/auth/pact_auth/errors';
 import { defaultReturnTo } from '@/src/framework/auth/pact_auth/return_to';
+import {
+  invalidJsonResponse,
+  isString,
+  readJsonBody,
+} from '@/src/framework/auth/pact_auth/route_helpers';
 
 export const runtime = 'nodejs';
 
 type Body = { email?: unknown; returnTo?: unknown };
-
-const isString = (v: unknown): v is string => typeof v === 'string';
 
 // Anti-enumeration mirror of pact-auth's ResendVerification: returns 200
 // regardless of whether the email maps to an account, or whether that
@@ -19,11 +22,9 @@ const isString = (v: unknown): v is string => typeof v === 'string';
 // same email the user just registered with; returnTo is rebased from the
 // inbound origin so verify links land back on this app.
 export const POST = async (req: NextRequest) => {
-  let body: Body;
-  try {
-    body = (await req.json()) as Body;
-  } catch {
-    return NextResponse.json({ error: 'invalid json' }, { status: 400 });
+  const body = await readJsonBody<Body>(req);
+  if (body === null) {
+    return invalidJsonResponse();
   }
 
   const { email, returnTo } = body;

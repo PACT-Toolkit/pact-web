@@ -3,13 +3,16 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
 import {
+  SESSION_COOKIE,
+  sessionCookieOptions,
+} from '@/src/framework/auth/pact_auth/cookies';
+import {
   rebaseReturnTo,
   requestOrigin,
 } from '@/src/framework/auth/pact_auth/return_to';
 
 export const runtime = 'nodejs';
 
-const SESSION_COOKIE = 'pact_session';
 const FALLBACK_RETURN_TO = '/dashboard';
 
 // GET /api/auth/verify-email?token=<token>
@@ -74,11 +77,7 @@ export const GET = async (req: NextRequest) => {
   res.cookies.set({
     name: SESSION_COOKIE,
     value: resp.sessionToken,
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    expires: expiresAt,
+    ...sessionCookieOptions(expiresAt),
   });
 
   return res;

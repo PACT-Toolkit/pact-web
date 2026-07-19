@@ -6,12 +6,13 @@ import { redirect } from 'next/navigation';
 import { isMock, MOCK_USER_ID } from '@/src/framework/helpers/environment';
 
 import { getPactAuthClient } from './client';
-
-const SESSION_COOKIE = 'pact_session';
+import { SESSION_COOKIE } from './cookies';
 
 // One-year horizon, recomputed at module load. Far enough out that nothing
 // in the UI treats the session as "about to expire" during a dev:mock run.
-const MOCK_SESSION_EXPIRES_AT = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+const MOCK_SESSION_EXPIRES_AT = new Date(
+  Date.now() + 365 * 24 * 60 * 60 * 1000
+);
 
 export type Session = {
   userId: string;

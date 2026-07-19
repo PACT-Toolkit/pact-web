@@ -1,10 +1,9 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import { SESSION_COOKIE } from '@/src/framework/auth/pact_auth/cookies';
 
 export const runtime = 'nodejs';
-
-const SESSION_COOKIE = 'pact_session';
 
 // Idempotent. Safe to call without a session — we just clear the cookie.
 // Best-effort RevokeSession: any failure here (network blip, expired token)

@@ -2,12 +2,15 @@ import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import {
+  invalidJsonResponse,
+  isString,
+  readJsonBody,
+} from '@/src/framework/auth/pact_auth/route_helpers';
 
 export const runtime = 'nodejs';
 
 type Body = { email?: unknown };
-
-const isString = (v: unknown): v is string => typeof v === 'string';
 
 // POST /api/auth/passkey/login/begin
 // Body: { email?: string }
@@ -18,11 +21,9 @@ const isString = (v: unknown): v is string => typeof v === 'string';
 // re-emit as JSON so the browser can hand it directly to navigator.credentials.get
 // after decoding the binary fields locally.
 export const POST = async (req: NextRequest) => {
-  let body: Body;
-  try {
-    body = (await req.json()) as Body;
-  } catch {
-    return NextResponse.json({ error: 'invalid json' }, { status: 400 });
+  const body = await readJsonBody<Body>(req);
+  if (body === null) {
+    return invalidJsonResponse();
   }
 
   const email = isString(body.email) ? body.email : '';

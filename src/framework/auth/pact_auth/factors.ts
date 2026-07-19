@@ -3,8 +3,7 @@ import 'server-only';
 import { cookies } from 'next/headers';
 
 import { getPactAuthClient } from './client';
-
-const SESSION_COOKIE = 'pact_session';
+import { SESSION_COOKIE } from './cookies';
 
 // Server-only readers for the security settings page. Each function fails
 // closed: when pact-auth is unreachable or the session is invalid we
