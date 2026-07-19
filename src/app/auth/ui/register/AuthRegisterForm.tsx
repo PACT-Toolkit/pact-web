@@ -24,6 +24,12 @@ import {
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
+import {
+  apiErrorToFormError,
+  AUTH_KEYS,
+  registerFetcher,
+  resendVerificationFetcher,
+} from '@/src/framework/auth/pact_auth/web_mutations';
 
 type RegisterErrorCode = 'email_already_registered';
 
@@ -93,32 +99,12 @@ export const AuthRegisterForm = () => {
   const handleResend = async () => {
     if (!registeredEmail) return;
     setResendState({ status: 'sending' });
-    let res: Response;
     try {
-      res = await fetch('/api/auth/resend-verification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: registeredEmail }),
+      await resendVerificationFetcher(AUTH_KEYS.resendVerification, {
+        arg: { email: registeredEmail },
       });
-    } catch {
-      setResendState({
-        status: 'error',
-        code: null,
-        message: 'Network error. Please try again.',
-      });
-
-      return;
-    }
-    if (!res.ok) {
-      const payload = (await res.json().catch(() => null)) as {
-        code?: string;
-        error?: string;
-      } | null;
-      setResendState({
-        status: 'error',
-        code: payload?.code ?? null,
-        message: payload?.error ?? "Couldn't resend. Please try again later.",
-      });
+    } catch (err) {
+      setResendState({ status: 'error', ...apiErrorToFormError(err) });
 
       return;
     }
@@ -137,30 +123,19 @@ export const AuthRegisterForm = () => {
 
   const onSubmit = async (data: RegisterFormData) => {
     setServerError(null);
-    let res: Response;
     try {
-      res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      await registerFetcher(AUTH_KEYS.register, {
+        arg: {
           email: data.email,
           password: data.password,
           display_name: data.displayName,
-        }),
+        },
       });
-    } catch {
-      setServerError({ message: 'Network error. Please try again.' });
-
-      return;
-    }
-    if (!res.ok) {
-      const payload = (await res.json().catch(() => null)) as {
-        code?: RegisterErrorCode;
-        error?: string;
-      } | null;
+    } catch (err) {
+      const { code, message } = apiErrorToFormError(err);
       setServerError({
-        code: payload?.code,
-        message: payload?.error ?? 'Registration failed. Please try again.',
+        code: code === 'email_already_registered' ? code : undefined,
+        message,
       });
 
       return;

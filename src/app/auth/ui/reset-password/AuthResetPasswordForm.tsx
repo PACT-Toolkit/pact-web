@@ -23,6 +23,12 @@ import {
   FieldLabel,
 } from '@/src/components/ui/field';
 import { Input } from '@/src/components/ui/input';
+import {
+  apiErrorToFormError,
+  AUTH_KEYS,
+  resetPasswordFetcher,
+  type ResetPasswordResult,
+} from '@/src/framework/auth/pact_auth/web_mutations';
 import { cn } from '@/src/lib/utils';
 
 type Props = React.ComponentProps<'div'> & {
@@ -52,38 +58,18 @@ export const AuthResetPasswordForm = ({
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     setServerError(null);
-    let res: Response;
+    let result: ResetPasswordResult;
     try {
-      res = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, password: data.password }),
+      result = await resetPasswordFetcher(AUTH_KEYS.resetPassword, {
+        arg: { token, password: data.password },
       });
-    } catch {
-      setServerError({
-        code: null,
-        message: 'Network error. Please try again.',
-      });
-
-      return;
-    }
-    if (!res.ok) {
-      const payload = (await res.json().catch(() => null)) as {
-        code?: string;
-        error?: string;
-      } | null;
-      setServerError({
-        code: payload?.code ?? null,
-        message: payload?.error ?? 'Reset failed. Please try again.',
-      });
+    } catch (err) {
+      setServerError(apiErrorToFormError(err));
 
       return;
     }
 
-    const payload = (await res.json().catch(() => null)) as {
-      mfaRequired?: boolean;
-    } | null;
-    if (payload?.mfaRequired) {
+    if (result?.mfaRequired) {
       // pact-auth withheld the session - the resetting user still has a
       // verified MFA factor to clear. No session exists yet, so we must
       // not broadcast password-reset-completed to other tabs: the reset
