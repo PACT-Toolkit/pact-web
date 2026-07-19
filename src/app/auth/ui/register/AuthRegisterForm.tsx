@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import useSWRMutation from 'swr/mutation';
 
 import { subscribeToVerified } from '@/src/app/auth/domain/auth_broadcast';
 import {
@@ -96,16 +97,32 @@ export const AuthRegisterForm = () => {
     }, 1000);
   };
 
+  const registerMutation = useSWRMutation(AUTH_KEYS.register, registerFetcher, {
+    onError: (err: unknown) => {
+      const { code, message } = apiErrorToFormError(err);
+      setServerError({
+        code: code === 'email_already_registered' ? code : undefined,
+        message,
+      });
+    },
+  });
+
+  const resendMutation = useSWRMutation(
+    AUTH_KEYS.resendVerification,
+    resendVerificationFetcher,
+    {
+      onError: (err: unknown) =>
+        setResendState({ status: 'error', ...apiErrorToFormError(err) }),
+    }
+  );
+
   const handleResend = async () => {
     if (!registeredEmail) return;
     setResendState({ status: 'sending' });
     try {
-      await resendVerificationFetcher(AUTH_KEYS.resendVerification, {
-        arg: { email: registeredEmail },
-      });
-    } catch (err) {
-      setResendState({ status: 'error', ...apiErrorToFormError(err) });
-
+      await resendMutation.trigger({ email: registeredEmail });
+    } catch {
+      // handled in onError
       return;
     }
     startCooldown();
@@ -124,20 +141,13 @@ export const AuthRegisterForm = () => {
   const onSubmit = async (data: RegisterFormData) => {
     setServerError(null);
     try {
-      await registerFetcher(AUTH_KEYS.register, {
-        arg: {
-          email: data.email,
-          password: data.password,
-          display_name: data.displayName,
-        },
+      await registerMutation.trigger({
+        email: data.email,
+        password: data.password,
+        display_name: data.displayName,
       });
-    } catch (err) {
-      const { code, message } = apiErrorToFormError(err);
-      setServerError({
-        code: code === 'email_already_registered' ? code : undefined,
-        message,
-      });
-
+    } catch {
+      // handled in onError
       return;
     }
     setRegisteredEmail(data.email);

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import useSWRMutation from 'swr/mutation';
 
 import { subscribeToPasswordResetCompleted } from '@/src/app/auth/domain/auth_broadcast';
 import {
@@ -54,18 +55,22 @@ export const AuthForgotPasswordForm = ({ className, ...props }: Props) => {
     resolver: yupResolver(forgotPasswordSchema),
   });
 
+  const forgotMutation = useSWRMutation(
+    AUTH_KEYS.forgotPassword,
+    forgotPasswordFetcher,
+    {
+      onSuccess: () => setSubmitted(true),
+      onError: (err: unknown) => setServerError(apiErrorToFormError(err)),
+    }
+  );
+
   const onSubmit = async (data: ForgotPasswordFormData) => {
     setServerError(null);
     try {
-      await forgotPasswordFetcher(AUTH_KEYS.forgotPassword, {
-        arg: { email: data.email },
-      });
-    } catch (err) {
-      setServerError(apiErrorToFormError(err));
-
-      return;
+      await forgotMutation.trigger({ email: data.email });
+    } catch {
+      // handled in onError
     }
-    setSubmitted(true);
   };
 
   if (submitted) {

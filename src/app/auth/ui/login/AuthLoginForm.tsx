@@ -33,8 +33,8 @@ import {
 } from '@/src/components/ui/field';
 import { Input } from '@/src/components/ui/input';
 import {
+  apiErrorToFormError,
   AUTH_KEYS,
-  ApiError,
   loginFetcher,
 } from '@/src/framework/auth/pact_auth/web_mutations';
 import { cn } from '@/src/lib/utils';
@@ -83,18 +83,7 @@ export const AuthLoginForm = ({
       router.push(returnTo);
     },
     onError: (err: unknown) => {
-      if (err instanceof ApiError) {
-        setServerError({
-          code: err.info?.code ?? null,
-          message: err.message,
-        });
-
-        return;
-      }
-      setServerError({
-        code: null,
-        message: 'Network error. Please try again.',
-      });
+      setServerError(apiErrorToFormError(err));
     },
   });
 
