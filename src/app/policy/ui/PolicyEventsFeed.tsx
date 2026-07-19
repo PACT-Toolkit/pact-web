@@ -1,6 +1,5 @@
 'use client';
 
-import { RefreshCw } from 'lucide-react';
 import { useMemo } from 'react';
 
 import {
@@ -9,7 +8,7 @@ import {
 } from '@/src/app/policy/domain/policy_event';
 import { usePolicyEvents } from '@/src/app/policy/domain/use_policy_events';
 import { PolicyStatCard } from '@/src/app/policy/ui/PolicyStatCard';
-import { Button } from '@/src/components/ui/button';
+import { RefreshButton } from '@/src/components/refresh-button';
 import {
   Card,
   CardContent,
@@ -88,18 +87,10 @@ export const PolicyEventsFeed = () => {
                 every 30 s.
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void mutate()}
-              disabled={isValidating}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isValidating ? 'animate-spin' : ''}`}
-                aria-hidden
-              />
-              Refresh
-            </Button>
+            <RefreshButton
+              onRefresh={() => void mutate()}
+              busy={isValidating}
+            />
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

@@ -1,6 +1,5 @@
 'use client';
 
-import { RefreshCw } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { AuditRow } from '@/src/app/audit/ui/AuditRow';
@@ -9,7 +8,7 @@ import {
   type DecisionSeverity,
   decisionSeverity,
 } from '@/src/app/dashboard/domain/dashboard_pipeline_stats';
-import { Button } from '@/src/components/ui/button';
+import { RefreshButton } from '@/src/components/refresh-button';
 import {
   Card,
   CardContent,
@@ -82,18 +81,7 @@ export const DashboardLiveDecisions = ({
             />
             Live
           </label>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={isValidating}
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isValidating ? 'animate-spin' : ''}`}
-              aria-hidden
-            />
-            Refresh
-          </Button>
+          <RefreshButton onRefresh={onRefresh} busy={isValidating} />
         </div>
         <div className="mt-1 flex flex-wrap gap-1.5">
           {FILTERS.map(({ value, label }) => (
