@@ -3,6 +3,7 @@
 import { RefreshCw } from 'lucide-react';
 import { type ReactNode } from 'react';
 
+import { PaginationFooter } from '@/src/components/pagination-footer';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -116,34 +117,11 @@ export const DecisionsConsoleShell = ({
         )}
 
         {!isEmpty && (
-          <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span data-testid={`${stage}-page-info`}>
-              {`Showing ${pagination.rangeStart}–${pagination.rangeEnd} of ${pagination.totalCount}`}
-            </span>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!pagination.canPrev || isValidating}
-                onClick={pagination.goPrev}
-                data-testid={`${stage}-page-prev`}
-              >
-                Previous
-              </Button>
-              <span>
-                Page {pagination.page + 1} of {pagination.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!pagination.canNext || isValidating}
-                onClick={pagination.goNext}
-                data-testid={`${stage}-page-next`}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
+          <PaginationFooter
+            pagination={pagination}
+            busy={isValidating}
+            testIdPrefix={stage}
+          />
         )}
       </CardContent>
     </Card>
