@@ -1,12 +1,14 @@
 import { Code, ConnectError } from '@connectrpc/connect';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import {
+  getSessionToken,
+  notSignedInResponse,
+  sessionExpiredResponse,
+} from '@/src/framework/auth/pact_auth/route_helpers';
 
 export const runtime = 'nodejs';
-
-const SESSION_COOKIE = 'pact_session';
 
 // POST /api/auth/mfa/recovery-codes
 // Generates a fresh batch of recovery codes; the previous batch is invalidated
@@ -14,9 +16,9 @@ const SESSION_COOKIE = 'pact_session';
 // or surface them again, so the caller MUST display them once and prompt the
 // user to copy/print/save them before navigating away.
 export const POST = async () => {
-  const sessionToken = (await cookies()).get(SESSION_COOKIE)?.value;
+  const sessionToken = await getSessionToken();
   if (!sessionToken) {
-    return NextResponse.json({ error: 'not signed in' }, { status: 401 });
+    return notSignedInResponse();
   }
 
   let resp: Awaited<
@@ -28,10 +30,7 @@ export const POST = async () => {
     if (err instanceof ConnectError) {
       switch (err.code) {
         case Code.Unauthenticated:
-          return NextResponse.json(
-            { error: 'session expired' },
-            { status: 401 }
-          );
+          return sessionExpiredResponse();
         case Code.FailedPrecondition:
           return NextResponse.json(
             { error: 'enroll a TOTP factor before generating recovery codes' },

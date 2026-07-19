@@ -5,20 +5,7 @@ import { useState } from 'react';
 
 import { type RedactorRecord } from '@/src/app/redactor/domain/redactor_record';
 import { RedactorSpanList } from '@/src/app/redactor/ui/RedactorSpanList';
-
-const formatTimestamp = (iso: string) => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-
-  return d.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 // One redactor-stage decision: verdict badge, engine, span count, and a
 // collapsible detail panel listing each redacted span's entity type and

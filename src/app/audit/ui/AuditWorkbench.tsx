@@ -1,6 +1,6 @@
 'use client';
 
-import { RefreshCw, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { useQueryAuditEvents } from '@/src/__codegen__/rest/audit';
@@ -13,7 +13,8 @@ import {
   matchesActorFilter,
 } from '@/src/app/audit/domain/audit_filters';
 import { AuditRow } from '@/src/app/audit/ui/AuditRow';
-import { Button } from '@/src/components/ui/button';
+import { PaginationFooter } from '@/src/components/pagination-footer';
+import { RefreshButton } from '@/src/components/refresh-button';
 import {
   Card,
   CardContent,
@@ -22,6 +23,7 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
+import { type Pagination } from '@/src/lib/use_local_pagination';
 
 // Page size for the activity log. Server-side clamp is 200 (see
 // audit.Service.MaxLimit) -- keep this comfortably below so a single
@@ -99,9 +101,21 @@ export const AuditWorkbench = () => {
     [events, actor]
   );
 
+  // Server-side paging: the offset lives in the SWR key, so this
+  // assembles the shared Pagination shape by hand instead of using
+  // useLocalPagination (which paginates an already-loaded list).
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const pageStart = page * PAGE_SIZE + 1;
-  const pageEnd = Math.min(total, (page + 1) * PAGE_SIZE);
+  const pagination: Pagination = {
+    page,
+    totalPages,
+    totalCount: total,
+    rangeStart: page * PAGE_SIZE + 1,
+    rangeEnd: Math.min(total, (page + 1) * PAGE_SIZE),
+    canPrev: page > 0,
+    canNext: page + 1 < totalPages,
+    goPrev: () => setPage((p) => Math.max(0, p - 1)),
+    goNext: () => setPage((p) => p + 1),
+  };
 
   const handleFilterChange = (next: () => void) => {
     // Any filter change resets the page -- offset is relative to the
@@ -123,18 +137,7 @@ export const AuditWorkbench = () => {
               nothing here can be edited or deleted, even by you.
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void mutate()}
-            disabled={isValidating}
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isValidating ? 'animate-spin' : ''}`}
-              aria-hidden
-            />
-            Refresh
-          </Button>
+          <RefreshButton onRefresh={() => void mutate()} busy={isValidating} />
         </div>
         <div className="mt-4 flex flex-wrap items-end gap-2">
           <select
@@ -233,36 +236,12 @@ export const AuditWorkbench = () => {
           </div>
         )}
 
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span data-testid="audit-page-info">
-            {total > 0
-              ? `Showing ${pageStart}–${pageEnd} of ${total}`
-              : 'No matching rows'}
-          </span>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 0 || isValidating}
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              data-testid="audit-page-prev"
-            >
-              Previous
-            </Button>
-            <span>
-              Page {page + 1} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page + 1 >= totalPages || isValidating}
-              onClick={() => setPage((p) => p + 1)}
-              data-testid="audit-page-next"
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+        <PaginationFooter
+          pagination={pagination}
+          busy={isValidating}
+          testIdPrefix="audit"
+          emptyText="No matching rows"
+        />
       </CardContent>
     </Card>
   );

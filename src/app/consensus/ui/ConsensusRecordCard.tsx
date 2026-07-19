@@ -15,20 +15,7 @@ import {
 import { type ConsensusRecord } from '@/src/app/consensus/domain/consensus_record';
 import { ConsensusRawPayloadToggle } from '@/src/app/consensus/ui/ConsensusRawPayloadToggle';
 import { ConsensusVoteChip } from '@/src/app/consensus/ui/ConsensusVoteChip';
-
-const formatTimestamp = (iso: string) => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-
-  return d.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 // One arbitrated request: winning label, confidence, backend count, quorum
 // badge, per-model vote chips, highlight badges for the cases an operator

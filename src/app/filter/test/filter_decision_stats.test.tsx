@@ -1,23 +1,10 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { type ReactNode } from 'react';
-import { SWRConfig } from 'swr';
 import { describe, expect, it } from 'vitest';
 
 import { server } from '@/mocks/server';
+import { SWRTestProvider } from '@/mocks/swr_test_provider';
 import { useFilterDecisionStats } from '@/src/app/filter/domain/filter_decision_stats';
-
-// Fresh SWR cache per render so one test's cached /v1/audit/stats entry
-// never bleeds into the next (mirrors use_policy_rules.test.tsx).
-const createWrapper = () => {
-  const Wrapper = ({ children }: { children: ReactNode }) => (
-    <SWRConfig value={{ provider: () => new Map(), dedupingInterval: 0 }}>
-      {children}
-    </SWRConfig>
-  );
-
-  return Wrapper;
-};
 
 describe('useFilterDecisionStats - PACT-363 audit:stats 403 gate (PACT-377)', () => {
   it('exposes forbidden=true and empty stats on a 403, not a raw error', async () => {
@@ -31,7 +18,7 @@ describe('useFilterDecisionStats - PACT-363 audit:stats 403 gate (PACT-377)', ()
     );
 
     const { result } = renderHook(() => useFilterDecisionStats(), {
-      wrapper: createWrapper(),
+      wrapper: SWRTestProvider,
     });
 
     await waitFor(() => expect(result.current.forbidden).toBe(true));
@@ -56,7 +43,7 @@ describe('useFilterDecisionStats - PACT-363 audit:stats 403 gate (PACT-377)', ()
     );
 
     const { result } = renderHook(() => useFilterDecisionStats(), {
-      wrapper: createWrapper(),
+      wrapper: SWRTestProvider,
     });
 
     await waitFor(() => expect(result.current.forbidden).toBe(true));
@@ -72,7 +59,7 @@ describe('useFilterDecisionStats - PACT-363 audit:stats 403 gate (PACT-377)', ()
 
   it('still polls normally and reports forbidden=false on 200', async () => {
     const { result } = renderHook(() => useFilterDecisionStats(), {
-      wrapper: createWrapper(),
+      wrapper: SWRTestProvider,
     });
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));

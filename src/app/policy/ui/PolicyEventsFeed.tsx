@@ -1,6 +1,5 @@
 'use client';
 
-import { RefreshCw } from 'lucide-react';
 import { useMemo } from 'react';
 
 import {
@@ -9,7 +8,7 @@ import {
 } from '@/src/app/policy/domain/policy_event';
 import { usePolicyEvents } from '@/src/app/policy/domain/use_policy_events';
 import { PolicyStatCard } from '@/src/app/policy/ui/PolicyStatCard';
-import { Button } from '@/src/components/ui/button';
+import { RefreshButton } from '@/src/components/refresh-button';
 import {
   Card,
   CardContent,
@@ -17,19 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
-
-const formatTimestamp = (iso: string) => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-
-  return d.toLocaleString(undefined, {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 // Live view over the caller's pact.policy decisions (GET
 // /v1/audit/policy-events, PACT-306): one row per capability-token
@@ -88,18 +75,10 @@ export const PolicyEventsFeed = () => {
                 every 30 s.
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void mutate()}
-              disabled={isValidating}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isValidating ? 'animate-spin' : ''}`}
-                aria-hidden
-              />
-              Refresh
-            </Button>
+            <RefreshButton
+              onRefresh={() => void mutate()}
+              busy={isValidating}
+            />
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -161,7 +140,7 @@ export const PolicyEventsFeed = () => {
                       </span>
                     )}
                     <span className="ml-auto text-xs text-muted-foreground">
-                      {formatTimestamp(evt.createdAt)}
+                      {formatTimestamp(evt.createdAt, 'compact')}
                     </span>
                   </div>
                 );

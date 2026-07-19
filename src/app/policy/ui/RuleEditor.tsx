@@ -1,6 +1,5 @@
 'use client';
 
-import { RefreshCw } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 
 import {
@@ -11,6 +10,7 @@ import {
 } from '@/src/app/policy/domain/policy_rule';
 import { usePolicyRuleActions } from '@/src/app/policy/domain/use_policy_rule_actions';
 import { usePolicyRules } from '@/src/app/policy/domain/use_policy_rules';
+import { RefreshButton } from '@/src/components/refresh-button';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -21,6 +21,7 @@ import {
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 // RuleAction names the write the user triggered. The in-flight button label is
 // derived from this, not from the optimistically-updated rule status, so a
@@ -33,18 +34,6 @@ const STATUS_CLASS: Record<RuleStatus, string> = {
   published: 'bg-green-500/10 text-green-600 dark:text-green-400',
   revoked: 'bg-destructive/10 text-destructive',
   unspecified: 'bg-muted text-muted-foreground',
-};
-
-const formatTimestamp = (iso: string) => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-
-  return d.toLocaleString(undefined, {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 };
 
 // messageForRuleError maps a failed action onto an actionable, no-em-dash
@@ -175,7 +164,7 @@ const PolicyRuleRow = ({
           v{rule.version}
         </code>
         <span className="ml-auto text-xs text-muted-foreground">
-          {formatTimestamp(rule.createdAt)}
+          {formatTimestamp(rule.createdAt, 'short')}
         </span>
         {renderActions()}
       </div>
@@ -334,18 +323,10 @@ export const RuleEditor = () => {
                 Authored policy rules, newest first.
               </CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => void refresh()}
-              disabled={isValidating}
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isValidating ? 'animate-spin' : ''}`}
-                aria-hidden
-              />
-              Refresh
-            </Button>
+            <RefreshButton
+              onRefresh={() => void refresh()}
+              busy={isValidating}
+            />
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

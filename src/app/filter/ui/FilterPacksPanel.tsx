@@ -1,17 +1,16 @@
 'use client';
 
-import { Layers, RefreshCw } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { useListLoadedPacks } from '@/src/__codegen__/rest/filter';
-import { formatTimestamp } from '@/src/app/filter/domain/filter_decision';
 import {
   engineKindLabel,
   packSourceBadgeClass,
   packSourceLabel,
   sortPacksByLoadedAt,
 } from '@/src/app/filter/domain/filter_packs';
-import { Button } from '@/src/components/ui/button';
+import { RefreshButton } from '@/src/components/refresh-button';
 import {
   Card,
   CardContent,
@@ -19,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 // Loaded rule packs / engines view (pact-gateway PACT-450's GET
 // /v1/filter/packs, wired here under PACT-325 part 1). Lets an operator see
@@ -51,19 +51,11 @@ export const FilterPacksPanel = () => {
               /v1/filter/packs.
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void mutate()}
-            disabled={isValidating}
-            data-testid="filter-packs-refresh"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isValidating ? 'animate-spin' : ''}`}
-              aria-hidden
-            />
-            Refresh
-          </Button>
+          <RefreshButton
+            onRefresh={() => void mutate()}
+            busy={isValidating}
+            testId="filter-packs-refresh"
+          />
         </div>
       </CardHeader>
       <CardContent
@@ -106,7 +98,7 @@ export const FilterPacksPanel = () => {
                     )}
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    Loaded {formatTimestamp(pack.loadedAt)}
+                    Loaded {formatTimestamp(pack.loadedAt, 'compact')}
                     {pack.ruleCount !== undefined
                       ? ` · ${pack.ruleCount} rules`
                       : ''}

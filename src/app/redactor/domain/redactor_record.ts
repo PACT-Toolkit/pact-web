@@ -1,8 +1,9 @@
 import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import {
-  type DecisionPayload,
-  parseDecisionPayload,
-} from '@/src/lib/decisions/decision_payload';
+  extractStageRecords,
+  type StageRecordBase,
+} from '@/src/lib/decisions/extract_stage_records';
 
 // Re-derived from DecisionPayload rather than redeclared, so the redactor
 // feature never drifts from the canonical decode of pact-gateway's
@@ -16,15 +17,12 @@ export type RedactorSpan = NonNullable<RedactorSubObject['spans']>[number];
 // ConsensusRecord PAGE_SIZE).
 export const PAGE_SIZE = 25;
 
-// One redactor-stage decision: the audit event's identity/timing fields
-// paired with the decoded redactor sub-object. Unlike consensus (which only
-// escalates a minority of requests past the classifier), the redactor stage
-// runs on every /v1/check call, so most pact.decisions rows carry a
-// redactor sub-object -- pass_through as often as redacted.
-export interface RedactorRecord {
-  id: string;
-  createdAt: string;
-  requestId?: string;
+// One redactor-stage decision: the shared audit-event identity/timing
+// fields paired with the decoded redactor sub-object. Unlike consensus
+// (which only escalates a minority of requests past the classifier), the
+// redactor stage runs on every /v1/check call, so most pact.decisions rows
+// carry a redactor sub-object -- pass_through as often as redacted.
+export interface RedactorRecord extends StageRecordBase {
   redactor: RedactorSubObject;
   // Whole-pipeline engine tag (kafka.DecisionEvent.Engine). Not a
   // redactor-specific field -- the redactor sub-object itself carries no
@@ -32,40 +30,20 @@ export interface RedactorRecord {
   // the classifier sub-object and the top-level payload have an `engine`).
   // Additive; absent on older payloads.
   engine?: string;
-  // Whole /v1/check pipeline latency in ms, NOT a redactor-stage-specific
-  // duration -- pact-gateway does not emit a per-stage latency, only the
-  // end-to-end request latency (mirrors ConsensusRecord.latencyMs's
-  // caveat).
-  latencyMs?: number;
-  // Raw JSONB payload string for the same event, in case a future pass
-  // wants a raw-payload fallback like ConsensusRawPayloadToggle's.
-  rawPayload: string;
 }
 
 // Only events whose decoded payload carries a `redactor` sub-object become
 // records -- everything else means the payload predates the redactor
-// pipeline stage or failed to decode. Malformed payload JSON never throws:
-// parseDecisionPayload returns null and the event is skipped, same as a
-// payload with no redactor block.
+// pipeline stage or failed to decode. See extractStageRecords for the
+// shared guard and malformed-payload semantics.
 export const extractRedactorRecords = (
   events: AuditEvent[]
-): RedactorRecord[] => {
-  const records: RedactorRecord[] = [];
-
-  for (const event of events) {
-    const payload = parseDecisionPayload(event.payloadJson);
-    if (!payload?.redactor) continue;
-
-    records.push({
-      id: event.id,
-      createdAt: event.createdAt,
-      requestId: event.requestId,
-      redactor: payload.redactor,
+): RedactorRecord[] =>
+  extractStageRecords(
+    events,
+    (payload) => payload.redactor,
+    (redactor, payload) => ({
+      redactor,
       engine: payload.engine,
-      latencyMs: payload.latency_ms,
-      rawPayload: event.payloadJson,
-    });
-  }
-
-  return records;
-};
+    })
+  );

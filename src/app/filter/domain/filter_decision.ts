@@ -24,17 +24,4 @@ export type {
 
 export const PAGE_SIZE = 25;
 
-export const formatTimestamp = (iso: string) => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-
-  return d.toLocaleString(undefined, {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-};
-
 export const parsePayload = parseDecisionPayload;

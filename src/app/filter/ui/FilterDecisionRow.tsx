@@ -4,10 +4,8 @@ import { Flag } from 'lucide-react';
 import { useMemo } from 'react';
 
 import { type AuditEvent } from '@/src/__codegen__/rest/audit';
-import {
-  formatTimestamp,
-  parsePayload,
-} from '@/src/app/filter/domain/filter_decision';
+import { parsePayload } from '@/src/app/filter/domain/filter_decision';
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 export const FilterDecisionRow = ({
   event,
@@ -52,7 +50,7 @@ export const FilterDecisionRow = ({
           </span>
         </div>
         <span className="text-xs text-muted-foreground">
-          {formatTimestamp(event.createdAt)}
+          {formatTimestamp(event.createdAt, 'compact')}
           {payload?.latency_ms !== undefined
             ? ` · ${payload.latency_ms} ms`
             : ''}

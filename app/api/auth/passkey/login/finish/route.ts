@@ -2,14 +2,19 @@ import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
+import {
+  SESSION_COOKIE,
+  sessionCookieOptions,
+} from '@/src/framework/auth/pact_auth/cookies';
+import {
+  invalidJsonResponse,
+  isString,
+  readJsonBody,
+} from '@/src/framework/auth/pact_auth/route_helpers';
 
 export const runtime = 'nodejs';
 
-const SESSION_COOKIE = 'pact_session';
-
 type Body = { ceremonyId?: unknown; assertion?: unknown };
-
-const isString = (v: unknown): v is string => typeof v === 'string';
 
 // POST /api/auth/passkey/login/finish
 // Body: { ceremonyId, assertion }
@@ -20,11 +25,9 @@ const isString = (v: unknown): v is string => typeof v === 'string';
 // generic 401 rather than discriminating, so a stranger probing the endpoint
 // can't learn whether a credential exists.
 export const POST = async (req: NextRequest) => {
-  let body: Body;
-  try {
-    body = (await req.json()) as Body;
-  } catch {
-    return NextResponse.json({ error: 'invalid json' }, { status: 400 });
+  const body = await readJsonBody<Body>(req);
+  if (body === null) {
+    return invalidJsonResponse();
   }
 
   if (!isString(body.ceremonyId) || !body.ceremonyId) {
@@ -83,11 +86,7 @@ export const POST = async (req: NextRequest) => {
   res.cookies.set({
     name: SESSION_COOKIE,
     value: resp.sessionToken,
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    expires: expiresAt,
+    ...sessionCookieOptions(expiresAt),
   });
 
   return res;

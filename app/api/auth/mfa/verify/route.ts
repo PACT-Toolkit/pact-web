@@ -3,20 +3,26 @@ import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
-import { MOCK_MFA_CHALLENGE_TOKEN } from '@/src/framework/auth/pact_auth/mock';
+import {
+  MFA_TOKEN_COOKIE,
+  OAUTH_RETURN_TO_COOKIE,
+  SESSION_COOKIE,
+  sessionCookieOptions,
+} from '@/src/framework/auth/pact_auth/cookies';
+import {
+  MOCK_MFA_CHALLENGE_TOKEN,
+  mockSessionCookie,
+} from '@/src/framework/auth/pact_auth/mock';
+import {
+  invalidJsonResponse,
+  isString,
+  readJsonBody,
+} from '@/src/framework/auth/pact_auth/route_helpers';
 import { isMock, MOCK_USER_ID } from '@/src/framework/helpers/environment';
 
 export const runtime = 'nodejs';
 
-const SESSION_COOKIE = 'pact_session';
-const MFA_TOKEN_COOKIE = 'pact_mfa_token';
-// Set only on the OAuth-callback MFA branch (app/v1/auth/callback/[provider]).
-// Absent for password-login MFA; deleting an absent cookie is a no-op.
-const OAUTH_RETURN_TO_COOKIE = 'pact_oauth_return_to';
-
 type Body = { code?: unknown; isRecovery?: unknown };
-
-const isString = (v: unknown): v is string => typeof v === 'string';
 
 // POST /api/auth/mfa/verify
 // Body: { code: string, isRecovery?: boolean }
@@ -43,11 +49,9 @@ export const POST = async (req: NextRequest) => {
     );
   }
 
-  let body: Body;
-  try {
-    body = (await req.json()) as Body;
-  } catch {
-    return NextResponse.json({ error: 'invalid json' }, { status: 400 });
+  const body = await readJsonBody<Body>(req);
+  if (body === null) {
+    return invalidJsonResponse();
   }
   if (!isString(body.code) || !body.code) {
     return NextResponse.json(
@@ -80,15 +84,7 @@ export const POST = async (req: NextRequest) => {
   // instead of a real one; any correctly-formatted code completes the demo.
   if (isMock() && mfaToken === MOCK_MFA_CHALLENGE_TOKEN) {
     const res = NextResponse.json({ ok: true, userId: MOCK_USER_ID });
-    res.cookies.set({
-      name: SESSION_COOKIE,
-      value: 'mock-session-token',
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: false,
-      path: '/',
-      maxAge: 60 * 60 * 24 * 365,
-    });
+    res.cookies.set(mockSessionCookie());
     res.cookies.delete(MFA_TOKEN_COOKIE);
     res.cookies.delete(OAUTH_RETURN_TO_COOKIE);
 
@@ -113,11 +109,7 @@ export const POST = async (req: NextRequest) => {
   res.cookies.set({
     name: SESSION_COOKIE,
     value: resp.sessionToken,
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    expires: expiresAt,
+    ...sessionCookieOptions(expiresAt),
   });
   // The challenge is one-shot and now consumed server-side.
   res.cookies.delete(MFA_TOKEN_COOKIE);

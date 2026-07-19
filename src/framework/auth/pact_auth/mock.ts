@@ -7,6 +7,7 @@ import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
 import {
   MFA_TOKEN_COOKIE,
   MFA_TOKEN_TTL_SECONDS,
+  SESSION_COOKIE,
   shortLivedCookieOptions,
 } from './cookies';
 
@@ -53,3 +54,17 @@ export const mockMfaRequiredResponse = (): NextResponse => {
 
   return res;
 };
+
+// The synthetic session both mock login-completion branches write
+// (/api/auth/mfa/verify on the sentinel challenge token, the OAuth
+// callback in dev:mock). One-year maxAge so nothing treats the demo
+// session as expiring; secure:false because dev:mock runs on plain http.
+export const mockSessionCookie = () => ({
+  name: SESSION_COOKIE,
+  value: 'mock-session-token',
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  secure: false,
+  path: '/',
+  maxAge: 60 * 60 * 24 * 365,
+});

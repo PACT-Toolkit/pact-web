@@ -5,6 +5,8 @@ import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
 import {
   MFA_TOKEN_COOKIE,
   MFA_TOKEN_TTL_SECONDS,
+  SESSION_COOKIE,
+  sessionCookieOptions,
   shortLivedCookieOptions,
 } from '@/src/framework/auth/pact_auth/cookies';
 import {
@@ -12,25 +14,24 @@ import {
   mapPactAuthError,
 } from '@/src/framework/auth/pact_auth/errors';
 import {
-  mockMfaRequiredResponse,
   MOCK_MFA_LOGIN_EMAIL,
+  mockMfaRequiredResponse,
 } from '@/src/framework/auth/pact_auth/mock';
+import {
+  invalidJsonResponse,
+  isString,
+  readJsonBody,
+} from '@/src/framework/auth/pact_auth/route_helpers';
 import { isMock } from '@/src/framework/helpers/environment';
 
 export const runtime = 'nodejs';
 
-const SESSION_COOKIE = 'pact_session';
-
 type LoginBody = { email?: unknown; password?: unknown };
 
-const isString = (v: unknown): v is string => typeof v === 'string';
-
 export const POST = async (req: NextRequest) => {
-  let body: LoginBody;
-  try {
-    body = (await req.json()) as LoginBody;
-  } catch {
-    return NextResponse.json({ error: 'invalid json' }, { status: 400 });
+  const body = await readJsonBody<LoginBody>(req);
+  if (body === null) {
+    return invalidJsonResponse();
   }
 
   const { email, password } = body;
@@ -90,11 +91,7 @@ export const POST = async (req: NextRequest) => {
   res.cookies.set({
     name: SESSION_COOKIE,
     value: resp.sessionToken,
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    expires: expiresAt,
+    ...sessionCookieOptions(expiresAt),
   });
 
   return res;
