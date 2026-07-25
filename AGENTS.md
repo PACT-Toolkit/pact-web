@@ -51,6 +51,7 @@ Available skills:
 - `shadcn` — add, search, fix, style, and compose shadcn/ui components; registries, presets, project context, usage examples
 - `swr-best-practices` — SWR for data fetching, mutations, revalidation, error handling, caching, subscriptions, middleware, Next.js integration
 - `pact-react-patterns` — SWR-first data fetching (never fetch in `useEffect`), optimistic updates via SWR, derived state over `useEffect` sync, polling via `refreshInterval`. Use when writing or reviewing any component that fetches data or has effects.
+- `pact-web-e2e-verification` - how to launch pact-web and drive it end-to-end for verification: `dev:mock` vs `dev` vs `dev:real`, the port it serves on, mock-mode auto-login and persona switching (as verified live), the E2E verification checklist, and the two Playwright setups available for automation. Use before opening any pact-web PR.
 - `tailwind-design-system` — build scalable design systems with Tailwind CSS v4: design tokens, component libraries, responsive patterns
 - `typescript-advanced-types` — generics, conditional types, mapped types, template literals, utility types
 - `vercel-react-best-practices` — React/Next.js performance guidelines from Vercel Engineering: components, data fetching, bundle optimization
