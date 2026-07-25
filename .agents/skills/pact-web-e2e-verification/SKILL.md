@@ -57,6 +57,7 @@ Observed on a stock `dev:mock` dashboard load, unrelated to any particular chang
 
 - `Error with Permissions-Policy header: Unrecognized feature: '...'` - browser-level warnings about experimental Permissions-Policy directives, not app bugs.
 - `MSW Warning: intercepted a request without a matching request handler` for `https://i.pravatar.cc/150?u=...` - the seeded mock avatar URL points at a real third-party image host that MSW does not (and should not) mock.
+- `The width(-1) and height(-1) of chart should be greater than 0` from `recharts` - fires on the dashboard's chart widgets during the initial `dev:mock` render, pre-existing and unrelated to any diff.
 
 If new console output appears beyond these, it belongs to the diff being verified - investigate it, don't wave it through.
 
