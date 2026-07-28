@@ -100,6 +100,13 @@ export const GET = async (
           // for the same email. The user has to sign in via the original
           // provider, then add this one from settings (once that exists).
           return failed(req, 'email_already_linked');
+        case Code.DeadlineExceeded:
+        case Code.Unavailable:
+          // The gateway (or pact-auth itself) failed to respond in time, or
+          // is down. Distinct from callback_failed so the copy can tell the
+          // user this is transient/infrastructural rather than something a
+          // retry with the same code/state would fix differently.
+          return failed(req, 'provider_timeout');
         default:
           return failed(req, 'callback_failed');
       }

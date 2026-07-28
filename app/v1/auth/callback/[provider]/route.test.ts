@@ -1,3 +1,4 @@
+import { Code, ConnectError } from '@connectrpc/connect';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -124,6 +125,51 @@ describe('GET /v1/auth/callback/[provider]', () => {
     const location = new URL(res.headers.get('location')!);
     expect(location.pathname).toBe('/login');
     expect(location.searchParams.get('oauth_error')).toBe('mfa_token_missing');
+    expect(res.cookies.get(MFA_TOKEN_COOKIE)).toBeUndefined();
+    expect(res.cookies.get(OAUTH_RETURN_TO_COOKIE)).toBeUndefined();
+    expect(res.cookies.get(STATE_COOKIE)?.value).toBe('');
+  });
+
+  it('redirects to /login with provider_timeout when pact-auth returns DeadlineExceeded', async () => {
+    mockGetPactAuthClient.mockReturnValue(
+      fakeAuthClient(() =>
+        Promise.reject(
+          new ConnectError(
+            'rpc error: deadline exceeded',
+            Code.DeadlineExceeded
+          )
+        )
+      )
+    );
+
+    const res = await callGet(makeRequest());
+
+    expect(res.status).toBe(307);
+    const location = new URL(res.headers.get('location')!);
+    expect(location.pathname).toBe('/login');
+    expect(location.searchParams.get('oauth_error')).toBe('provider_timeout');
+    expect(res.cookies.get(SESSION_COOKIE)).toBeUndefined();
+    expect(res.cookies.get(MFA_TOKEN_COOKIE)).toBeUndefined();
+    expect(res.cookies.get(OAUTH_RETURN_TO_COOKIE)).toBeUndefined();
+    expect(res.cookies.get(STATE_COOKIE)?.value).toBe('');
+  });
+
+  it('redirects to /login with provider_timeout when pact-auth returns Unavailable', async () => {
+    mockGetPactAuthClient.mockReturnValue(
+      fakeAuthClient(() =>
+        Promise.reject(
+          new ConnectError('rpc error: unavailable', Code.Unavailable)
+        )
+      )
+    );
+
+    const res = await callGet(makeRequest());
+
+    expect(res.status).toBe(307);
+    const location = new URL(res.headers.get('location')!);
+    expect(location.pathname).toBe('/login');
+    expect(location.searchParams.get('oauth_error')).toBe('provider_timeout');
+    expect(res.cookies.get(SESSION_COOKIE)).toBeUndefined();
     expect(res.cookies.get(MFA_TOKEN_COOKIE)).toBeUndefined();
     expect(res.cookies.get(OAUTH_RETURN_TO_COOKIE)).toBeUndefined();
     expect(res.cookies.get(STATE_COOKIE)?.value).toBe('');
