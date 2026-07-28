@@ -172,6 +172,27 @@ const verifyErrorResponse = async (err: unknown): Promise<NextResponse> => {
           },
           { status: 429 }
         );
+      case Code.FailedPrecondition: {
+        // pact-auth returns this when there's no usable authenticator factor
+        // to verify the code against - either the account has none enrolled
+        // (it reached this step some other way, e.g. a passkey-only account
+        // that still has 2FA required) or the enrolled factor can no longer
+        // be read and needs re-enrolling. The gateway collapses both to the
+        // same constant message, so we can't tell them apart here - retrying
+        // the code can never succeed either way, so the challenge is cleared
+        // too.
+        const res = NextResponse.json(
+          {
+            error:
+              'We can’t verify a two-factor code for this account right now. Sign in with your passkey instead, then check your authenticator app under Sign-in methods.',
+            code: 'mfa_unavailable',
+          },
+          { status: 400 }
+        );
+        res.cookies.delete(MFA_TOKEN_COOKIE);
+
+        return res;
+      }
       default:
         break;
     }
