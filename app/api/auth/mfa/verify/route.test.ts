@@ -142,4 +142,23 @@ describe('POST /api/auth/mfa/verify', () => {
     const payload = (await res.json()) as { code: string };
     expect(payload.code).toBe('challenge_expired');
   });
+
+  it('returns 400 with a mfa_unavailable code and clears the mfa cookie on FailedPrecondition', async () => {
+    cookieJar.set(MFA_TOKEN_COOKIE, 'real-challenge-token');
+    mockGetPactAuthClient.mockReturnValue(
+      fakeAuthClient(() =>
+        Promise.reject(
+          new ConnectError('invalid request', Code.FailedPrecondition)
+        )
+      )
+    );
+
+    const res = await POST(makeRequest({ code: '123456' }));
+
+    expect(res.status).toBe(400);
+    const payload = (await res.json()) as { code: string; error: string };
+    expect(payload.code).toBe('mfa_unavailable');
+    expect(payload.error).toContain('passkey');
+    expect(res.cookies.get(MFA_TOKEN_COOKIE)?.value).toBe('');
+  });
 });
