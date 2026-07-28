@@ -49,9 +49,10 @@ describe('POST /api/auth/reset-password', () => {
           sessionToken: 'real-session-token',
           refreshToken: 'refresh-token',
           userId: 'user-1',
-          expiresAtUnix: BigInt(Math.floor(Date.now() / 1000) + 3600),
+          expiresAtUnix: Math.floor(Date.now() / 1000) + 3600,
           mfaRequired: false,
           mfaToken: '',
+          returnTo: '',
         } as ConfirmPasswordResetResult)
       )
     );
@@ -74,9 +75,10 @@ describe('POST /api/auth/reset-password', () => {
           sessionToken: '',
           refreshToken: '',
           userId: 'user-1',
-          expiresAtUnix: BigInt(0),
+          expiresAtUnix: 0,
           mfaRequired: true,
           mfaToken: 'challenge-token',
+          returnTo: '',
         } as ConfirmPasswordResetResult)
       )
     );
@@ -103,9 +105,10 @@ describe('POST /api/auth/reset-password', () => {
           sessionToken: '',
           refreshToken: '',
           userId: 'user-1',
-          expiresAtUnix: BigInt(0),
+          expiresAtUnix: 0,
           mfaRequired: true,
           mfaToken: '',
+          returnTo: '',
         } as ConfirmPasswordResetResult)
       )
     );
@@ -156,9 +159,10 @@ describe('POST /api/auth/reset-password', () => {
           sessionToken: 'real-session-token',
           refreshToken: 'refresh-token',
           userId: 'user-1',
-          expiresAtUnix: BigInt(Math.floor(Date.now() / 1000) + 3600),
+          expiresAtUnix: Math.floor(Date.now() / 1000) + 3600,
           mfaRequired: false,
           mfaToken: '',
+          returnTo: '',
         } as ConfirmPasswordResetResult)
       )
     );

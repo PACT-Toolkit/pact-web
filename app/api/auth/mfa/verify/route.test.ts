@@ -71,7 +71,10 @@ describe('POST /api/auth/mfa/verify', () => {
           sessionToken: 'real-session-token',
           refreshToken: 'refresh-token',
           userId: 'user-1',
-          expiresAtUnix: BigInt(Math.floor(Date.now() / 1000) + 3600),
+          expiresAtUnix: Math.floor(Date.now() / 1000) + 3600,
+          mfaRequired: false,
+          mfaToken: '',
+          returnTo: '',
         } as VerifyMfaResult)
       )
     );
@@ -106,7 +109,10 @@ describe('POST /api/auth/mfa/verify', () => {
           sessionToken: 'real-session-token',
           refreshToken: 'refresh-token',
           userId: 'user-1',
-          expiresAtUnix: BigInt(Math.floor(Date.now() / 1000) + 3600),
+          expiresAtUnix: Math.floor(Date.now() / 1000) + 3600,
+          mfaRequired: false,
+          mfaToken: '',
+          returnTo: '',
         } as VerifyMfaResult)
       )
     );

@@ -1,0 +1,882 @@
+basePath: /
+definitions:
+    auth.BeginPasskeyLoginRequest:
+        properties:
+            email:
+                type: string
+        type: object
+    auth.BeginPasskeyRegistrationRequest:
+        properties:
+            label:
+                type: string
+        type: object
+    auth.BeginTOTPEnrollmentResponse:
+        properties:
+            factorId:
+                type: string
+            otpauthUrl:
+                type: string
+            secret:
+                type: string
+        type: object
+    auth.ConfirmPasswordResetRequest:
+        properties:
+            newPassword:
+                type: string
+            token:
+                type: string
+        type: object
+    auth.ConfirmTOTPEnrollmentRequest:
+        properties:
+            code:
+                type: string
+            factorId:
+                type: string
+        type: object
+    auth.FinishPasskeyLoginRequest:
+        properties:
+            assertionJson:
+                type: object
+            ceremonyId:
+                type: string
+        type: object
+    auth.FinishPasskeyRegistrationRequest:
+        properties:
+            attestationJson:
+                type: object
+            ceremonyId:
+                type: string
+        type: object
+    auth.FinishPasskeyRegistrationResponse:
+        properties:
+            credentialId:
+                type: string
+        type: object
+    auth.HandleCallbackRequest:
+        properties:
+            code:
+                type: string
+            signedState:
+                type: string
+            state:
+                type: string
+        type: object
+    auth.ListIdentitiesResponse:
+        properties:
+            identities:
+                items:
+                    $ref: '#/definitions/auth.OAuthIdentityResponse'
+                type: array
+        type: object
+    auth.ListMfaFactorsResponse:
+        properties:
+            factors:
+                items:
+                    $ref: '#/definitions/auth.MfaFactorResponse'
+                type: array
+        type: object
+    auth.ListPasskeysResponse:
+        properties:
+            passkeys:
+                items:
+                    $ref: '#/definitions/auth.PasskeyResponse'
+                type: array
+        type: object
+    auth.LoginRequest:
+        properties:
+            email:
+                type: string
+            password:
+                type: string
+        type: object
+    auth.MfaFactorResponse:
+        properties:
+            createdAtUnix:
+                type: integer
+            factorId:
+                type: string
+            label:
+                type: string
+            type:
+                type: string
+            verified:
+                type: boolean
+        type: object
+    auth.OAuthIdentityResponse:
+        properties:
+            connectedAtUnix:
+                type: integer
+            provider:
+                type: string
+            providerUid:
+                type: string
+        type: object
+    auth.PasskeyCeremonyResponse:
+        properties:
+            ceremonyId:
+                type: string
+            optionsJson:
+                type: object
+        type: object
+    auth.PasskeyResponse:
+        properties:
+            createdAtUnix:
+                type: integer
+            label:
+                type: string
+            lastUsedAtUnix:
+                type: integer
+            passkeyId:
+                type: string
+        type: object
+    auth.RecoveryCodesResponse:
+        properties:
+            recoveryCodes:
+                items:
+                    type: string
+                type: array
+        type: object
+    auth.RegisterRequest:
+        properties:
+            displayName:
+                type: string
+            email:
+                type: string
+            password:
+                type: string
+            returnTo:
+                type: string
+        type: object
+    auth.RenamePasskeyRequest:
+        properties:
+            label:
+                type: string
+        type: object
+    auth.RequestPasswordResetRequest:
+        properties:
+            email:
+                type: string
+            returnTo:
+                type: string
+        type: object
+    auth.ResendVerificationRequest:
+        properties:
+            email:
+                type: string
+            returnTo:
+                type: string
+        type: object
+    auth.SessionIntrospectionResponse:
+        properties:
+            expiresAtUnix:
+                type: integer
+            userId:
+                type: string
+            valid:
+                type: boolean
+        type: object
+    auth.SessionResponse:
+        properties:
+            expiresAtUnix:
+                type: integer
+            mfaRequired:
+                type: boolean
+            mfaToken:
+                type: string
+            refreshToken:
+                type: string
+            returnTo:
+                type: string
+            sessionToken:
+                type: string
+            userId:
+                type: string
+        type: object
+    auth.StartLoginResponse:
+        properties:
+            authorizationUrl:
+                type: string
+            state:
+                type: string
+        type: object
+    auth.VerifyEmailRequest:
+        properties:
+            token:
+                type: string
+        type: object
+    auth.VerifyMfaRequest:
+        properties:
+            code:
+                type: string
+            isRecovery:
+                type: boolean
+            mfaToken:
+                type: string
+        type: object
+host: localhost:8080
+info:
+    contact: {}
+    description: Public REST entrypoint for the PACT safety pipeline.
+    title: pact-gateway
+    version: 0.1.0
+paths:
+    /v1/auth/identities:
+        get:
+            operationId: listIdentities
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/auth.ListIdentitiesResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: List the signed-in user's linked OAuth identities
+            tags:
+                - auth
+    /v1/auth/identities/{provider}:
+        delete:
+            operationId: unlinkIdentity
+            parameters:
+                - description: OAuth provider to unlink
+                  in: path
+                  name: provider
+                  required: true
+                  type: string
+            responses:
+                "204":
+                    description: No Content
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "404":
+                    description: identity not linked
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Unlink a federated OAuth identity
+            tags:
+                - auth
+    /v1/auth/login:
+        post:
+            consumes:
+                - application/json
+            operationId: login
+            parameters:
+                - description: Credentials
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.LoginRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: Session issued, or a partial-auth envelope when mfaRequired is true
+                    schema:
+                        $ref: '#/definitions/auth.SessionResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: invalid credentials
+                    schema:
+                        type: string
+            summary: Log in with email and password
+            tags:
+                - auth
+    /v1/auth/logout:
+        post:
+            operationId: logout
+            responses:
+                "204":
+                    description: No Content
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Revoke the signed-in session
+            tags:
+                - auth
+    /v1/auth/mfa/factors:
+        get:
+            operationId: listMfaFactors
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/auth.ListMfaFactorsResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: List the signed-in user's enrolled MFA factors
+            tags:
+                - auth
+    /v1/auth/mfa/factors/{factorId}:
+        delete:
+            operationId: revokeMfaFactor
+            parameters:
+                - description: MFA factor id
+                  in: path
+                  name: factorId
+                  required: true
+                  type: string
+            responses:
+                "204":
+                    description: No Content
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "404":
+                    description: factor not found
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Revoke an enrolled MFA factor
+            tags:
+                - auth
+    /v1/auth/mfa/recovery-codes:
+        post:
+            operationId: regenerateRecoveryCodes
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: New one-time recovery codes -- old codes are invalidated
+                    schema:
+                        $ref: '#/definitions/auth.RecoveryCodesResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Regenerate MFA recovery codes
+            tags:
+                - auth
+    /v1/auth/mfa/verify:
+        post:
+            consumes:
+                - application/json
+            operationId: verifyMfa
+            parameters:
+                - description: MFA token from login plus a TOTP or recovery code
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.VerifyMfaRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/auth.SessionResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: invalid or expired mfa token/code
+                    schema:
+                        type: string
+            summary: Complete a partial-auth login with an MFA code
+            tags:
+                - auth
+    /v1/auth/oauth/callback/{provider}:
+        post:
+            consumes:
+                - application/json
+            operationId: handleOAuthCallback
+            parameters:
+                - description: OAuth provider (must match the StartLogin call)
+                  in: path
+                  name: provider
+                  required: true
+                  type: string
+                - description: Authorization code and CSRF state
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.HandleCallbackRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: Session issued, or a partial-auth envelope when mfaRequired is true
+                    schema:
+                        $ref: '#/definitions/auth.SessionResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: invalid code or state
+                    schema:
+                        type: string
+            summary: Complete a federated OAuth login
+            tags:
+                - auth
+    /v1/auth/oauth/start:
+        get:
+            operationId: startOAuthLogin
+            parameters:
+                - description: OAuth provider (e.g. google, github)
+                  in: query
+                  name: provider
+                  required: true
+                  type: string
+                - description: Post-login redirect target
+                  in: query
+                  name: returnTo
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/auth.StartLoginResponse'
+                "400":
+                    description: missing or unsupported provider
+                    schema:
+                        type: string
+            summary: Start a federated OAuth login
+            tags:
+                - auth
+    /v1/auth/passkeys:
+        get:
+            operationId: listPasskeys
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/auth.ListPasskeysResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: List the signed-in user's passkeys
+            tags:
+                - auth
+    /v1/auth/passkeys/{passkeyId}:
+        delete:
+            operationId: deletePasskey
+            parameters:
+                - description: Passkey id
+                  in: path
+                  name: passkeyId
+                  required: true
+                  type: string
+            responses:
+                "204":
+                    description: No Content
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "404":
+                    description: passkey not found
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Delete a passkey
+            tags:
+                - auth
+        patch:
+            consumes:
+                - application/json
+            operationId: renamePasskey
+            parameters:
+                - description: Passkey id
+                  in: path
+                  name: passkeyId
+                  required: true
+                  type: string
+                - description: New label
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.RenamePasskeyRequest'
+            responses:
+                "204":
+                    description: No Content
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "404":
+                    description: passkey not found
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Rename a passkey
+            tags:
+                - auth
+    /v1/auth/passkeys/login/begin:
+        post:
+            consumes:
+                - application/json
+            operationId: beginPasskeyLogin
+            parameters:
+                - description: Account email, or empty for a discoverable-credential flow
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.BeginPasskeyLoginRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: WebAuthn request options for navigator.credentials.get()
+                    schema:
+                        $ref: '#/definitions/auth.PasskeyCeremonyResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+            summary: Begin a passkey login
+            tags:
+                - auth
+    /v1/auth/passkeys/login/finish:
+        post:
+            consumes:
+                - application/json
+            operationId: finishPasskeyLogin
+            parameters:
+                - description: Ceremony id and the browser's assertion response
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.FinishPasskeyLoginRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/auth.SessionResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: invalid assertion
+                    schema:
+                        type: string
+            summary: Finish a passkey login
+            tags:
+                - auth
+    /v1/auth/passkeys/register/begin:
+        post:
+            consumes:
+                - application/json
+            operationId: beginPasskeyRegistration
+            parameters:
+                - description: Label for the new passkey
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.BeginPasskeyRegistrationRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: WebAuthn creation options for navigator.credentials.create()
+                    schema:
+                        $ref: '#/definitions/auth.PasskeyCeremonyResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Begin passkey registration
+            tags:
+                - auth
+    /v1/auth/passkeys/register/finish:
+        post:
+            consumes:
+                - application/json
+            operationId: finishPasskeyRegistration
+            parameters:
+                - description: Ceremony id and the browser's attestation response
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.FinishPasskeyRegistrationRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/auth.FinishPasskeyRegistrationResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token, or invalid attestation
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Finish passkey registration
+            tags:
+                - auth
+    /v1/auth/password-reset/confirm:
+        post:
+            consumes:
+                - application/json
+            operationId: confirmPasswordReset
+            parameters:
+                - description: Reset token and new password
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.ConfirmPasswordResetRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: Session issued, or a partial-auth envelope when mfaRequired is true
+                    schema:
+                        $ref: '#/definitions/auth.SessionResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: invalid or expired reset token
+                    schema:
+                        type: string
+            summary: Confirm a password reset with the emailed token
+            tags:
+                - auth
+    /v1/auth/password-reset/request:
+        post:
+            consumes:
+                - application/json
+            operationId: requestPasswordReset
+            parameters:
+                - description: Account email
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.RequestPasswordResetRequest'
+            produces:
+                - application/json
+            responses:
+                "202":
+                    description: Accepted -- a reset email is sent if the account exists
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+            summary: Request a password-reset email
+            tags:
+                - auth
+    /v1/auth/register:
+        post:
+            consumes:
+                - application/json
+            operationId: registerAccount
+            parameters:
+                - description: New account details
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.RegisterRequest'
+            produces:
+                - application/json
+            responses:
+                "201":
+                    description: Created -- verification email sent
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "409":
+                    description: already exists
+                    schema:
+                        type: string
+            summary: Register a new account
+            tags:
+                - auth
+    /v1/auth/session:
+        get:
+            operationId: getSession
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/auth.SessionIntrospectionResponse'
+                "401":
+                    description: missing or malformed bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Introspect the bearer token's session
+            tags:
+                - auth
+    /v1/auth/totp/enroll/begin:
+        post:
+            operationId: beginTOTPEnrollment
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/auth.BeginTOTPEnrollmentResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Begin TOTP enrollment
+            tags:
+                - auth
+    /v1/auth/totp/enroll/confirm:
+        post:
+            consumes:
+                - application/json
+            operationId: confirmTOTPEnrollment
+            parameters:
+                - description: Factor id and current TOTP code
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.ConfirmTOTPEnrollmentRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: One-time recovery codes -- shown to the user exactly once
+                    schema:
+                        $ref: '#/definitions/auth.RecoveryCodesResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token, or invalid code
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Confirm TOTP enrollment with a generated code
+            tags:
+                - auth
+    /v1/auth/verify-email:
+        post:
+            consumes:
+                - application/json
+            operationId: verifyEmail
+            parameters:
+                - description: Verification token
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.VerifyEmailRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/auth.SessionResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: invalid or expired verification token
+                    schema:
+                        type: string
+            summary: Verify an account email with the emailed token
+            tags:
+                - auth
+    /v1/auth/verify-email/resend:
+        post:
+            consumes:
+                - application/json
+            operationId: resendVerification
+            parameters:
+                - description: Account email
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.ResendVerificationRequest'
+            produces:
+                - application/json
+            responses:
+                "202":
+                    description: Accepted -- a verification email is sent if the account exists and is unverified
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+            summary: Resend the account verification email
+            tags:
+                - auth
+schemes:
+    - http
+    - https
+securityDefinitions:
+    Bearer:
+        description: 'Opaque pact-auth session token. Format: <uuid>.<base64-hmac>.'
+        in: header
+        name: Authorization
+        type: apiKey
+swagger: "2.0"
