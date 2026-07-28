@@ -43,9 +43,10 @@ import {
 // auto-login bypass), so they only become reachable once something calls
 // POST /api/auth/login directly - e.g. via curl/devtools, or a future test
 // harness - at which point the login handler's sessionToken becomes the
-// real cookie value and /settings/security renders the seeded factor,
-// passkey, and identity below. That's expected: it mirrors what happens in
-// real mode too, just without needing pact-auth running.
+// real cookie value and /settings/security renders the seeded passkey and
+// identity below, plus any TOTP factor enrolled during the session. That's
+// expected: it mirrors what happens in real mode too, just without needing
+// pact-auth running.
 
 const bearerToken = (request: Request): string | undefined =>
   request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
