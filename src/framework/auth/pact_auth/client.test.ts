@@ -1,7 +1,22 @@
 import { Code, ConnectError } from '@connectrpc/connect';
+import { headers as nextHeaders } from 'next/headers';
+import type * as NextHeadersModule from 'next/headers';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { appendForwardedFor } from '@/src/lib/proxy/client_ip';
+
 import { getPactAuthClient } from './client';
+
+// Wraps the real next/headers so most tests exercise the actual
+// "called outside a request scope" rejection (see the request-scope
+// describe block below) with zero mocking, and the handful of tests that
+// need an inbound header value can override it per-case with
+// mockResolvedValueOnce.
+vi.mock('next/headers', async (importOriginal) => {
+  const actual = await importOriginal<typeof NextHeadersModule>();
+
+  return { ...actual, headers: vi.fn(actual.headers) };
+});
 
 // client.ts is the one module in this migration (PACT-681) with genuinely
 // new logic: every /api/auth/* route handler test mocks getPactAuthClient
@@ -26,6 +41,7 @@ describe('getPactAuthClient', () => {
     fetchMock.mockReset();
     vi.stubGlobal('fetch', fetchMock);
     vi.stubEnv('PACT_GATEWAY_URL', 'http://gateway.test');
+    vi.mocked(nextHeaders).mockClear();
   });
 
   afterEach(() => {
@@ -166,6 +182,75 @@ describe('getPactAuthClient', () => {
     expect(JSON.parse(finishInit?.body as string)).toEqual({
       ceremonyId: 'cer-1',
       assertionJson: assertion,
+    });
+  });
+
+  // PACT-687: pact-gateway keys its per-IP rate buckets on the right-most
+  // X-Forwarded-For hop, so authRequest forwards its best determination of
+  // the end-user's client IP - read via next/headers - as that one hop.
+  describe('client IP forwarding (PACT-687)', () => {
+    it('sends no X-Forwarded-For header outside a request scope, which is the default here', async () => {
+      // No mockResolvedValueOnce override: this hits the real next/headers
+      // implementation, which rejects with "called outside a request
+      // scope" in this test environment (see the module-level vi.mock
+      // above) - exactly the no-op path the try/catch in client.ts exists
+      // for. None of the tests above needed to know this module reads
+      // next/headers at all.
+      fetchMock.mockResolvedValue(jsonResponse({ sessionToken: 'tok' }));
+
+      await getPactAuthClient().login({
+        email: 'a@example.com',
+        password: 'x',
+      });
+
+      const [, init] = fetchMock.mock.calls[0];
+      expect(new Headers(init?.headers).has('x-forwarded-for')).toBe(false);
+    });
+
+    it('appends the right-most inbound X-Forwarded-For hop to the outbound header', async () => {
+      vi.mocked(nextHeaders).mockResolvedValueOnce(
+        new Headers({ 'x-forwarded-for': '203.0.113.5, 70.41.3.18' })
+      );
+      fetchMock.mockResolvedValue(jsonResponse({ sessionToken: 'tok' }));
+
+      await getPactAuthClient().login({
+        email: 'a@example.com',
+        password: 'x',
+      });
+
+      const [, init] = fetchMock.mock.calls[0];
+      expect(new Headers(init?.headers).get('x-forwarded-for')).toBe(
+        '70.41.3.18'
+      );
+    });
+
+    it('falls back to X-Real-IP when the inbound request has no X-Forwarded-For', async () => {
+      vi.mocked(nextHeaders).mockResolvedValueOnce(
+        new Headers({ 'x-real-ip': '198.51.100.9' })
+      );
+      fetchMock.mockResolvedValue(jsonResponse({ sessionToken: 'tok' }));
+
+      await getPactAuthClient().login({
+        email: 'a@example.com',
+        password: 'x',
+      });
+
+      const [, init] = fetchMock.mock.calls[0];
+      expect(new Headers(init?.headers).get('x-forwarded-for')).toBe(
+        '198.51.100.9'
+      );
+    });
+
+    // authRequest builds a fresh outbound Headers object on every call, so
+    // it never has a pre-existing X-Forwarded-For value to protect in
+    // practice today. This locks in the append-not-replace invariant on
+    // the shared helper authRequest relies on for that value, directly,
+    // so it can never regress even if a future outbound header source is
+    // added.
+    it('append-not-replace: the shared helper appends after an existing outbound value rather than replacing it', () => {
+      expect(appendForwardedFor('203.0.113.5', '70.41.3.18')).toBe(
+        '203.0.113.5, 70.41.3.18'
+      );
     });
   });
 });
