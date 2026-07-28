@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { getGatewayBaseUrl } from '@/src/lib/proxy/gateway_url';
 import { SESSION_COOKIE } from '@/src/lib/session_cookie';
 
 // Shared core of every pact-gateway edge proxy route in this app: translates
@@ -24,7 +25,6 @@ import { SESSION_COOKIE } from '@/src/lib/session_cookie';
 // helper only owns the fetch + cookie/header translation that is identical
 // across all of them.
 
-const GATEWAY_URL = process.env.PACT_GATEWAY_URL ?? 'http://localhost:8080';
 const REFRESH_HEADER = 'x-pact-refresh-token';
 const NEW_SESSION_HEADER = 'x-pact-new-session-token';
 const NEW_REFRESH_HEADER = 'x-pact-new-refresh-token';
@@ -62,7 +62,7 @@ export async function proxyToGateway(
 
   const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
   const upstream = await fetch(
-    `${GATEWAY_URL}${upstreamPath}${req.nextUrl.search}`,
+    `${getGatewayBaseUrl()}${upstreamPath}${req.nextUrl.search}`,
     {
       method: req.method,
       headers,

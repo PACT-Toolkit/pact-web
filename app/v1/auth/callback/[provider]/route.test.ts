@@ -54,7 +54,7 @@ describe('GET /v1/auth/callback/[provider]', () => {
         Promise.resolve({
           sessionToken: 'real-session-token',
           userId: 'user-1',
-          expiresAtUnix: BigInt(Math.floor(Date.now() / 1000) + 3600),
+          expiresAtUnix: Math.floor(Date.now() / 1000) + 3600,
           returnTo: 'http://localhost:3000/settings/billing',
           refreshToken: 'refresh-token',
           mfaRequired: false,
@@ -82,7 +82,7 @@ describe('GET /v1/auth/callback/[provider]', () => {
         Promise.resolve({
           sessionToken: '',
           userId: 'user-1',
-          expiresAtUnix: BigInt(0),
+          expiresAtUnix: 0,
           returnTo: 'http://localhost:3000/settings/billing',
           refreshToken: '',
           mfaRequired: true,
@@ -109,7 +109,7 @@ describe('GET /v1/auth/callback/[provider]', () => {
         Promise.resolve({
           sessionToken: '',
           userId: 'user-1',
-          expiresAtUnix: BigInt(0),
+          expiresAtUnix: 0,
           returnTo: 'http://localhost:3000/settings/billing',
           refreshToken: '',
           mfaRequired: true,

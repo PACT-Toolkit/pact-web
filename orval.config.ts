@@ -35,6 +35,23 @@ export default defineConfig({
       },
     },
   },
+  auth: {
+    input: '.rest-codegen-temp/auth.openapi.yaml',
+    output: {
+      mode: 'split',
+      target: 'src/__codegen__/rest/auth/hooks.ts',
+      schemas: 'src/__codegen__/rest/auth/types',
+      client: 'swr',
+      baseUrl: '/api/pact/gateway/v1',
+      override: {
+        query: {
+          useQuery: true,
+          useMutation: true,
+          signal: true,
+        },
+      },
+    },
+  },
   benchmark: {
     input: '.rest-codegen-temp/benchmark.openapi.yaml',
     output: {

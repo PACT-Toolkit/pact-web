@@ -34,8 +34,10 @@ const trimRpcPrefix = (msg: string): string =>
 const friendlyRateLimited =
   "You're trying that too often. Please wait a moment and try again.";
 
-// mapPactAuthError turns any error thrown from the connect-node client
-// into a consistent `{ status, body }` shape for the /api/auth/* route
+// mapPactAuthError turns any error thrown from the pact_auth client
+// (client.ts synthesises a ConnectError with a mapped Code from
+// pact-gateway's HTTP responses - see PACT-681) into a consistent
+// `{ status, body }` shape for the /api/auth/* route
 // to return. Callers that need to special-case a code (e.g. register's
 // AlreadyExists with a domain-specific link block) should branch on the
 // ConnectError directly before falling through to this default mapping.
