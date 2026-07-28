@@ -7,6 +7,11 @@ import {
   type AuditEvent,
   type DecisionAnnotation,
 } from '@/src/__codegen__/rest/audit';
+import {
+  type AuthMfaFactorResponse,
+  type AuthOAuthIdentityResponse,
+  type AuthPasskeyResponse,
+} from '@/src/__codegen__/rest/auth';
 import { type ConfigConfigResponse } from '@/src/__codegen__/rest/config';
 import { type FileRecord } from '@/src/__codegen__/rest/files';
 import {
@@ -21,6 +26,12 @@ import {
   mockAuditEvent,
   mockDecisionAnnotation,
 } from '@/src/app/audit/mock/data/audit';
+import {
+  createAuthMockData,
+  mockAuthIdentity,
+  mockAuthMfaFactor,
+  mockAuthPasskey,
+} from '@/src/app/auth/mock/data/auth';
 import { createClassifierMockData } from '@/src/app/classifier/mock/data/classifier';
 import { createConsensusMockData } from '@/src/app/consensus/mock/data/consensus';
 import {
@@ -58,6 +69,11 @@ export const db = {
   auditAuthEvents: new MockRepository<AuditEvent>(mockAuditEvent),
   auditAccountEvents: new MockRepository<AuditEvent>(mockAuditEvent),
   auditFilesEvents: new MockRepository<AuditEvent>(mockAuditEvent),
+  authMfaFactors: new MockRepository<AuthMfaFactorResponse>(mockAuthMfaFactor),
+  authPasskeys: new MockRepository<AuthPasskeyResponse>(mockAuthPasskey),
+  authIdentities: new MockRepository<AuthOAuthIdentityResponse>(
+    mockAuthIdentity
+  ),
   decisions: new MockRepository<AuditEvent>(mockDecisionEvent),
   files: new MockRepository<FileRecord>(mockFileRecord),
   gatewayConfig: new MockRepository<ConfigConfigResponse>(mockGatewayConfig),
@@ -68,6 +84,7 @@ export type DB = typeof db;
 
 createAccountMockData(db);
 createAuditMockData(db);
+createAuthMockData(db);
 // No ordering dependency on the decisions-producing seeders below --
 // annotations are independent rows keyed on requestId (PACT-464/PACT-474),
 // looked up by whatever the caller passes, not tied to a decision row
