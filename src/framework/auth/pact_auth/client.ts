@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { Code, ConnectError } from '@connectrpc/connect';
+import { headers as nextHeaders } from 'next/headers';
 
 import {
   type AuthBeginTOTPEnrollmentResponse,
@@ -13,6 +14,7 @@ import {
   type AuthSessionResponse,
   type AuthStartLoginResponse,
 } from '@/src/__codegen__/rest/auth/types';
+import { appendForwardedFor, inboundClientIp } from '@/src/lib/proxy/client_ip';
 import { getGatewayBaseUrl } from '@/src/lib/proxy/gateway_url';
 
 // Server-side pact-auth client. Speaks REST/JSON against pact-gateway's
@@ -29,8 +31,15 @@ import { getGatewayBaseUrl } from '@/src/lib/proxy/gateway_url';
 // `src/__codegen__/rest/auth/{fetchers,hooks}.ts` target the browser-facing
 // `/api/pact/gateway/v1/*` catch-all proxy and have no way to attach a
 // caller-supplied bearer token, which every session-authed method below
-// needs (the caller passes the token as a plain argument, not a cookie -
-// this module never reads `next/headers` itself).
+// needs (the caller passes the token as a plain argument, not a cookie).
+//
+// The one exception is the end-user client IP (PACT-687): authRequest
+// reads it from `next/headers` via inboundRequestHeaders() below, purely
+// to forward it on to pact-gateway (see the X-Forwarded-For comment on
+// authRequest). That read is wrapped so it is a clean no-op outside an
+// active request scope, which is what keeps this module's original
+// testability property intact - none of the tests in client.test.ts need
+// to mock `next/headers` to exercise the request-building logic.
 //
 // Every method here preserves the exact name, argument shape, and
 // zero-valued-field return shape the old protobuf-backed client had, so
@@ -78,6 +87,19 @@ const httpStatusToCode = (status: number): Code => {
   }
 };
 
+// Best-effort read of the inbound request's headers via next/headers.
+// `headers()` throws (or is simply unavailable) outside an active request
+// scope - build time, unit tests, and any script that imports this module
+// directly - and none of those cases should ever fail or block an auth
+// request, so every failure mode collapses to "no headers available".
+const inboundRequestHeaders = async (): Promise<Headers | undefined> => {
+  try {
+    return await nextHeaders();
+  } catch {
+    return undefined;
+  }
+};
+
 type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
 type AuthRequestOptions = {
@@ -106,6 +128,24 @@ const authRequest = async <T>(opts: AuthRequestOptions): Promise<T> => {
   if (opts.body !== undefined) headers.set('content-type', 'application/json');
   if (opts.sessionToken) {
     headers.set('authorization', `Bearer ${opts.sessionToken}`);
+  }
+
+  // Forward the end-user's client IP to pact-gateway (PACT-687), which
+  // keys its per-IP rate buckets on the right-most X-Forwarded-For hop
+  // under PACT_TRUST_XFF=true. pact-web is the gateway's single trusted
+  // proxy hop (trustedProxyHops=1), so exactly one hop is appended here -
+  // never more, and never replacing a value already on this (freshly
+  // built) outbound header. The inbound request scope may be unavailable
+  // (see inboundRequestHeaders above), in which case no header is set and
+  // the request proceeds exactly as it did before this change.
+  const inbound = await inboundRequestHeaders();
+  if (inbound) {
+    const clientIp = inboundClientIp(inbound);
+    const forwardedFor = appendForwardedFor(
+      headers.get('x-forwarded-for'),
+      clientIp
+    );
+    if (forwardedFor) headers.set('x-forwarded-for', forwardedFor);
   }
 
   let res: Response;

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { appendForwardedFor, inboundClientIp } from '@/src/lib/proxy/client_ip';
 import { getGatewayBaseUrl } from '@/src/lib/proxy/gateway_url';
 import { SESSION_COOKIE } from '@/src/lib/session_cookie';
 
@@ -59,6 +60,19 @@ export async function proxyToGateway(
     const refresh = req.headers.get(REFRESH_HEADER);
     if (refresh) headers.set(REFRESH_HEADER, refresh);
   }
+
+  // Forward the end-user's client IP to pact-gateway (PACT-687). Same
+  // single-trusted-hop model as the pact-auth REST client
+  // (src/framework/auth/pact_auth/client.ts): pact-gateway's rate limiter
+  // (trustedProxyHops=1) reads only the right-most X-Forwarded-For entry,
+  // so exactly one hop - pact-web's own trusted determination of the
+  // client IP - is appended here, never replacing anything already on
+  // this (freshly built) outbound header.
+  const forwardedFor = appendForwardedFor(
+    headers.get('x-forwarded-for'),
+    inboundClientIp(req.headers)
+  );
+  if (forwardedFor) headers.set('x-forwarded-for', forwardedFor);
 
   const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
   const upstream = await fetch(
