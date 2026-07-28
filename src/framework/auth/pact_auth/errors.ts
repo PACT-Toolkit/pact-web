@@ -35,12 +35,17 @@ const friendlyRateLimited =
   "You're trying that too often. Please wait a moment and try again.";
 
 // mapPactAuthError turns any error thrown from the pact_auth client
-// (client.ts synthesises a ConnectError with a mapped Code from
-// pact-gateway's HTTP responses - see PACT-681) into a consistent
-// `{ status, body }` shape for the /api/auth/* route
-// to return. Callers that need to special-case a code (e.g. register's
-// AlreadyExists with a domain-specific link block) should branch on the
-// ConnectError directly before falling through to this default mapping.
+// (client.ts synthesises a ConnectError with a mapped Code - preferring
+// pact-gateway's own error-body `code` slug (PACT-684) and falling back to
+// its HTTP status only when that slug is absent or unrecognised, e.g. on
+// pact-gateway's plain-text middleware error paths - see PACT-686) into a
+// consistent `{ status, body }` shape for the /api/auth/* route to return.
+// Callers that need to special-case a code (e.g. register's AlreadyExists
+// with a domain-specific link block, or login's FailedPrecondition for
+// "email not verified" - reachable again as of PACT-686, since
+// FailedPrecondition no longer collapses into InvalidArgument) should
+// branch on the ConnectError directly before falling through to this
+// default mapping.
 //
 // Non-ConnectError values get the generic `unknown` fallback so any
 // transport-level surprise (DNS, panic, etc.) doesn't leak into

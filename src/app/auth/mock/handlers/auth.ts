@@ -75,8 +75,11 @@ export const handlers: RequestHandler[] = [
   http.post('*/v1/auth/login', async ({ request }) => {
     const body = (await request.json()) as AuthLoginRequest;
     if (body.password === MOCK_LOGIN_WRONG_PASSWORD) {
+      // Mirrors pact-gateway's error envelope (PACT-684) so dev:mock
+      // fidelity matches the `code`-slug parsing client.ts does in real
+      // mode (PACT-686).
       return HttpResponse.json(
-        { error: 'invalid email or password' },
+        { code: 'unauthenticated', error: 'invalid email or password' },
         { status: 401 }
       );
     }
