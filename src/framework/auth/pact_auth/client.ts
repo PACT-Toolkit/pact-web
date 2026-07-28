@@ -51,17 +51,19 @@ import { getGatewayBaseUrl } from '@/src/lib/proxy/gateway_url';
 
 const AUTH_BASE_PATH = '/v1/auth';
 
-// Inverse of pact-gateway's HTTPStatusFromGRPC
-// (internal/boundary/boundary.go). Necessarily lossy in one place:
-// InvalidArgument, FailedPrecondition, and OutOfRange all collapse to 400
-// on the wire, so a 400 here always decodes back to InvalidArgument even
-// when the upstream gRPC code was one of the other two. Route handlers
-// that used to branch on Code.FailedPrecondition (login's "email not
-// verified", mfa/enroll/begin's "already enrolled", mfa/recovery-codes's
-// "enroll TOTP first") fall through to the generic InvalidArgument mapping
-// as a result - a confirmed, gateway-side limitation, not something this
-// module can recover client-side. Same story for Canceled vs
-// DeadlineExceeded on 504.
+// Fallback inverse of pact-gateway's HTTPStatusFromGRPC
+// (internal/boundary/boundary.go), used only when the response body doesn't
+// carry a recognised `code` slug (see GATEWAY_BODY_CODE_TO_CODE below) -
+// most notably pact-gateway's middleware error paths (authMiddleware's 401,
+// the rate limiter's 429, requirePermission's 403), which return plain text,
+// not JSON. Necessarily lossy in one place: InvalidArgument,
+// FailedPrecondition, and OutOfRange all collapse to 400 on the wire, so a
+// bare 400 with no body code always decodes to InvalidArgument even when the
+// upstream gRPC code was one of the other two. Same story for Canceled vs
+// DeadlineExceeded on 504. That was a real, confirmed gap for the
+// gRPC-mapped error paths - closed by PACT-684's stable `code` slug on
+// those responses, which authRequest below now prefers over this table
+// whenever it's present.
 const httpStatusToCode = (status: number): Code => {
   switch (status) {
     case 400:
@@ -85,6 +87,53 @@ const httpStatusToCode = (status: number): Code => {
     default:
       return Code.Unknown;
   }
+};
+
+// pact-gateway's stable error-body code slugs (PACT-684), on every
+// gRPC-mapped error path: `{"code": "<slug>", "error": "<stable msg>"}`
+// with a JSON content-type. This is the authoritative source for the
+// `Code` on those paths - notably failed_precondition and out_of_range,
+// which httpStatusToCode above can't tell apart from invalid_argument since
+// all three share HTTP 400 on the wire. A slug not listed here (or a body
+// that isn't valid JSON, as pact-gateway's own middleware error paths
+// aren't - see httpStatusToCode's docstring) falls back to the
+// status-based mapping in authRequest.
+const GATEWAY_BODY_CODE_TO_CODE: Readonly<Record<string, Code>> = {
+  invalid_argument: Code.InvalidArgument,
+  failed_precondition: Code.FailedPrecondition,
+  out_of_range: Code.OutOfRange,
+  not_found: Code.NotFound,
+  already_exists: Code.AlreadyExists,
+  permission_denied: Code.PermissionDenied,
+  unauthenticated: Code.Unauthenticated,
+  resource_exhausted: Code.ResourceExhausted,
+  timeout: Code.DeadlineExceeded,
+  unavailable: Code.Unavailable,
+  unimplemented: Code.Unimplemented,
+  upstream_error: Code.Internal,
+};
+
+type GatewayErrorBody = {
+  code?: string;
+  error?: string;
+};
+
+// Parses pact-gateway's error envelope (PACT-684) out of a raw response
+// body. Returns undefined for anything that isn't a JSON object - a plain
+// error string from pact-gateway's middleware paths, an empty body, or any
+// other non-conforming payload - so the caller can fall back to the
+// status-based mapping cleanly instead of throwing on JSON.parse.
+const parseGatewayErrorBody = (text: string): GatewayErrorBody | undefined => {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+
+  return typeof parsed === 'object' && parsed !== null
+    ? (parsed as GatewayErrorBody)
+    : undefined;
 };
 
 // Best-effort read of the inbound request's headers via next/headers.
@@ -168,10 +217,23 @@ const authRequest = async <T>(opts: AuthRequestOptions): Promise<T> => {
   const text = await res.text();
 
   if (!res.ok) {
-    throw new ConnectError(
-      text || res.statusText,
-      httpStatusToCode(res.status)
-    );
+    // Prefer the gateway's own body code (PACT-684) over the HTTP-status
+    // fallback whenever it's present and recognised - see
+    // GATEWAY_BODY_CODE_TO_CODE's docstring for why the status alone can't
+    // always tell the right Code apart. Same for the message: a JSON body
+    // carries its human-readable text in `error`, so use that over the raw
+    // (JSON) response text where available.
+    const errorBody = parseGatewayErrorBody(text);
+    const bodyCode =
+      typeof errorBody?.code === 'string'
+        ? GATEWAY_BODY_CODE_TO_CODE[errorBody.code]
+        : undefined;
+    const message =
+      typeof errorBody?.error === 'string' && errorBody.error
+        ? errorBody.error
+        : text || res.statusText;
+
+    throw new ConnectError(message, bodyCode ?? httpStatusToCode(res.status));
   }
 
   return (text ? JSON.parse(text) : undefined) as T;

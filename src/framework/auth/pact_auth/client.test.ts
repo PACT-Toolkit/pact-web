@@ -124,6 +124,97 @@ describe('getPactAuthClient', () => {
     expect((err as ConnectError).code).toBe(expectedCode);
   });
 
+  // PACT-686: pact-gateway's error bodies now carry a stable `code` slug
+  // (PACT-684) on every gRPC-mapped error path. authRequest prefers that
+  // slug over the HTTP-status mapping above, since status alone can't
+  // distinguish InvalidArgument/FailedPrecondition/OutOfRange - they all
+  // share HTTP 400 on the wire.
+  describe('gateway error-body code mapping (PACT-686)', () => {
+    it('prefers a known body code over the status mapping (failed_precondition on 400)', async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse(
+          { code: 'failed_precondition', error: 'email not verified' },
+          400
+        )
+      );
+
+      const err = await getPactAuthClient()
+        .login({ email: 'a@example.com', password: 'x' })
+        .catch((caught: unknown) => caught);
+
+      expect(err).toBeInstanceOf(ConnectError);
+      expect((err as ConnectError).code).toBe(Code.FailedPrecondition);
+      expect((err as ConnectError).rawMessage).toBe('email not verified');
+    });
+
+    it('maps out_of_range on 400, distinct from invalid_argument', async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse({ code: 'out_of_range', error: 'page out of range' }, 400)
+      );
+
+      const err = await getPactAuthClient()
+        .login({ email: 'a@example.com', password: 'x' })
+        .catch((caught: unknown) => caught);
+
+      expect(err).toBeInstanceOf(ConnectError);
+      expect((err as ConnectError).code).toBe(Code.OutOfRange);
+    });
+
+    it('falls back to the status mapping when the body code is an unrecognised slug', async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse({ code: 'some_future_slug', error: 'huh' }, 400)
+      );
+
+      const err = await getPactAuthClient()
+        .login({ email: 'a@example.com', password: 'x' })
+        .catch((caught: unknown) => caught);
+
+      expect(err).toBeInstanceOf(ConnectError);
+      expect((err as ConnectError).code).toBe(Code.InvalidArgument);
+    });
+
+    it('falls back to the status mapping when the body is not JSON', async () => {
+      fetchMock.mockResolvedValue(
+        new Response('not json at all', { status: 400 })
+      );
+
+      const err = await getPactAuthClient()
+        .login({ email: 'a@example.com', password: 'x' })
+        .catch((caught: unknown) => caught);
+
+      expect(err).toBeInstanceOf(ConnectError);
+      expect((err as ConnectError).code).toBe(Code.InvalidArgument);
+      expect((err as ConnectError).rawMessage).toBe('not json at all');
+    });
+
+    it("falls back cleanly on pact-gateway's plain-text middleware bodies", async () => {
+      fetchMock.mockResolvedValue(
+        new Response('unauthorized', { status: 401 })
+      );
+
+      const err = await getPactAuthClient()
+        .login({ email: 'a@example.com', password: 'x' })
+        .catch((caught: unknown) => caught);
+
+      expect(err).toBeInstanceOf(ConnectError);
+      expect((err as ConnectError).code).toBe(Code.Unauthenticated);
+      expect((err as ConnectError).rawMessage).toBe('unauthorized');
+    });
+
+    it("falls back cleanly on the rate limiter's plain-text 429 body", async () => {
+      fetchMock.mockResolvedValue(
+        new Response('rate limit exceeded\n', { status: 429 })
+      );
+
+      const err = await getPactAuthClient()
+        .login({ email: 'a@example.com', password: 'x' })
+        .catch((caught: unknown) => caught);
+
+      expect(err).toBeInstanceOf(ConnectError);
+      expect((err as ConnectError).code).toBe(Code.ResourceExhausted);
+    });
+  });
+
   it('throws Code.Unavailable when the gateway is unreachable', async () => {
     fetchMock.mockRejectedValue(new TypeError('fetch failed'));
 
