@@ -25,8 +25,9 @@ export const MOCK_LOGIN_WRONG_PASSWORD = 'wrong-password';
 
 const nowUnix = (): number => Math.floor(Date.now() / 1000);
 
-// Recomputed at module load so a session minted at dev:mock startup never
-// looks expired during the run.
+// A function (not a fixed constant) so every call recomputes from the
+// current time - a session minted hours into a long-running dev:mock
+// session never looks expired.
 export const mockSessionExpiresAtUnix = (): number =>
   nowUnix() + 365 * 24 * 60 * 60;
 
@@ -72,19 +73,20 @@ export const mockAuthIdentity = (
   ...overrides,
 });
 
-// Seeds one row per credential-management surface (MFA factor, passkey,
-// connected identity) so the account security settings page has something
-// to show and revoke/rename/disconnect flows have a target - matching the
-// account.ts seeder's "non-empty by default" convention.
+// Seeds one row per credential-management surface that doesn't gate its own
+// "add" entry point on existing rows, so the account security settings page
+// has something to show and revoke/rename/disconnect flows have a target -
+// matching the account.ts seeder's "non-empty by default" convention.
+//
+// Deliberately NOT seeding a verified TOTP factor here:
+// AuthSettingsTwoFactorCard hides its "Add authenticator app" button
+// whenever hasVerifiedTotp is true (see AuthSettingsTwoFactorCard.tsx), so a
+// pre-seeded verified factor would permanently hide that button and make the
+// totp/enroll/begin and totp/enroll/confirm handlers below unreachable
+// through the UI in dev:mock. Passkeys and connected identities have no
+// equivalent gate - their register/connect buttons render regardless of
+// existing rows - so they are safe to seed non-empty.
 export const createAuthMockData = (db: DB): void => {
-  db.authMfaFactors.create({
-    factorId: 'mock-totp-factor-1',
-    type: 'totp',
-    label: 'Authenticator app',
-    verified: true,
-    createdAtUnix: nowUnix() - 30 * 24 * 60 * 60,
-  });
-
   db.authPasskeys.create({
     passkeyId: 'mock-passkey-1',
     label: 'MacBook Touch ID',
