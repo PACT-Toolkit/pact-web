@@ -15,7 +15,12 @@ import {
 import { runRedactor } from '@/src/app/redactor/mock/data/redactor';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
-import { filterMatchPattern, runClassifier, runFilter } from '../data/test_lab';
+import {
+  filterMatchPattern,
+  runClassifier,
+  runConsensus,
+  runFilter,
+} from '../data/test_lab';
 
 const TEST_LAB_RUN_DECISION_VALUES = new Set(['allow', 'block']);
 const TEST_LAB_RUN_STATUS_VALUES = new Set(['ok', 'error']);
@@ -84,56 +89,94 @@ export const handlers: RequestHandler[] = [
     // fields, so this is equivalent to the old static-constant read, just
     // sourced from the one shared row instead of a second copy.
     const gatewayConfig = db.gatewayConfig.findFirst(() => true)!;
+    const vectorEnforcing = gatewayConfig.vectorEnforceMode === 'enforce';
+    const classifierEnforcing =
+      gatewayConfig.classifierEnforceMode === 'enforce';
+    const consensusInline = gatewayConfig.consensusMode === 'inline';
+    const consensusThreshold = gatewayConfig.consensusThreshold ?? 0.55;
 
+    // The pipeline below mirrors pact-gateway's stage order and halt
+    // semantics byte-for-byte (internal/pipeline/service.go: "for _, st :=
+    // range s.stages { halt, err := st.run(...); if halt { break } }") --
+    // each stage below only runs once `blocked` is still false, exactly like
+    // the real Check loop stopping at the first halting stage. This is what
+    // makes dev:mock a faithful fixture for PACT-702's reason-driven
+    // attribution logic (test_lab_check.ts's applyLiveLayers) rather than a
+    // parallel computation that could drift from real halt behaviour.
+    let blocked = false;
+    let reason: string | undefined;
+
+    // Stage 1: filter. `_bypass_layers` is a mock-only escape hatch (Test
+    // Lab's "pass through" re-run) -- the real gateway ignores it entirely.
     const filterBypassed = bypass.includes('filter');
-    const filterResult = filterBypassed ? null : runFilter(content);
-    const shouldRunClassifier =
-      filterBypassed || filterResult?.decision === 'allow';
-    const classifierResult = shouldRunClassifier
-      ? runClassifier(content)
-      : null;
+    const filterResult = filterBypassed ? undefined : runFilter(content);
+    if (filterResult?.verdict === 'hostile') {
+      blocked = true;
+      reason = 'filter_hostile';
+    } else if (filterResult?.verdict === 'suspicious' && vectorEnforcing) {
+      blocked = true;
+      reason = 'filter_suspicious_enforced';
+    }
 
-    // Sandbox re-scan (PACT-236/327): runs regardless of filter/classifier
-    // outcome, same as the real gateway's indirect-injection pipeline stage.
-    // A hostile external_ref blocks the request even when filter/classifier
-    // both allowed -- see gateway_sandbox.ts's docblock.
-    const externalRefsResult = runSandboxProbe(
-      body.external_refs,
-      Boolean(gatewayConfig.sandboxEnabled)
-    );
+    // Stage 2: classifier -- tags only, never decides block itself.
+    const classifierResult = !blocked ? runClassifier(content) : undefined;
+    let consensusRan = false;
+    if (!blocked && classifierResult?.label === 'sensitive') {
+      const highConfidence = classifierResult.score >= consensusThreshold;
+      if (highConfidence) {
+        if (classifierEnforcing) {
+          blocked = true;
+          reason = 'classifier_enforced';
+        }
+      } else if (consensusInline) {
+        consensusRan = true;
+        const { malicious } = runConsensus(content);
+        if (classifierEnforcing && malicious) {
+          blocked = true;
+          reason = 'consensus_enforced';
+        }
+      }
+      // Shadow consensusMode defers the vote entirely (matches the real
+      // gateway's DeferConsensusVote path) -- never blocks inline.
+    }
 
-    const decision =
-      filterResult?.decision === 'block' ||
-      classifierResult?.decision === 'block' ||
-      sandboxBlocked(externalRefsResult)
-        ? 'block'
-        : 'allow';
+    // Stage 3: sandbox re-scan (PACT-236/327). Only runs if nothing upstream
+    // already halted the pipeline, same as the real gateway.
+    const externalRefsResult = !blocked
+      ? runSandboxProbe(
+          body.external_refs,
+          Boolean(gatewayConfig.sandboxEnabled)
+        )
+      : undefined;
+    if (!blocked && sandboxBlocked(externalRefsResult)) {
+      blocked = true;
+      // The mock's sandbox simulation (gateway.ts's refVerdict) only ever
+      // produces a 'hostile' verdict for a ref that sets `blocked` > 0 --
+      // 'external_ref_not_allowlisted' has no mock scenario today.
+      reason = 'external_ref_hostile';
+    }
 
-    const reason =
-      filterResult?.decision === 'block'
-        ? 'filter_hostile'
-        : classifierResult?.decision === 'block'
-          ? 'classifier_hostile'
-          : sandboxBlocked(externalRefsResult)
-            ? 'sandbox_hostile_external_ref'
-            : undefined;
+    // Stage 4: redactor. Runs only when nothing upstream halted, mirroring
+    // the real gateway's stage loop -- pact-redactor is bidirectional, but
+    // that only means it inspects both request/response content when it
+    // DOES run, not that it runs after an already-halted pipeline. Shared
+    // with createRedactorMockData's seed data via
+    // redactor/mock/data/redactor.ts so /redactor's ad-hoc test panel
+    // (PACT-324) exercises the same detection logic as the live console.
+    const redactorResult = !blocked ? runRedactor(content) : undefined;
 
-    // Redactor runs regardless of decision/kind, same as the real gateway
-    // (pact-redactor is bidirectional -- see README.md). Shared with
-    // createRedactorMockData's seed data via redactor/mock/data/redactor.ts
-    // so /redactor's ad-hoc test panel (PACT-324) exercises the same
-    // detection logic as the live console's fixtures.
-    const redactorResult = runRedactor(content);
+    const decision = blocked ? 'block' : 'allow';
 
     // Diagnostics (PACT-303/327): the causal-diagnostic harness only ever
     // replays a block decision, and only when the gateway build has it
     // enabled. filterMatchPattern resolves the exact rule the filter stage
     // matched so the span lines up with the submitted content byte-for-byte.
+    // No span for a suspicious-verdict block -- filterMatchPattern only
+    // covers the hostile pattern tables, matching maybeDiagnose's own
+    // reason-prefix gate on the real gateway.
     const diagnosticsResult = computeCausalSpans(
       content,
-      filterResult?.decision === 'block'
-        ? filterMatchPattern(content)
-        : undefined,
+      reason === 'filter_hostile' ? filterMatchPattern(content) : undefined,
       Boolean(gatewayConfig.diagnosticsEnabled),
       decision === 'block'
     );
@@ -152,52 +195,46 @@ export const handlers: RequestHandler[] = [
       request_id: `req-test-${uuidv4().slice(0, 6)}`,
       decision,
       reason,
+      // Modern builds set this alongside the `filter` sub-object below,
+      // never instead of it (handler.go's writeDecision sets both from the
+      // same RuleID) -- kept for callers still reading the legacy field.
       filter_rule_id:
-        filterResult?.decision === 'block' ? filterResult.ruleId : undefined,
+        reason === 'filter_hostile' || reason === 'filter_suspicious_enforced'
+          ? filterResult!.ruleId
+          : undefined,
+      // Presence mirrors pact-gateway's FilterOutcome.HasSignal(): omitted
+      // entirely for the ordinary safe-verdict, no-rule-fired case.
+      filter:
+        filterResult && (filterResult.verdict !== 'safe' || filterResult.ruleId)
+          ? {
+              verdict: filterResult.verdict,
+              rule_id: filterResult.ruleId,
+              shadow: false,
+              duration_ms: 1 + Math.random() * 4,
+            }
+          : undefined,
       classifier: classifierResult
-        ? { label: classifierResult.label, score: classifierResult.confidence }
+        ? {
+            label: classifierResult.label,
+            score: classifierResult.score,
+            duration_ms: 12 + Math.random() * 22,
+          }
         : undefined,
-      redactor: redactorResult,
+      // PACT-682/623: Ran is the dedicated presence signal, set alongside
+      // Duration -- consensus never rendering-relevant unless it actually
+      // voted inline.
+      consensus: consensusRan
+        ? { duration_ms: 30 + Math.random() * 60 }
+        : undefined,
+      redactor: redactorResult
+        ? { ...redactorResult, duration_ms: 2 + Math.random() * 3 }
+        : undefined,
       external_refs: externalRefsResult,
       spotlight: spotlightResult,
       diagnostics: diagnosticsResult
         ? { causal_spans: diagnosticsResult }
         : undefined,
       latency_ms: Math.floor(3 + Math.random() * 8),
-      _mock_layers: [
-        filterBypassed
-          ? {
-              name: 'filter',
-              decision: 'skip',
-              reason: 'Bypassed by user',
-              latency_ms: 0,
-              confidence: 0,
-            }
-          : {
-              name: 'filter',
-              decision: filterResult!.decision,
-              rule_id: filterResult!.ruleId,
-              reason: filterResult!.reason ?? 'No rule match',
-              latency_ms: Math.floor(1 + Math.random() * 4),
-              confidence: filterResult!.confidence,
-            },
-        classifierResult
-          ? {
-              name: 'classifier',
-              decision: classifierResult.decision,
-              label: classifierResult.label,
-              reason: classifierResult.reason ?? 'Clean input',
-              latency_ms: Math.floor(12 + Math.random() * 22),
-              confidence: classifierResult.confidence,
-            }
-          : {
-              name: 'classifier',
-              decision: 'skip',
-              reason: 'Skipped — filter blocked',
-              latency_ms: 0,
-              confidence: 0,
-            },
-      ],
     });
   }),
 

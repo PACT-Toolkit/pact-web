@@ -29,4 +29,13 @@ export interface LayerState {
   confidence?: number;
   classifierLabel?: string;
   bypassed?: boolean;
+  // Redactor layer detail (PACT-703) -- populated only when this layer is
+  // the redactor stage and it produced a 'redacted' verdict.
+  redactedSpanCount?: number;
+  redactedSpanLabels?: string[];
+  // Sandbox layer detail (PACT-703) -- populated only when this layer is the
+  // conditionally-rendered sandbox stage (data.external_refs present).
+  refsScanned?: number;
+  refsBlocked?: number;
+  refsMitigated?: number;
 }
