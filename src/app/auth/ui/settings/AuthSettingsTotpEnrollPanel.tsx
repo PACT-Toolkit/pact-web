@@ -16,6 +16,8 @@ import {
 } from '@/src/framework/auth/pact_auth/web_mutations';
 import { cn } from '@/src/lib/utils';
 
+import { AuthSettingsTotpEnrollQrCode } from './AuthSettingsTotpEnrollQrCode';
+
 type Props = {
   onComplete: () => void;
   onCancel: () => void;
@@ -23,7 +25,10 @@ type Props = {
 
 type Stage = 'begin' | 'verify' | 'recovery';
 
-export const AuthSettingsTotpEnrollPanel = ({ onComplete, onCancel }: Props) => {
+export const AuthSettingsTotpEnrollPanel = ({
+  onComplete,
+  onCancel,
+}: Props) => {
   const [stage, setStage] = useState<Stage>('begin');
   const [enrollment, setEnrollment] =
     useState<BeginTotpEnrollmentResult | null>(null);
@@ -160,10 +165,14 @@ export const AuthSettingsTotpEnrollPanel = ({ onComplete, onCancel }: Props) => 
         data-stage="verify"
         className="flex flex-col gap-4 rounded-md border bg-muted/30 p-4"
       >
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <p className="text-sm">
-            Add this secret to your authenticator app, then enter the 6-digit
-            code it shows.
+            Scan this QR code with your authenticator app, then enter the
+            6-digit code it shows.
+          </p>
+          <AuthSettingsTotpEnrollQrCode value={enrollment.otpauthUrl} />
+          <p className="text-center text-xs text-muted-foreground">
+            Can&apos;t scan? Enter this code manually instead.
           </p>
           <div className="flex items-center gap-2">
             <code
@@ -186,12 +195,15 @@ export const AuthSettingsTotpEnrollPanel = ({ onComplete, onCancel }: Props) => 
               )}
             </Button>
           </div>
-          <p
-            data-testid="totp-otpauth-url"
-            className="break-all text-xs text-muted-foreground"
-          >
-            <span className="sr-only">otpauth URL: </span>
-            {enrollment.otpauthUrl}
+          {/*
+            Visually hidden - the QR code and the secret field above cover
+            sighted and manual-entry use. Screen-reader users who can't
+            scan the QR still need the full otpauth:// URI: some
+            authenticator apps accept pasting it directly instead of a
+            manual secret.
+          */}
+          <p data-testid="totp-otpauth-url" className="sr-only">
+            Authenticator setup link: {enrollment.otpauthUrl}
           </p>
         </div>
 
