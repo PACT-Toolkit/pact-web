@@ -21,10 +21,11 @@ describe('QrCodeTile', () => {
       .getByTestId('qr-tile')
       .querySelector('svg');
 
-    // QrCodeTile's default size/level (168 / 'M'). Byte-identical markup
-    // proves it threads `value` into the encoder unchanged.
+    // QrCodeTile's default size/level (168 / 'M') plus its fixed 4-module
+    // quiet zone. Byte-identical markup proves it threads `value` into the
+    // encoder unchanged.
     const { container: reference } = render(
-      <QRCodeSVG value={VALUE} size={168} level="M" />
+      <QRCodeSVG value={VALUE} size={168} level="M" marginSize={4} />
     );
     const expected = reference.querySelector('svg');
 
