@@ -7,6 +7,10 @@
  */
 
 export interface CheckClassifierInfo {
+  /** DurationMs is the classifier stage's wall-clock RPC time in fractional
+   * milliseconds (PACT-613), for the primary Classify call only; absent
+   * when the classifier stage did not run. */
+  duration_ms?: number;
   /** Engine is the exercised classifier model version as echoed by
    * pact-classifier; absent when the classifier stage did not run or did
    * not report one. */

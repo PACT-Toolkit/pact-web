@@ -11,6 +11,7 @@ export * from './checkCheckRequest';
 export * from './checkCheckResponse';
 export * from './checkCheckResponseDecision';
 export * from './checkClassifierInfo';
+export * from './checkConsensusInfo';
 export * from './checkDiagnosticsInfo';
 export * from './checkExternalRef';
 export * from './checkExternalRefInfo';

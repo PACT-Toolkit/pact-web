@@ -9,10 +9,10 @@ import {
 import { checkContent } from '@/src/__codegen__/rest/check';
 import {
   applyLiveLayers,
-  applyMockLayers,
   BLANK_LAYERS,
   type CheckInput,
   type CheckResponse,
+  LAYER_DEFINITIONS,
   parseCheckResponse,
   type SaveRunPayload,
   type TestLabRunRecord,
@@ -124,12 +124,16 @@ export function useTestLabRun() {
         );
       }
 
-      const startIdx = bypassLayers.includes('filter') ? 1 : 0;
-      setActiveIdx(startIdx);
-      await sleep(400);
-      if (startIdx === 0) {
-        setActiveIdx(1);
-        await sleep(400);
+      // Animate one active-stage highlight per pre-run stage definition,
+      // skipping any bypassed stage. This walks LAYER_DEFINITIONS (the base
+      // stage set known before the response arrives -- a conditionally
+      // rendered sandbox stage only exists once the response is in hand, so
+      // it never has a pending animation frame). 200ms/stage keeps the total
+      // walk roughly the same as the previous fixed two-stage animation.
+      for (let i = 0; i < LAYER_DEFINITIONS.length; i += 1) {
+        if (bypassLayers.includes(LAYER_DEFINITIONS[i].id)) continue;
+        setActiveIdx(i);
+        await sleep(200);
       }
       setActiveIdx(-1);
 
@@ -188,11 +192,7 @@ export function useTestLabRun() {
         return;
       }
 
-      setLayers((prev) =>
-        data._mock_layers
-          ? applyMockLayers(prev, data._mock_layers, bypassLayers)
-          : applyLiveLayers(prev, data, bypassLayers)
-      );
+      setLayers((prev) => applyLiveLayers(prev, data, bypassLayers));
 
       setResult(data);
       setStatus('done');

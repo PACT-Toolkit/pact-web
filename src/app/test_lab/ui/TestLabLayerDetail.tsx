@@ -1,4 +1,4 @@
-import  { type LayerState } from '@/src/app/test_lab/ui/types';
+import { type LayerState } from '@/src/app/test_lab/ui/types';
 import { Button } from '@/src/components/ui/button';
 
 export const TestLabLayerDetail = ({
@@ -29,7 +29,9 @@ export const TestLabLayerDetail = ({
       {layer.ruleId && (
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-muted-foreground">Rule</span>
-          <code className="rounded bg-muted px-1.5 py-0.5 text-xs">{layer.ruleId}</code>
+          <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+            {layer.ruleId}
+          </code>
         </div>
       )}
       {layer.classifierLabel && (
@@ -46,12 +48,47 @@ export const TestLabLayerDetail = ({
           <span className="text-xs font-medium">{layer.latencyMs}ms</span>
         </div>
       )}
+      {layer.redactedSpanCount !== undefined && layer.redactedSpanCount > 0 && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">Redacted spans</span>
+          <span className="text-xs font-medium">{layer.redactedSpanCount}</span>
+          {layer.redactedSpanLabels && layer.redactedSpanLabels.length > 0 && (
+            <span className="flex flex-wrap gap-1">
+              {/* Span labels aren't unique on their own (the same PII kind
+                  can appear more than once in one response) -- pairing with
+                  index is safe since this list is only ever re-rendered
+                  from a fresh layer state, never reordered in place. */}
+              {layer.redactedSpanLabels.map((label, i) => (
+                <code
+                  key={`${label}-${i}`}
+                  className="rounded bg-muted px-1.5 py-0.5 text-xs"
+                >
+                  {label}
+                </code>
+              ))}
+            </span>
+          )}
+        </div>
+      )}
+      {layer.refsScanned !== undefined && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted-foreground">
+            References scanned
+          </span>
+          <span className="text-xs font-medium">
+            {layer.refsScanned} ({layer.refsBlocked ?? 0} blocked,{' '}
+            {layer.refsMitigated ?? 0} mitigated)
+          </span>
+        </div>
+      )}
     </div>
     {layer.confidence !== undefined && layer.confidence > 0 && (
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">Confidence</span>
-          <span className="text-xs font-medium">{(layer.confidence * 100).toFixed(0)}%</span>
+          <span className="text-xs font-medium">
+            {(layer.confidence * 100).toFixed(0)}%
+          </span>
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
           <div
@@ -61,7 +98,9 @@ export const TestLabLayerDetail = ({
         </div>
       </div>
     )}
-    {layer.reason && <p className="text-sm text-muted-foreground">{layer.reason}</p>}
+    {layer.reason && (
+      <p className="text-sm text-muted-foreground">{layer.reason}</p>
+    )}
     <div className="flex gap-2">
       <Button
         size="sm"
@@ -78,7 +117,11 @@ export const TestLabLayerDetail = ({
         className="h-7 text-xs"
         disabled={isRunning || layer.decision !== 'block'}
         onClick={onPassthrough}
-        title={layer.decision !== 'block' ? 'Only available when this layer blocks' : undefined}
+        title={
+          layer.decision !== 'block'
+            ? 'Only available when this layer blocks'
+            : undefined
+        }
       >
         Pass Through
       </Button>
