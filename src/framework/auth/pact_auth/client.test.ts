@@ -276,6 +276,42 @@ describe('getPactAuthClient', () => {
     });
   });
 
+  // PACT-697: the MFA passkey step-up mirrors beginPasskeyLogin/
+  // finishPasskeyLogin's request shape exactly, plus the mfaToken every
+  // mfa_token-scoped RPC carries.
+  it('beginMfaPasskey posts mfaToken to /mfa/passkey/begin', async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({ ceremonyId: 'cer-1', optionsJson: { challenge: 'abc' } })
+    );
+
+    await getPactAuthClient().beginMfaPasskey({ mfaToken: 'mfa-tok-1' });
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toBe('http://gateway.test/v1/auth/mfa/passkey/begin');
+    expect(JSON.parse(init?.body as string)).toEqual({
+      mfaToken: 'mfa-tok-1',
+    });
+  });
+
+  it('finishMfaPasskey posts mfaToken, ceremonyId, and the decoded assertion to /mfa/passkey/finish', async () => {
+    fetchMock.mockResolvedValue(jsonResponse({ sessionToken: 'tok' }));
+    const assertion = { id: 'cred-1', response: {} };
+
+    await getPactAuthClient().finishMfaPasskey({
+      mfaToken: 'mfa-tok-1',
+      ceremonyId: 'cer-1',
+      assertionJson: new TextEncoder().encode(JSON.stringify(assertion)),
+    });
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(String(url)).toBe('http://gateway.test/v1/auth/mfa/passkey/finish');
+    expect(JSON.parse(init?.body as string)).toEqual({
+      mfaToken: 'mfa-tok-1',
+      ceremonyId: 'cer-1',
+      assertionJson: assertion,
+    });
+  });
+
   // PACT-687: pact-gateway keys its per-IP rate buckets on the right-most
   // X-Forwarded-For hop, so authRequest forwards its best determination of
   // the end-user's client IP - read via next/headers - as that one hop.

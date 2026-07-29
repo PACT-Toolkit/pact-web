@@ -367,6 +367,17 @@ export interface PactAuthClient {
     code: string;
     isRecovery: boolean;
   }): Promise<AuthSessionResult>;
+  // Alternative to verifyMfa's TOTP/recovery-code step-up (PACT-696/700):
+  // completes the same outstanding mfa_token via a WebAuthn assertion
+  // instead of a code.
+  beginMfaPasskey(req: {
+    mfaToken: string;
+  }): Promise<AuthPasskeyCeremonyResult>;
+  finishMfaPasskey(req: {
+    mfaToken: string;
+    ceremonyId: string;
+    assertionJson: Uint8Array;
+  }): Promise<AuthSessionResult>;
   startLogin(req: {
     provider: string;
     returnTo: string;
@@ -497,6 +508,28 @@ export const getPactAuthClient = (): PactAuthClient => {
           method: 'POST',
           path: '/mfa/verify',
           body: { mfaToken, code, isRecovery },
+        })
+      ),
+
+    beginMfaPasskey: async ({ mfaToken }) =>
+      toCeremonyResult(
+        await authRequest<AuthPasskeyCeremonyResponse>({
+          method: 'POST',
+          path: '/mfa/passkey/begin',
+          body: { mfaToken },
+        })
+      ),
+
+    finishMfaPasskey: async ({ mfaToken, ceremonyId, assertionJson }) =>
+      toSessionResult(
+        await authRequest<AuthSessionResponse>({
+          method: 'POST',
+          path: '/mfa/passkey/finish',
+          body: {
+            mfaToken,
+            ceremonyId,
+            assertionJson: decodeCeremonyJson(assertionJson),
+          },
         })
       ),
 

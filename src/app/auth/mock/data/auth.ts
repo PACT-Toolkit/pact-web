@@ -43,6 +43,17 @@ export const MOCK_WEBAUTHN_CHALLENGE_B64URL =
 export const MOCK_WEBAUTHN_USER_HANDLE_B64URL =
   'bW9jay11c2VyLWhhbmRsZS0wMDAwMDA';
 
+// A credential id the mfa/passkey/finish mock handler treats as a
+// deliberate assertion-verification failure (PACT-697): registering an E2E
+// virtual authenticator credential with this exact id, then completing the
+// MFA passkey ceremony, exercises the same Code.Unauthenticated "passkey
+// verification failed" branch pact-auth's real FinishMfaPasskeyAssertion
+// returns for a non-matching assertion - mirroring
+// MOCK_LOGIN_WRONG_PASSWORD's role for the password login form. Any other
+// credential id succeeds.
+export const MOCK_WEBAUTHN_MFA_FAILING_CREDENTIAL_ID_B64URL =
+  'bW9jay1tZmEtZmFpbGluZy1jcmVkZW50aWFsLWlk';
+
 export const mockAuthMfaFactor = (
   overrides: Partial<AuthMfaFactorResponse>
 ): AuthMfaFactorResponse => ({

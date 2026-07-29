@@ -1,5 +1,10 @@
 basePath: /
 definitions:
+    auth.BeginMfaPasskeyAssertionRequest:
+        properties:
+            mfaToken:
+                type: string
+        type: object
     auth.BeginPasskeyLoginRequest:
         properties:
             email:
@@ -31,6 +36,15 @@ definitions:
             code:
                 type: string
             factorId:
+                type: string
+        type: object
+    auth.FinishMfaPasskeyAssertionRequest:
+        properties:
+            assertionJson:
+                type: object
+            ceremonyId:
+                type: string
+            mfaToken:
                 type: string
         type: object
     auth.FinishPasskeyLoginRequest:
@@ -213,6 +227,13 @@ definitions:
             mfaToken:
                 type: string
         type: object
+    boundary.ErrorResponse:
+        properties:
+            code:
+                type: string
+            error:
+                type: string
+        type: object
 host: localhost:8080
 info:
     contact: {}
@@ -258,7 +279,7 @@ paths:
                 "404":
                     description: identity not linked
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Unlink a federated OAuth identity
@@ -347,10 +368,70 @@ paths:
                 "404":
                     description: factor not found
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Revoke an enrolled MFA factor
+            tags:
+                - auth
+    /v1/auth/mfa/passkey/begin:
+        post:
+            consumes:
+                - application/json
+            operationId: beginMfaPasskeyAssertion
+            parameters:
+                - description: MFA token from a partial login
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.BeginMfaPasskeyAssertionRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: WebAuthn request options for navigator.credentials.get()
+                    schema:
+                        $ref: '#/definitions/auth.PasskeyCeremonyResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: invalid or expired mfa token
+                    schema:
+                        type: string
+            summary: Begin a passkey-assertion MFA step-up
+            tags:
+                - auth
+    /v1/auth/mfa/passkey/finish:
+        post:
+            consumes:
+                - application/json
+            operationId: finishMfaPasskeyAssertion
+            parameters:
+                - description: MFA token, ceremony id, and the browser's assertion response
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/auth.FinishMfaPasskeyAssertionRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/auth.SessionResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: invalid or expired mfa token, or invalid assertion
+                    schema:
+                        type: string
+            summary: Finish a passkey-assertion MFA step-up
             tags:
                 - auth
     /v1/auth/mfa/recovery-codes:
@@ -502,7 +583,7 @@ paths:
                 "404":
                     description: passkey not found
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Delete a passkey
@@ -538,7 +619,7 @@ paths:
                 "404":
                     description: passkey not found
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Rename a passkey
@@ -742,7 +823,7 @@ paths:
                 "409":
                     description: already exists
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             summary: Register a new account
             tags:
                 - auth

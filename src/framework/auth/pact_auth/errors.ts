@@ -18,6 +18,26 @@ export const AUTH_ERROR_CODES = {
 export type AuthErrorCode =
   (typeof AUTH_ERROR_CODES)[keyof typeof AUTH_ERROR_CODES];
 
+// MFA-step-up-specific codes layered on top of AUTH_ERROR_CODES. pact-auth's
+// MapMfaErr (internal/features/mfa/errors.go) collapses several distinct
+// outcomes onto Code.Unauthenticated for every mfa_token-scoped RPC
+// (VerifyMfa, BeginMfaPasskeyAssertion, FinishMfaPasskeyAssertion), so the
+// /api/auth/mfa/* routes classify the raw message before falling through to
+// mapPactAuthError - see isChallengeGoneMessage in route_helpers.ts. Kept
+// alongside AUTH_ERROR_CODES so every mfa route and
+// AuthLoginMfaChallengeForm read one canonical set instead of scattering
+// string literals per file.
+export const MFA_STEP_UP_ERROR_CODES = {
+  noChallenge: 'no_challenge',
+  challengeExpired: 'challenge_expired',
+  invalidCode: 'invalid_code',
+  mfaUnavailable: 'mfa_unavailable',
+  passkeyFailed: 'passkey_failed',
+} as const;
+
+export type MfaStepUpErrorCode =
+  (typeof MFA_STEP_UP_ERROR_CODES)[keyof typeof MFA_STEP_UP_ERROR_CODES];
+
 export type AuthErrorBody = {
   code: AuthErrorCode;
   error: string;

@@ -5,6 +5,7 @@ import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
 import {
   invalidJsonResponse,
   isString,
+  parseCeremonyOptions,
   readJsonBody,
 } from '@/src/framework/auth/pact_auth/route_helpers';
 
@@ -47,24 +48,16 @@ export const POST = async (req: NextRequest) => {
     );
   }
 
-  let options: unknown;
-  try {
-    const parsed = JSON.parse(new TextDecoder().decode(resp.optionsJson)) as
-      | { publicKey?: unknown }
-      | unknown;
-    // go-webauthn marshals CredentialAssertion as { publicKey: {...}, mediation? }.
-    // Unwrap so the browser-side decoder reads challenge/allowCredentials
-    // directly off the top.
-    options =
-      parsed && typeof parsed === 'object' && 'publicKey' in parsed
-        ? (parsed as { publicKey: unknown }).publicKey
-        : parsed;
-  } catch {
+  const parsedOptions = parseCeremonyOptions(resp.optionsJson);
+  if (!parsedOptions.ok) {
     return NextResponse.json(
       { error: 'invalid passkey options' },
       { status: 502 }
     );
   }
 
-  return NextResponse.json({ ceremonyId: resp.ceremonyId, options });
+  return NextResponse.json({
+    ceremonyId: resp.ceremonyId,
+    options: parsedOptions.options,
+  });
 };

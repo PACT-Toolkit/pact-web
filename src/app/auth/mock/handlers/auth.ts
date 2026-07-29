@@ -22,6 +22,7 @@ import {
   MOCK_LOGIN_WRONG_PASSWORD,
   MOCK_SESSION_TOKEN,
   MOCK_WEBAUTHN_CHALLENGE_B64URL,
+  MOCK_WEBAUTHN_MFA_FAILING_CREDENTIAL_ID_B64URL,
   MOCK_WEBAUTHN_USER_HANDLE_B64URL,
   mockSessionExpiresAtUnix,
 } from '../data/auth';
@@ -104,6 +105,42 @@ export const handlers: RequestHandler[] = [
   http.post('*/v1/auth/mfa/verify', () =>
     HttpResponse.json(mockSessionResponse())
   ),
+
+  // Alternative to mfa/verify's TOTP/recovery-code step-up (PACT-697). No
+  // allowCredentials - same simplification passkeys/login/begin below
+  // already makes - so any resident credential a virtual authenticator
+  // registers can complete the ceremony.
+  http.post('*/v1/auth/mfa/passkey/begin', () =>
+    HttpResponse.json({
+      ceremonyId: uuidv4(),
+      optionsJson: {
+        publicKey: {
+          challenge: MOCK_WEBAUTHN_CHALLENGE_B64URL,
+          timeout: 60_000,
+          userVerification: 'preferred',
+        },
+      },
+    } satisfies AuthPasskeyCeremonyResponse)
+  ),
+
+  // See MOCK_WEBAUTHN_MFA_FAILING_CREDENTIAL_ID_B64URL's docblock: a
+  // credential id matching that sentinel fails exactly like a real
+  // assertion pact-auth can't verify. Any other credential id succeeds.
+  http.post('*/v1/auth/mfa/passkey/finish', async ({ request }) => {
+    const body = (await request.json()) as {
+      assertionJson?: { id?: string };
+    };
+    if (
+      body.assertionJson?.id === MOCK_WEBAUTHN_MFA_FAILING_CREDENTIAL_ID_B64URL
+    ) {
+      return HttpResponse.json(
+        { code: 'unauthenticated', error: 'passkey verification failed' },
+        { status: 401 }
+      );
+    }
+
+    return HttpResponse.json(mockSessionResponse());
+  }),
 
   // /api/auth/oauth/start short-circuits before ever calling the pact-auth
   // client when isMock() is true (see pact-dev-mock skill), so this is
