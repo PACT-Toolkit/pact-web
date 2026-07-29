@@ -14,6 +14,7 @@ import type { SWRMutationConfiguration } from 'swr/mutation';
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 
 import type {
+  BoundaryErrorResponse,
   ClassifierLabelVerdictRequest,
   ClassifierLabelVerdictResponse,
 } from './types';
@@ -43,7 +44,9 @@ export type LabelVerdictMutationResult = NonNullable<
 /**
  * @summary Label a classifier verdict
  */
-export const useLabelVerdict = <TError = Promise<string>>(options?: {
+export const useLabelVerdict = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof labelVerdict>>,
     TError,

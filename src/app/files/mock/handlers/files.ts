@@ -2,10 +2,7 @@ import { http, HttpResponse, type RequestHandler } from 'msw';
 import { v4 as uuidv4 } from 'uuid';
 
 import { db } from '@/mocks/data/dbFactory';
-import {
-  type FileRecord,
-  FileRecordStatus,
-} from '@/src/__codegen__/rest/files';
+import { type FilesFileResponse } from '@/src/__codegen__/rest/files';
 import { MINT_FAILURE_FILE_ID } from '@/src/app/files/mock/data/files';
 
 // How long a "processing" row stays processing before the mock pipeline
@@ -19,9 +16,9 @@ const PROCESSING_DURATION_MS = 3_000;
 // (list/get) rather than via a real timer - avoids leaking timers across
 // Vitest runs (same reasoning as benchmark.ts's advanceJob, which uses the
 // same read-time-advance pattern for job polling).
-const settle = (file: FileRecord): FileRecord => {
-  if (file.status !== FileRecordStatus.processing) return file;
-  const age = Date.now() - Date.parse(file.updatedAt);
+const settle = (file: FilesFileResponse): FilesFileResponse => {
+  if (file.status !== 'processing') return file;
+  const age = Date.now() - Date.parse(file.updatedAt ?? '');
   if (age < PROCESSING_DURATION_MS) return file;
 
   return (
@@ -29,7 +26,7 @@ const settle = (file: FileRecord): FileRecord => {
       (f) => f.id === file.id,
       (f) => ({
         ...f,
-        status: FileRecordStatus.ready,
+        status: 'ready',
         updatedAt: new Date().toISOString(),
       })
     ) ?? file
@@ -44,7 +41,7 @@ export const handlers: RequestHandler[] = [
 
     const rows = db.files
       .getAll()
-      .filter((f) => f.status !== FileRecordStatus.deleted)
+      .filter((f) => f.status !== 'deleted')
       .map(settle);
 
     return HttpResponse.json({
@@ -66,7 +63,7 @@ export const handlers: RequestHandler[] = [
       contentType: body.contentType,
       sizeBytes: body.sizeBytes,
       purpose: body.purpose ?? 'attachment',
-      status: FileRecordStatus.pending,
+      status: 'pending',
       storageKey: `mock/${body.filename}`,
     });
 
@@ -86,7 +83,7 @@ export const handlers: RequestHandler[] = [
       (f) => f.id === id,
       (f) => ({
         ...f,
-        status: FileRecordStatus.processing,
+        status: 'processing',
         updatedAt: new Date().toISOString(),
       })
     );
@@ -114,7 +111,7 @@ export const handlers: RequestHandler[] = [
       return HttpResponse.json({ error: 'file not found' }, { status: 404 });
     }
     const settled = settle(file);
-    if (settled.status !== FileRecordStatus.ready) {
+    if (settled.status !== 'ready') {
       return HttpResponse.json({ file: settled });
     }
 
@@ -129,7 +126,7 @@ export const handlers: RequestHandler[] = [
     const { id } = params as { id: string };
     const updated = db.files.update(
       (f) => f.id === id,
-      (f) => ({ ...f, status: FileRecordStatus.deleted })
+      (f) => ({ ...f, status: 'deleted' })
     );
     if (!updated) {
       return HttpResponse.json({ error: 'file not found' }, { status: 404 });

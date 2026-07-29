@@ -1,7 +1,4 @@
-import {
-  confirmFileUpload,
-  requestFileUpload,
-} from '@/src/__codegen__/rest/files';
+import { postFiles, postFilesIdConfirm } from '@/src/__codegen__/rest/files';
 
 // UploadFileFailureStep identifies which leg of the presign -> PUT -> confirm
 // protocol failed, so a caller can map it onto user-facing copy without
@@ -28,7 +25,7 @@ export type UploadFileResult =
 // uncaught -- callers are expected to wrap the call in their own try/catch,
 // same as before this was extracted.
 export async function uploadFile(file: File): Promise<UploadFileResult> {
-  const presign = await requestFileUpload({
+  const presign = await postFiles({
     filename: file.name,
     contentType: file.type || 'application/octet-stream',
     sizeBytes: file.size,
@@ -38,6 +35,9 @@ export async function uploadFile(file: File): Promise<UploadFileResult> {
     return { ok: false, failure: { step: 'presign', status: presign.status } };
   }
   const { fileId, uploadUrl } = presign.data;
+  if (!fileId || !uploadUrl) {
+    return { ok: false, failure: { step: 'presign', status: presign.status } };
+  }
 
   const put = await fetch(uploadUrl, {
     method: 'PUT',
@@ -48,7 +48,7 @@ export async function uploadFile(file: File): Promise<UploadFileResult> {
     return { ok: false, failure: { step: 'put', status: put.status } };
   }
 
-  const confirm = await confirmFileUpload(fileId);
+  const confirm = await postFilesIdConfirm(fileId);
   if (confirm.status !== 200) {
     return { ok: false, failure: { step: 'confirm', status: confirm.status } };
   }

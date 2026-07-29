@@ -7,10 +7,9 @@ import { useForm } from 'react-hook-form';
 import { useSWRConfig } from 'swr';
 
 import {
-  type Profile,
   getGetAccountProfileKey,
   useGetAccountProfile,
-  useUpdateAccountProfile,
+  usePutAccountProfile,
 } from '@/src/__codegen__/rest/account';
 import {
   PROFILE_FIELD_TO_MASK,
@@ -58,7 +57,7 @@ export const AccountSettingsProfileForm = () => {
       revalidateOnFocus: false,
       onSuccess: (data) => {
         if (data?.status === 200) {
-          const p = data.data as Profile;
+          const p = data.data;
           form.reset({
             displayName: p.displayName ?? '',
             avatarUrl: p.avatarUrl ?? '',
@@ -70,11 +69,10 @@ export const AccountSettingsProfileForm = () => {
       },
     },
   });
-  const profile =
-    query.data?.status === 200 ? (query.data.data as Profile) : undefined;
+  const profile = query.data?.status === 200 ? query.data.data : undefined;
   const isLoading = query.isLoading;
   const loadError = query.error;
-  const update = useUpdateAccountProfile({
+  const update = usePutAccountProfile({
     swr: { onSuccess: () => void mutate(getGetAccountProfileKey()) },
   });
 

@@ -1,4 +1,4 @@
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import {
   extractStageRecords,
@@ -34,7 +34,7 @@ export interface ConsensusRecord extends StageRecordBase {
 // (classifier score >= PACT_CONSENSUS_THRESHOLD). See extractStageRecords
 // for the shared guard and malformed-payload semantics.
 export const extractConsensusRecords = (
-  events: AuditEvent[]
+  events: AuditAuditEventResponse[]
 ): ConsensusRecord[] =>
   extractStageRecords(
     events,

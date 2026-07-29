@@ -2,8 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { type DB } from '@/mocks/data/dbFactory';
 import {
-  type AuditEvent,
-  type QueryDecisionStatsResponse,
+  type AuditAuditEventResponse,
+  type AuditQueryDecisionStatsResponse,
 } from '@/src/__codegen__/rest/audit';
 import { type FilterLoadedPackResponse } from '@/src/__codegen__/rest/filter';
 import {
@@ -46,8 +46,8 @@ export const MOCK_LOADED_PACKS: FilterLoadedPackResponse[] = [
 ];
 
 export const mockDecisionEvent = (
-  overrides: Partial<AuditEvent>
-): AuditEvent => ({
+  overrides: Partial<AuditAuditEventResponse>
+): AuditAuditEventResponse => ({
   id: uuidv4(),
   topic: 'pact.decisions',
   eventId: 'filter.decision',
@@ -79,12 +79,14 @@ const topRuleCounts = (
  * fields.
  */
 export const computeDecisionStats = (
-  events: AuditEvent[],
+  events: AuditAuditEventResponse[],
   window: { sinceUnix?: number; untilUnix?: number } = {}
-): QueryDecisionStatsResponse => {
+): AuditQueryDecisionStatsResponse => {
   const { sinceUnix, untilUnix } = window;
   const matched = events.filter((event) => {
-    const createdUnix = Math.floor(new Date(event.createdAt).getTime() / 1000);
+    const createdUnix = Math.floor(
+      new Date(event.createdAt ?? 0).getTime() / 1000
+    );
     if (sinceUnix !== undefined && createdUnix < sinceUnix) return false;
     if (untilUnix !== undefined && createdUnix >= untilUnix) return false;
 
@@ -96,10 +98,12 @@ export const computeDecisionStats = (
   let latestAtUnix = 0;
 
   for (const event of matched) {
-    const createdUnix = Math.floor(new Date(event.createdAt).getTime() / 1000);
+    const createdUnix = Math.floor(
+      new Date(event.createdAt ?? 0).getTime() / 1000
+    );
     if (createdUnix > latestAtUnix) latestAtUnix = createdUnix;
 
-    const payload = parseDecisionPayload(event.payloadJson);
+    const payload = parseDecisionPayload(event.payloadJson ?? '');
     if (!payload) continue;
 
     if (payload.decision === 'block') {
@@ -158,7 +162,7 @@ const BLOCKED_RULES = [
 const buildEvent = (
   offsetMs: number,
   payload: DecisionPayload
-): Partial<AuditEvent> => {
+): Partial<AuditAuditEventResponse> => {
   const createdAt = new Date(Date.now() - offsetMs).toISOString();
 
   return {

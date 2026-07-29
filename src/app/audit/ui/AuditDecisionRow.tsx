@@ -1,6 +1,6 @@
 import { Shield } from 'lucide-react';
 
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { prettyPayload } from '@/src/app/audit/domain/audit_event_variant';
 import { AuditDecisionInsights } from '@/src/app/audit/ui/AuditDecisionInsights';
 import { AuditRowShell } from '@/src/app/audit/ui/AuditRowShell';
@@ -14,14 +14,14 @@ export const AuditDecisionRow = ({
   event,
   payload,
 }: {
-  event: AuditEvent;
+  event: AuditAuditEventResponse;
   payload: DecisionPayload;
 }) => (
   <AuditRowShell
-    topic={event.topic}
-    createdAt={event.createdAt}
+    topic={event.topic ?? ''}
+    createdAt={event.createdAt ?? ''}
     requestId={event.requestId}
-    rawPayload={prettyPayload(event.payloadJson)}
+    rawPayload={prettyPayload(event.payloadJson ?? '')}
     detail={<AuditDecisionInsights dp={payload} />}
     badges={
       <>

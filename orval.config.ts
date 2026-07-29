@@ -8,7 +8,7 @@ export default defineConfig({
       target: 'src/__codegen__/rest/account/hooks.ts',
       schemas: 'src/__codegen__/rest/account/types',
       client: 'swr',
-      baseUrl: '/v1/account',
+      baseUrl: '/api/pact/gateway/v1',
       override: {
         query: {
           useQuery: true,
@@ -25,7 +25,7 @@ export default defineConfig({
       target: 'src/__codegen__/rest/audit/hooks.ts',
       schemas: 'src/__codegen__/rest/audit/types',
       client: 'swr',
-      baseUrl: '/v1/audit',
+      baseUrl: '/api/pact/gateway/v1',
       override: {
         query: {
           useQuery: true,
@@ -127,7 +127,7 @@ export default defineConfig({
       target: 'src/__codegen__/rest/files/hooks.ts',
       schemas: 'src/__codegen__/rest/files/types',
       client: 'swr',
-      baseUrl: '/v1/files',
+      baseUrl: '/api/pact/gateway/v1',
       override: {
         query: {
           useQuery: true,

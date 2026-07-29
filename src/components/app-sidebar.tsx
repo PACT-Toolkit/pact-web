@@ -27,7 +27,7 @@ import { usePathname } from 'next/navigation';
 import * as React from 'react';
 
 import {
-  type Profile,
+  type AccountProfileResponse,
   useGetAccountProfile,
 } from '@/src/__codegen__/rest/account';
 import { MockUserTypeSwitcher } from '@/src/components/mock-user-type-switcher';
@@ -184,8 +184,8 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
 export const AppSidebar = ({ userId, ...props }: AppSidebarProps) => {
   const pathname = usePathname() ?? '';
   const query = useGetAccountProfile();
-  const profile =
-    query.data?.status === 200 ? (query.data.data as Profile) : undefined;
+  const profile: AccountProfileResponse | undefined =
+    query.data?.status === 200 ? query.data.data : undefined;
   const isLoading = query.isLoading;
   const navMain = React.useMemo(() => buildNavMain(pathname), [pathname]);
 

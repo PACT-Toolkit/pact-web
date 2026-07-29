@@ -15,6 +15,7 @@ import type { SWRMutationConfiguration } from 'swr/mutation';
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 
 import type {
+  BoundaryErrorResponse,
   FilterListPacksResponse,
   FilterTestRuleRequest,
   FilterTestRuleResponse,
@@ -54,7 +55,9 @@ export type ListLoadedPacksQueryResult = NonNullable<
 /**
  * @summary List loaded rule packs and engines
  */
-export const useListLoadedPacks = <TError = Promise<string>>(options?: {
+export const useListLoadedPacks = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(options?: {
   swr?: SWRConfiguration<
     Awaited<ReturnType<typeof listLoadedPacks>>,
     TError
@@ -87,7 +90,9 @@ export type TestRuleMutationResult = NonNullable<
 /**
  * @summary Test a candidate rule against a sample
  */
-export const useTestRule = <TError = Promise<string>>(options?: {
+export const useTestRule = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof testRule>>,
     TError,

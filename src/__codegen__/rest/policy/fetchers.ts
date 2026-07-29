@@ -11,6 +11,7 @@ import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { Key } from 'swr';
 
 import type {
+  BoundaryErrorResponse,
   PolicyIssueTokenRequest,
   PolicyIssueTokenResponse,
 } from './types';
@@ -36,7 +37,7 @@ export type issueTokenResponse429 = {
 };
 
 export type issueTokenResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 

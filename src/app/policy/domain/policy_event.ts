@@ -2,18 +2,19 @@
 // Distinct from policy_rule.ts, which models the authored rules themselves;
 // these model evaluated capability-token decisions.
 //
-// Wire types are generated from pact-gateway's audit per-tag slice
-// (schema/audit, hand-maintained since pact-audit is gRPC-only -- see
-// schema/audit/swagger.yaml's header comment). Alias the codegen names to
-// the domain vocabulary so the rest of the feature imports stable event
-// types from the domain layer rather than the __codegen__ folder.
+// Wire types are generated from pact-gateway's published audit per-tag slice
+// (schema/audit -- pact-audit is gRPC-only, so this contract comes from the
+// gateway's REST facade, not pact-audit itself; see schema/audit/swagger.yaml's
+// header comment). Alias the codegen names to the domain vocabulary so the
+// rest of the feature imports stable event types from the domain layer
+// rather than the __codegen__ folder.
 import {
-  type PolicyEvent as AuditPolicyEvent,
-  type QueryPolicyEventsResponse,
+  type AuditPolicyEventResponse,
+  type AuditQueryPolicyEventsResponse,
 } from '@/src/__codegen__/rest/audit';
 
-export type PolicyEvent = AuditPolicyEvent;
-export type PolicyEventsResponse = QueryPolicyEventsResponse;
+export type PolicyEvent = AuditPolicyEventResponse;
+export type PolicyEventsResponse = AuditQueryPolicyEventsResponse;
 
 // isPolicyEventDenied reports whether a policy event's overall pipeline
 // decision was a block. The generated type is a free-form string (the

@@ -1,529 +1,378 @@
-swagger: "2.0"
-info:
-  title: Audit Service
-  description: |
-    Read window into the append-only audit log for the signed-in
-    user. Mounted on pact-gateway at /v1/audit/*; the gateway resolves
-    user_id from the session cookie and forwards it to pact-audit as a
-    hard filter, so a regular caller can only see their own rows.
-
-    pact-audit has no notion of identity: whoever holds a connection
-    to the gRPC :9590 listener reads anything they ask for. The gateway
-    is the only gate between the SPA and unfiltered access. There is
-    no admin override today; cross-user reads will land once sessions
-    carry an admin claim.
-
-    The payloadJson field is the raw JSONB column from audit_events.
-    Schema is per-topic and evolves over time; decode lazily and
-    tolerate unknown fields.
-
-    This spec is hand-maintained (schema/audit/services.config.json
-    sets "manual": true) because pact-audit is a gRPC-only service
-    with no swagger of its own; pact-gateway owns the REST surface
-    as a proxy and publishes its own per-tag slice at
-    api/swagger/audit.yaml. Keep this file in sync by hand when that
-    slice's audit paths change shape.
-  version: "0.1.0"
-host: localhost:8110
-basePath: /v1/audit
-consumes:
-  - application/json
-produces:
-  - application/json
-paths:
-  /events:
-    get:
-      summary: List the caller's audit events, newest first
-      description: |
-        Paginated, newest-first view of the immutable audit log
-        belonging to the caller. limit is clamped server-side
-        (default 50, max 200). offset is stable as long as no new
-        rows land between calls -- since the Kafka consumer is
-        always writing, the SPA should refetch from offset=0 when
-        a filter changes or new rows are expected.
-      operationId: queryAuditEvents
-      tags: [audit]
-      parameters:
-        - name: topic
-          in: query
-          required: false
-          type: string
-          description: Exact match on the topic column (e.g. pact.auth, pact.files).
-        - name: requestId
-          in: query
-          required: false
-          type: string
-          description: |
-            Exact match on the gateway request-id; useful for
-            following one browser action across multiple topics
-            (login -> session created -> profile fetched).
-        - name: sinceUnix
-          in: query
-          required: false
-          type: integer
-          format: int64
-          minimum: 0
-          description: Inclusive lower bound on createdAt, unix seconds UTC.
-        - name: untilUnix
-          in: query
-          required: false
-          type: integer
-          format: int64
-          minimum: 0
-          description: Exclusive upper bound on createdAt, unix seconds UTC.
-        - name: limit
-          in: query
-          required: false
-          type: integer
-          minimum: 0
-          maximum: 200
-          default: 50
-        - name: offset
-          in: query
-          required: false
-          type: integer
-          minimum: 0
-          default: 0
-      responses:
-        "200":
-          description: OK
-          schema: { $ref: "#/definitions/QueryAuditEventsResponse" }
-        "400": { $ref: "#/responses/BadRequest" }
-        "401": { $ref: "#/responses/Unauthorized" }
-        "429": { $ref: "#/responses/TooManyRequests" }
-
-  /stats:
-    get:
-      summary: Read aggregate decision stats for the pipeline dashboard
-      description: |
-        Server-side aggregate over the caller's pact.decisions rows in
-        [sinceUnix, untilUnix). Both bounds are optional; omitting both
-        aggregates over all of the caller's history. Mirrors the shape
-        of the client-side aggregatePipelineStats helper it replaces,
-        field for field, but computed exactly instead of over a
-        200-event window.
-
-        Gated behind the audit:stats permission (operator/admin only);
-        a caller without it gets a 403, not a filtered result.
-      operationId: queryDecisionStats
-      tags: [audit]
-      parameters:
-        - name: sinceUnix
-          in: query
-          required: false
-          type: integer
-          format: int64
-          minimum: 0
-          description: Inclusive lower bound on createdAt, unix seconds UTC.
-        - name: untilUnix
-          in: query
-          required: false
-          type: integer
-          format: int64
-          minimum: 0
-          description: Exclusive upper bound on createdAt, unix seconds UTC.
-      responses:
-        "200":
-          description: OK
-          schema: { $ref: "#/definitions/QueryDecisionStatsResponse" }
-        "400": { $ref: "#/responses/BadRequest" }
-        "401": { $ref: "#/responses/Unauthorized" }
-        "403": { $ref: "#/responses/Forbidden" }
-
-  /policy-events:
-    get:
-      summary: Read the caller's policy decisions
-      description: |
-        Paginated, newest-first view of the caller's pact.policy events --
-        one row per capability-token evaluation the gateway ran during a
-        /v1/check request. The topic is hard-scoped server-side to
-        pact.policy; callers cannot override it via the query string.
-
-        Populated once pact-audit consumes the pact.policy topic
-        (PACT-308). Until then this returns an empty page, not an error --
-        an empty policy feed is expected in early deployments, not a bug.
-      operationId: queryPolicyEvents
-      tags: [audit]
-      parameters:
-        - name: sinceUnix
-          in: query
-          required: false
-          type: integer
-          format: int64
-          minimum: 0
-          description: Inclusive lower bound on createdAt, unix seconds UTC.
-        - name: limit
-          in: query
-          required: false
-          type: integer
-          minimum: 0
-          maximum: 200
-          default: 50
-        - name: offset
-          in: query
-          required: false
-          type: integer
-          minimum: 0
-          default: 0
-      responses:
-        "200":
-          description: OK
-          schema: { $ref: "#/definitions/QueryPolicyEventsResponse" }
-        "400": { $ref: "#/responses/BadRequest" }
-        "401": { $ref: "#/responses/Unauthorized" }
-
-  /annotations:
-    post:
-      summary: Record an operator annotation on a decision
-      description: |
-        Persists a "false positive" flag (the only supported kind today)
-        against a decision's requestId. Actor is derived server-side from
-        the caller's session -- the request body carries no actor field,
-        so a caller can never annotate on another operator's behalf.
-
-        Idempotent create (PACT-464): annotating the same (requestId,
-        kind, actor) twice is not an error; created is false on the
-        repeat. There is no corresponding delete/un-flag RPC (PACT-466)
-        -- once flagged, always flagged.
-
-        The real gateway response also echoes a partial annotation object
-        (requestId/kind/actor, no createdAt); this contract intentionally
-        omits it (PACT-474) since a caller needs the createdAt field for
-        anything durable and must re-read via /annotations/query to get
-        it -- created is the only field pact-web relies on here.
-      operationId: annotateDecision
-      tags: [audit]
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema: { $ref: "#/definitions/AnnotateDecisionRequest" }
-      responses:
-        "200":
-          description: OK
-          schema: { $ref: "#/definitions/AnnotateDecisionResponse" }
-        "400": { $ref: "#/responses/PlainTextBadRequest" }
-        "401": { $ref: "#/responses/PlainTextUnauthorized" }
-
-  /annotations/query:
-    post:
-      summary: Batch-read operator annotations for a set of decisions
-      description: |
-        Answers "which of these request ids has an operator already
-        annotated, and how" for a page of decisions. POST-for-query is
-        deliberate: up to 200 request ids do not fit safely in a query
-        string. Not offset-paginated -- callers pass the exact set of
-        request ids they are rendering and get back every matching
-        annotation in one round trip. requestIds must contain 1-200
-        entries.
-
-        The RPC backing this endpoint also accepts a kinds filter, but
-        pact-gateway does not expose it in this JSON contract -- filter
-        by kind client-side if a second kind is ever introduced.
-      operationId: listDecisionAnnotations
-      tags: [audit]
-      parameters:
-        - name: body
-          in: body
-          required: true
-          schema: { $ref: "#/definitions/ListDecisionAnnotationsRequest" }
-      responses:
-        "200":
-          description: OK
-          schema: { $ref: "#/definitions/ListDecisionAnnotationsResponse" }
-        "400": { $ref: "#/responses/PlainTextBadRequest" }
-        "401": { $ref: "#/responses/PlainTextUnauthorized" }
-
+basePath: /
 definitions:
-  AuditEvent:
-    type: object
-    required:
-      - id
-      - topic
-      - eventId
-      - payloadJson
-      - createdAt
-    properties:
-      id:         { type: string, format: uuid }
-      topic:
-        type: string
-        description: |
-          Kafka topic the underlying record came from. Stable values
-          today: pact.auth, pact.account, pact.files, pact.decisions.
-        example: "pact.auth"
-      eventId:
-        type: string
-        description: |
-          Producer-assigned event type (e.g. "user.logged_in"). May
-          be empty for legacy rows that pre-date the field.
-        example: "user.logged_in"
-      userId:
-        type: string
-        format: uuid
-        description: Omitted when the underlying row has user_id IS NULL.
-      requestId:
-        type: string
-        description: Gateway-assigned correlation id; may be empty.
-      payloadJson:
-        type: string
-        description: |
-          Raw JSONB payload from audit_events. Schema is per-topic
-          and evolves over time; clients should decode lazily and
-          tolerate unknown fields.
-      createdAt: { type: string, format: date-time }
-
-  QueryAuditEventsResponse:
-    type: object
-    required: [events, total]
-    properties:
-      events:
-        type: array
-        items: { $ref: "#/definitions/AuditEvent" }
-        description: Page of AuditEvents for the caller, newest first.
-      total:
-        type: integer
-        description: |
-          Caller's matching row count (independent of len(events),
-          which is the requested page). Lets the SPA render
-          "page x of y" without a follow-up count call.
-
-  # These four definitions are a field-for-field mirror of pact-gateway's
-  # audit.DecisionStats* DTOs (snake_case, not the camelCase used
-  # elsewhere in this file) because pact-gateway's own JSON encoding
-  # mirrors pact-audit's QueryDecisionStatsResponse proto verbatim.
-  # Do not rename, flatten, or otherwise "improve" these fields.
-  DecisionStatsLabelCount:
-    type: object
-    required: [label, count]
-    properties:
-      label: { type: string }
-      count: { type: integer }
-
-  DecisionStatsFilter:
-    type: object
-    required:
-      [flagged, blocked, block_rate, top_rule_id, suspicious, hostile, top_rules]
-    properties:
-      flagged:
-        type: integer
-        description: Decisions where the filter produced a non-safe verdict.
-      blocked:
-        type: integer
-        description: Decisions the gateway ultimately blocked.
-      block_rate:
-        type: number
-        description: blocked / total, as a 0-100 percentage.
-      top_rule_id:
-        type: string
-        description: Most frequently matched filter rule id; empty if none.
-      suspicious:
-        type: integer
-      hostile:
-        type: integer
-      top_rules:
-        type: array
-        items: { $ref: "#/definitions/DecisionStatsLabelCount" }
-        description: Top matched rule ids with counts, highest first, max 3.
-
-  DecisionStatsClassifier:
-    type: object
-    required:
-      [responded, tagged, top_label, avg_tagged_score, consensus, labels]
-    properties:
-      responded:
-        type: integer
-        description: Decisions where the classifier returned a label.
-      tagged:
-        type: integer
-        description: Decisions tagged with a non-benign label.
-      top_label:
-        type: string
-        description: Most frequent non-benign label; empty if none.
-      avg_tagged_score:
-        type: number
-        description: Mean score across tagged decisions, as a 0-100 percentage.
-      consensus:
-        type: integer
-        description: Decisions arbitrated by pact-consensus (sub-object present, not skipped).
-      labels:
-        type: array
-        items: { $ref: "#/definitions/DecisionStatsLabelCount" }
-        description: Non-benign label distribution, highest first, max 3.
-
-  DecisionStatsRedactor:
-    type: object
-    required: [redacted, spans, redaction_rate, span_labels]
-    properties:
-      redacted:
-        type: integer
-        description: Decisions where the redactor removed at least one span.
-      spans:
-        type: integer
-        description: Total PII spans removed across the matched window.
-      redaction_rate:
-        type: number
-        description: redacted / total, as a 0-100 percentage.
-      span_labels:
-        type: array
-        items: { $ref: "#/definitions/DecisionStatsLabelCount" }
-        description: PII span label distribution, highest first, max 3.
-
-  QueryDecisionStatsResponse:
-    type: object
-    required: [total, latest_at_unix, filter, classifier, redactor]
-    properties:
-      total:
-        type: integer
-        description: Decisions matched by the requested [sinceUnix, untilUnix) window.
-      latest_at_unix:
-        type: integer
-        format: int64
-        description: Unix seconds of the newest matched decision; 0 if total is 0.
-      filter: { $ref: "#/definitions/DecisionStatsFilter" }
-      classifier: { $ref: "#/definitions/DecisionStatsClassifier" }
-      redactor: { $ref: "#/definitions/DecisionStatsRedactor" }
-
-  # Field-for-field mirror of pact-gateway's audit.PolicyInfo /
-  # audit.PolicyEventResponse / audit.QueryPolicyEventsResponse DTOs
-  # (internal/features/audit/types.go), which in turn match pact-web's
-  # pre-existing PolicyEvent / PolicyEventsResponse interfaces
-  # (src/app/policy/domain/policy_event.ts) exactly -- that domain file
-  # predates this codegen wiring and was hand-typed against the same
-  # contract, so no reshaping is needed on the pact-web side.
-  PolicyInfo:
-    type: object
-    properties:
-      verdict:
-        type: string
-        description: |
-          The policy service's capability-token verdict for this
-          request, e.g. "allowed" or "denied".
-      agentId:
-        type: string
-        description: Agent the capability token was scoped to; may be empty.
-      toolId:
-        type: string
-        description: Tool the capability token was scoped to; may be empty.
-
-  PolicyEvent:
-    type: object
-    required: [id, requestId, createdAt, decision]
-    properties:
-      id: { type: string, format: uuid }
-      requestId:
-        type: string
-        description: Gateway-assigned correlation id; may be empty.
-      createdAt: { type: string, format: date-time }
-      decision:
-        type: string
-        description: |
-          The pipeline's overall decision for the request: "allow" or
-          "block". Matches the same union /v1/check itself returns.
-        example: "block"
-      reason:
-        type: string
-        description: |
-          Machine-readable reason code, e.g. "policy_token_denied".
-          Empty on an allow decision.
-      policy: { $ref: "#/definitions/PolicyInfo" }
-
-  QueryPolicyEventsResponse:
-    type: object
-    required: [events, total]
-    properties:
-      events:
-        type: array
-        items: { $ref: "#/definitions/PolicyEvent" }
-        description: Page of PolicyEvents for the caller, newest first.
-      total:
-        type: integer
-        description: |
-          Caller's matching row count (independent of len(events),
-          which is the requested page).
-
-  Error:
-    type: object
-    required: [error]
-    properties:
-      error: { type: string }
-
-  # AnnotateDecision / ListDecisionAnnotations (PACT-464/PACT-474) are
-  # pact-gateway's newest audit paths, and unlike every other path in this
-  # file their error bodies are plain text (http.Error), not the JSON
-  # {error: string} shape the Error definition above models. Do not point
-  # these definitions' error responses at #/definitions/Error.
-  AnnotateDecisionRequest:
-    type: object
-    required: [requestId, kind]
-    properties:
-      requestId:
-        type: string
-        description: Gateway-assigned correlation id to annotate.
-      kind:
-        type: string
-        enum: [false_positive]
-        description: Annotation kind. Only false_positive is supported today.
-
-  AnnotateDecisionResponse:
-    type: object
-    required: [created]
-    properties:
-      created:
-        type: boolean
-        description: |
-          False when the (requestId, kind, actor) triple already existed
-          (idempotent repeat) -- see pact-audit's AnnotateDecision doc
-          comment (PACT-464). See the /annotations path description for
-          why the real gateway's fuller response shape is intentionally
-          not modeled here.
-
-  ListDecisionAnnotationsRequest:
-    type: object
-    required: [requestIds]
-    properties:
-      requestIds:
-        type: array
-        items: { type: string }
-        description: 1-200 gateway-assigned correlation ids to look up.
-
-  DecisionAnnotation:
-    type: object
-    required: [requestId, kind, actor, createdAt]
-    properties:
-      requestId: { type: string }
-      kind: { type: string, enum: [false_positive] }
-      actor:
-        type: string
-        description: User id of the operator who created the annotation.
-      createdAt: { type: string, format: date-time }
-
-  ListDecisionAnnotationsResponse:
-    type: object
-    required: [annotations]
-    properties:
-      annotations:
-        type: array
-        items: { $ref: "#/definitions/DecisionAnnotation" }
-        description: |
-          One entry per requested id that has a matching annotation;
-          ids with none are simply absent (not null-filled).
-
-responses:
-  BadRequest:
-    description: Invalid request
-    schema: { $ref: "#/definitions/Error" }
-  Unauthorized:
-    description: Missing or invalid session
-    schema: { $ref: "#/definitions/Error" }
-  Forbidden:
-    description: Caller lacks the required permission
-    schema: { $ref: "#/definitions/Error" }
-  TooManyRequests:
-    description: Per-IP rate limit exceeded
-    schema: { $ref: "#/definitions/Error" }
-  PlainTextBadRequest:
-    description: Invalid request (plain text body, not JSON)
-    schema: { type: string }
-  PlainTextUnauthorized:
-    description: Missing or invalid session (plain text body, not JSON)
-    schema: { type: string }
+    audit.AnnotateDecisionRequest:
+        properties:
+            kind:
+                enum:
+                    - false_positive
+                type: string
+            requestId:
+                type: string
+        type: object
+    audit.AnnotateDecisionResponse:
+        properties:
+            annotation:
+                $ref: '#/definitions/audit.AnnotatedDecision'
+            created:
+                type: boolean
+        type: object
+    audit.AnnotatedDecision:
+        properties:
+            actor:
+                type: string
+            kind:
+                type: string
+            requestId:
+                type: string
+        type: object
+    audit.AuditEventResponse:
+        properties:
+            createdAt:
+                type: string
+            eventId:
+                type: string
+            id:
+                type: string
+            payloadJson:
+                type: string
+            requestId:
+                type: string
+            topic:
+                type: string
+            userId:
+                type: string
+        type: object
+    audit.DecisionAnnotationResponse:
+        properties:
+            actor:
+                type: string
+            createdAt:
+                type: string
+            kind:
+                type: string
+            requestId:
+                type: string
+        type: object
+    audit.DecisionStatsClassifier:
+        properties:
+            avg_tagged_score:
+                type: number
+            consensus:
+                type: integer
+            labels:
+                items:
+                    $ref: '#/definitions/audit.DecisionStatsLabelCount'
+                type: array
+            responded:
+                type: integer
+            tagged:
+                type: integer
+            top_label:
+                type: string
+        type: object
+    audit.DecisionStatsFilter:
+        properties:
+            block_rate:
+                type: number
+            blocked:
+                type: integer
+            flagged:
+                type: integer
+            hostile:
+                type: integer
+            suspicious:
+                type: integer
+            top_rule_id:
+                type: string
+            top_rules:
+                items:
+                    $ref: '#/definitions/audit.DecisionStatsLabelCount'
+                type: array
+        type: object
+    audit.DecisionStatsLabelCount:
+        properties:
+            count:
+                type: integer
+            label:
+                type: string
+        type: object
+    audit.DecisionStatsRedactor:
+        properties:
+            redacted:
+                type: integer
+            redaction_rate:
+                type: number
+            span_labels:
+                items:
+                    $ref: '#/definitions/audit.DecisionStatsLabelCount'
+                type: array
+            spans:
+                type: integer
+        type: object
+    audit.ListDecisionAnnotationsRequest:
+        properties:
+            requestIds:
+                items:
+                    type: string
+                type: array
+        type: object
+    audit.ListDecisionAnnotationsResponse:
+        properties:
+            annotations:
+                items:
+                    $ref: '#/definitions/audit.DecisionAnnotationResponse'
+                type: array
+        type: object
+    audit.PolicyEventResponse:
+        properties:
+            createdAt:
+                type: string
+            decision:
+                type: string
+            id:
+                type: string
+            policy:
+                $ref: '#/definitions/audit.PolicyInfo'
+            reason:
+                type: string
+            requestId:
+                type: string
+        type: object
+    audit.PolicyInfo:
+        properties:
+            agentId:
+                type: string
+            toolId:
+                type: string
+            verdict:
+                type: string
+        type: object
+    audit.QueryAuditResponse:
+        properties:
+            events:
+                items:
+                    $ref: '#/definitions/audit.AuditEventResponse'
+                type: array
+            total:
+                type: integer
+        type: object
+    audit.QueryDecisionStatsResponse:
+        properties:
+            classifier:
+                $ref: '#/definitions/audit.DecisionStatsClassifier'
+            filter:
+                $ref: '#/definitions/audit.DecisionStatsFilter'
+            latest_at_unix:
+                type: integer
+            redactor:
+                $ref: '#/definitions/audit.DecisionStatsRedactor'
+            total:
+                type: integer
+        type: object
+    audit.QueryPolicyEventsResponse:
+        properties:
+            events:
+                items:
+                    $ref: '#/definitions/audit.PolicyEventResponse'
+                type: array
+            total:
+                type: integer
+        type: object
+host: localhost:8080
+info:
+    contact: {}
+    description: Public REST entrypoint for the PACT safety pipeline.
+    title: pact-gateway
+    version: 0.1.0
+paths:
+    /v1/audit/annotations:
+        post:
+            consumes:
+                - application/json
+            operationId: annotateDecision
+            parameters:
+                - description: Request id and annotation kind
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/audit.AnnotateDecisionRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/audit.AnnotateDecisionResponse'
+                "400":
+                    description: missing requestId, unknown kind, or invalid body
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Record an operator annotation on a decision
+            tags:
+                - audit
+    /v1/audit/annotations/query:
+        post:
+            consumes:
+                - application/json
+            operationId: listDecisionAnnotations
+            parameters:
+                - description: 1-200 request ids to look up
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/audit.ListDecisionAnnotationsRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/audit.ListDecisionAnnotationsResponse'
+                "400":
+                    description: requestIds empty, over 200 entries, or invalid body
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Batch-read operator annotations for a set of decisions
+            tags:
+                - audit
+    /v1/audit/events:
+        get:
+            parameters:
+                - description: Exact match on topic (e.g. pact.auth, pact.files)
+                  in: query
+                  name: topic
+                  type: string
+                - description: Exact match on gateway request-id
+                  in: query
+                  name: requestId
+                  type: string
+                - description: Inclusive lower bound on createdAt (unix seconds UTC)
+                  in: query
+                  name: sinceUnix
+                  type: integer
+                - description: Exclusive upper bound on createdAt (unix seconds UTC)
+                  in: query
+                  name: untilUnix
+                  type: integer
+                - description: Page size 1..200 (default 50)
+                  in: query
+                  name: limit
+                  type: integer
+                - description: Page offset >= 0 (default 0)
+                  in: query
+                  name: offset
+                  type: integer
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/audit.QueryAuditResponse'
+                "400":
+                    description: invalid query parameter
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Read the caller's audit log
+            tags:
+                - audit
+    /v1/audit/policy-events:
+        get:
+            parameters:
+                - description: Inclusive lower bound on createdAt (unix seconds UTC)
+                  in: query
+                  name: sinceUnix
+                  type: integer
+                - description: Page size 1..200 (default 50)
+                  in: query
+                  name: limit
+                  type: integer
+                - description: Page offset >= 0 (default 0)
+                  in: query
+                  name: offset
+                  type: integer
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/audit.QueryPolicyEventsResponse'
+                "400":
+                    description: invalid query parameter
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Read the caller's policy decisions
+            tags:
+                - audit
+    /v1/audit/stats:
+        get:
+            parameters:
+                - description: Inclusive lower bound on createdAt (unix seconds UTC)
+                  in: query
+                  name: sinceUnix
+                  type: integer
+                - description: Exclusive upper bound on createdAt (unix seconds UTC)
+                  in: query
+                  name: untilUnix
+                  type: integer
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/audit.QueryDecisionStatsResponse'
+                "400":
+                    description: invalid query parameter
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "403":
+                    description: missing required permission
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Read aggregate decision stats for the pipeline dashboard
+            tags:
+                - audit
+schemes:
+    - http
+    - https
+securityDefinitions:
+    Bearer:
+        description: 'Opaque pact-auth session token. Format: <uuid>.<base64-hmac>.'
+        in: header
+        name: Authorization
+        type: apiKey
+swagger: "2.0"

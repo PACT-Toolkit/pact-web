@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './boundaryErrorResponse';
 export * from './rulesCreateRuleRequest';
 export * from './rulesListRulesResponse';
 export * from './rulesRuleResponse';

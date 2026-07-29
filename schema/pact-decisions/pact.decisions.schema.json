@@ -102,6 +102,22 @@
         }
       }
     },
+    "controlRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["framework", "id"],
+      "description": "One compliance control a stage verdict enforces (PACT-611). Open set by design - new frameworks or control IDs are added without a schema change.",
+      "properties": {
+        "framework": {
+          "type": "string",
+          "description": "Compliance framework identifying the control vocabulary, e.g. \"owasp_llm_top10\" (control IDs \"LLM01\"..\"LLM10\") or \"eu_ai_act_art15\" (control IDs \"accuracy\", \"robustness\", \"cybersecurity\"). Open set by design - decisions.FrameworkOWASPLLMTop10 and decisions.FrameworkEUAIActArt15 are the two known values today."
+        },
+        "id": {
+          "type": "string",
+          "description": "Framework-specific control identifier, e.g. \"LLM01\" under owasp_llm_top10 or \"accuracy\" under eu_ai_act_art15."
+        }
+      }
+    },
     "filterDecision": {
       "type": "object",
       "additionalProperties": false,
@@ -122,6 +138,13 @@
           "type": "string",
           "enum": ["shadow", "enforce"],
           "description": "Staged-enforcement mode (PACT-257 vector enforcement); pipeline.EnforceModeShadow / EnforceModeEnforce."
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlRef"
+          },
+          "description": "Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
         }
       }
     },
@@ -144,6 +167,13 @@
         "engine": {
           "type": "string",
           "description": "Free-form model/checkpoint tag (e.g. stub-v1, deberta-prompt-injection-v2@abcd1234). Open set - mirrors classifierpb.ClassifyResponse.model_version."
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlRef"
+          },
+          "description": "Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
         }
       }
     },
@@ -202,6 +232,13 @@
         "skipped_reason": {
           "type": "string",
           "description": "PACT-432. Machine-readable cause of skipped=true: consensus_timeout, consensus_error (shadow-mode vote failures), or shadow_saturated (completion pool full). Open set by design, and not populated on the pre-existing inline-mode transport-error fail-open (skipped=true with no reason) to keep that path's wire output unchanged."
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlRef"
+          },
+          "description": "Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
         }
       }
     },
@@ -236,6 +273,13 @@
           "items": {
             "$ref": "#/$defs/redactedSpan"
           }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlRef"
+          },
+          "description": "Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
         }
       }
     },
@@ -267,6 +311,13 @@
           "type": "string",
           "enum": ["observe", "block", "redact", "block_only"],
           "description": "Closed set per pipeline.Decision.ToolMitigationMode doc comment (PACT-304/PACT-247). The empty string is also valid but is dropped by omitempty, so it never appears on the wire."
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlRef"
+          },
+          "description": "Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
         }
       }
     },

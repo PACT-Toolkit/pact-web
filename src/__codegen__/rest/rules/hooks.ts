@@ -15,6 +15,7 @@ import type { SWRMutationConfiguration } from 'swr/mutation';
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 
 import type {
+  BoundaryErrorResponse,
   RulesCreateRuleRequest,
   RulesListRulesResponse,
   RulesRuleResponse,
@@ -135,7 +136,9 @@ export type PublishRuleMutationResult = NonNullable<
 /**
  * @summary Publish a policy rule
  */
-export const usePublishRule = <TError = Promise<string>>(
+export const usePublishRule = <
+  TError = Promise<BoundaryErrorResponse | string>,
+>(
   id: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -168,7 +171,7 @@ export type RevokeRuleMutationResult = NonNullable<
 /**
  * @summary Revoke a policy rule
  */
-export const useRevokeRule = <TError = Promise<string>>(
+export const useRevokeRule = <TError = Promise<BoundaryErrorResponse | string>>(
   id: string,
   options?: {
     swr?: SWRMutationConfiguration<

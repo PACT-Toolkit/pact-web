@@ -1,11 +1,11 @@
 import {
-  type Consent,
-  type Preferences,
-  type Profile,
+  type AccountConsentResponse,
+  type AccountPreferencesResponse,
+  type AccountProfileResponse,
 } from '@/src/__codegen__/rest/account';
 import {
-  type AuditEvent,
-  type DecisionAnnotation,
+  type AuditAuditEventResponse,
+  type AuditDecisionAnnotationResponse,
 } from '@/src/__codegen__/rest/audit';
 import {
   type AuthMfaFactorResponse,
@@ -13,7 +13,7 @@ import {
   type AuthPasskeyResponse,
 } from '@/src/__codegen__/rest/auth';
 import { type ConfigConfigResponse } from '@/src/__codegen__/rest/config';
-import { type FileRecord } from '@/src/__codegen__/rest/files';
+import { type FilesFileResponse } from '@/src/__codegen__/rest/files';
 import {
   createAccountMockData,
   mockConsent,
@@ -59,23 +59,27 @@ import {
 import { MockRepository } from './repository';
 
 export const db = {
-  accountProfile: new MockRepository<Profile>(mockProfile),
-  accountPreferences: new MockRepository<Preferences>(mockPreferences),
-  accountConsents: new MockRepository<Consent>(mockConsent),
+  accountProfile: new MockRepository<AccountProfileResponse>(mockProfile),
+  accountPreferences: new MockRepository<AccountPreferencesResponse>(
+    mockPreferences
+  ),
+  accountConsents: new MockRepository<AccountConsentResponse>(mockConsent),
   attackExamples: new MockRepository<AttackExample>(mockAttackExample),
-  auditAnnotations: new MockRepository<DecisionAnnotation>(
+  auditAnnotations: new MockRepository<AuditDecisionAnnotationResponse>(
     mockDecisionAnnotation
   ),
-  auditAuthEvents: new MockRepository<AuditEvent>(mockAuditEvent),
-  auditAccountEvents: new MockRepository<AuditEvent>(mockAuditEvent),
-  auditFilesEvents: new MockRepository<AuditEvent>(mockAuditEvent),
+  auditAuthEvents: new MockRepository<AuditAuditEventResponse>(mockAuditEvent),
+  auditAccountEvents: new MockRepository<AuditAuditEventResponse>(
+    mockAuditEvent
+  ),
+  auditFilesEvents: new MockRepository<AuditAuditEventResponse>(mockAuditEvent),
   authMfaFactors: new MockRepository<AuthMfaFactorResponse>(mockAuthMfaFactor),
   authPasskeys: new MockRepository<AuthPasskeyResponse>(mockAuthPasskey),
   authIdentities: new MockRepository<AuthOAuthIdentityResponse>(
     mockAuthIdentity
   ),
-  decisions: new MockRepository<AuditEvent>(mockDecisionEvent),
-  files: new MockRepository<FileRecord>(mockFileRecord),
+  decisions: new MockRepository<AuditAuditEventResponse>(mockDecisionEvent),
+  files: new MockRepository<FilesFileResponse>(mockFileRecord),
   gatewayConfig: new MockRepository<ConfigConfigResponse>(mockGatewayConfig),
   testLabRuns: new MockRepository<TestLabRunRecord>(mockTestLabRun),
 };

@@ -1,4 +1,4 @@
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import {
   AUTH_EVENT_LABELS,
   type AuthPayload,
@@ -14,7 +14,7 @@ export const AuditAuthRow = ({
   event,
   payload,
 }: {
-  event: AuditEvent;
+  event: AuditAuditEventResponse;
   payload: AuthPayload;
 }) => {
   const eventId = payload.event_id;
@@ -24,10 +24,10 @@ export const AuditAuthRow = ({
 
   return (
     <AuditRowShell
-      topic={event.topic}
-      createdAt={event.createdAt}
+      topic={event.topic ?? ''}
+      createdAt={event.createdAt ?? ''}
       requestId={event.requestId}
-      rawPayload={prettyPayload(event.payloadJson)}
+      rawPayload={prettyPayload(event.payloadJson ?? '')}
       badges={
         <>
           {label && (

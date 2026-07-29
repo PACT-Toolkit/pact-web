@@ -3,7 +3,7 @@
 import { Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { useQueryAuditEvents } from '@/src/__codegen__/rest/audit';
+import { useGetAuditEvents } from '@/src/__codegen__/rest/audit';
 import {
   AUDIT_TOPIC_OPTIONS,
   decodeAuditEventVariant,
@@ -66,7 +66,7 @@ export const AuditWorkbench = () => {
     return out;
   }, [topic, requestId, since, until, page]);
 
-  const { data, error, isLoading, isValidating, mutate } = useQueryAuditEvents(
+  const { data, error, isLoading, isValidating, mutate } = useGetAuditEvents(
     params,
     {
       swr: {
@@ -78,10 +78,10 @@ export const AuditWorkbench = () => {
   );
 
   const events = useMemo(
-    () => (data?.status === 200 ? data.data.events : []),
+    () => (data?.status === 200 ? (data.data.events ?? []) : []),
     [data]
   );
-  const total = data?.status === 200 ? data.data.total : 0;
+  const total = data?.status === 200 ? (data.data.total ?? 0) : 0;
 
   // Actor/user has no server-side query param (see audit_filters.ts), so
   // it's applied here over the page we already fetched. This means the
@@ -93,7 +93,10 @@ export const AuditWorkbench = () => {
         ? events.filter((event) =>
             matchesActorFilter(
               event,
-              decodeAuditEventVariant(event.topic, event.payloadJson),
+              decodeAuditEventVariant(
+                event.topic ?? '',
+                event.payloadJson ?? ''
+              ),
               actor
             )
           )

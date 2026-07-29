@@ -1,6 +1,10 @@
 import { type SWRConfiguration } from 'swr';
 
-import { type QueryDecisionStatsQueryResult } from '@/src/__codegen__/rest/audit';
+import {
+  type AuditDecisionStatsLabelCount,
+  type AuditQueryDecisionStatsResponse,
+  type GetAuditStatsQueryResult,
+} from '@/src/__codegen__/rest/audit';
 
 // Classifies GET /v1/audit/stats outcomes as a permission error (HTTP 403)
 // versus every other outcome. Shared by the two consumers of the decision
@@ -45,7 +49,7 @@ export const isDecisionStatsForbidden = (value: unknown): boolean => {
 export const decisionStatsPollingConfig = (
   intervalMs: number
 ): Pick<
-  SWRConfiguration<QueryDecisionStatsQueryResult>,
+  SWRConfiguration<GetAuditStatsQueryResult>,
   'refreshInterval' | 'onErrorRetry'
 > => ({
   refreshInterval: (latestData) =>
@@ -63,3 +67,125 @@ export const decisionStatsPollingConfig = (
     setTimeout(() => revalidate(revalidateOpts), config.errorRetryInterval);
   },
 });
+
+// GET /v1/audit/stats is now served from pact-gateway's generated per-tag
+// OpenAPI slice (PACT-706), which has no `required:` markers -- every field
+// on AuditQueryDecisionStatsResponse and its sub-objects is optional, even
+// though pact-gateway's DTOs never actually omit them. Both consumers
+// (useDashboardPipelineStats, useFilterDecisionStats) want a fully-populated
+// shape so their widgets don't need optional-chaining sprinkled through
+// render code, so the "every rate is a number, every array is present"
+// normalization lives here once, rather than as two separately hand-kept
+// EMPTY_STATS-shaped literals that would have to change together.
+export type DecisionStatsLabelCount = Required<AuditDecisionStatsLabelCount>;
+
+export interface DecisionStatsFilter {
+  flagged: number;
+  blocked: number;
+  block_rate: number;
+  top_rule_id: string;
+  suspicious: number;
+  hostile: number;
+  top_rules: DecisionStatsLabelCount[];
+}
+
+export interface DecisionStatsClassifier {
+  responded: number;
+  tagged: number;
+  top_label: string;
+  avg_tagged_score: number;
+  consensus: number;
+  labels: DecisionStatsLabelCount[];
+}
+
+export interface DecisionStatsRedactor {
+  redacted: number;
+  spans: number;
+  redaction_rate: number;
+  span_labels: DecisionStatsLabelCount[];
+}
+
+export interface DecisionStatsSummary {
+  total: number;
+  latest_at_unix: number;
+  filter: DecisionStatsFilter;
+  classifier: DecisionStatsClassifier;
+  redactor: DecisionStatsRedactor;
+}
+
+const normalizeLabelCounts = (
+  counts: AuditDecisionStatsLabelCount[] | undefined
+): DecisionStatsLabelCount[] =>
+  (counts ?? []).map((count) => ({
+    label: count.label ?? '',
+    count: count.count ?? 0,
+  }));
+
+export const EMPTY_DECISION_STATS: DecisionStatsSummary = {
+  total: 0,
+  latest_at_unix: 0,
+  filter: {
+    flagged: 0,
+    blocked: 0,
+    block_rate: 0,
+    top_rule_id: '',
+    suspicious: 0,
+    hostile: 0,
+    top_rules: [],
+  },
+  classifier: {
+    responded: 0,
+    tagged: 0,
+    top_label: '',
+    avg_tagged_score: 0,
+    consensus: 0,
+    labels: [],
+  },
+  redactor: {
+    redacted: 0,
+    spans: 0,
+    redaction_rate: 0,
+    span_labels: [],
+  },
+};
+
+/**
+ * Fills in every optional field of a GET /v1/audit/stats response with the
+ * same zero-value defaults pact-gateway's DTOs already guarantee at runtime,
+ * so callers get a fully-required DecisionStatsSummary regardless of what
+ * the generated (all-optional) response type claims. Pass `undefined` for
+ * the no-data-yet / non-200 case to get EMPTY_DECISION_STATS back.
+ */
+export const normalizeDecisionStats = (
+  response: AuditQueryDecisionStatsResponse | undefined
+): DecisionStatsSummary => {
+  if (!response) return EMPTY_DECISION_STATS;
+
+  return {
+    total: response.total ?? 0,
+    latest_at_unix: response.latest_at_unix ?? 0,
+    filter: {
+      flagged: response.filter?.flagged ?? 0,
+      blocked: response.filter?.blocked ?? 0,
+      block_rate: response.filter?.block_rate ?? 0,
+      top_rule_id: response.filter?.top_rule_id ?? '',
+      suspicious: response.filter?.suspicious ?? 0,
+      hostile: response.filter?.hostile ?? 0,
+      top_rules: normalizeLabelCounts(response.filter?.top_rules),
+    },
+    classifier: {
+      responded: response.classifier?.responded ?? 0,
+      tagged: response.classifier?.tagged ?? 0,
+      top_label: response.classifier?.top_label ?? '',
+      avg_tagged_score: response.classifier?.avg_tagged_score ?? 0,
+      consensus: response.classifier?.consensus ?? 0,
+      labels: normalizeLabelCounts(response.classifier?.labels),
+    },
+    redactor: {
+      redacted: response.redactor?.redacted ?? 0,
+      spans: response.redactor?.spans ?? 0,
+      redaction_rate: response.redactor?.redaction_rate ?? 0,
+      span_labels: normalizeLabelCounts(response.redactor?.span_labels),
+    },
+  };
+};
