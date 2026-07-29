@@ -6,11 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './authBeginMfaPasskeyAssertionRequest';
 export * from './authBeginPasskeyLoginRequest';
 export * from './authBeginPasskeyRegistrationRequest';
 export * from './authBeginTOTPEnrollmentResponse';
 export * from './authConfirmPasswordResetRequest';
 export * from './authConfirmTOTPEnrollmentRequest';
+export * from './authFinishMfaPasskeyAssertionRequest';
+export * from './authFinishMfaPasskeyAssertionRequestAssertionJson';
 export * from './authFinishPasskeyLoginRequest';
 export * from './authFinishPasskeyLoginRequestAssertionJson';
 export * from './authFinishPasskeyRegistrationRequest';
@@ -36,4 +39,5 @@ export * from './authSessionResponse';
 export * from './authStartLoginResponse';
 export * from './authVerifyEmailRequest';
 export * from './authVerifyMfaRequest';
+export * from './boundaryErrorResponse';
 export * from './startOAuthLoginParams';

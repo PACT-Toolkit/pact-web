@@ -11,11 +11,13 @@ import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { Arguments, Key } from 'swr';
 
 import type {
+  AuthBeginMfaPasskeyAssertionRequest,
   AuthBeginPasskeyLoginRequest,
   AuthBeginPasskeyRegistrationRequest,
   AuthBeginTOTPEnrollmentResponse,
   AuthConfirmPasswordResetRequest,
   AuthConfirmTOTPEnrollmentRequest,
+  AuthFinishMfaPasskeyAssertionRequest,
   AuthFinishPasskeyLoginRequest,
   AuthFinishPasskeyRegistrationRequest,
   AuthFinishPasskeyRegistrationResponse,
@@ -35,6 +37,7 @@ import type {
   AuthStartLoginResponse,
   AuthVerifyEmailRequest,
   AuthVerifyMfaRequest,
+  BoundaryErrorResponse,
   StartOAuthLoginParams,
 } from './types';
 
@@ -99,7 +102,7 @@ export type unlinkIdentityResponse401 = {
 };
 
 export type unlinkIdentityResponse404 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 404;
 };
 
@@ -335,7 +338,7 @@ export type revokeMfaFactorResponse401 = {
 };
 
 export type revokeMfaFactorResponse404 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 404;
 };
 
@@ -396,6 +399,150 @@ export const getRevokeMfaFactorMutationFetcher = (
 
 export const getRevokeMfaFactorMutationKey = (factorId: string) =>
   [`/api/pact/gateway/v1/auth/mfa/factors/${factorId}`] as const;
+
+export type beginMfaPasskeyAssertionResponse200 = {
+  data: AuthPasskeyCeremonyResponse;
+  status: 200;
+};
+
+export type beginMfaPasskeyAssertionResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type beginMfaPasskeyAssertionResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type beginMfaPasskeyAssertionResponseSuccess =
+  beginMfaPasskeyAssertionResponse200 & {
+    headers: Headers;
+  };
+
+export type beginMfaPasskeyAssertionResponseError = (
+  | beginMfaPasskeyAssertionResponse400
+  | beginMfaPasskeyAssertionResponse401
+) & {
+  headers: Headers;
+};
+
+export type beginMfaPasskeyAssertionResponse =
+  | beginMfaPasskeyAssertionResponseSuccess
+  | beginMfaPasskeyAssertionResponseError;
+
+export const getBeginMfaPasskeyAssertionUrl = () => {
+  return `/api/pact/gateway/v1/auth/mfa/passkey/begin`;
+};
+
+/**
+ * @summary Begin a passkey-assertion MFA step-up
+ */
+export const beginMfaPasskeyAssertion = async (
+  authBeginMfaPasskeyAssertionRequest: AuthBeginMfaPasskeyAssertionRequest,
+  options?: RequestInit
+): Promise<beginMfaPasskeyAssertionResponse> => {
+  const res = await fetch(getBeginMfaPasskeyAssertionUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(authBeginMfaPasskeyAssertionRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: beginMfaPasskeyAssertionResponse['data'] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as beginMfaPasskeyAssertionResponse;
+};
+
+export const getBeginMfaPasskeyAssertionMutationFetcher = (
+  options?: RequestInit
+) => {
+  return (_: Key, { arg }: { arg: AuthBeginMfaPasskeyAssertionRequest }) => {
+    return beginMfaPasskeyAssertion(arg, options);
+  };
+};
+
+export const getBeginMfaPasskeyAssertionMutationKey = () =>
+  [`/api/pact/gateway/v1/auth/mfa/passkey/begin`] as const;
+
+export type finishMfaPasskeyAssertionResponse200 = {
+  data: AuthSessionResponse;
+  status: 200;
+};
+
+export type finishMfaPasskeyAssertionResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type finishMfaPasskeyAssertionResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type finishMfaPasskeyAssertionResponseSuccess =
+  finishMfaPasskeyAssertionResponse200 & {
+    headers: Headers;
+  };
+
+export type finishMfaPasskeyAssertionResponseError = (
+  | finishMfaPasskeyAssertionResponse400
+  | finishMfaPasskeyAssertionResponse401
+) & {
+  headers: Headers;
+};
+
+export type finishMfaPasskeyAssertionResponse =
+  | finishMfaPasskeyAssertionResponseSuccess
+  | finishMfaPasskeyAssertionResponseError;
+
+export const getFinishMfaPasskeyAssertionUrl = () => {
+  return `/api/pact/gateway/v1/auth/mfa/passkey/finish`;
+};
+
+/**
+ * @summary Finish a passkey-assertion MFA step-up
+ */
+export const finishMfaPasskeyAssertion = async (
+  authFinishMfaPasskeyAssertionRequest: AuthFinishMfaPasskeyAssertionRequest,
+  options?: RequestInit
+): Promise<finishMfaPasskeyAssertionResponse> => {
+  const res = await fetch(getFinishMfaPasskeyAssertionUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(authFinishMfaPasskeyAssertionRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: finishMfaPasskeyAssertionResponse['data'] = body
+    ? JSON.parse(body)
+    : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as finishMfaPasskeyAssertionResponse;
+};
+
+export const getFinishMfaPasskeyAssertionMutationFetcher = (
+  options?: RequestInit
+) => {
+  return (_: Key, { arg }: { arg: AuthFinishMfaPasskeyAssertionRequest }) => {
+    return finishMfaPasskeyAssertion(arg, options);
+  };
+};
+
+export const getFinishMfaPasskeyAssertionMutationKey = () =>
+  [`/api/pact/gateway/v1/auth/mfa/passkey/finish`] as const;
 
 export type regenerateRecoveryCodesResponse200 = {
   data: AuthRecoveryCodesResponse;
@@ -727,7 +874,7 @@ export type deletePasskeyResponse401 = {
 };
 
 export type deletePasskeyResponse404 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 404;
 };
 
@@ -805,7 +952,7 @@ export type renamePasskeyResponse401 = {
 };
 
 export type renamePasskeyResponse404 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 404;
 };
 
@@ -1290,7 +1437,7 @@ export type registerAccountResponse400 = {
 };
 
 export type registerAccountResponse409 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 409;
 };
 

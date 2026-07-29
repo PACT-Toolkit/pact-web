@@ -15,11 +15,13 @@ import type { SWRMutationConfiguration } from 'swr/mutation';
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 
 import type {
+  AuthBeginMfaPasskeyAssertionRequest,
   AuthBeginPasskeyLoginRequest,
   AuthBeginPasskeyRegistrationRequest,
   AuthBeginTOTPEnrollmentResponse,
   AuthConfirmPasswordResetRequest,
   AuthConfirmTOTPEnrollmentRequest,
+  AuthFinishMfaPasskeyAssertionRequest,
   AuthFinishPasskeyLoginRequest,
   AuthFinishPasskeyRegistrationRequest,
   AuthFinishPasskeyRegistrationResponse,
@@ -39,6 +41,7 @@ import type {
   AuthStartLoginResponse,
   AuthVerifyEmailRequest,
   AuthVerifyMfaRequest,
+  BoundaryErrorResponse,
   StartOAuthLoginParams,
 } from './types';
 
@@ -98,6 +101,26 @@ import {
   revokeMfaFactor,
   getRevokeMfaFactorMutationFetcher,
   getRevokeMfaFactorMutationKey,
+  beginMfaPasskeyAssertionResponse200,
+  beginMfaPasskeyAssertionResponse400,
+  beginMfaPasskeyAssertionResponse401,
+  beginMfaPasskeyAssertionResponseSuccess,
+  beginMfaPasskeyAssertionResponseError,
+  getBeginMfaPasskeyAssertionUrl,
+  beginMfaPasskeyAssertionResponse,
+  beginMfaPasskeyAssertion,
+  getBeginMfaPasskeyAssertionMutationFetcher,
+  getBeginMfaPasskeyAssertionMutationKey,
+  finishMfaPasskeyAssertionResponse200,
+  finishMfaPasskeyAssertionResponse400,
+  finishMfaPasskeyAssertionResponse401,
+  finishMfaPasskeyAssertionResponseSuccess,
+  finishMfaPasskeyAssertionResponseError,
+  getFinishMfaPasskeyAssertionUrl,
+  finishMfaPasskeyAssertionResponse,
+  finishMfaPasskeyAssertion,
+  getFinishMfaPasskeyAssertionMutationFetcher,
+  getFinishMfaPasskeyAssertionMutationKey,
   regenerateRecoveryCodesResponse200,
   regenerateRecoveryCodesResponse401,
   regenerateRecoveryCodesResponseSuccess,
@@ -320,7 +343,9 @@ export type UnlinkIdentityMutationResult = NonNullable<
 /**
  * @summary Unlink a federated OAuth identity
  */
-export const useUnlinkIdentity = <TError = Promise<string>>(
+export const useUnlinkIdentity = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(
   provider: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -446,7 +471,9 @@ export type RevokeMfaFactorMutationResult = NonNullable<
 /**
  * @summary Revoke an enrolled MFA factor
  */
-export const useRevokeMfaFactor = <TError = Promise<string>>(
+export const useRevokeMfaFactor = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(
   factorId: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -463,6 +490,71 @@ export const useRevokeMfaFactor = <TError = Promise<string>>(
 
   const swrKey = swrOptions?.swrKey ?? getRevokeMfaFactorMutationKey(factorId);
   const swrFn = getRevokeMfaFactorMutationFetcher(factorId, fetchOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type BeginMfaPasskeyAssertionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof beginMfaPasskeyAssertion>>
+>;
+
+/**
+ * @summary Begin a passkey-assertion MFA step-up
+ */
+export const useBeginMfaPasskeyAssertion = <
+  TError = Promise<string>,
+>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof beginMfaPasskeyAssertion>>,
+    TError,
+    Key,
+    AuthBeginMfaPasskeyAssertionRequest,
+    Awaited<ReturnType<typeof beginMfaPasskeyAssertion>>
+  > & { swrKey?: string };
+  fetch?: RequestInit;
+}) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getBeginMfaPasskeyAssertionMutationKey();
+  const swrFn = getBeginMfaPasskeyAssertionMutationFetcher(fetchOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type FinishMfaPasskeyAssertionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof finishMfaPasskeyAssertion>>
+>;
+
+/**
+ * @summary Finish a passkey-assertion MFA step-up
+ */
+export const useFinishMfaPasskeyAssertion = <
+  TError = Promise<string>,
+>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof finishMfaPasskeyAssertion>>,
+    TError,
+    Key,
+    AuthFinishMfaPasskeyAssertionRequest,
+    Awaited<ReturnType<typeof finishMfaPasskeyAssertion>>
+  > & { swrKey?: string };
+  fetch?: RequestInit;
+}) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getFinishMfaPasskeyAssertionMutationKey();
+  const swrFn = getFinishMfaPasskeyAssertionMutationFetcher(fetchOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -643,7 +735,9 @@ export type DeletePasskeyMutationResult = NonNullable<
 /**
  * @summary Delete a passkey
  */
-export const useDeletePasskey = <TError = Promise<string>>(
+export const useDeletePasskey = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(
   passkeyId: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -676,7 +770,9 @@ export type RenamePasskeyMutationResult = NonNullable<
 /**
  * @summary Rename a passkey
  */
-export const useRenamePasskey = <TError = Promise<string>>(
+export const useRenamePasskey = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(
   passkeyId: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -894,7 +990,9 @@ export type RegisterAccountMutationResult = NonNullable<
 /**
  * @summary Register a new account
  */
-export const useRegisterAccount = <TError = Promise<string>>(options?: {
+export const useRegisterAccount = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof registerAccount>>,
     TError,

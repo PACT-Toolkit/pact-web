@@ -1,5 +1,4 @@
 import { Code, ConnectError } from '@connectrpc/connect';
-import { cookies } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
@@ -10,12 +9,21 @@ import {
   sessionCookieOptions,
 } from '@/src/framework/auth/pact_auth/cookies';
 import {
+  AUTH_ERROR_CODES,
+  MFA_STEP_UP_ERROR_CODES,
+  mapPactAuthError,
+} from '@/src/framework/auth/pact_auth/errors';
+import {
   MOCK_MFA_CHALLENGE_TOKEN,
   mockSessionCookie,
 } from '@/src/framework/auth/pact_auth/mock';
 import {
+  challengeExpiredResponse,
+  getMfaToken,
   invalidJsonResponse,
+  isChallengeGoneMessage,
   isString,
+  noMfaChallengeResponse,
   readJsonBody,
 } from '@/src/framework/auth/pact_auth/route_helpers';
 import { isMock, MOCK_USER_ID } from '@/src/framework/helpers/environment';
@@ -37,16 +45,9 @@ type Body = { code?: unknown; isRecovery?: unknown };
 // bad code, so we can't keep it around). The form should redirect back
 // to /login with the appropriate error code.
 export const POST = async (req: NextRequest) => {
-  const jar = await cookies();
-  const mfaToken = jar.get(MFA_TOKEN_COOKIE)?.value;
+  const mfaToken = await getMfaToken();
   if (!mfaToken) {
-    return NextResponse.json(
-      {
-        error: 'No sign-in in progress. Start again from the login page.',
-        code: 'no_challenge',
-      },
-      { status: 401 }
-    );
+    return noMfaChallengeResponse();
   }
 
   const body = await readJsonBody<Body>(req);
@@ -55,7 +56,7 @@ export const POST = async (req: NextRequest) => {
   }
   if (!isString(body.code) || !body.code) {
     return NextResponse.json(
-      { error: 'code is required', code: 'invalid_code' },
+      { error: 'code is required', code: MFA_STEP_UP_ERROR_CODES.invalidCode },
       { status: 400 }
     );
   }
@@ -67,13 +68,19 @@ export const POST = async (req: NextRequest) => {
   const normalized = body.code.replace(/\s+/g, '').trim();
   if (!isRecovery && !/^\d{6}$/.test(normalized)) {
     return NextResponse.json(
-      { error: 'Authenticator code must be 6 digits.', code: 'invalid_code' },
+      {
+        error: 'Authenticator code must be 6 digits.',
+        code: MFA_STEP_UP_ERROR_CODES.invalidCode,
+      },
       { status: 400 }
     );
   }
   if (isRecovery && normalized.length < 6) {
     return NextResponse.json(
-      { error: 'Recovery code looks too short.', code: 'invalid_code' },
+      {
+        error: 'Recovery code looks too short.',
+        code: MFA_STEP_UP_ERROR_CODES.invalidCode,
+      },
       { status: 400 }
     );
   }
@@ -125,25 +132,15 @@ export const POST = async (req: NextRequest) => {
 // "invalid MFA code" (user mistyped — let them try again) and
 // "MFA challenge invalid or expired" (token revoked / TTL hit — they
 // need to re-enter their password). We split them by raw message so
-// the form can offer the right next step.
-const verifyErrorResponse = async (err: unknown): Promise<NextResponse> => {
+// the form can offer the right next step. Everything else - including the
+// generic fallback for a code this route doesn't special-case - defers to
+// mapPactAuthError instead of hand-rolling a second default mapping.
+const verifyErrorResponse = (err: unknown): NextResponse => {
   if (err instanceof ConnectError) {
-    const raw = err.rawMessage.toLowerCase();
     switch (err.code) {
       case Code.Unauthenticated: {
-        const challengeGone =
-          raw.includes('challenge') || raw.includes('expired');
-        if (challengeGone) {
-          const res = NextResponse.json(
-            {
-              error: 'Your sign-in attempt expired. Enter your password again.',
-              code: 'challenge_expired',
-            },
-            { status: 401 }
-          );
-          res.cookies.delete(MFA_TOKEN_COOKIE);
-
-          return res;
+        if (isChallengeGoneMessage(err.rawMessage)) {
+          return challengeExpiredResponse();
         }
 
         // Wrong code: keep the cookie in place so the user can retry
@@ -151,7 +148,7 @@ const verifyErrorResponse = async (err: unknown): Promise<NextResponse> => {
         return NextResponse.json(
           {
             error: 'That code didn’t match. Try again.',
-            code: 'invalid_code',
+            code: MFA_STEP_UP_ERROR_CODES.invalidCode,
           },
           { status: 401 }
         );
@@ -160,7 +157,7 @@ const verifyErrorResponse = async (err: unknown): Promise<NextResponse> => {
         return NextResponse.json(
           {
             error: err.rawMessage || 'That code didn’t look right.',
-            code: 'invalid_code',
+            code: MFA_STEP_UP_ERROR_CODES.invalidCode,
           },
           { status: 400 }
         );
@@ -168,7 +165,7 @@ const verifyErrorResponse = async (err: unknown): Promise<NextResponse> => {
         return NextResponse.json(
           {
             error: 'Too many attempts. Please wait a moment and try again.',
-            code: 'rate_limited',
+            code: AUTH_ERROR_CODES.rateLimited,
           },
           { status: 429 }
         );
@@ -185,7 +182,7 @@ const verifyErrorResponse = async (err: unknown): Promise<NextResponse> => {
           {
             error:
               'We can’t verify a two-factor code for this account right now. Sign in with your passkey instead, then check your authenticator app under Sign-in methods.',
-            code: 'mfa_unavailable',
+            code: MFA_STEP_UP_ERROR_CODES.mfaUnavailable,
           },
           { status: 400 }
         );
@@ -198,8 +195,7 @@ const verifyErrorResponse = async (err: unknown): Promise<NextResponse> => {
     }
   }
 
-  return NextResponse.json(
-    { error: 'Could not verify the code. Please try again.' },
-    { status: 500 }
-  );
+  const { status, body } = mapPactAuthError(err);
+
+  return NextResponse.json(body, { status });
 };

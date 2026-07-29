@@ -7,6 +7,7 @@ import {
   invalidJsonResponse,
   isString,
   notSignedInResponse,
+  parseCeremonyOptions,
   readJsonBody,
   sessionExpiredResponse,
 } from '@/src/framework/auth/pact_auth/route_helpers';
@@ -69,24 +70,16 @@ export const POST = async (req: NextRequest) => {
     );
   }
 
-  let options: unknown;
-  try {
-    const parsed = JSON.parse(new TextDecoder().decode(resp.optionsJson)) as
-      | { publicKey?: unknown }
-      | unknown;
-    // go-webauthn marshals CredentialCreation as { publicKey: {...}, mediation? }.
-    // Unwrap so the browser-side decoder reads challenge/user/pubKeyCredParams
-    // directly off the top — saves it from juggling either shape.
-    options =
-      parsed && typeof parsed === 'object' && 'publicKey' in parsed
-        ? (parsed as { publicKey: unknown }).publicKey
-        : parsed;
-  } catch {
+  const parsedOptions = parseCeremonyOptions(resp.optionsJson);
+  if (!parsedOptions.ok) {
     return NextResponse.json(
       { error: 'invalid passkey options' },
       { status: 502 }
     );
   }
 
-  return NextResponse.json({ ceremonyId: resp.ceremonyId, options });
+  return NextResponse.json({
+    ceremonyId: resp.ceremonyId,
+    options: parsedOptions.options,
+  });
 };

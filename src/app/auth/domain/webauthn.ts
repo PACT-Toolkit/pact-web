@@ -276,6 +276,70 @@ export const signInWithPasskey = async ({
   }
 };
 
+// Run the MFA passkey step-up ceremony end-to-end (PACT-697): an
+// alternative to submitting a TOTP/recovery code from
+// AuthLoginMfaChallengeForm. The outstanding mfa_token never leaves the
+// server - both routes read it off the httpOnly pact_mfa_token cookie,
+// exactly like /api/auth/mfa/verify.
+export const completeMfaWithPasskey = async (): Promise<void> => {
+  if (!isWebAuthnSupported()) {
+    throw new PasskeyError(
+      'unsupported',
+      "This browser doesn't support passkeys. Use your authenticator app instead."
+    );
+  }
+
+  let beginRes: Response;
+  try {
+    beginRes = await fetch('/api/auth/mfa/passkey/begin', { method: 'POST' });
+  } catch (err) {
+    throw mapDomError(err);
+  }
+  if (!beginRes.ok) {
+    const payload = (await beginRes.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    throw new PasskeyError(
+      'server',
+      payload?.error ?? 'Could not start passkey verification.'
+    );
+  }
+  const begin = (await beginRes.json()) as {
+    ceremonyId: string;
+    options: PublicKeyCredentialRequestOptionsJSON;
+  };
+
+  let credential: PublicKeyCredential | null;
+  try {
+    credential = (await navigator.credentials.get({
+      publicKey: decodeRequestOptions(begin.options),
+    })) as PublicKeyCredential | null;
+  } catch (err) {
+    throw mapDomError(err);
+  }
+  if (!credential) {
+    throw new PasskeyError('cancelled', 'No passkey was selected.');
+  }
+
+  const finishRes = await fetch('/api/auth/mfa/passkey/finish', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ceremonyId: begin.ceremonyId,
+      assertion: encodeAssertion(credential),
+    }),
+  });
+  if (!finishRes.ok) {
+    const payload = (await finishRes.json().catch(() => null)) as {
+      error?: string;
+    } | null;
+    throw new PasskeyError(
+      'server',
+      payload?.error ?? 'Passkey verification failed.'
+    );
+  }
+};
+
 // Enroll a new passkey for the currently signed-in user. The session token
 // stays server-side — only the passkey label is sent from the browser.
 export const enrollPasskey = async ({
