@@ -10,6 +10,11 @@
 // the auth bundle. If we grow more ceremonies (e.g. conditional UI hints,
 // large-blob ext) it's worth revisiting.
 
+import {
+  ApiError,
+  postJson,
+} from '@/src/framework/auth/pact_auth/web_mutations';
+
 const PASSKEY_PROMPT_DISMISSED_KEY = 'pact:passkey-prompt-dismissed';
 
 export const isWebAuthnSupported = (): boolean => {
@@ -281,6 +286,18 @@ export const signInWithPasskey = async ({
 // AuthLoginMfaChallengeForm. The outstanding mfa_token never leaves the
 // server - both routes read it off the httpOnly pact_mfa_token cookie,
 // exactly like /api/auth/mfa/verify.
+//
+// Unlike signInWithPasskey/enrollPasskey above, the begin/finish calls here
+// go through postJson (shared with every other /api/auth/* mutation) rather
+// than a hand-rolled fetch: the finish route's failure carries a
+// MFA_STEP_UP_ERROR_CODES code (challenge_expired / no_challenge /
+// passkey_failed) that the caller needs to redirect on the same way
+// AuthLoginMfaChallengeForm's TOTP path does - a PasskeyError has no slot
+// for that, and adding one would mean every other PasskeyError call site
+// (cancel/unsupported/no_credentials) carries a code it never sets. Errors
+// thrown by postJson (ApiError) propagate to the caller as-is; anything
+// else (a network failure, or a WebAuthn DOMException) still goes through
+// mapDomError so callers only ever see PasskeyError or ApiError.
 export const completeMfaWithPasskey = async (): Promise<void> => {
   if (!isWebAuthnSupported()) {
     throw new PasskeyError(
@@ -289,25 +306,20 @@ export const completeMfaWithPasskey = async (): Promise<void> => {
     );
   }
 
-  let beginRes: Response;
-  try {
-    beginRes = await fetch('/api/auth/mfa/passkey/begin', { method: 'POST' });
-  } catch (err) {
-    throw mapDomError(err);
-  }
-  if (!beginRes.ok) {
-    const payload = (await beginRes.json().catch(() => null)) as {
-      error?: string;
-    } | null;
-    throw new PasskeyError(
-      'server',
-      payload?.error ?? 'Could not start passkey verification.'
-    );
-  }
-  const begin = (await beginRes.json()) as {
+  let begin: {
     ceremonyId: string;
     options: PublicKeyCredentialRequestOptionsJSON;
   };
+  try {
+    begin = await postJson(
+      '/api/auth/mfa/passkey/begin',
+      undefined,
+      'Could not start passkey verification.'
+    );
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw mapDomError(err);
+  }
 
   let credential: PublicKeyCredential | null;
   try {
@@ -321,22 +333,15 @@ export const completeMfaWithPasskey = async (): Promise<void> => {
     throw new PasskeyError('cancelled', 'No passkey was selected.');
   }
 
-  const finishRes = await fetch('/api/auth/mfa/passkey/finish', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      ceremonyId: begin.ceremonyId,
-      assertion: encodeAssertion(credential),
-    }),
-  });
-  if (!finishRes.ok) {
-    const payload = (await finishRes.json().catch(() => null)) as {
-      error?: string;
-    } | null;
-    throw new PasskeyError(
-      'server',
-      payload?.error ?? 'Passkey verification failed.'
+  try {
+    await postJson(
+      '/api/auth/mfa/passkey/finish',
+      { ceremonyId: begin.ceremonyId, assertion: encodeAssertion(credential) },
+      'Passkey verification failed.'
     );
+  } catch (err) {
+    if (err instanceof ApiError) throw err;
+    throw mapDomError(err);
   }
 };
 

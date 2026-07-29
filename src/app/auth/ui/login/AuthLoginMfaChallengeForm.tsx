@@ -90,14 +90,16 @@ export const AuthLoginMfaChallengeForm = ({
     },
   });
 
-  // Alternative to the TOTP/recovery-code form below (PACT-697). A failed
-  // ceremony never disables the code input or submit button: an assertion
-  // that never reaches the server (cancelled, unsupported), or one pact-auth
-  // rejects before consuming the mfa_token, leaves the TOTP path fully
-  // usable - see completeMfaWithPasskey's and the finish route's docblocks.
-  // If the mfa_token was already burned by the failed attempt, submitting a
-  // TOTP code next simply surfaces the existing no_challenge/challenge_expired
-  // redirect above, same as it would after two wrong codes in a row.
+  // Alternative to the TOTP/recovery-code form below (PACT-697). A ceremony
+  // that never reaches the server (cancelled, unsupported) or one pact-auth
+  // rejects before consuming the mfa_token never disables the code input or
+  // submit button - the TOTP path stays fully usable. One that pact-auth
+  // parses but fails to verify has already consumed the token by the time
+  // the failure comes back (passkey_failed), same as the finish route's
+  // challenge_expired/no_challenge cases - the catch block below redirects
+  // on all three immediately instead of waiting for a doomed TOTP submit to
+  // discover it. See completeMfaWithPasskey's and the finish route's
+  // docblocks.
   const onPasskeyClick = async () => {
     setValidationError(null);
     setServerError(null);
@@ -112,6 +114,25 @@ export const AuthLoginMfaChallengeForm = ({
       router.push('/dashboard');
     } catch (err) {
       setPasskeyPending(false);
+      if (err instanceof ApiError) {
+        // The finish route's { code, error } body - challenge_expired and
+        // no_challenge mean the mfa_token is dead (same as the TOTP path
+        // above), and passkey_failed means this very call is what just
+        // consumed it (see completeMfaWithPasskey's docblock). All three
+        // leave nothing left to retry on this page, so bounce the same way.
+        if (
+          err.info?.code === MFA_STEP_UP_ERROR_CODES.challengeExpired ||
+          err.info?.code === MFA_STEP_UP_ERROR_CODES.noChallenge ||
+          err.info?.code === MFA_STEP_UP_ERROR_CODES.passkeyFailed
+        ) {
+          goToExpiredLogin();
+
+          return;
+        }
+        setServerError({ code: err.info?.code ?? null, message: err.message });
+
+        return;
+      }
       if (err instanceof PasskeyError) {
         if (err.code === 'cancelled') return;
         setServerError({ code: null, message: err.message });

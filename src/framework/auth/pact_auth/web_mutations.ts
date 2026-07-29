@@ -27,7 +27,10 @@ export class ApiError extends Error {
   }
 }
 
-const postJson = async <TBody, TResp = void>(
+// Exported so browser-side ceremony helpers that aren't SWR mutations (see
+// completeMfaWithPasskey in src/app/auth/domain/webauthn.ts) get the same
+// { code, error } wire-shape parsing instead of a second hand-rolled copy.
+export const postJson = async <TBody, TResp = void>(
   url: string,
   body: TBody | undefined,
   fallbackError: string
