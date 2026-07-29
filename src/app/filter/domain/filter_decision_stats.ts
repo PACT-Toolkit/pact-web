@@ -1,3 +1,5 @@
+import { useMemo } from 'react';
+
 import { useGetAuditStats } from '@/src/__codegen__/rest/audit';
 import {
   type DecisionStatsFilter,
@@ -37,12 +39,18 @@ export const useFilterDecisionStats = () => {
     }
   );
 
-  // Plain property reads on the existing SWR response, not derived
-  // computation -- no useMemo needed, they're as cheap as the access itself.
+  // total is a plain property read on the existing SWR response -- as cheap
+  // as the access itself, no useMemo needed. normalizeDecisionStats builds a
+  // fresh nested object every call, so it's memoized on `data` to match
+  // useDashboardPipelineStats's pattern (dashboard_pipeline_stats.ts), the
+  // other consumer of the same normalization helper.
   const total = data?.status === 200 ? (data.data.total ?? 0) : 0;
-  const filter = normalizeDecisionStats(
-    data?.status === 200 ? data.data : undefined
-  ).filter;
+  const filter = useMemo(
+    () =>
+      normalizeDecisionStats(data?.status === 200 ? data.data : undefined)
+        .filter,
+    [data]
+  );
 
   // A 403 (PACT-363's audit:stats permission gate) is a stable, expected
   // outcome for non-operator users -- not a transient error. The workbench
