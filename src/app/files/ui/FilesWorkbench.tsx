@@ -3,7 +3,11 @@
 import { Loader2, RefreshCw } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
-import { type FileRecord, useListFiles } from '@/src/__codegen__/rest/files';
+import {
+  type FilesFileResponse,
+  useGetFiles,
+} from '@/src/__codegen__/rest/files';
+import { DEFAULT_FILE_STATUS } from '@/src/app/files/domain/file_status';
 import {
   isTerminal,
   POLL_INTERVAL_MS,
@@ -55,14 +59,15 @@ export const FilesWorkbench = () => {
     error: listError,
     isLoading,
     mutate,
-  } = useListFiles(
+  } = useGetFiles(
     { limit: 100, offset: 0 },
     {
       swr: {
         refreshInterval: (latestData) => {
-          const files = latestData?.status === 200 ? latestData.data.files : [];
+          const files =
+            latestData?.status === 200 ? (latestData.data.files ?? []) : [];
 
-          return files.some((f) => !isTerminal(f.status))
+          return files.some((f) => !isTerminal(f.status ?? DEFAULT_FILE_STATUS))
             ? POLL_INTERVAL_MS
             : 0;
         },
@@ -70,11 +75,11 @@ export const FilesWorkbench = () => {
     }
   );
 
-  const serverFiles = useMemo<FileRecord[]>(
-    () => (data?.status === 200 ? data.data.files : []),
+  const serverFiles = useMemo<FilesFileResponse[]>(
+    () => (data?.status === 200 ? (data.data.files ?? []) : []),
     [data]
   );
-  const serverTotal = data?.status === 200 ? data.data.total : 0;
+  const serverTotal = data?.status === 200 ? (data.data.total ?? 0) : 0;
 
   // Passed to each FilesRow so it can trigger a list refresh after a delete
   // or after discovering (via a 404 on its own download-URL mint) that its
@@ -177,7 +182,7 @@ export const FilesWorkbench = () => {
             </p>
           ) : (
             <ul className="flex flex-col gap-2">
-              {serverFiles.map((r: FileRecord) => (
+              {serverFiles.map((r: FilesFileResponse) => (
                 <FilesRow key={r.id} file={r} onListChange={refreshList} />
               ))}
             </ul>

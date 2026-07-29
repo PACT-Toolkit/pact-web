@@ -25,6 +25,7 @@ import type {
   BenchmarkSaveTestLabRunResponse,
   BenchmarkSubmitJobRequest,
   BenchmarkSubmitJobResponse,
+  BoundaryErrorResponse,
   GetBenchmarkJobParams,
   ListBenchmarkRunsParams,
   ListBenchmarkTestLabRunsParams,
@@ -114,7 +115,7 @@ export type SaveBenchmarkCorpusEntryMutationResult = NonNullable<
  * @summary Save one Test Lab corpus entry
  */
 export const useSaveBenchmarkCorpusEntry = <
-  TError = Promise<string>,
+  TError = Promise<string | BoundaryErrorResponse>,
 >(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof saveBenchmarkCorpusEntry>>,
@@ -146,7 +147,7 @@ export type GetBenchmarkCorpusLibrarySummaryQueryResult = NonNullable<
  * @summary Get corpus library summary
  */
 export const useGetBenchmarkCorpusLibrarySummary = <
-  TError = Promise<string>,
+  TError = Promise<string | BoundaryErrorResponse>,
 >(options?: {
   swr?: SWRConfiguration<
     Awaited<ReturnType<typeof getBenchmarkCorpusLibrarySummary>>,
@@ -181,7 +182,9 @@ export type SubmitBenchmarkJobMutationResult = NonNullable<
 /**
  * @summary Submit a benchmark corpus job
  */
-export const useSubmitBenchmarkJob = <TError = Promise<string>>(options?: {
+export const useSubmitBenchmarkJob = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof submitBenchmarkJob>>,
     TError,
@@ -211,7 +214,9 @@ export type GetBenchmarkJobQueryResult = NonNullable<
 /**
  * @summary Poll a benchmark job's status and result
  */
-export const useGetBenchmarkJob = <TError = Promise<string>>(
+export const useGetBenchmarkJob = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(
   id: string,
   params?: GetBenchmarkJobParams,
   options?: {
@@ -250,7 +255,9 @@ export type ListBenchmarkRunsQueryResult = NonNullable<
 /**
  * @summary List persisted benchmark run history
  */
-export const useListBenchmarkRuns = <TError = Promise<string>>(
+export const useListBenchmarkRuns = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(
   params?: ListBenchmarkRunsParams,
   options?: {
     swr?: SWRConfiguration<
@@ -287,7 +294,9 @@ export type ListBenchmarkTestLabRunsQueryResult = NonNullable<
 /**
  * @summary List Test Lab run history
  */
-export const useListBenchmarkTestLabRuns = <TError = Promise<string>>(
+export const useListBenchmarkTestLabRuns = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(
   params?: ListBenchmarkTestLabRunsParams,
   options?: {
     swr?: SWRConfiguration<
@@ -324,7 +333,9 @@ export type SaveBenchmarkTestLabRunMutationResult = NonNullable<
 /**
  * @summary Save one Test Lab run-history entry
  */
-export const useSaveBenchmarkTestLabRun = <TError = Promise<string>>(options?: {
+export const useSaveBenchmarkTestLabRun = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof saveBenchmarkTestLabRun>>,
     TError,

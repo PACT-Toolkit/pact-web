@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { useQueryPolicyEvents } from '@/src/__codegen__/rest/audit';
+import { useGetAuditPolicyEvents } from '@/src/__codegen__/rest/audit';
 
 // Same fetch-window/refresh cadence as ClassifierWorkbench and the other
 // pact.decisions consoles: server-side clamp is 200 (audit.Service.MaxLimit)
@@ -8,7 +8,7 @@ import { useQueryPolicyEvents } from '@/src/__codegen__/rest/audit';
 const FETCH_WINDOW_SIZE = 200;
 const REFRESH_INTERVAL_MS = 30_000;
 
-// usePolicyEvents wraps the generated useQueryPolicyEvents SWR hook (GET
+// usePolicyEvents wraps the generated useGetAuditPolicyEvents SWR hook (GET
 // /v1/audit/policy-events) with the params/polling config PolicyEventsFeed
 // needs. Replaces a hand-rolled fetch this feature used before schema/audit
 // gained the policy-events path (PACT-326): the two shared the same
@@ -18,19 +18,17 @@ const REFRESH_INTERVAL_MS = 30_000;
 export function usePolicyEvents() {
   const params = useMemo(() => ({ limit: FETCH_WINDOW_SIZE }), []);
 
-  const { data, error, isLoading, isValidating, mutate } = useQueryPolicyEvents(
-    params,
-    {
+  const { data, error, isLoading, isValidating, mutate } =
+    useGetAuditPolicyEvents(params, {
       swr: {
         refreshInterval: REFRESH_INTERVAL_MS,
         revalidateOnFocus: false,
         keepPreviousData: true,
       },
-    }
-  );
+    });
 
   const events = useMemo(
-    () => (data?.status === 200 ? data.data.events : []),
+    () => (data?.status === 200 ? (data.data.events ?? []) : []),
     [data]
   );
 

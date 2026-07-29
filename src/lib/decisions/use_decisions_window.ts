@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 
 import {
-  useQueryAuditEvents,
-  type AuditEvent,
+  useGetAuditEvents,
+  type AuditAuditEventResponse,
 } from '@/src/__codegen__/rest/audit';
 
 // Size of the single SWR fetch window shared by every pact.decisions
@@ -27,7 +27,7 @@ export const useDecisionsWindow = () => {
     []
   );
 
-  const { data, error, isLoading, isValidating, mutate } = useQueryAuditEvents(
+  const { data, error, isLoading, isValidating, mutate } = useGetAuditEvents(
     params,
     {
       swr: {
@@ -38,8 +38,8 @@ export const useDecisionsWindow = () => {
     }
   );
 
-  const events: AuditEvent[] = useMemo(
-    () => (data?.status === 200 ? data.data.events : []),
+  const events: AuditAuditEventResponse[] = useMemo(
+    () => (data?.status === 200 ? (data.data.events ?? []) : []),
     [data]
   );
 

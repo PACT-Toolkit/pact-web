@@ -11,6 +11,7 @@ import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { Key } from 'swr';
 
 import type {
+  BoundaryErrorResponse,
   FilterListPacksResponse,
   FilterTestRuleRequest,
   FilterTestRuleResponse,
@@ -27,7 +28,7 @@ export type listLoadedPacksResponse401 = {
 };
 
 export type listLoadedPacksResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 
@@ -102,7 +103,7 @@ export type testRuleResponse401 = {
 };
 
 export type testRuleResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 

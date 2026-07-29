@@ -3,7 +3,7 @@
 import { Flag } from 'lucide-react';
 import { useMemo } from 'react';
 
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { parsePayload } from '@/src/app/filter/domain/filter_decision';
 import { formatTimestamp } from '@/src/lib/format_timestamp';
 
@@ -14,14 +14,14 @@ export const FilterDecisionRow = ({
   flagFailed,
   onFlagFP,
 }: {
-  event: AuditEvent;
+  event: AuditAuditEventResponse;
   isFlagged: boolean;
   isFlagging: boolean;
   flagFailed: boolean;
   onFlagFP: () => void;
 }) => {
   const payload = useMemo(
-    () => parsePayload(event.payloadJson),
+    () => parsePayload(event.payloadJson ?? ''),
     [event.payloadJson]
   );
 
@@ -50,7 +50,7 @@ export const FilterDecisionRow = ({
           </span>
         </div>
         <span className="text-xs text-muted-foreground">
-          {formatTimestamp(event.createdAt, 'compact')}
+          {formatTimestamp(event.createdAt ?? '', 'compact')}
           {payload?.latency_ms !== undefined
             ? ` · ${payload.latency_ms} ms`
             : ''}

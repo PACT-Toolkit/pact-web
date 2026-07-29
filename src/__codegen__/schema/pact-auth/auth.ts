@@ -13,7 +13,7 @@ export interface PactAuth {
    */
   event_uuid?: string;
   /**
-   * Closed set - pact-auth's internal/kafka/producer.go Evt* constants (this module's auth.Evt* constants) only ever produce these ten values.
+   * Closed set - pact-auth's internal/kafka/producer.go Evt* constants (this module's auth.Evt* constants) only ever produce these twelve values. The session-revocation pair was added for PACT-527 so pact-gateway can maintain its edge revocation set.
    */
   event_id:
     | "login_started"
@@ -25,7 +25,9 @@ export interface PactAuth {
     | "email_verified"
     | "password_set_link_requested"
     | "password_reset_requested"
-    | "password_changed";
+    | "password_changed"
+    | "session_revoked"
+    | "user_sessions_revoked";
   user_id?: string;
   /**
    * OAuth provider name (e.g. google, github). Open set - pact-auth can register a new OAuth provider without a schema change. Absent on password-flow events.
@@ -56,4 +58,12 @@ export interface PactAuth {
    * Profile seed value, same population rule as display_name.
    */
   avatar_url?: string;
+  /**
+   * Session row UUID revoked by a session_revoked event (PACT-527). Never a wire token - the PACT-515 rule applies to session credentials too.
+   */
+  session_id?: string;
+  /**
+   * Only on user_sessions_revoked: the one session a mass revoke deliberately kept alive (PACT-527). Absent means every session for user_id is revoked.
+   */
+  except_session_id?: string;
 }

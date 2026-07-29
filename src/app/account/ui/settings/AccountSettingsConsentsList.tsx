@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  type ConsentList,
-  useGetAccountConsents,
-} from '@/src/__codegen__/rest/account';
+import { useGetAccountConsents } from '@/src/__codegen__/rest/account';
 import {
   Card,
   CardContent,
@@ -19,9 +16,7 @@ import { DOCUMENT_LABELS, formatRecordedAt, titleCase } from './helpers';
 export const AccountSettingsConsentsList = () => {
   const query = useGetAccountConsents();
   const consents =
-    query.data?.status === 200
-      ? ((query.data.data as ConsentList).consents ?? [])
-      : [];
+    query.data?.status === 200 ? (query.data.data.consents ?? []) : [];
   const isLoading = query.isLoading;
   const error = query.error;
 
@@ -60,13 +55,14 @@ export const AccountSettingsConsentsList = () => {
         ) : (
           <ul className="flex flex-col gap-2">
             {consents.map((c) => {
+              const documentSlug = c.document ?? '';
               const label =
-                DOCUMENT_LABELS[c.document] ?? titleCase(c.document);
-              const recorded = formatRecordedAt(c.recordedAt);
+                DOCUMENT_LABELS[documentSlug] ?? titleCase(documentSlug);
+              const recorded = formatRecordedAt(c.recordedAt ?? '');
 
               return (
                 <li
-                  key={`${c.document}:${c.version}`}
+                  key={`${documentSlug}:${c.version}`}
                   className="flex items-start justify-between gap-4 rounded-md border px-3 py-2"
                 >
                   <div className="min-w-0">
@@ -76,7 +72,7 @@ export const AccountSettingsConsentsList = () => {
                       {recorded && <> • {recorded}</>}
                     </div>
                   </div>
-                  <AccountSettingsConsentBadge granted={c.granted} />
+                  <AccountSettingsConsentBadge granted={c.granted ?? false} />
                 </li>
               );
             })}

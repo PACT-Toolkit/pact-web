@@ -1,4 +1,4 @@
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { prettyPayload } from '@/src/app/audit/domain/audit_event_variant';
 import {
   FILES_EVENT_LABELS,
@@ -20,7 +20,7 @@ export const AuditFilesRow = ({
   event,
   payload,
 }: {
-  event: AuditEvent;
+  event: AuditAuditEventResponse;
   payload: FilesPayload;
 }) => {
   const eventType = payload.event_type;
@@ -30,10 +30,10 @@ export const AuditFilesRow = ({
 
   return (
     <AuditRowShell
-      topic={event.topic}
-      createdAt={event.createdAt}
+      topic={event.topic ?? ''}
+      createdAt={event.createdAt ?? ''}
       requestId={event.requestId}
-      rawPayload={prettyPayload(event.payloadJson)}
+      rawPayload={prettyPayload(event.payloadJson ?? '')}
       badges={
         <>
           {label && (

@@ -5,10 +5,9 @@ import { useState } from 'react';
 import { useSWRConfig } from 'swr';
 
 import {
-  type Preferences,
   getGetAccountPreferencesKey,
   useGetAccountPreferences,
-  useUpdateAccountPreferences,
+  usePutAccountPreferences,
 } from '@/src/__codegen__/rest/account';
 import {
   Card,
@@ -32,11 +31,10 @@ import { type ToggleConfig, TOGGLES } from './helpers';
 export const AccountSettingsPreferencesForm = () => {
   const { mutate } = useSWRConfig();
   const query = useGetAccountPreferences();
-  const preferences =
-    query.data?.status === 200 ? (query.data.data as Preferences) : undefined;
+  const preferences = query.data?.status === 200 ? query.data.data : undefined;
   const isLoading = query.isLoading;
   const loadError = query.error;
-  const update = useUpdateAccountPreferences({
+  const update = usePutAccountPreferences({
     swr: { onSuccess: () => void mutate(getGetAccountPreferencesKey()) },
   });
   const [busyField, setBusyField] = useState<ToggleConfig['field'] | null>(
@@ -93,7 +91,7 @@ export const AccountSettingsPreferencesForm = () => {
         ) : preferences ? (
           <FieldGroup>
             {TOGGLES.map((cfg) => {
-              const checked = preferences[cfg.field];
+              const checked = preferences[cfg.field] ?? false;
               const busy = busyField === cfg.field;
 
               return (

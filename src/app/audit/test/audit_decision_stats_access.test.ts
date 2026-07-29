@@ -82,7 +82,7 @@ describe('decisionStatsPollingConfig', () => {
     expect(
       refreshInterval({
         status: 403,
-        data: { error: 'nope' },
+        data: 'nope',
         headers: new Headers(),
       })
     ).toBe(0);

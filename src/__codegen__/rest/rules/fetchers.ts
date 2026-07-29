@@ -11,6 +11,7 @@ import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { Arguments, Key } from 'swr';
 
 import type {
+  BoundaryErrorResponse,
   RulesCreateRuleRequest,
   RulesListRulesResponse,
   RulesRuleResponse,
@@ -138,7 +139,7 @@ export type publishRuleResponse200 = {
 };
 
 export type publishRuleResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -153,7 +154,7 @@ export type publishRuleResponse403 = {
 };
 
 export type publishRuleResponse404 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 404;
 };
 
@@ -218,7 +219,7 @@ export type revokeRuleResponse200 = {
 };
 
 export type revokeRuleResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -233,7 +234,7 @@ export type revokeRuleResponse403 = {
 };
 
 export type revokeRuleResponse404 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 404;
 };
 

@@ -14,6 +14,7 @@ import type { SWRMutationConfiguration } from 'swr/mutation';
 import type { AxiosError, AxiosRequestConfig } from 'axios';
 
 import type {
+  BoundaryErrorResponse,
   PolicyIssueTokenRequest,
   PolicyIssueTokenResponse,
 } from './types';
@@ -42,7 +43,9 @@ export type IssueTokenMutationResult = NonNullable<
 /**
  * @summary Mint a capability token
  */
-export const useIssueToken = <TError = Promise<string>>(options?: {
+export const useIssueToken = <
+  TError = Promise<string | BoundaryErrorResponse>,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof issueToken>>,
     TError,

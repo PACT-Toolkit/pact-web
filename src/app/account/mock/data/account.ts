@@ -1,8 +1,8 @@
 import { type DB } from '@/mocks/data/dbFactory';
 import {
-  type Consent,
-  type Preferences,
-  type Profile,
+  type AccountConsentResponse,
+  type AccountPreferencesResponse,
+  type AccountProfileResponse,
 } from '@/src/__codegen__/rest/account';
 import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
 import { type MockUserType } from '@/src/framework/helpers/mock_user_type';
@@ -30,7 +30,9 @@ export const profilePersonaFor = (userType: MockUserType) =>
 
 export { MOCK_USER_ID };
 
-export const mockProfile = (overrides: Partial<Profile>): Profile => ({
+export const mockProfile = (
+  overrides: Partial<AccountProfileResponse>
+): AccountProfileResponse => ({
   userId: MOCK_USER_ID,
   displayName: 'Ada Lovelace',
   avatarUrl: 'https://i.pravatar.cc/150?u=ada',
@@ -43,8 +45,8 @@ export const mockProfile = (overrides: Partial<Profile>): Profile => ({
 });
 
 export const mockPreferences = (
-  overrides: Partial<Preferences>
-): Preferences => ({
+  overrides: Partial<AccountPreferencesResponse>
+): AccountPreferencesResponse => ({
   userId: MOCK_USER_ID,
   marketingEmail: false,
   productEmail: true,
@@ -52,7 +54,9 @@ export const mockPreferences = (
   ...overrides,
 });
 
-export const mockConsent = (overrides: Partial<Consent>): Consent => ({
+export const mockConsent = (
+  overrides: Partial<AccountConsentResponse>
+): AccountConsentResponse => ({
   document: '',
   version: '',
   granted: true,

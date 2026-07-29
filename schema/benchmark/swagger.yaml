@@ -263,6 +263,13 @@ definitions:
             - id
             - latency_ms
         type: object
+    boundary.ErrorResponse:
+        properties:
+            code:
+                type: string
+            error:
+                type: string
+        type: object
 host: localhost:8080
 info:
     contact: {}
@@ -300,7 +307,7 @@ paths:
                 "502":
                     description: upstream error
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Save one Test Lab corpus entry
@@ -327,7 +334,7 @@ paths:
                 "502":
                     description: upstream error
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Get corpus library summary
@@ -363,7 +370,7 @@ paths:
                 "502":
                     description: upstream error
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Submit a benchmark corpus job
@@ -404,11 +411,11 @@ paths:
                 "404":
                     description: not found
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "502":
                     description: upstream error
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Poll a benchmark job's status and result
@@ -456,7 +463,7 @@ paths:
                 "502":
                     description: upstream error
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: List persisted benchmark run history
@@ -492,7 +499,7 @@ paths:
                 "502":
                     description: upstream error
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: List Test Lab run history
@@ -531,7 +538,7 @@ paths:
                 "502":
                     description: upstream error
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Save one Test Lab run-history entry

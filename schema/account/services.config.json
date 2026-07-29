@@ -1,7 +1,8 @@
 {
-  "repo": "pact-account",
-  "path": "/api/swagger.yaml",
+  "repo": "pact-gateway",
+  "path": "/api/swagger/account.yaml",
   "branch": "master",
-  "baseUrl": "/v1/account",
+  "baseUrl": "/api/pact/gateway/v1",
+  "stripPathPrefix": "/v1",
   "production": false
 }

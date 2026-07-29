@@ -11,6 +11,7 @@ import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
 import type { Key } from 'swr';
 
 import type {
+  BoundaryErrorResponse,
   ClassifierLabelVerdictRequest,
   ClassifierLabelVerdictResponse,
 } from './types';
@@ -41,7 +42,7 @@ export type labelVerdictResponse429 = {
 };
 
 export type labelVerdictResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 

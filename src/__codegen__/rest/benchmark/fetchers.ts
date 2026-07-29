@@ -21,6 +21,7 @@ import type {
   BenchmarkSaveTestLabRunResponse,
   BenchmarkSubmitJobRequest,
   BenchmarkSubmitJobResponse,
+  BoundaryErrorResponse,
   GetBenchmarkJobParams,
   ListBenchmarkRunsParams,
   ListBenchmarkTestLabRunsParams,
@@ -42,7 +43,7 @@ export type saveBenchmarkCorpusEntryResponse401 = {
 };
 
 export type saveBenchmarkCorpusEntryResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 
@@ -115,7 +116,7 @@ export type getBenchmarkCorpusLibrarySummaryResponse401 = {
 };
 
 export type getBenchmarkCorpusLibrarySummaryResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 
@@ -184,7 +185,7 @@ export type submitBenchmarkJobResponse401 = {
 };
 
 export type submitBenchmarkJobResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 
@@ -258,12 +259,12 @@ export type getBenchmarkJobResponse401 = {
 };
 
 export type getBenchmarkJobResponse404 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 404;
 };
 
 export type getBenchmarkJobResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 
@@ -351,7 +352,7 @@ export type listBenchmarkRunsResponse401 = {
 };
 
 export type listBenchmarkRunsResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 
@@ -428,7 +429,7 @@ export type listBenchmarkTestLabRunsResponse401 = {
 };
 
 export type listBenchmarkTestLabRunsResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 
@@ -515,7 +516,7 @@ export type saveBenchmarkTestLabRunResponse401 = {
 };
 
 export type saveBenchmarkTestLabRunResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 
