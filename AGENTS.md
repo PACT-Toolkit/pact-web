@@ -180,8 +180,8 @@ There is no per-feature `data/` or `__codegen__/` folder - generated REST hooks 
    Where `repo` is the repo name in the [PACT-Toolkit](https://github.com/PACT-Toolkit) GitHub org.
 
    **`production` flag** marks whether the service's generated client ships in production builds:
-   - `false` (default) — excluded from production client builds. Safe while the backend service is still in early development or the schema isn't stable.
-   - `true` — included in production client builds. Set this once the service is stable.
+   - `false` (default) - excluded from production client builds. Safe while the backend service is still in early development or the schema isn't stable.
+   - `true` - included in production client builds. Set this once the service is stable.
 
    This flag no longer affects `pnpm api:update`'s failure behaviour: a fetch failure for **any** configured service - `production: true` or `false` - fails the whole run. Every failing service is named individually (with its unreachable repo/path/branch), all failures are reported together, then the process exits non-zero. A silently stale vendored spec is worse than a loud CI failure, so there is no "safe to skip" mode.
 
