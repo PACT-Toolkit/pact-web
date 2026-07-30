@@ -33,7 +33,7 @@ const config = [
       // rule that walks resolved files (no-cycle among them) silently skips
       // .ts/.tsx (PACT-715).
       'import-x/parsers': {
-        '@typescript-eslint/parser': ['.ts', '.tsx'],
+        '@typescript-eslint/parser': ['.ts', '.tsx', '.cts', '.mts'],
       },
       'import-x/resolver': {
         typescript: {
