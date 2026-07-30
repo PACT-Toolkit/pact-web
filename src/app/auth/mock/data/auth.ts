@@ -84,6 +84,21 @@ export const mockAuthIdentity = (
   ...overrides,
 });
 
+// Mock-only tracking of whether this session's account has ever had
+// recovery codes provisioned - there is no generated wire type for this,
+// it never leaves the mock layer. Mirrors the one bit of state pact-auth
+// keeps to decide whether passkey enrollment should mint a fresh batch
+// (see mock/handlers/auth.ts's passkeys/register/finish handler): a
+// singleton row, following dbFactory.ts's singleton-entity convention.
+export type AuthRecoveryCodesState = { issued: boolean };
+
+export const mockAuthRecoveryCodesState = (
+  overrides: Partial<AuthRecoveryCodesState>
+): AuthRecoveryCodesState => ({
+  issued: false,
+  ...overrides,
+});
+
 // Seeds one row per credential-management surface that doesn't gate its own
 // "add" entry point on existing rows, so the account security settings page
 // has something to show and revoke/rename/disconnect flows have a target -
@@ -110,4 +125,11 @@ export const createAuthMockData = (db: DB): void => {
     providerUid: MOCK_USER_ID,
     connectedAtUnix: nowUnix() - 60 * 24 * 60 * 60,
   });
+
+  // Fresh account, no codes issued yet - the default dev:mock persona is
+  // passkey-only (a passkey seeded above, no TOTP factor), so registering
+  // a second passkey through the UI exercises the "pact-auth issues a
+  // fresh batch" path until a TOTP enrollment or an explicit regenerate
+  // call flips this to true.
+  db.authRecoveryCodesState.create({ issued: false });
 };

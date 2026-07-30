@@ -27,10 +27,12 @@ import {
   mockDecisionAnnotation,
 } from '@/src/app/audit/mock/data/audit';
 import {
+  type AuthRecoveryCodesState,
   createAuthMockData,
   mockAuthIdentity,
   mockAuthMfaFactor,
   mockAuthPasskey,
+  mockAuthRecoveryCodesState,
 } from '@/src/app/auth/mock/data/auth';
 import { createClassifierMockData } from '@/src/app/classifier/mock/data/classifier';
 import { createConsensusMockData } from '@/src/app/consensus/mock/data/consensus';
@@ -77,6 +79,9 @@ export const db = {
   authPasskeys: new MockRepository<AuthPasskeyResponse>(mockAuthPasskey),
   authIdentities: new MockRepository<AuthOAuthIdentityResponse>(
     mockAuthIdentity
+  ),
+  authRecoveryCodesState: new MockRepository<AuthRecoveryCodesState>(
+    mockAuthRecoveryCodesState
   ),
   decisions: new MockRepository<AuditAuditEventResponse>(mockDecisionEvent),
   files: new MockRepository<FilesFileResponse>(mockFileRecord),

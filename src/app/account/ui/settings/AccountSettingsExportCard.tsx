@@ -12,8 +12,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { triggerDownload } from '@/src/framework/helpers';
 
-import { makeExportFilename, triggerDownload } from './helpers';
+import { makeExportFilename } from './helpers';
 
 export const AccountSettingsExportCard = () => {
   const [busy, setBusy] = useState(false);

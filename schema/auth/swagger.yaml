@@ -65,6 +65,10 @@ definitions:
         properties:
             credentialId:
                 type: string
+            recoveryCodes:
+                items:
+                    type: string
+                type: array
         type: object
     auth.HandleCallbackRequest:
         properties:
@@ -729,7 +733,7 @@ paths:
                 - application/json
             responses:
                 "200":
-                    description: OK
+                    description: Credential id, plus one-time recovery codes when pact-auth issues them -- shown to the user exactly once
                     schema:
                         $ref: '#/definitions/auth.FinishPasskeyRegistrationResponse'
                 "400":
