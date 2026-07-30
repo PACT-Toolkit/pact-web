@@ -20,6 +20,7 @@ const fakeAuthClient = (login: () => Promise<LoginResult>) =>
   ({ login }) as unknown as ReturnType<typeof getPactAuthClient>;
 
 const SESSION_COOKIE = 'pact_session';
+const REFRESH_TOKEN_COOKIE = 'pact_refresh_token';
 const MFA_TOKEN_COOKIE = 'pact_mfa_token';
 
 const makeRequest = (body: unknown) =>
@@ -63,10 +64,11 @@ describe('POST /api/auth/login', () => {
     const payload = (await res.json()) as { ok: boolean; userId: string };
     expect(payload).toEqual({ ok: true, userId: 'user-1' });
     expect(res.cookies.get(SESSION_COOKIE)?.value).toBe('real-session-token');
+    expect(res.cookies.get(REFRESH_TOKEN_COOKIE)?.value).toBe('refresh-token');
     expect(res.cookies.get(MFA_TOKEN_COOKIE)).toBeUndefined();
   });
 
-  it('sets the mfa cookie and skips the session cookie when MFA is required', async () => {
+  it('sets the mfa cookie and skips the session and refresh cookies when MFA is required', async () => {
     mockGetPactAuthClient.mockReturnValue(
       fakeAuthClient(() =>
         Promise.resolve({
@@ -94,6 +96,7 @@ describe('POST /api/auth/login', () => {
     expect(payload).toEqual({ ok: true, mfaRequired: true, userId: 'user-1' });
     expect(res.cookies.get(MFA_TOKEN_COOKIE)?.value).toBe('challenge-token');
     expect(res.cookies.get(SESSION_COOKIE)).toBeUndefined();
+    expect(res.cookies.get(REFRESH_TOKEN_COOKIE)).toBeUndefined();
   });
 
   it('returns 502 when mfaRequired is true but mfaToken is empty', async () => {
@@ -164,6 +167,7 @@ describe('POST /api/auth/login', () => {
     expect(payload.mfaRequired).toBe(true);
     expect(res.cookies.get(MFA_TOKEN_COOKIE)?.value).toBeTruthy();
     expect(res.cookies.get(SESSION_COOKIE)).toBeUndefined();
+    expect(res.cookies.get(REFRESH_TOKEN_COOKIE)).toBeUndefined();
     expect(mockGetPactAuthClient).not.toHaveBeenCalled();
   });
 

@@ -2,10 +2,7 @@ import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
-import {
-  SESSION_COOKIE,
-  sessionCookieOptions,
-} from '@/src/framework/auth/pact_auth/cookies';
+import { setSessionCookies } from '@/src/framework/auth/pact_auth/cookies';
 import {
   rebaseReturnTo,
   requestOrigin,
@@ -72,13 +69,8 @@ export const GET = async (req: NextRequest) => {
   const success = new URL('/verify-email/success', origin);
   success.searchParams.set('next', nextPath);
 
-  const expiresAt = new Date(Number(resp.expiresAtUnix) * 1000);
   const res = NextResponse.redirect(success);
-  res.cookies.set({
-    name: SESSION_COOKIE,
-    value: resp.sessionToken,
-    ...sessionCookieOptions(expiresAt),
-  });
+  setSessionCookies(res, resp);
 
   return res;
 };

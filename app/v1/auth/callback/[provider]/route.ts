@@ -7,8 +7,7 @@ import {
   MFA_TOKEN_TTL_SECONDS,
   OAUTH_RETURN_TO_COOKIE,
   OAUTH_STATE_COOKIE,
-  SESSION_COOKIE,
-  sessionCookieOptions,
+  setSessionCookies,
   shortLivedCookieOptions,
 } from '@/src/framework/auth/pact_auth/cookies';
 import { mockSessionCookie } from '@/src/framework/auth/pact_auth/mock';
@@ -156,13 +155,8 @@ export const GET = async (
     return res;
   }
 
-  const expiresAt = new Date(Number(resp.expiresAtUnix) * 1000);
   const res = NextResponse.redirect(target);
-  res.cookies.set({
-    name: SESSION_COOKIE,
-    value: resp.sessionToken,
-    ...sessionCookieOptions(expiresAt),
-  });
+  setSessionCookies(res, resp);
   burnStateCookie(res);
 
   return res;

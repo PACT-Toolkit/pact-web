@@ -5,8 +5,7 @@ import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
 import {
   MFA_TOKEN_COOKIE,
   OAUTH_RETURN_TO_COOKIE,
-  SESSION_COOKIE,
-  sessionCookieOptions,
+  setSessionCookies,
 } from '@/src/framework/auth/pact_auth/cookies';
 import {
   MFA_STEP_UP_ERROR_CODES,
@@ -90,13 +89,8 @@ export const POST = async (req: NextRequest) => {
     return finishMfaPasskeyErrorResponse(err);
   }
 
-  const expiresAt = new Date(Number(resp.expiresAtUnix) * 1000);
   const res = NextResponse.json({ ok: true, userId: resp.userId });
-  res.cookies.set({
-    name: SESSION_COOKIE,
-    value: resp.sessionToken,
-    ...sessionCookieOptions(expiresAt),
-  });
+  setSessionCookies(res, resp);
   // The challenge is one-shot and now consumed server-side.
   res.cookies.delete(MFA_TOKEN_COOKIE);
   // The client already read this into `returnTo` when it rendered

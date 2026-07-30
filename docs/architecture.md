@@ -12,7 +12,7 @@ flowchart TB
     subgraph web["pact-web (Next.js)"]
         authroutes["<b>(auth) route group</b><br/><i>app/(auth)</i><br/>login, register, forgot/reset password,<br/>verify email - rendered logged-out"]:::comp
         approutes["<b>(app) route group</b><br/><i>app/(app)</i><br/>dashboard, test-lab, per-service consoles (filter, redactor,<br/>policy, audit, files, benchmark, classifier, consensus, gateway),<br/>settings - every layout validates the session server-side"]:::comp
-        authapi["<b>Auth route handlers</b><br/><i>app/api/auth/*</i><br/>login / logout / mfa / password flows; call pact-auth over<br/>Connect RPC and set the pact_session cookie"]:::comp
+        authapi["<b>Auth route handlers</b><br/><i>app/api/auth/*</i><br/>login / logout / mfa / password flows; call pact-auth over<br/>Connect RPC and set the pact_session + pact_refresh_token cookies"]:::comp
         proxy["<b>Gateway edge proxies</b><br/><i>app/api/pact/* + app/v1/* via src/lib/proxy/proxy_to_gateway.ts</i><br/>one shared core: translates the pact_session cookie into<br/>Authorization: Bearer, forwards to pact-gateway, propagates<br/>rotated session tokens back as cookies"]:::comp
         session["<b>Session validation</b><br/><i>src/framework/auth/pact_auth/session.ts</i><br/>requireSession / validateSessionFromCookies - calls pact-auth<br/>ValidateSession on every invocation, fail-closed; middleware<br/>cookie checks are an optimization, not the barrier"]:::comp
         features["<b>Feature slices</b><br/><i>src/app/{feature}/{domain, ui, mock, test}</i><br/>one slice per console; domain/ is headless (types, helpers,<br/>hooks), ui/ renders, mock/ seeds MSW, test/ is canonical for tests"]:::comp
@@ -62,12 +62,13 @@ classDiagram
     }
     class ProxyToGatewayOptions {
         +upstreamPath string (must start with /v1/)
-        +forwardRefreshHeader bool
         caller owns method allowlist + path building
     }
     class proxyToGateway {
         pact_session cookie -> Authorization Bearer
-        propagates x-pact-new-* rotation headers
+        pact_refresh_token cookie -> X-Pact-Refresh-Token
+        single-flights near-expiry refresh per session token
+        rotates both cookies from x-pact-new-* response headers
         single shared core for every proxy route
     }
     class FeatureSlice {

@@ -22,7 +22,6 @@ async function proxy(req: NextRequest, { params }: RouteContext) {
 
   return proxyToGateway(req, {
     upstreamPath: `/v1/audit/${path.join('/')}`,
-    forwardRefreshHeader: true,
   });
 }
 

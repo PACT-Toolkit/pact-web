@@ -5,3 +5,27 @@
 // the lib layer cannot import framework modules; the auth framework
 // re-exports it from cookies.ts so auth code keeps one import site.
 export const SESSION_COOKIE = 'pact_session';
+
+// Name of the httpOnly refresh-token cookie the same routes write alongside
+// SESSION_COOKIE, and that the gateway proxy attaches as the
+// X-Pact-Refresh-Token request header on every proxied call so
+// pact-gateway's authMiddleware can silently rotate the session pair before
+// the short-lived session token expires (PACT-705). Same layering
+// rationale as SESSION_COOKIE above.
+export const REFRESH_TOKEN_COOKIE = 'pact_refresh_token';
+
+// The refresh token itself has no fixed expiry pact-web can read off a
+// response - it's single-use and stays valid until pact-auth's underlying
+// session goes idle or hits its absolute cap (SESSION_IDLE_TTL_HOURS,
+// default 24h; see pact-auth/internal/app/config.go). We can't mirror the
+// short-lived session token's own expiry here - that would make the
+// refresh cookie vanish almost as fast as the session token it exists to
+// renew, defeating the point of PACT-705 for anyone who returns after the
+// token TTL but before the session itself goes idle. Instead the cookie
+// caps out at the idle-TTL default and slides forward on every write
+// (initial login, and every rotation the gateway proxy performs) because
+// callers set it with maxAge, not a fixed expires. Defined here (rather
+// than only in the auth framework) because the gateway proxy also needs
+// it to rotate the cookie and the lib layer cannot import framework
+// modules.
+export const REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS = 24 * 60 * 60;

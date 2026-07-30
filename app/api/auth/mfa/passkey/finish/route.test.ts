@@ -30,6 +30,7 @@ const fakeAuthClient = (
 ) => ({ finishMfaPasskey }) as unknown as ReturnType<typeof getPactAuthClient>;
 
 const SESSION_COOKIE = 'pact_session';
+const REFRESH_TOKEN_COOKIE = 'pact_refresh_token';
 const MFA_TOKEN_COOKIE = 'pact_mfa_token';
 
 const makeRequest = (body: unknown) =>
@@ -96,6 +97,7 @@ describe('POST /api/auth/mfa/passkey/finish', () => {
 
     expect(res.status).toBe(200);
     expect(res.cookies.get(SESSION_COOKIE)?.value).toBe('real-session-token');
+    expect(res.cookies.get(REFRESH_TOKEN_COOKIE)?.value).toBe('refresh-token');
     expect(res.cookies.get(MFA_TOKEN_COOKIE)?.value).toBe('');
   });
 

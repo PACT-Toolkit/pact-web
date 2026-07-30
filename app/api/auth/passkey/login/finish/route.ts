@@ -2,10 +2,7 @@ import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
-import {
-  SESSION_COOKIE,
-  sessionCookieOptions,
-} from '@/src/framework/auth/pact_auth/cookies';
+import { setSessionCookies } from '@/src/framework/auth/pact_auth/cookies';
 import {
   invalidJsonResponse,
   isString,
@@ -81,13 +78,8 @@ export const POST = async (req: NextRequest) => {
     );
   }
 
-  const expiresAt = new Date(Number(resp.expiresAtUnix) * 1000);
   const res = NextResponse.json({ ok: true, userId: resp.userId });
-  res.cookies.set({
-    name: SESSION_COOKIE,
-    value: resp.sessionToken,
-    ...sessionCookieOptions(expiresAt),
-  });
+  setSessionCookies(res, resp);
 
   return res;
 };
