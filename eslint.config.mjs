@@ -27,6 +27,14 @@ const config = [
     },
     settings: {
       'import-x/internal-regex': '^@/',
+      // import-x reads its own settings key, not the legacy `import/*` one
+      // eslint-config-next populates - without this, import-x's valid
+      // extensions default to ['.js', '.mjs', '.cjs'] and every import-x
+      // rule that walks resolved files (no-cycle among them) silently skips
+      // .ts/.tsx (PACT-715).
+      'import-x/parsers': {
+        '@typescript-eslint/parser': ['.ts', '.tsx', '.cts', '.mts'],
+      },
       'import-x/resolver': {
         typescript: {
           alwaysTryTypes: true,
