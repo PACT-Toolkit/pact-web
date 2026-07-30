@@ -49,6 +49,20 @@ describe('RecoveryCodesList', () => {
     expect(writeTextMock).toHaveBeenCalledWith(CODES.join('\n'));
   });
 
+  it('surfaces a visible error when the clipboard write fails', async () => {
+    writeTextMock.mockRejectedValue(new Error('denied'));
+
+    render(<RecoveryCodesList codes={CODES} />);
+    fireEvent.click(screen.getByRole('button', { name: /copy all/i }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/could not copy to clipboard/i);
+    // No false success signal - the label must not flip to "Copied".
+    expect(
+      screen.getByRole('button', { name: /copy all/i })
+    ).toBeInTheDocument();
+  });
+
   it('triggers a file download with the given filename', () => {
     // triggerDownload (src/framework/helpers/download.ts) builds a real
     // <a download> and appends it to the document rather than faking the

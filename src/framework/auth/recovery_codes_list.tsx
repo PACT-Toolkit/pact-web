@@ -39,15 +39,18 @@ export const RecoveryCodesList = ({
   filename = 'pact-recovery-codes.txt',
 }: Props) => {
   const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
 
   const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(codes.join('\n'));
       setCopied(true);
+      setCopyError(null);
     } catch {
-      // Clipboard access can fail (permissions, insecure context); the
-      // download button below is still a way to save the codes, so this
-      // is silently ignored rather than surfaced as an error.
+      // Clipboard access can fail (permissions, insecure context) - say so,
+      // since a user who thinks they saved the codes but didn't loses their
+      // recovery path. The download button remains as the fallback.
+      setCopyError('Could not copy to clipboard. Use Download instead.');
     }
   };
 
@@ -81,6 +84,11 @@ export const RecoveryCodesList = ({
           </li>
         ))}
       </ul>
+      {copyError && (
+        <p role="alert" className="text-sm text-destructive">
+          {copyError}
+        </p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <Button type="button" variant="outline" onClick={() => void onCopy()}>
           {copied ? (
