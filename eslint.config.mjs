@@ -248,6 +248,12 @@ const config = [
       ],
 
       // ── Imports ──────────────────────────────────────────────────────
+      // Kept here (not as a `pnpm run lint:eslint` --rule CLI flag) because
+      // pnpm on Windows shells the script through cmd.exe, which strips the
+      // single quotes around the flag's value and breaks the argument in two
+      // (PACT-711). A plain `eslint .` in package.json has no shell-quoting
+      // to mangle, so the rule lives in config instead.
+      'import-x/no-cycle': ['error', { ignoreExternal: true, maxDepth: 4 }],
       'import-x/no-extraneous-dependencies': 'error',
       'import-x/no-duplicates': ['error', { 'prefer-inline': true }],
       'import-x/consistent-type-specifier-style': ['error', 'prefer-inline'],

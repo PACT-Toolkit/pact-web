@@ -29,7 +29,7 @@
     "test": "TZ=CET vitest run",
     "test:watch": "TZ=CET vitest",
     "lint": "pnpm run lint:typescript && pnpm run lint:eslint",
-    "lint:eslint": "node --max-old-space-size=8192 ./node_modules/eslint/bin/eslint.js --rule 'import-x/no-cycle: [error, { ignoreExternal: true, maxDepth: 4 }]'",
+    "lint:eslint": "node --max-old-space-size=8192 ./node_modules/eslint/bin/eslint.js .",
     "lint:eslint:staged": "node --max-old-space-size=8192 ./node_modules/eslint/bin/eslint.js --cache --no-warn-ignored",
     "lint:typescript": "tsc --noEmit",
     "msw:init": "npx msw init ./public --no-save",
