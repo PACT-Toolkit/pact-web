@@ -40,14 +40,12 @@ import {
 // in session.ts) always returns a synthetic session, so /login itself
 // redirects straight to /dashboard and never sets a real pact_session
 // cookie. The session-scoped endpoints below (identities, MFA factors,
-// passkeys, enrollment) read that cookie directly (factors.ts, not the
-// auto-login bypass), so they only become reachable once something calls
-// POST /api/auth/login directly - e.g. via curl/devtools, or a future test
-// harness - at which point the login handler's sessionToken becomes the
-// real cookie value and /settings/security renders the seeded passkey and
-// identity below, plus any TOTP factor enrolled during the session. That's
-// expected: it mirrors what happens in real mode too, just without needing
-// pact-auth running.
+// passkeys, enrollment) don't check the bearer token's value at all - they
+// just answer from the MockRepository rows below - and factors.ts
+// (PACT-717) falls back to MOCK_SESSION_TOKEN as the token whenever
+// isMock() is true, so a fresh dev:mock session renders the seeded
+// passkey and identity below, plus any TOTP factor enrolled during the
+// session, without ever calling POST /api/auth/login.
 
 const bearerToken = (request: Request): string | undefined =>
   request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
