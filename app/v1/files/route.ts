@@ -12,7 +12,6 @@ import { proxyToGateway } from '@/src/lib/proxy/proxy_to_gateway';
 const proxy = (req: NextRequest) =>
   proxyToGateway(req, {
     upstreamPath: '/v1/files/',
-    forwardRefreshHeader: true,
   });
 
 export const GET = proxy;
