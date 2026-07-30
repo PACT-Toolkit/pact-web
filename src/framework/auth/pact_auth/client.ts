@@ -5,6 +5,7 @@ import { headers as nextHeaders } from 'next/headers';
 
 import {
   type AuthBeginTOTPEnrollmentResponse,
+  type AuthFinishPasskeyRegistrationResponse,
   type AuthListIdentitiesResponse,
   type AuthListMfaFactorsResponse,
   type AuthListPasskeysResponse,
@@ -343,6 +344,14 @@ const toCeremonyResult = (
 
 export type AuthFinishPasskeyRegistrationResult = {
   credentialId: string;
+  // Undefined (not an empty array) when pact-auth issued no codes - it only
+  // provisions recovery codes the first time an account has none at all, so
+  // a TOTP user's existing batch is never silently rotated by adding a
+  // passkey. Preserving the absent/present distinction (rather than
+  // collapsing to `?? []` like the other recovery-codes results in this
+  // file) is what lets the UI tell "nothing to show" apart from "pact-auth
+  // issued zero codes", which would otherwise look identical.
+  recoveryCodes?: string[];
 };
 
 // -- Client ---------------------------------------------------------------
@@ -672,7 +681,7 @@ export const getPactAuthClient = (): PactAuthClient => {
       ceremonyId,
       attestationJson,
     }) => {
-      const raw = await authRequest<{ credentialId?: string }>({
+      const raw = await authRequest<AuthFinishPasskeyRegistrationResponse>({
         method: 'POST',
         path: '/passkeys/register/finish',
         sessionToken,
@@ -682,7 +691,10 @@ export const getPactAuthClient = (): PactAuthClient => {
         },
       });
 
-      return { credentialId: raw.credentialId ?? '' };
+      return {
+        credentialId: raw.credentialId ?? '',
+        recoveryCodes: raw.recoveryCodes,
+      };
     },
 
     beginPasskeyLogin: async ({ email }) =>

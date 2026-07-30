@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Copy, Loader2, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { Check, Copy, Loader2, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import useSWRMutation from 'swr/mutation';
 
@@ -14,6 +14,7 @@ import {
   type BeginTotpEnrollmentResult,
   confirmTotpEnrollmentFetcher,
 } from '@/src/framework/auth/pact_auth/web_mutations';
+import { RecoveryCodesList } from '@/src/framework/auth/recovery_codes_list';
 import { cn } from '@/src/lib/utils';
 
 import { AuthSettingsTotpEnrollQrCode } from './AuthSettingsTotpEnrollQrCode';
@@ -36,7 +37,6 @@ export const AuthSettingsTotpEnrollPanel = ({
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [copiedSecret, setCopiedSecret] = useState(false);
-  const [copiedCodes, setCopiedCodes] = useState(false);
 
   const beginMutation = useSWRMutation(
     AUTH_KEYS.mfaEnrollBegin,
@@ -102,16 +102,6 @@ export const AuthSettingsTotpEnrollPanel = ({
     try {
       await navigator.clipboard.writeText(enrollment.secret);
       setCopiedSecret(true);
-    } catch {
-      setError('Could not copy to clipboard.');
-    }
-  };
-
-  const onCopyCodes = async () => {
-    if (recoveryCodes.length === 0) return;
-    try {
-      await navigator.clipboard.writeText(recoveryCodes.join('\n'));
-      setCopiedCodes(true);
     } catch {
       setError('Could not copy to clipboard.');
     }
@@ -272,36 +262,13 @@ export const AuthSettingsTotpEnrollPanel = ({
         />
         <span>Authenticator enabled. Save your recovery codes now.</span>
       </p>
-      <p className="flex items-start gap-2 rounded-md border bg-background/60 px-3 py-2 text-sm text-muted-foreground">
-        <TriangleAlert
-          className="mt-0.5 h-4 w-4 shrink-0 text-warning"
-          aria-hidden
-        />
-        <span>
-          We&apos;ll only show these once. Without them, losing your
-          authenticator means losing access.
-        </span>
-      </p>
-      <ul
-        data-testid="totp-recovery-codes"
-        className="grid grid-cols-2 gap-1 font-mono text-sm sm:grid-cols-3"
-      >
-        {recoveryCodes.map((c) => (
-          <li key={c} className="rounded bg-background px-2 py-1">
-            {c}
-          </li>
-        ))}
-      </ul>
+      <RecoveryCodesList codes={recoveryCodes} testId="totp-recovery-codes" />
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="outline" onClick={onCopyCodes}>
-          <Copy className="mr-2 h-4 w-4" aria-hidden />
-          {copiedCodes ? 'Copied' : 'Copy all'}
-        </Button>
+      <div>
         <Button
           type="button"
           onClick={onComplete}

@@ -101,6 +101,47 @@ describe('getPactAuthClient', () => {
     ).resolves.toBeUndefined();
   });
 
+  // pact-auth only issues recovery codes at passkey enrollment the first
+  // time an account has none - the response omits recoveryCodes entirely
+  // when it doesn't. finishPasskeyRegistration must preserve that absence
+  // rather than collapsing it to an empty array (see
+  // AuthFinishPasskeyRegistrationResult's docstring), since the UI treats
+  // "no field" and "an empty batch" as different things.
+  describe('finishPasskeyRegistration recovery codes', () => {
+    it('passes recoveryCodes through when pact-auth issues them', async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse({
+          credentialId: 'cred-1',
+          recoveryCodes: ['aaa111', 'bbb222'],
+        })
+      );
+
+      const result = await getPactAuthClient().finishPasskeyRegistration({
+        sessionToken: 'sess-1',
+        ceremonyId: 'cer-1',
+        attestationJson: new TextEncoder().encode('{}'),
+      });
+
+      expect(result).toEqual({
+        credentialId: 'cred-1',
+        recoveryCodes: ['aaa111', 'bbb222'],
+      });
+    });
+
+    it('leaves recoveryCodes undefined when the gateway response omits it', async () => {
+      fetchMock.mockResolvedValue(jsonResponse({ credentialId: 'cred-2' }));
+
+      const result = await getPactAuthClient().finishPasskeyRegistration({
+        sessionToken: 'sess-1',
+        ceremonyId: 'cer-1',
+        attestationJson: new TextEncoder().encode('{}'),
+      });
+
+      expect(result.credentialId).toBe('cred-2');
+      expect(result.recoveryCodes).toBeUndefined();
+    });
+  });
+
   it.each([
     [400, Code.InvalidArgument],
     [401, Code.Unauthenticated],

@@ -72,6 +72,22 @@ const mockSessionResponse = (): AuthSessionResponse => ({
 const generateRecoveryCodes = (): string[] =>
   Array.from({ length: 8 }, () => uuidv4().replace(/-/g, '').slice(0, 10));
 
+// pact-auth issues recovery codes exactly once per account - the first time
+// it confirms a TOTP enrollment, finishes a passkey registration, or
+// answers an explicit regenerate call with no prior batch on file. Every
+// other Regenerate/TOTP-confirm call after that mints a fresh batch too
+// (that's their whole point), but passkey registration only mints one the
+// very first time - see the passkeys/register/finish handler below.
+const recoveryCodesIssued = (): boolean =>
+  db.authRecoveryCodesState.findFirst(() => true)?.issued ?? false;
+
+const markRecoveryCodesIssued = (): void => {
+  db.authRecoveryCodesState.update(
+    () => true,
+    (s) => ({ ...s, issued: true })
+  );
+};
+
 export const handlers: RequestHandler[] = [
   http.post('*/v1/auth/login', async ({ request }) => {
     const body = (await request.json()) as AuthLoginRequest;
@@ -214,6 +230,7 @@ export const handlers: RequestHandler[] = [
       (f) => f.factorId === body.factorId,
       (f) => ({ ...f, verified: true })
     );
+    markRecoveryCodesIssued();
 
     return HttpResponse.json({
       recoveryCodes: generateRecoveryCodes(),
@@ -233,11 +250,13 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json({});
   }),
 
-  http.post('*/v1/auth/mfa/recovery-codes', () =>
-    HttpResponse.json({
+  http.post('*/v1/auth/mfa/recovery-codes', () => {
+    markRecoveryCodesIssued();
+
+    return HttpResponse.json({
       recoveryCodes: generateRecoveryCodes(),
-    } satisfies AuthRecoveryCodesResponse)
-  ),
+    } satisfies AuthRecoveryCodesResponse);
+  }),
 
   // rp.id / rpId are deliberately omitted below - the WebAuthn spec
   // defaults them to the calling origin's effective domain, which keeps
@@ -270,6 +289,12 @@ export const handlers: RequestHandler[] = [
   // authenticator (none is wired into dev:mock), so this only ever fires
   // under an automated test harness driving a virtual authenticator. A
   // fresh passkey row is enough to keep that path working end to end.
+  //
+  // PACT-714: mirrors pact-auth only issuing recovery codes here the first
+  // time an account has none at all - recoveryCodes is entirely absent
+  // (not an empty array) once markRecoveryCodesIssued() has fired, whether
+  // that happened via an earlier passkey enrollment, a TOTP confirm, or an
+  // explicit regenerate call.
   http.post('*/v1/auth/passkeys/register/finish', () => {
     const passkey = db.authPasskeys.create({
       passkeyId: uuidv4(),
@@ -277,8 +302,12 @@ export const handlers: RequestHandler[] = [
       lastUsedAtUnix: 0,
     });
 
+    const alreadyIssued = recoveryCodesIssued();
+    if (!alreadyIssued) markRecoveryCodesIssued();
+
     return HttpResponse.json({
       credentialId: passkey.passkeyId,
+      ...(alreadyIssued ? {} : { recoveryCodes: generateRecoveryCodes() }),
     } satisfies AuthFinishPasskeyRegistrationResponse);
   }),
 

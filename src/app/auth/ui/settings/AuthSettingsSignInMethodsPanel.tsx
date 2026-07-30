@@ -30,13 +30,17 @@ export const AuthSettingsSignInMethodsPanel = ({
   const refresh = () => startTransition(() => router.refresh());
 
   const hasTotp = factors.some((f) => f.type.toLowerCase() === 'totp');
+  const hasPasskey = passkeys.length > 0;
 
   return (
     <div className="flex flex-col gap-6">
       <AuthSettingsPasskeysCard passkeys={passkeys} onChanged={refresh} />
-      <AuthSettingsConnectedAccountsCard identities={identities} onChanged={refresh} />
+      <AuthSettingsConnectedAccountsCard
+        identities={identities}
+        onChanged={refresh}
+      />
       <AuthSettingsTwoFactorCard factors={factors} onChanged={refresh} />
-      <AuthSettingsRecoveryCodesCard hasTotp={hasTotp} />
+      <AuthSettingsRecoveryCodesCard canGenerate={hasTotp || hasPasskey} />
       {pending && (
         <span className="sr-only" aria-live="polite">
           Refreshing…

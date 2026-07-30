@@ -1,3 +1,4 @@
+export { triggerDownload } from './download';
 export {
   isDemo,
   isLocalDevelopment,

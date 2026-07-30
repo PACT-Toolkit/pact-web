@@ -351,7 +351,7 @@ export const enrollPasskey = async ({
   label,
 }: {
   label: string;
-}): Promise<{ credentialId: string }> => {
+}): Promise<{ credentialId: string; recoveryCodes?: string[] }> => {
   if (!isWebAuthnSupported()) {
     throw new PasskeyError(
       'unsupported',
@@ -408,7 +408,10 @@ export const enrollPasskey = async ({
     );
   }
 
-  return (await finishRes.json()) as { credentialId: string };
+  return (await finishRes.json()) as {
+    credentialId: string;
+    recoveryCodes?: string[];
+  };
 };
 
 // In-process pubsub so React subscribers (`usePasskeyPromptHidden`)
