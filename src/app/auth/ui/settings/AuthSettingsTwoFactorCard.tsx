@@ -4,6 +4,7 @@ import { Plus, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 import useSWRMutation from 'swr/mutation';
 
+import { hasVerifiedTotpFactor } from '@/src/app/auth/domain/auth_settings_factors';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -57,9 +58,7 @@ export const AuthSettingsTwoFactorCard = ({ factors, onChanged }: Props) => {
     }
   };
 
-  const hasVerifiedTotp = factors.some(
-    (f) => f.type.toLowerCase() === 'totp' && f.verified
-  );
+  const hasVerifiedTotp = hasVerifiedTotpFactor(factors);
 
   return (
     <Card>
