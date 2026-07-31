@@ -32,6 +32,7 @@ import type {
   AuthLoginRequest,
   AuthPasskeyCeremonyResponse,
   AuthRecoveryCodesResponse,
+  AuthRefreshSessionRequest,
   AuthRegisterRequest,
   AuthRenamePasskeyRequest,
   AuthRequestPasswordResetRequest,
@@ -263,6 +264,16 @@ import {
   getSessionResponse,
   getSession,
   getGetSessionKey,
+  refreshSessionResponse200,
+  refreshSessionResponse400,
+  refreshSessionResponse401,
+  refreshSessionResponseSuccess,
+  refreshSessionResponseError,
+  getRefreshSessionUrl,
+  refreshSessionResponse,
+  refreshSession,
+  getRefreshSessionMutationFetcher,
+  getRefreshSessionMutationKey,
   beginTOTPEnrollmentResponse200,
   beginTOTPEnrollmentResponse401,
   beginTOTPEnrollmentResponseSuccess,
@@ -1041,6 +1052,36 @@ export const useGetSession = <TError = Promise<string>>(options?: {
     swrFn,
     swrOptions
   );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type RefreshSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof refreshSession>>
+>;
+
+/**
+ * @summary Redeem a refresh token for a new session
+ */
+export const useRefreshSession = <TError = Promise<string>>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof refreshSession>>,
+    TError,
+    Key,
+    AuthRefreshSessionRequest | undefined,
+    Awaited<ReturnType<typeof refreshSession>>
+  > & { swrKey?: string };
+  fetch?: RequestInit;
+}) => {
+  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getRefreshSessionMutationKey();
+  const swrFn = getRefreshSessionMutationFetcher(fetchOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
   return {
     swrKey,

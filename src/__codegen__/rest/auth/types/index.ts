@@ -30,6 +30,7 @@ export * from './authPasskeyCeremonyResponse';
 export * from './authPasskeyCeremonyResponseOptionsJson';
 export * from './authPasskeyResponse';
 export * from './authRecoveryCodesResponse';
+export * from './authRefreshSessionRequest';
 export * from './authRegisterRequest';
 export * from './authRenamePasskeyRequest';
 export * from './authRequestPasswordResetRequest';

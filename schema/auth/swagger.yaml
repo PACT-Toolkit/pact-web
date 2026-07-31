@@ -154,6 +154,11 @@ definitions:
                     type: string
                 type: array
         type: object
+    auth.RefreshSessionRequest:
+        properties:
+            refreshToken:
+                type: string
+        type: object
     auth.RegisterRequest:
         properties:
             displayName:
@@ -848,6 +853,39 @@ paths:
             security:
                 - Bearer: []
             summary: Introspect the bearer token's session
+            tags:
+                - auth
+    /v1/auth/session/refresh:
+        post:
+            consumes:
+                - application/json
+            operationId: refreshSession
+            parameters:
+                - description: Refresh token (primary channel)
+                  in: header
+                  name: X-Pact-Refresh-Token
+                  type: string
+                - description: Refresh token, read only when the header is absent
+                  in: body
+                  name: body
+                  schema:
+                    $ref: '#/definitions/auth.RefreshSessionRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/auth.SessionResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        type: string
+                "401":
+                    description: missing, invalid, or reused refresh token
+                    schema:
+                        type: string
+            summary: Redeem a refresh token for a new session
             tags:
                 - auth
     /v1/auth/totp/enroll/begin:

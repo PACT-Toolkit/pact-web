@@ -28,6 +28,7 @@ import type {
   AuthLoginRequest,
   AuthPasskeyCeremonyResponse,
   AuthRecoveryCodesResponse,
+  AuthRefreshSessionRequest,
   AuthRegisterRequest,
   AuthRenamePasskeyRequest,
   AuthRequestPasswordResetRequest,
@@ -1544,6 +1545,73 @@ export const getSession = async (
 
 export const getGetSessionKey = () =>
   [`/api/pact/gateway/v1/auth/session`] as const;
+
+export type refreshSessionResponse200 = {
+  data: AuthSessionResponse;
+  status: 200;
+};
+
+export type refreshSessionResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type refreshSessionResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type refreshSessionResponseSuccess = refreshSessionResponse200 & {
+  headers: Headers;
+};
+
+export type refreshSessionResponseError = (
+  | refreshSessionResponse400
+  | refreshSessionResponse401
+) & {
+  headers: Headers;
+};
+
+export type refreshSessionResponse =
+  | refreshSessionResponseSuccess
+  | refreshSessionResponseError;
+
+export const getRefreshSessionUrl = () => {
+  return `/api/pact/gateway/v1/auth/session/refresh`;
+};
+
+/**
+ * @summary Redeem a refresh token for a new session
+ */
+export const refreshSession = async (
+  authRefreshSessionRequest?: AuthRefreshSessionRequest,
+  options?: RequestInit
+): Promise<refreshSessionResponse> => {
+  const res = await fetch(getRefreshSessionUrl(), {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(authRefreshSessionRequest),
+  });
+
+  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
+
+  const data: refreshSessionResponse['data'] = body ? JSON.parse(body) : {};
+  return {
+    data,
+    status: res.status,
+    headers: res.headers,
+  } as refreshSessionResponse;
+};
+
+export const getRefreshSessionMutationFetcher = (options?: RequestInit) => {
+  return (_: Key, { arg }: { arg: AuthRefreshSessionRequest | undefined }) => {
+    return refreshSession(arg, options);
+  };
+};
+
+export const getRefreshSessionMutationKey = () =>
+  [`/api/pact/gateway/v1/auth/session/refresh`] as const;
 
 export type beginTOTPEnrollmentResponse200 = {
   data: AuthBeginTOTPEnrollmentResponse;

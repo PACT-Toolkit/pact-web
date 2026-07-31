@@ -193,6 +193,25 @@ export const handlers: RequestHandler[] = [
 
   http.post('*/v1/auth/logout', () => HttpResponse.json({})),
 
+  // PACT-726: bearer-less redemption of the refresh cookie - proxy.ts calls
+  // this directly (fetch, not through PactAuthClient) when a page
+  // navigation finds pact_session missing but pact_refresh_token present.
+  // Unreachable via the running app in dev:mock (isMock() short-circuits
+  // proxy.ts before it ever gets here - see proxy.ts's own docblock), but
+  // exercised directly by src/lib/proxy/refresh_session.test.ts's fetch
+  // stub and kept here for parity with every other auth endpoint's mock
+  // coverage, and in case that short-circuit is ever relaxed.
+  http.post('*/v1/auth/session/refresh', ({ request }) => {
+    if (!request.headers.get('x-pact-refresh-token')) {
+      return HttpResponse.json(
+        { code: 'unauthenticated', error: 'missing refresh token' },
+        { status: 401 }
+      );
+    }
+
+    return HttpResponse.json(mockSessionResponse());
+  }),
+
   http.get('*/v1/auth/identities', () =>
     HttpResponse.json({
       identities: db.authIdentities.getAll(),
