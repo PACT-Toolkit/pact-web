@@ -19,7 +19,7 @@ import {
   SidebarMenuSubItem,
 } from '@/src/components/ui/sidebar';
 
-export type NavMainItem = {
+export type NavSectionItem = {
   title: string;
   url: string;
   icon?: LucideIcon;
@@ -30,10 +30,16 @@ export type NavMainItem = {
   }[];
 };
 
-export const NavMain = ({ items }: { items: NavMainItem[] }) => {
+export const NavSection = ({
+  label,
+  items,
+}: {
+  label: string;
+  items: NavSectionItem[];
+}) => {
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) =>
           item.items && item.items.length > 0 ? (
@@ -47,7 +53,7 @@ export const NavMain = ({ items }: { items: NavMainItem[] }) => {
   );
 };
 
-const FlatItem = ({ item }: { item: NavMainItem }) => {
+const FlatItem = ({ item }: { item: NavSectionItem }) => {
   return (
     <SidebarMenuItem>
       <SidebarMenuButton asChild tooltip={item.title} isActive={item.isActive}>
@@ -60,7 +66,7 @@ const FlatItem = ({ item }: { item: NavMainItem }) => {
   );
 };
 
-const CollapsibleItem = ({ item }: { item: NavMainItem }) => {
+const CollapsibleItem = ({ item }: { item: NavSectionItem }) => {
   return (
     <Collapsible
       asChild

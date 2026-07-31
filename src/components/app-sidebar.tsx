@@ -1,27 +1,18 @@
 'use client';
 
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
   BrainCircuit,
-  Command,
   Eraser,
   Files,
   FlaskConical,
-  Frame,
   Gauge,
-  GalleryVerticalEnd,
   KeyRound,
   LayoutDashboard,
-  Map,
-  PieChart,
   Radar,
   Scale,
   ScrollText,
   Settings2,
   ShieldCheck,
-  SquareTerminal,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import * as React from 'react';
@@ -31,11 +22,10 @@ import {
   useGetAccountProfile,
 } from '@/src/__codegen__/rest/account';
 import { MockUserTypeSwitcher } from '@/src/components/mock-user-type-switcher';
-import { NavMain, type NavMainItem } from '@/src/components/nav-main';
-import { NavProjects } from '@/src/components/nav-projects';
+import { NavSection, type NavSectionItem } from '@/src/components/nav-section';
 import { NavUser } from '@/src/components/nav-user';
+import { SidebarBrand } from '@/src/components/sidebar-brand';
 import { buildNavUser } from '@/src/components/sidebar-helpers';
-import { TeamSwitcher } from '@/src/components/team-switcher';
 import {
   Sidebar,
   SidebarContent,
@@ -44,17 +34,10 @@ import {
   SidebarRail,
 } from '@/src/components/ui/sidebar';
 
-const teams = [
-  { name: 'Acme Inc', logo: GalleryVerticalEnd, plan: 'Enterprise' },
-  { name: 'Acme Corp.', logo: AudioWaveform, plan: 'Startup' },
-  { name: 'Evil Corp.', logo: Command, plan: 'Free' },
-];
-
-const projects = [
-  { name: 'Design Engineering', url: '#', icon: Frame },
-  { name: 'Sales & Marketing', url: '#', icon: PieChart },
-  { name: 'Travel', url: '#', icon: Map },
-];
+type NavSectionData = {
+  label: string;
+  items: NavSectionItem[];
+};
 
 const isRouteActive = (pathname: string, url: string) => {
   if (url === '/') {
@@ -64,115 +47,109 @@ const isRouteActive = (pathname: string, url: string) => {
   return pathname === url || pathname.startsWith(`${url}/`);
 };
 
-const buildNavMain = (pathname: string): NavMainItem[] => [
+const buildNavSections = (pathname: string): NavSectionData[] => [
   {
-    title: 'Dashboard',
-    url: '/dashboard',
-    icon: LayoutDashboard,
-    isActive: isRouteActive(pathname, '/dashboard'),
-  },
-  {
-    title: 'Files',
-    url: '/files',
-    icon: Files,
-    isActive: isRouteActive(pathname, '/files'),
-  },
-  {
-    title: 'Filter decisions',
-    url: '/filter',
-    icon: ShieldCheck,
-    isActive: pathname === '/filter',
-  },
-  {
-    title: 'Classifier',
-    url: '/classifier',
-    icon: BrainCircuit,
-    isActive: isRouteActive(pathname, '/classifier'),
-  },
-  {
-    title: 'Consensus',
-    url: '/consensus',
-    icon: Scale,
-    isActive: isRouteActive(pathname, '/consensus'),
-  },
-  {
-    title: 'Redactor',
-    url: '/redactor',
-    icon: Eraser,
-    isActive: isRouteActive(pathname, '/redactor'),
-  },
-  {
-    title: 'Test lab',
-    url: '/test-lab',
-    icon: FlaskConical,
-    isActive: isRouteActive(pathname, '/test-lab'),
-  },
-  {
-    title: 'Policy',
-    url: '/policy',
-    icon: KeyRound,
-    isActive: isRouteActive(pathname, '/policy'),
-  },
-  {
-    title: 'Gateway',
-    url: '/gateway',
-    icon: Radar,
-    isActive: isRouteActive(pathname, '/gateway'),
-  },
-  {
-    title: 'Benchmark',
-    url: '/benchmark',
-    icon: Gauge,
-    isActive: isRouteActive(pathname, '/benchmark'),
-  },
-  {
-    title: 'Activity',
-    url: '/audit',
-    icon: ScrollText,
-    isActive: isRouteActive(pathname, '/audit'),
-  },
-  {
-    title: 'Settings',
-    url: '/settings/account',
-    icon: Settings2,
-    isActive: isRouteActive(pathname, '/settings'),
+    label: 'Overview',
     items: [
-      { title: 'Profile', url: '/settings/account' },
-      { title: 'Preferences', url: '/settings/account/preferences' },
-      { title: 'Consents', url: '/settings/account/consents' },
-      { title: 'Sign-in methods', url: '/settings/security' },
-      { title: 'Danger zone', url: '/settings/account/danger' },
+      {
+        title: 'Dashboard',
+        url: '/dashboard',
+        icon: LayoutDashboard,
+        isActive: isRouteActive(pathname, '/dashboard'),
+      },
+      {
+        title: 'Activity',
+        url: '/audit',
+        icon: ScrollText,
+        isActive: isRouteActive(pathname, '/audit'),
+      },
     ],
   },
   {
-    title: 'Playground',
-    url: '#',
-    icon: SquareTerminal,
+    label: 'Pipeline',
     items: [
-      { title: 'History', url: '#' },
-      { title: 'Starred', url: '#' },
-      { title: 'Settings', url: '#' },
+      {
+        title: 'Gateway',
+        url: '/gateway',
+        icon: Radar,
+        isActive: isRouteActive(pathname, '/gateway'),
+      },
+      {
+        title: 'Filter decisions',
+        url: '/filter',
+        icon: ShieldCheck,
+        isActive: pathname === '/filter',
+      },
+      {
+        title: 'Classifier',
+        url: '/classifier',
+        icon: BrainCircuit,
+        isActive: isRouteActive(pathname, '/classifier'),
+      },
+      {
+        title: 'Consensus',
+        url: '/consensus',
+        icon: Scale,
+        isActive: isRouteActive(pathname, '/consensus'),
+      },
+      {
+        title: 'Redactor',
+        url: '/redactor',
+        icon: Eraser,
+        isActive: isRouteActive(pathname, '/redactor'),
+      },
     ],
   },
   {
-    title: 'Models',
-    url: '#',
-    icon: Bot,
+    label: 'Governance',
     items: [
-      { title: 'Genesis', url: '#' },
-      { title: 'Explorer', url: '#' },
-      { title: 'Quantum', url: '#' },
+      {
+        title: 'Policy',
+        url: '/policy',
+        icon: KeyRound,
+        isActive: isRouteActive(pathname, '/policy'),
+      },
+      {
+        title: 'Files',
+        url: '/files',
+        icon: Files,
+        isActive: isRouteActive(pathname, '/files'),
+      },
     ],
   },
   {
-    title: 'Documentation',
-    url: '#',
-    icon: BookOpen,
+    label: 'Evaluation',
     items: [
-      { title: 'Introduction', url: '#' },
-      { title: 'Get Started', url: '#' },
-      { title: 'Tutorials', url: '#' },
-      { title: 'Changelog', url: '#' },
+      {
+        title: 'Test lab',
+        url: '/test-lab',
+        icon: FlaskConical,
+        isActive: isRouteActive(pathname, '/test-lab'),
+      },
+      {
+        title: 'Benchmark',
+        url: '/benchmark',
+        icon: Gauge,
+        isActive: isRouteActive(pathname, '/benchmark'),
+      },
+    ],
+  },
+  {
+    label: 'General',
+    items: [
+      {
+        title: 'Settings',
+        url: '/settings/account',
+        icon: Settings2,
+        isActive: isRouteActive(pathname, '/settings'),
+        items: [
+          { title: 'Profile', url: '/settings/account' },
+          { title: 'Preferences', url: '/settings/account/preferences' },
+          { title: 'Consents', url: '/settings/account/consents' },
+          { title: 'Sign-in methods', url: '/settings/security' },
+          { title: 'Danger zone', url: '/settings/account/danger' },
+        ],
+      },
     ],
   },
 ];
@@ -187,16 +164,24 @@ export const AppSidebar = ({ userId, ...props }: AppSidebarProps) => {
   const profile: AccountProfileResponse | undefined =
     query.data?.status === 200 ? query.data.data : undefined;
   const isLoading = query.isLoading;
-  const navMain = React.useMemo(() => buildNavMain(pathname), [pathname]);
+  const navSections = React.useMemo(
+    () => buildNavSections(pathname),
+    [pathname]
+  );
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={teams} />
+        <SidebarBrand />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} />
-        <NavProjects projects={projects} />
+        {navSections.map((section) => (
+          <NavSection
+            key={section.label}
+            label={section.label}
+            items={section.items}
+          />
+        ))}
         <MockUserTypeSwitcher />
       </SidebarContent>
       <SidebarFooter>
