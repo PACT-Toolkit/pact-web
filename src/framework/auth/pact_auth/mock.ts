@@ -55,13 +55,20 @@ export const mockMfaRequiredResponse = (): NextResponse => {
   return res;
 };
 
+// The one session token dev:mock ever hands out. Also the literal
+// src/app/auth/mock/data/auth.ts's MOCK_SESSION_TOKEN carries independently
+// (that module runs in the browser bundle too and can't import this
+// 'server-only' file) and the value factors.ts falls back to for a fresh
+// dev:mock session that never went through a cookie-setting round trip.
+export const MOCK_SESSION_TOKEN = 'mock-session-token';
+
 // The synthetic session both mock login-completion branches write
 // (/api/auth/mfa/verify on the sentinel challenge token, the OAuth
 // callback in dev:mock). One-year maxAge so nothing treats the demo
 // session as expiring; secure:false because dev:mock runs on plain http.
 export const mockSessionCookie = () => ({
   name: SESSION_COOKIE,
-  value: 'mock-session-token',
+  value: MOCK_SESSION_TOKEN,
   httpOnly: true,
   sameSite: 'lax' as const,
   secure: false,

@@ -2,13 +2,33 @@ import 'server-only';
 
 import { cookies } from 'next/headers';
 
+import { isMock } from '@/src/framework/helpers/environment';
+
 import { getPactAuthClient } from './client';
 import { SESSION_COOKIE } from './cookies';
+import { MOCK_SESSION_TOKEN } from './mock';
 
 // Server-only readers for the security settings page. Each function fails
 // closed: when pact-auth is unreachable or the session is invalid we
 // return an empty list and let the page render in an unconfigured state
 // rather than 500 the whole route.
+
+// dev:mock's auto-login (validateSessionFromCookies in session.ts) never
+// sets a real pact_session cookie - it short-circuits straight to a
+// synthetic session, so a fresh dev:mock tab that never hit /login or the
+// OAuth callback has no cookie for the reads below to find. Every reader
+// here falls back to the same MOCK_SESSION_TOKEN the auth MSW handlers
+// mint (src/app/auth/mock/handlers/auth.ts) so the pact-auth client call
+// still fires - those handlers don't validate the token, they just answer
+// from the MockRepository rows seeded by createAuthMockData - so the
+// settings page shows the seeded passkey/identity/factor rows without a
+// manual login round trip. This mirrors session.ts's own isMock() early
+// return and never touches the real (non-mock) cookie path.
+const currentSessionToken = async (): Promise<string | undefined> => {
+  if (isMock()) return MOCK_SESSION_TOKEN;
+
+  return (await cookies()).get(SESSION_COOKIE)?.value;
+};
 
 export type MfaFactorView = {
   factorId: string;
@@ -23,7 +43,7 @@ export type MfaFactorView = {
 // UI surfaces them in a dedicated card via listPasskeys, so we filter
 // them out here to avoid double-counting.
 export const listMfaFactors = async (): Promise<MfaFactorView[]> => {
-  const sessionToken = (await cookies()).get(SESSION_COOKIE)?.value;
+  const sessionToken = await currentSessionToken();
   if (!sessionToken) return [];
 
   try {
@@ -51,7 +71,7 @@ export type PasskeyView = {
 };
 
 export const listPasskeys = async (): Promise<PasskeyView[]> => {
-  const sessionToken = (await cookies()).get(SESSION_COOKIE)?.value;
+  const sessionToken = await currentSessionToken();
   if (!sessionToken) return [];
 
   try {
@@ -84,7 +104,7 @@ export const hasWebAuthnFactor = async (): Promise<boolean> => {
   // factor we might have missed (e.g. WebAuthn-as-MFA enrollments). This
   // makes the banner stop nudging users who set up a security key as a
   // second factor without going through the passkey flow.
-  const sessionToken = (await cookies()).get(SESSION_COOKIE)?.value;
+  const sessionToken = await currentSessionToken();
   if (!sessionToken) return false;
   try {
     const resp = await getPactAuthClient().listMfaFactors({ sessionToken });
@@ -107,7 +127,7 @@ export type OAuthIdentityView = {
 };
 
 export const listIdentities = async (): Promise<OAuthIdentityView[]> => {
-  const sessionToken = (await cookies()).get(SESSION_COOKIE)?.value;
+  const sessionToken = await currentSessionToken();
   if (!sessionToken) return [];
 
   try {
