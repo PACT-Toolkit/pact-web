@@ -17,15 +17,23 @@ export const REFRESH_TOKEN_COOKIE = 'pact_refresh_token';
 // The refresh token itself has no fixed expiry pact-web can read off a
 // response - it's single-use and stays valid until pact-auth's underlying
 // session goes idle or hits its absolute cap (SESSION_IDLE_TTL_HOURS,
-// default 24h; see pact-auth/internal/app/config.go). We can't mirror the
-// short-lived session token's own expiry here - that would make the
-// refresh cookie vanish almost as fast as the session token it exists to
-// renew, defeating the point of PACT-705 for anyone who returns after the
-// token TTL but before the session itself goes idle. Instead the cookie
-// caps out at the idle-TTL default and slides forward on every write
-// (initial login, and every rotation the gateway proxy performs) because
+// default 168h/7d as of PACT-727; see pact-auth/internal/app/config.go). We
+// can't mirror the short-lived session token's own expiry here - that would
+// make the refresh cookie vanish almost as fast as the session token it
+// exists to renew, defeating the point of PACT-705/PACT-726 for anyone who
+// returns after the token TTL but before the session itself goes idle.
+// Instead the cookie caps out at the idle-TTL default and slides forward on
+// every write (initial login, every rotation the gateway proxy performs,
+// and every silent renewal proxy.ts performs on page navigation) because
 // callers set it with maxAge, not a fixed expires. Defined here (rather
 // than only in the auth framework) because the gateway proxy also needs
 // it to rotate the cookie and the lib layer cannot import framework
 // modules.
-export const REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS = 24 * 60 * 60;
+//
+// Kept in lockstep with pact-auth's SESSION_IDLE_TTL_HOURS default - bumping
+// one without the other either strands users at the shorter of the two
+// (cookie survives but pact-auth already reaped the session) or lets the
+// cookie outlive a session that's already gone (harmless - a dead refresh
+// token just fails at redemption time - but pointless to widen further than
+// the value it fronts).
+export const REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
