@@ -11,25 +11,24 @@ flowchart TB
 
     subgraph web["pact-web (Next.js)"]
         authroutes["<b>(auth) route group</b><br/><i>app/(auth)</i><br/>login, register, forgot/reset password,<br/>verify email - rendered logged-out"]:::comp
-        approutes["<b>(app) route group</b><br/><i>app/(app)</i><br/>dashboard, test-lab, per-service consoles (filter, redactor,<br/>policy, audit, files, benchmark, classifier, consensus, gateway),<br/>settings - every layout validates the session server-side"]:::comp
-        authapi["<b>Auth route handlers</b><br/><i>app/api/auth/*</i><br/>login / logout / mfa / password flows; call pact-auth over<br/>Connect RPC and set the pact_session + pact_refresh_token cookies"]:::comp
-        proxy["<b>Gateway edge proxies</b><br/><i>app/api/pact/* + app/v1/* via src/lib/proxy/proxy_to_gateway.ts</i><br/>one shared core: translates the pact_session cookie into<br/>Authorization: Bearer, forwards to pact-gateway, propagates<br/>rotated session tokens back as cookies"]:::comp
-        session["<b>Session validation</b><br/><i>src/framework/auth/pact_auth/session.ts</i><br/>requireSession / validateSessionFromCookies - calls pact-auth<br/>ValidateSession on every invocation, fail-closed; middleware<br/>cookie checks are an optimization, not the barrier"]:::comp
+        approutes["<b>(app) route group</b><br/><i>app/(app)</i><br/>sidebar sections: Overview (dashboard, activity), Pipeline<br/>(gateway, filter, classifier, consensus, redactor), Governance<br/>(policy, files), Evaluation (test lab, benchmark), General<br/>(settings) - every layout validates the session server-side"]:::comp
+        authapi["<b>Auth route handlers</b><br/><i>app/api/auth/*</i><br/>login / logout / mfa / password flows; call pact-gateway's<br/>/v1/auth/* REST proxy and set the pact_session + pact_refresh_token cookies"]:::comp
+        proxy["<b>Gateway edge proxies</b><br/><i>app/api/pact/* + app/v1/* via src/lib/proxy/proxy_to_gateway.ts</i><br/>one shared core: translates the pact_session cookie into<br/>Authorization: Bearer, forwards to pact-gateway, propagates<br/>both rotated cookies (session + refresh) back"]:::comp
+        session["<b>Session validation</b><br/><i>src/framework/auth/pact_auth/session.ts</i><br/>requireSession / validateSessionFromCookies - calls pact-gateway's<br/>/v1/auth/session on every invocation, fail-closed; the edge<br/>middleware also redeems refresh tokens, but is never the barrier"]:::comp
         features["<b>Feature slices</b><br/><i>src/app/{feature}/{domain, ui, mock, test}</i><br/>one slice per console; domain/ is headless (types, helpers,<br/>hooks), ui/ renders, mock/ seeds MSW, test/ is canonical for tests"]:::comp
-        codegen["<b>Generated clients</b><br/><i>src/__codegen__/{proto, rest, schema}</i><br/>Connect client for pact-auth; per-tag REST fetchers generated<br/>from the gateway OpenAPI spec; vendored decision-schema<br/>artifacts - never hand-edited"]:::comp
+        codegen["<b>Generated clients</b><br/><i>src/__codegen__/{proto, rest, schema}</i><br/>proto stubs are used only by e2e test seeding, not the app;<br/>per-tag REST fetchers generated from the gateway OpenAPI<br/>spec; vendored decision-schema artifacts - never hand-edited"]:::comp
         msw["<b>MSW mock layer</b><br/><i>src/framework/msw</i><br/>dev:mock runs the full UI against handlers seeded from<br/>feature mock/ modules; fetch gate holds requests<br/>until the worker is ready"]:::comp
         fw["<b>Framework</b><br/><i>src/framework/{http, swr, theme, motion, helpers}</i><br/>Axios base, SWR config, theming, motion<br/>presets, environment helpers"]:::comp
     end
 
     gw["<b>pact-gateway</b><br/><i>REST API</i>"]:::ext
-    auth["<b>pact-auth</b><br/><i>Connect RPC</i>"]:::ext
 
     user -->|logged-out flows| authroutes
     user -->|console| approutes
     authroutes -->|form posts| authapi
-    authapi -->|"StartLogin / Register<br/>/ ... (Connect RPC)"| auth
+    authapi -->|"Login / Register<br/>/ ... (REST)"| gw
     approutes -->|requireSession per request| session
-    session -->|ValidateSession| auth
+    session -->|"GET /v1/auth/session<br/>(REST)"| gw
     approutes -->|compose| features
     features -->|generated hooks/fetchers| codegen
     codegen -->|fetch /api/pact/*| proxy
@@ -71,6 +70,23 @@ classDiagram
         rotates both cookies from x-pact-new-* response headers
         single shared core for every proxy route
     }
+    class redeemRefreshToken {
+        <<src/lib/proxy/refresh_session.ts>>
+        Edge middleware only - fires when the session
+        cookie is absent but the refresh cookie is present
+        single-flights by refresh token value, own Map
+        distinct from proxyToGateway's - the two never overlap
+        bearer-less POST /v1/auth/session/refresh
+        re-sets both cookies on success, null on any failure
+    }
+    class SessionCookieTTLs {
+        <<cookie lifetimes>>
+        pact_session - mirrors pact-auth's session expiry
+        pact_refresh_token - 7 day sliding maxAge, renewed
+        on every rotation and every silent renewal
+        pact_mfa_token - 5 minute TTL, capped to
+        pact-auth's MFA challenge window
+    }
     class FeatureSlice {
         <<convention>>
         domain/ headless types + hooks
@@ -92,11 +108,14 @@ classDiagram
     requireSession ..> validateSessionFromCookies
     validateSessionFromCookies ..> Session
     proxyToGateway ..> ProxyToGatewayOptions
+    proxyToGateway ..> SessionCookieTTLs : rotates both<br/>near expiry
+    redeemRefreshToken ..> SessionCookieTTLs : re-sets both<br/>on success
     FeatureSlice --> GeneratedRestClient : data via
     FeatureSlice --> DecisionSchema : decision payloads
 ```
 
 The cookie is never trusted directly: only what pact-auth's ValidateSession says about it counts, so a stale or forged cookie degrades to a login redirect rather than a stale identity.
+`redeemRefreshToken` is the silent-renewal path triggered by page navigation (see the dedicated sequence diagram below); `proxyToGateway`'s own rotation is triggered by a near-expiry API call. The two never fire on the same request - one requires the session cookie, the other requires its absence.
 
 ## Class diagram (C4 L4) - feature-slice anatomy
 
@@ -691,7 +710,7 @@ classDiagram
 ```
 
 The account settings forms pair `profileFormSchema` with the account tag's profile, preferences, consents, export, and erasure hooks.
-Auth's domain modules never touch the gateway proxy: the forms post to the `/api/auth/*` route handlers, which speak Connect RPC to pact-auth (see the component diagram), and `auth_broadcast` fans auth events out across open tabs.
+Auth's domain modules never touch the gateway proxy: the forms post to the `/api/auth/*` route handlers, which speak REST to pact-gateway's `/v1/auth/*` proxy (see the component diagram), and `auth_broadcast` fans auth events out across open tabs.
 
 ## Sequence - login
 
@@ -701,25 +720,51 @@ sequenceDiagram
     participant B as Browser
     participant L as /login page
     participant R as /api/auth/login
-    participant A as pact-auth
+    participant G as pact-gateway
     participant P as (app) layout
 
     B->>L: credentials
     L->>R: POST
-    R->>A: Login (Connect RPC)
+    R->>G: POST /v1/auth/login
     alt MFA required
-        A-->>R: challenge
-        R-->>L: MFA required
+        G-->>R: challenge
+        R-->>L: MFA required, Set-Cookie<br/>pact_mfa_token (5 min TTL)
         L-->>B: MFA step (factor selection + verify)
     else success
-        A-->>R: session + refresh token pair
-        R-->>L: Set-Cookie pact_session
+        G-->>R: session + refresh token pair
+        R-->>L: Set-Cookie pact_session +<br/>pact_refresh_token (7d sliding)
         L-->>B: redirect to /dashboard
     end
     B->>P: GET /dashboard
-    P->>A: ValidateSession (requireSession)
-    A-->>P: valid + userId
+    P->>G: GET /v1/auth/session (requireSession)
+    G-->>P: valid + userId
     P-->>B: rendered console
+```
+
+## Sequence - silent session renewal (page navigation)
+
+Distinct from the per-request rotation below: this fires in `proxy.ts` (Edge middleware) when the session cookie is missing on a page navigation but the refresh cookie is still present, rather than when a session cookie exists but is near expiry.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as Browser
+    participant M as proxy.ts (Edge)
+    participant G as pact-gateway
+
+    B->>M: page nav, no session cookie
+    alt refresh cookie present
+        M->>G: POST /v1/auth/session/refresh<br/>(bearer-less, single-flighted)
+        alt refresh valid
+            G-->>M: new session + refresh pair
+            M-->>B: request continues,<br/>both cookies re-set
+        else refresh invalid or expired
+            G-->>M: 400 / 401
+            M-->>B: clear both cookies,<br/>redirect to /login
+        end
+    else no refresh cookie
+        M-->>B: redirect to /login
+    end
 ```
 
 ## Sequence - proxied API call with session rotation
@@ -765,7 +810,10 @@ stateDiagram-v2
     active --> active : ValidateSession ok per<br/>request
     active --> rotated : near-expiry call<br/>returns new token pair
     rotated --> active : cookie replaced<br/>transparently
-    active --> logged_out : logout / expiry /<br/>revocation -<br/>fail-closed redirect
+    active --> renewing : page nav, session<br/>cookie expired
+    renewing --> active : refresh cookie valid -<br/>both cookies re-set
+    renewing --> logged_out : refresh invalid or<br/>absent - clear cookies
+    active --> logged_out : logout / revocation /<br/>expiry with no usable<br/>refresh cookie -<br/>fail-closed redirect
     note right of active
         every server
         render revalidates -
