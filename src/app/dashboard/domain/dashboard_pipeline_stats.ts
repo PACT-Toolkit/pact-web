@@ -183,10 +183,16 @@ export const useDashboardPipelineStats = (live: boolean) => {
     void statsQuery.mutate();
   };
 
+  // The two queries fail independently, and their consumers must not share
+  // one error flag: a stats-side failure (e.g. the real gateway's
+  // text/plain 403 body throwing in the generated fetcher's JSON.parse -
+  // see PACT-363's permission gate) would otherwise paint the live stream's
+  // "failed to load decisions" banner while the stream itself is healthy.
   return {
     stats,
     records,
-    error: Boolean(eventsQuery.error) || Boolean(statsQuery.error),
+    streamError: Boolean(eventsQuery.error),
+    statsError: Boolean(statsQuery.error),
     statsForbidden,
     isLoading: eventsQuery.isLoading || statsQuery.isLoading,
     isValidating: eventsQuery.isValidating || statsQuery.isValidating,

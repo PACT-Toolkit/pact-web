@@ -23,6 +23,7 @@ import {
   type LayerState,
   type RunStatus,
 } from '@/src/app/test_lab/ui/types';
+import { TRAFFIC_SOURCE_TEST_LAB } from '@/src/lib/decisions/traffic_source';
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -143,6 +144,7 @@ export function useTestLabRun() {
         const body: CheckInput = {
           content: inputText,
           kind: 'input',
+          traffic_source: TRAFFIC_SOURCE_TEST_LAB,
           _bypass_layers: bypassLayers,
         };
         const response = await checkContent(body);

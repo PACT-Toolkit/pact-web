@@ -21,6 +21,7 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { isMock, isProduction } from '@/src/framework/helpers/environment';
+import { TRAFFIC_SOURCE_TEST_LAB } from '@/src/lib/decisions/traffic_source';
 
 type ProbeStatus = 'idle' | 'running' | 'done' | 'error';
 
@@ -54,9 +55,13 @@ export const DashboardQuickProbe = ({
     resetSaveState();
 
     try {
+      // Attribution, not authorization (PACT-484): probes are synthetic
+      // traffic fired from the console, so they declare the same source the
+      // full Test Lab does and land in the dashboard's Test Lab bucket.
       const response = await checkContent({
         content: inputText,
         kind: 'input',
+        traffic_source: TRAFFIC_SOURCE_TEST_LAB,
       });
       if (response.status !== 200) {
         throw new Error(`probe failed (${response.status})`);

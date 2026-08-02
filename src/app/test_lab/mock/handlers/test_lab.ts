@@ -74,12 +74,24 @@ export const handlers: RequestHandler[] = [
     const body = (await request.json()) as {
       content?: string;
       kind?: string;
+      traffic_source?: string;
       _bypass_layers?: string[];
       external_refs?: CheckExternalRef[];
       spotlight_chunks?: CheckSpotlightChunk[];
     };
     const content = body.content ?? '';
     const bypass = body._bypass_layers ?? [];
+
+    // Mirrors pact-gateway's validateTrafficSource (PACT-484): a declared
+    // traffic_source must match the decisions schema's pattern or the whole
+    // request is rejected before any stage runs.
+    const trafficSource = body.traffic_source;
+    if (trafficSource && !/^[a-z0-9_-]{1,32}$/.test(trafficSource)) {
+      return HttpResponse.json(
+        { error: 'traffic_source: must match ^[a-z0-9_-]{1,32}$' },
+        { status: 400 }
+      );
+    }
 
     await new Promise((r) => setTimeout(r, 120 + Math.random() * 80));
 
@@ -191,8 +203,44 @@ export const handlers: RequestHandler[] = [
           )
         : undefined;
 
+    const requestId = `req-test-${uuidv4().slice(0, 6)}`;
+    const latencyMs = Math.floor(3 + Math.random() * 8);
+    const createdAt = new Date().toISOString();
+
+    // The real gateway publishes a pact.decisions audit event for every
+    // /v1/check (outbox -> Kafka -> pact-audit); mirror that here so a
+    // mock-mode probe or Test Lab run lands in the dashboard's live stream
+    // too, carrying the caller's declared traffic_source. Payload shape
+    // matches filter.ts's seeded rows plus the stage sub-objects this
+    // handler already computed for the response.
+    db.decisions.create({
+      requestId,
+      createdAt,
+      payloadJson: JSON.stringify({
+        request_id: requestId,
+        decision,
+        reason,
+        ...(trafficSource ? { traffic_source: trafficSource } : {}),
+        filter:
+          filterResult &&
+          (filterResult.verdict !== 'safe' || filterResult.ruleId)
+            ? {
+                verdict: filterResult.verdict,
+                rule_id: filterResult.ruleId,
+                shadow: false,
+              }
+            : undefined,
+        classifier: classifierResult
+          ? { label: classifierResult.label, score: classifierResult.score }
+          : undefined,
+        redactor: redactorResult,
+        latency_ms: latencyMs,
+        created_at: createdAt,
+      }),
+    });
+
     return HttpResponse.json({
-      request_id: `req-test-${uuidv4().slice(0, 6)}`,
+      request_id: requestId,
       decision,
       reason,
       // Modern builds set this alongside the `filter` sub-object below,
@@ -234,7 +282,7 @@ export const handlers: RequestHandler[] = [
       diagnostics: diagnosticsResult
         ? { causal_spans: diagnosticsResult }
         : undefined,
-      latency_ms: Math.floor(3 + Math.random() * 8),
+      latency_ms: latencyMs,
     });
   }),
 
