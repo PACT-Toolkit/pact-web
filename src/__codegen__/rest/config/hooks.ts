@@ -12,8 +12,6 @@ import useSWRMutation from 'swr/mutation';
 import type { Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
-import type { AxiosError, AxiosRequestConfig } from 'axios';
-
 import type {
   ConfigConfigResponse,
   ConfigEnforcementPatchRequest,
@@ -43,6 +41,10 @@ import {
   getPatchEnforcementMutationKey,
 } from './fetchers';
 
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export type GetConfigQueryResult = NonNullable<
   Awaited<ReturnType<typeof getConfig>>
 >;
@@ -50,19 +52,19 @@ export type GetConfigQueryResult = NonNullable<
 /**
  * @summary Get live enforcement config
  */
-export const useGetConfig = <TError = Promise<string>>(options?: {
+export const useGetConfig = <TError = string>(options?: {
   swr?: SWRConfiguration<Awaited<ReturnType<typeof getConfig>>, TError> & {
     swrKey?: Key;
     enabled?: boolean;
   };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ?? (() => (isEnabled ? getGetConfigKey() : null));
-  const swrFn = () => getConfig(fetchOptions);
+  const swrFn = () => getConfig(requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -83,7 +85,7 @@ export type PatchEnforcementMutationResult = NonNullable<
 /**
  * @summary Flip runtime enforcement mode
  */
-export const usePatchEnforcement = <TError = Promise<string>>(options?: {
+export const usePatchEnforcement = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof patchEnforcement>>,
     TError,
@@ -91,12 +93,12 @@ export const usePatchEnforcement = <TError = Promise<string>>(options?: {
     ConfigEnforcementPatchRequest,
     Awaited<ReturnType<typeof patchEnforcement>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getPatchEnforcementMutationKey();
-  const swrFn = getPatchEnforcementMutationFetcher(fetchOptions);
+  const swrFn = getPatchEnforcementMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

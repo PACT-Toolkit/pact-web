@@ -12,8 +12,6 @@ import useSWRMutation from 'swr/mutation';
 import type { Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
-import type { AxiosError, AxiosRequestConfig } from 'axios';
-
 import type {
   AuditAnnotateDecisionRequest,
   AuditAnnotateDecisionResponse,
@@ -78,6 +76,10 @@ import {
   getGetAuditStatsKey,
 } from './fetchers';
 
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export type AnnotateDecisionMutationResult = NonNullable<
   Awaited<ReturnType<typeof annotateDecision>>
 >;
@@ -85,7 +87,7 @@ export type AnnotateDecisionMutationResult = NonNullable<
 /**
  * @summary Record an operator annotation on a decision
  */
-export const useAnnotateDecision = <TError = Promise<string>>(options?: {
+export const useAnnotateDecision = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof annotateDecision>>,
     TError,
@@ -93,12 +95,12 @@ export const useAnnotateDecision = <TError = Promise<string>>(options?: {
     AuditAnnotateDecisionRequest,
     Awaited<ReturnType<typeof annotateDecision>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getAnnotateDecisionMutationKey();
-  const swrFn = getAnnotateDecisionMutationFetcher(fetchOptions);
+  const swrFn = getAnnotateDecisionMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -115,7 +117,7 @@ export type ListDecisionAnnotationsMutationResult = NonNullable<
 /**
  * @summary Batch-read operator annotations for a set of decisions
  */
-export const useListDecisionAnnotations = <TError = Promise<string>>(options?: {
+export const useListDecisionAnnotations = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof listDecisionAnnotations>>,
     TError,
@@ -123,12 +125,12 @@ export const useListDecisionAnnotations = <TError = Promise<string>>(options?: {
     AuditListDecisionAnnotationsRequest,
     Awaited<ReturnType<typeof listDecisionAnnotations>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getListDecisionAnnotationsMutationKey();
-  const swrFn = getListDecisionAnnotationsMutationFetcher(fetchOptions);
+  const swrFn = getListDecisionAnnotationsMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -145,23 +147,23 @@ export type GetAuditEventsQueryResult = NonNullable<
 /**
  * @summary Read the caller's audit log
  */
-export const useGetAuditEvents = <TError = Promise<string>>(
+export const useGetAuditEvents = <TError = string>(
   params?: GetAuditEventsParams,
   options?: {
     swr?: SWRConfiguration<
       Awaited<ReturnType<typeof getAuditEvents>>,
       TError
     > & { swrKey?: Key; enabled?: boolean };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getGetAuditEventsKey(params) : null));
-  const swrFn = () => getAuditEvents(params, fetchOptions);
+  const swrFn = () => getAuditEvents(params, requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -182,23 +184,23 @@ export type GetAuditPolicyEventsQueryResult = NonNullable<
 /**
  * @summary Read the caller's policy decisions
  */
-export const useGetAuditPolicyEvents = <TError = Promise<string>>(
+export const useGetAuditPolicyEvents = <TError = string>(
   params?: GetAuditPolicyEventsParams,
   options?: {
     swr?: SWRConfiguration<
       Awaited<ReturnType<typeof getAuditPolicyEvents>>,
       TError
     > & { swrKey?: Key; enabled?: boolean };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getGetAuditPolicyEventsKey(params) : null));
-  const swrFn = () => getAuditPolicyEvents(params, fetchOptions);
+  const swrFn = () => getAuditPolicyEvents(params, requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -219,23 +221,23 @@ export type GetAuditStatsQueryResult = NonNullable<
 /**
  * @summary Read aggregate decision stats for the pipeline dashboard
  */
-export const useGetAuditStats = <TError = Promise<string>>(
+export const useGetAuditStats = <TError = string>(
   params?: GetAuditStatsParams,
   options?: {
     swr?: SWRConfiguration<
       Awaited<ReturnType<typeof getAuditStats>>,
       TError
     > & { swrKey?: Key; enabled?: boolean };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getGetAuditStatsKey(params) : null));
-  const swrFn = () => getAuditStats(params, fetchOptions);
+  const swrFn = () => getAuditStats(params, requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,

@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-
 import type { Key } from 'swr';
 
 import type {
@@ -22,6 +20,10 @@ import type {
   GetAuditPolicyEventsParams,
   GetAuditStatsParams,
 } from './types';
+
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 export type annotateDecisionResponse200 = {
   data: AuditAnnotateDecisionResponse;
@@ -64,24 +66,17 @@ export const annotateDecision = async (
   auditAnnotateDecisionRequest: AuditAnnotateDecisionRequest,
   options?: RequestInit
 ): Promise<annotateDecisionResponse> => {
-  const res = await fetch(getAnnotateDecisionUrl(), {
+  return customFetch<annotateDecisionResponse>(getAnnotateDecisionUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(auditAnnotateDecisionRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: annotateDecisionResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as annotateDecisionResponse;
 };
 
-export const getAnnotateDecisionMutationFetcher = (options?: RequestInit) => {
+export const getAnnotateDecisionMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: AuditAnnotateDecisionRequest }) => {
     return annotateDecision(arg, options);
   };
@@ -132,27 +127,19 @@ export const listDecisionAnnotations = async (
   auditListDecisionAnnotationsRequest: AuditListDecisionAnnotationsRequest,
   options?: RequestInit
 ): Promise<listDecisionAnnotationsResponse> => {
-  const res = await fetch(getListDecisionAnnotationsUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(auditListDecisionAnnotationsRequest),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listDecisionAnnotationsResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as listDecisionAnnotationsResponse;
+  return customFetch<listDecisionAnnotationsResponse>(
+    getListDecisionAnnotationsUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(auditListDecisionAnnotationsRequest),
+    }
+  );
 };
 
 export const getListDecisionAnnotationsMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: AuditListDecisionAnnotationsRequest }) => {
     return listDecisionAnnotations(arg, options);
@@ -215,19 +202,10 @@ export const getAuditEvents = async (
   params?: GetAuditEventsParams,
   options?: RequestInit
 ): Promise<getAuditEventsResponse> => {
-  const res = await fetch(getGetAuditEventsUrl(params), {
+  return customFetch<getAuditEventsResponse>(getGetAuditEventsUrl(params), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getAuditEventsResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getAuditEventsResponse;
 };
 
 export const getGetAuditEventsKey = (params?: GetAuditEventsParams) =>
@@ -289,21 +267,13 @@ export const getAuditPolicyEvents = async (
   params?: GetAuditPolicyEventsParams,
   options?: RequestInit
 ): Promise<getAuditPolicyEventsResponse> => {
-  const res = await fetch(getGetAuditPolicyEventsUrl(params), {
-    ...options,
-    method: 'GET',
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getAuditPolicyEventsResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getAuditPolicyEventsResponse;
+  return customFetch<getAuditPolicyEventsResponse>(
+    getGetAuditPolicyEventsUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetAuditPolicyEventsKey = (
@@ -373,19 +343,10 @@ export const getAuditStats = async (
   params?: GetAuditStatsParams,
   options?: RequestInit
 ): Promise<getAuditStatsResponse> => {
-  const res = await fetch(getGetAuditStatsUrl(params), {
+  return customFetch<getAuditStatsResponse>(getGetAuditStatsUrl(params), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getAuditStatsResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getAuditStatsResponse;
 };
 
 export const getGetAuditStatsKey = (params?: GetAuditStatsParams) =>

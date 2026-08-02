@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-
 import type { Arguments, Key } from 'swr';
 
 import type {
@@ -19,6 +17,10 @@ import type {
   FilesRequestUploadResponse,
   GetFilesParams,
 } from './types';
+
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 export type getFilesResponse200 = {
   data: FilesListFilesResponse;
@@ -71,15 +73,10 @@ export const getFiles = async (
   params?: GetFilesParams,
   options?: RequestInit
 ): Promise<getFilesResponse> => {
-  const res = await fetch(getGetFilesUrl(params), {
+  return customFetch<getFilesResponse>(getGetFilesUrl(params), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getFilesResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as getFilesResponse;
 };
 
 export const getGetFilesKey = (params?: GetFilesParams) =>
@@ -132,24 +129,17 @@ export const postFiles = async (
   filesRequestUploadBody: FilesRequestUploadBody,
   options?: RequestInit
 ): Promise<postFilesResponse> => {
-  const res = await fetch(getPostFilesUrl(), {
+  return customFetch<postFilesResponse>(getPostFilesUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(filesRequestUploadBody),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: postFilesResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as postFilesResponse;
 };
 
-export const getPostFilesMutationFetcher = (options?: RequestInit) => {
+export const getPostFilesMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: FilesRequestUploadBody }) => {
     return postFiles(arg, options);
   };
@@ -199,29 +189,15 @@ export const deleteFilesId = async (
   id: string,
   options?: RequestInit
 ): Promise<deleteFilesIdResponse> => {
-  const res = await fetch(getDeleteFilesIdUrl(id), {
+  return customFetch<deleteFilesIdResponse>(getDeleteFilesIdUrl(id), {
     ...options,
     method: 'DELETE',
   });
-
-  const contentType = (res.headers.get('content-type') ?? '').toLowerCase();
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: deleteFilesIdResponse['data'] = body
-    ? contentType.includes('json')
-      ? JSON.parse(body)
-      : body
-    : undefined;
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as deleteFilesIdResponse;
 };
 
 export const getDeleteFilesIdMutationFetcher = (
   id: string,
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, __: { arg: Arguments }) => {
     return deleteFilesId(id, options);
@@ -272,19 +248,10 @@ export const getFilesId = async (
   id: string,
   options?: RequestInit
 ): Promise<getFilesIdResponse> => {
-  const res = await fetch(getGetFilesIdUrl(id), {
+  return customFetch<getFilesIdResponse>(getGetFilesIdUrl(id), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getFilesIdResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getFilesIdResponse;
 };
 
 export const getGetFilesIdKey = (id: string) =>
@@ -332,24 +299,15 @@ export const postFilesIdConfirm = async (
   id: string,
   options?: RequestInit
 ): Promise<postFilesIdConfirmResponse> => {
-  const res = await fetch(getPostFilesIdConfirmUrl(id), {
+  return customFetch<postFilesIdConfirmResponse>(getPostFilesIdConfirmUrl(id), {
     ...options,
     method: 'POST',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: postFilesIdConfirmResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as postFilesIdConfirmResponse;
 };
 
 export const getPostFilesIdConfirmMutationFetcher = (
   id: string,
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, __: { arg: Arguments }) => {
     return postFilesIdConfirm(id, options);

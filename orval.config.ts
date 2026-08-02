@@ -10,6 +10,10 @@ export default defineConfig({
       client: 'swr',
       baseUrl: '/api/pact/gateway/v1',
       override: {
+        mutator: {
+          path: './src/__codegen__/rest/custom_fetch.ts',
+          name: 'customFetch',
+        },
         query: {
           useQuery: true,
           useMutation: true,
@@ -27,6 +31,10 @@ export default defineConfig({
       client: 'swr',
       baseUrl: '/api/pact/gateway/v1',
       override: {
+        mutator: {
+          path: './src/__codegen__/rest/custom_fetch.ts',
+          name: 'customFetch',
+        },
         query: {
           useQuery: true,
           useMutation: true,
@@ -44,6 +52,10 @@ export default defineConfig({
       client: 'swr',
       baseUrl: '/api/pact/gateway/v1',
       override: {
+        mutator: {
+          path: './src/__codegen__/rest/custom_fetch.ts',
+          name: 'customFetch',
+        },
         query: {
           useQuery: true,
           useMutation: true,
@@ -61,6 +73,10 @@ export default defineConfig({
       client: 'swr',
       baseUrl: '/api/pact/gateway/v1',
       override: {
+        mutator: {
+          path: './src/__codegen__/rest/custom_fetch.ts',
+          name: 'customFetch',
+        },
         query: {
           useQuery: true,
           useMutation: true,
@@ -78,6 +94,10 @@ export default defineConfig({
       client: 'swr',
       baseUrl: '/api/pact/gateway/v1',
       override: {
+        mutator: {
+          path: './src/__codegen__/rest/custom_fetch.ts',
+          name: 'customFetch',
+        },
         query: {
           useQuery: true,
           useMutation: true,
@@ -95,6 +115,10 @@ export default defineConfig({
       client: 'swr',
       baseUrl: '/api/pact/gateway/v1',
       override: {
+        mutator: {
+          path: './src/__codegen__/rest/custom_fetch.ts',
+          name: 'customFetch',
+        },
         query: {
           useQuery: true,
           useMutation: true,
@@ -112,6 +136,10 @@ export default defineConfig({
       client: 'swr',
       baseUrl: '/api/pact/gateway/v1',
       override: {
+        mutator: {
+          path: './src/__codegen__/rest/custom_fetch.ts',
+          name: 'customFetch',
+        },
         query: {
           useQuery: true,
           useMutation: true,
@@ -129,6 +157,10 @@ export default defineConfig({
       client: 'swr',
       baseUrl: '/api/pact/gateway/v1',
       override: {
+        mutator: {
+          path: './src/__codegen__/rest/custom_fetch.ts',
+          name: 'customFetch',
+        },
         query: {
           useQuery: true,
           useMutation: true,
@@ -146,6 +178,10 @@ export default defineConfig({
       client: 'swr',
       baseUrl: '/api/pact/gateway/v1',
       override: {
+        mutator: {
+          path: './src/__codegen__/rest/custom_fetch.ts',
+          name: 'customFetch',
+        },
         query: {
           useQuery: true,
           useMutation: true,
@@ -163,6 +199,10 @@ export default defineConfig({
       client: 'swr',
       baseUrl: '/api/pact/gateway/v1',
       override: {
+        mutator: {
+          path: './src/__codegen__/rest/custom_fetch.ts',
+          name: 'customFetch',
+        },
         query: {
           useQuery: true,
           useMutation: true,
@@ -180,6 +220,10 @@ export default defineConfig({
       client: 'swr',
       baseUrl: '/api/pact/gateway/v1',
       override: {
+        mutator: {
+          path: './src/__codegen__/rest/custom_fetch.ts',
+          name: 'customFetch',
+        },
         query: {
           useQuery: true,
           useMutation: true,

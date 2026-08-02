@@ -6,14 +6,16 @@
  * OpenAPI spec version: 0.1.0
  */
 
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-
 import type { Key } from 'swr';
 
 import type {
   ConfigConfigResponse,
   ConfigEnforcementPatchRequest,
 } from './types';
+
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 export type getConfigResponse200 = {
   data: ConfigConfigResponse;
@@ -55,19 +57,10 @@ export const getGetConfigUrl = () => {
 export const getConfig = async (
   options?: RequestInit
 ): Promise<getConfigResponse> => {
-  const res = await fetch(getGetConfigUrl(), {
+  return customFetch<getConfigResponse>(getGetConfigUrl(), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getConfigResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getConfigResponse;
 };
 
 export const getGetConfigKey = () => [`/api/pact/gateway/v1/config`] as const;
@@ -125,24 +118,17 @@ export const patchEnforcement = async (
   configEnforcementPatchRequest: ConfigEnforcementPatchRequest,
   options?: RequestInit
 ): Promise<patchEnforcementResponse> => {
-  const res = await fetch(getPatchEnforcementUrl(), {
+  return customFetch<patchEnforcementResponse>(getPatchEnforcementUrl(), {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(configEnforcementPatchRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: patchEnforcementResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as patchEnforcementResponse;
 };
 
-export const getPatchEnforcementMutationFetcher = (options?: RequestInit) => {
+export const getPatchEnforcementMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: ConfigEnforcementPatchRequest }) => {
     return patchEnforcement(arg, options);
   };

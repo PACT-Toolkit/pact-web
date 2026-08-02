@@ -12,8 +12,6 @@ import useSWRMutation from 'swr/mutation';
 import type { Arguments, Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
-import type { AxiosError, AxiosRequestConfig } from 'axios';
-
 import type {
   BoundaryErrorResponse,
   FilesFileResponse,
@@ -76,6 +74,10 @@ import {
   getPostFilesIdConfirmMutationKey,
 } from './fetchers';
 
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export type GetFilesQueryResult = NonNullable<
   Awaited<ReturnType<typeof getFiles>>
 >;
@@ -83,22 +85,22 @@ export type GetFilesQueryResult = NonNullable<
 /**
  * @summary List the caller's files, newest first
  */
-export const useGetFiles = <TError = Promise<string>>(
+export const useGetFiles = <TError = string>(
   params?: GetFilesParams,
   options?: {
     swr?: SWRConfiguration<Awaited<ReturnType<typeof getFiles>>, TError> & {
       swrKey?: Key;
       enabled?: boolean;
     };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ?? (() => (isEnabled ? getGetFilesKey(params) : null));
-  const swrFn = () => getFiles(params, fetchOptions);
+  const swrFn = () => getFiles(params, requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -119,7 +121,7 @@ export type PostFilesMutationResult = NonNullable<
 /**
  * @summary Request a presigned upload URL
  */
-export const usePostFiles = <TError = Promise<string>>(options?: {
+export const usePostFiles = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof postFiles>>,
     TError,
@@ -127,12 +129,12 @@ export const usePostFiles = <TError = Promise<string>>(options?: {
     FilesRequestUploadBody,
     Awaited<ReturnType<typeof postFiles>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getPostFilesMutationKey();
-  const swrFn = getPostFilesMutationFetcher(fetchOptions);
+  const swrFn = getPostFilesMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -149,9 +151,7 @@ export type DeleteFilesIdMutationResult = NonNullable<
 /**
  * @summary Soft-delete a file (idempotent)
  */
-export const useDeleteFilesId = <
-  TError = Promise<string | BoundaryErrorResponse>,
->(
+export const useDeleteFilesId = <TError = string | BoundaryErrorResponse>(
   id: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -161,13 +161,13 @@ export const useDeleteFilesId = <
       Arguments,
       Awaited<ReturnType<typeof deleteFilesId>>
     > & { swrKey?: string };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getDeleteFilesIdMutationKey(id);
-  const swrFn = getDeleteFilesIdMutationFetcher(id, fetchOptions);
+  const swrFn = getDeleteFilesIdMutationFetcher(id, requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -184,23 +184,23 @@ export type GetFilesIdQueryResult = NonNullable<
 /**
  * @summary Get file metadata and presigned download URL when ready
  */
-export const useGetFilesId = <TError = Promise<string | BoundaryErrorResponse>>(
+export const useGetFilesId = <TError = string | BoundaryErrorResponse>(
   id: string,
   options?: {
     swr?: SWRConfiguration<Awaited<ReturnType<typeof getFilesId>>, TError> & {
       swrKey?: Key;
       enabled?: boolean;
     };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled =
     swrOptions?.enabled !== false && id !== null && id !== undefined;
   const swrKey =
     swrOptions?.swrKey ?? (() => (isEnabled ? getGetFilesIdKey(id) : null));
-  const swrFn = () => getFilesId(id, fetchOptions);
+  const swrFn = () => getFilesId(id, requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -221,9 +221,7 @@ export type PostFilesIdConfirmMutationResult = NonNullable<
 /**
  * @summary Confirm a completed upload and start the validation pipeline
  */
-export const usePostFilesIdConfirm = <
-  TError = Promise<string | BoundaryErrorResponse>,
->(
+export const usePostFilesIdConfirm = <TError = string | BoundaryErrorResponse>(
   id: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -233,13 +231,13 @@ export const usePostFilesIdConfirm = <
       Arguments,
       Awaited<ReturnType<typeof postFilesIdConfirm>>
     > & { swrKey?: string };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getPostFilesIdConfirmMutationKey(id);
-  const swrFn = getPostFilesIdConfirmMutationFetcher(id, fetchOptions);
+  const swrFn = getPostFilesIdConfirmMutationFetcher(id, requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

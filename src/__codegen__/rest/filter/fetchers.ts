@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-
 import type { Key } from 'swr';
 
 import type {
@@ -16,6 +14,10 @@ import type {
   FilterTestRuleRequest,
   FilterTestRuleResponse,
 } from './types';
+
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 export type listLoadedPacksResponse200 = {
   data: FilterListPacksResponse;
@@ -69,19 +71,10 @@ export const getListLoadedPacksUrl = () => {
 export const listLoadedPacks = async (
   options?: RequestInit
 ): Promise<listLoadedPacksResponse> => {
-  const res = await fetch(getListLoadedPacksUrl(), {
+  return customFetch<listLoadedPacksResponse>(getListLoadedPacksUrl(), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listLoadedPacksResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as listLoadedPacksResponse;
 };
 
 export const getListLoadedPacksKey = () =>
@@ -144,20 +137,17 @@ export const testRule = async (
   filterTestRuleRequest: FilterTestRuleRequest,
   options?: RequestInit
 ): Promise<testRuleResponse> => {
-  const res = await fetch(getTestRuleUrl(), {
+  return customFetch<testRuleResponse>(getTestRuleUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(filterTestRuleRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: testRuleResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as testRuleResponse;
 };
 
-export const getTestRuleMutationFetcher = (options?: RequestInit) => {
+export const getTestRuleMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: FilterTestRuleRequest }) => {
     return testRule(arg, options);
   };

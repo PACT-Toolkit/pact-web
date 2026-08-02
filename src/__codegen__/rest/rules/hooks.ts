@@ -12,8 +12,6 @@ import useSWRMutation from 'swr/mutation';
 import type { Arguments, Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
-import type { AxiosError, AxiosRequestConfig } from 'axios';
-
 import type {
   BoundaryErrorResponse,
   RulesCreateRuleRequest,
@@ -66,6 +64,10 @@ import {
   getRevokeRuleMutationKey,
 } from './fetchers';
 
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export type ListRulesQueryResult = NonNullable<
   Awaited<ReturnType<typeof listRules>>
 >;
@@ -73,19 +75,19 @@ export type ListRulesQueryResult = NonNullable<
 /**
  * @summary List policy rules
  */
-export const useListRules = <TError = Promise<string>>(options?: {
+export const useListRules = <TError = string>(options?: {
   swr?: SWRConfiguration<Awaited<ReturnType<typeof listRules>>, TError> & {
     swrKey?: Key;
     enabled?: boolean;
   };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ?? (() => (isEnabled ? getListRulesKey() : null));
-  const swrFn = () => listRules(fetchOptions);
+  const swrFn = () => listRules(requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -106,7 +108,7 @@ export type CreateRuleMutationResult = NonNullable<
 /**
  * @summary Create a policy rule (Draft)
  */
-export const useCreateRule = <TError = Promise<string>>(options?: {
+export const useCreateRule = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof createRule>>,
     TError,
@@ -114,12 +116,12 @@ export const useCreateRule = <TError = Promise<string>>(options?: {
     RulesCreateRuleRequest,
     Awaited<ReturnType<typeof createRule>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getCreateRuleMutationKey();
-  const swrFn = getCreateRuleMutationFetcher(fetchOptions);
+  const swrFn = getCreateRuleMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -136,9 +138,7 @@ export type PublishRuleMutationResult = NonNullable<
 /**
  * @summary Publish a policy rule
  */
-export const usePublishRule = <
-  TError = Promise<BoundaryErrorResponse | string>,
->(
+export const usePublishRule = <TError = BoundaryErrorResponse | string>(
   id: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -148,13 +148,13 @@ export const usePublishRule = <
       Arguments,
       Awaited<ReturnType<typeof publishRule>>
     > & { swrKey?: string };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getPublishRuleMutationKey(id);
-  const swrFn = getPublishRuleMutationFetcher(id, fetchOptions);
+  const swrFn = getPublishRuleMutationFetcher(id, requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -171,7 +171,7 @@ export type RevokeRuleMutationResult = NonNullable<
 /**
  * @summary Revoke a policy rule
  */
-export const useRevokeRule = <TError = Promise<BoundaryErrorResponse | string>>(
+export const useRevokeRule = <TError = BoundaryErrorResponse | string>(
   id: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -181,13 +181,13 @@ export const useRevokeRule = <TError = Promise<BoundaryErrorResponse | string>>(
       Arguments,
       Awaited<ReturnType<typeof revokeRule>>
     > & { swrKey?: string };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getRevokeRuleMutationKey(id);
-  const swrFn = getRevokeRuleMutationFetcher(id, fetchOptions);
+  const swrFn = getRevokeRuleMutationFetcher(id, requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

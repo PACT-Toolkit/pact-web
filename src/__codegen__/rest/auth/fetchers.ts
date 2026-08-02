@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-
 import type { Arguments, Key } from 'swr';
 
 import type {
@@ -42,6 +40,10 @@ import type {
   StartOAuthLoginParams,
 } from './types';
 
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export type listIdentitiesResponse200 = {
   data: AuthListIdentitiesResponse;
   status: 200;
@@ -74,19 +76,10 @@ export const getListIdentitiesUrl = () => {
 export const listIdentities = async (
   options?: RequestInit
 ): Promise<listIdentitiesResponse> => {
-  const res = await fetch(getListIdentitiesUrl(), {
+  return customFetch<listIdentitiesResponse>(getListIdentitiesUrl(), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listIdentitiesResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as listIdentitiesResponse;
 };
 
 export const getListIdentitiesKey = () =>
@@ -133,29 +126,15 @@ export const unlinkIdentity = async (
   provider: string,
   options?: RequestInit
 ): Promise<unlinkIdentityResponse> => {
-  const res = await fetch(getUnlinkIdentityUrl(provider), {
+  return customFetch<unlinkIdentityResponse>(getUnlinkIdentityUrl(provider), {
     ...options,
     method: 'DELETE',
   });
-
-  const contentType = (res.headers.get('content-type') ?? '').toLowerCase();
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: unlinkIdentityResponse['data'] = body
-    ? contentType.includes('json')
-      ? JSON.parse(body)
-      : body
-    : undefined;
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as unlinkIdentityResponse;
 };
 
 export const getUnlinkIdentityMutationFetcher = (
   provider: string,
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, __: { arg: Arguments }) => {
     return unlinkIdentity(provider, options);
@@ -201,20 +180,17 @@ export const login = async (
   authLoginRequest: AuthLoginRequest,
   options?: RequestInit
 ): Promise<loginResponse> => {
-  const res = await fetch(getLoginUrl(), {
+  return customFetch<loginResponse>(getLoginUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(authLoginRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: loginResponse['data'] = body ? JSON.parse(body) : {};
-  return { data, status: res.status, headers: res.headers } as loginResponse;
 };
 
-export const getLoginMutationFetcher = (options?: RequestInit) => {
+export const getLoginMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: AuthLoginRequest }) => {
     return login(arg, options);
   };
@@ -253,23 +229,15 @@ export const getLogoutUrl = () => {
 export const logout = async (
   options?: RequestInit
 ): Promise<logoutResponse> => {
-  const res = await fetch(getLogoutUrl(), {
+  return customFetch<logoutResponse>(getLogoutUrl(), {
     ...options,
     method: 'POST',
   });
-
-  const contentType = (res.headers.get('content-type') ?? '').toLowerCase();
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: logoutResponse['data'] = body
-    ? contentType.includes('json')
-      ? JSON.parse(body)
-      : body
-    : undefined;
-  return { data, status: res.status, headers: res.headers } as logoutResponse;
 };
 
-export const getLogoutMutationFetcher = (options?: RequestInit) => {
+export const getLogoutMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, __: { arg: Arguments }) => {
     return logout(options);
   };
@@ -310,19 +278,10 @@ export const getListMfaFactorsUrl = () => {
 export const listMfaFactors = async (
   options?: RequestInit
 ): Promise<listMfaFactorsResponse> => {
-  const res = await fetch(getListMfaFactorsUrl(), {
+  return customFetch<listMfaFactorsResponse>(getListMfaFactorsUrl(), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listMfaFactorsResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as listMfaFactorsResponse;
 };
 
 export const getListMfaFactorsKey = () =>
@@ -369,29 +328,15 @@ export const revokeMfaFactor = async (
   factorId: string,
   options?: RequestInit
 ): Promise<revokeMfaFactorResponse> => {
-  const res = await fetch(getRevokeMfaFactorUrl(factorId), {
+  return customFetch<revokeMfaFactorResponse>(getRevokeMfaFactorUrl(factorId), {
     ...options,
     method: 'DELETE',
   });
-
-  const contentType = (res.headers.get('content-type') ?? '').toLowerCase();
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: revokeMfaFactorResponse['data'] = body
-    ? contentType.includes('json')
-      ? JSON.parse(body)
-      : body
-    : undefined;
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as revokeMfaFactorResponse;
 };
 
 export const getRevokeMfaFactorMutationFetcher = (
   factorId: string,
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, __: { arg: Arguments }) => {
     return revokeMfaFactor(factorId, options);
@@ -443,27 +388,19 @@ export const beginMfaPasskeyAssertion = async (
   authBeginMfaPasskeyAssertionRequest: AuthBeginMfaPasskeyAssertionRequest,
   options?: RequestInit
 ): Promise<beginMfaPasskeyAssertionResponse> => {
-  const res = await fetch(getBeginMfaPasskeyAssertionUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(authBeginMfaPasskeyAssertionRequest),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: beginMfaPasskeyAssertionResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as beginMfaPasskeyAssertionResponse;
+  return customFetch<beginMfaPasskeyAssertionResponse>(
+    getBeginMfaPasskeyAssertionUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(authBeginMfaPasskeyAssertionRequest),
+    }
+  );
 };
 
 export const getBeginMfaPasskeyAssertionMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: AuthBeginMfaPasskeyAssertionRequest }) => {
     return beginMfaPasskeyAssertion(arg, options);
@@ -515,27 +452,19 @@ export const finishMfaPasskeyAssertion = async (
   authFinishMfaPasskeyAssertionRequest: AuthFinishMfaPasskeyAssertionRequest,
   options?: RequestInit
 ): Promise<finishMfaPasskeyAssertionResponse> => {
-  const res = await fetch(getFinishMfaPasskeyAssertionUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(authFinishMfaPasskeyAssertionRequest),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: finishMfaPasskeyAssertionResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as finishMfaPasskeyAssertionResponse;
+  return customFetch<finishMfaPasskeyAssertionResponse>(
+    getFinishMfaPasskeyAssertionUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(authFinishMfaPasskeyAssertionRequest),
+    }
+  );
 };
 
 export const getFinishMfaPasskeyAssertionMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: AuthFinishMfaPasskeyAssertionRequest }) => {
     return finishMfaPasskeyAssertion(arg, options);
@@ -579,25 +508,17 @@ export const getRegenerateRecoveryCodesUrl = () => {
 export const regenerateRecoveryCodes = async (
   options?: RequestInit
 ): Promise<regenerateRecoveryCodesResponse> => {
-  const res = await fetch(getRegenerateRecoveryCodesUrl(), {
-    ...options,
-    method: 'POST',
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: regenerateRecoveryCodesResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as regenerateRecoveryCodesResponse;
+  return customFetch<regenerateRecoveryCodesResponse>(
+    getRegenerateRecoveryCodesUrl(),
+    {
+      ...options,
+      method: 'POST',
+    }
+  );
 };
 
 export const getRegenerateRecoveryCodesMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, __: { arg: Arguments }) => {
     return regenerateRecoveryCodes(options);
@@ -648,24 +569,17 @@ export const verifyMfa = async (
   authVerifyMfaRequest: AuthVerifyMfaRequest,
   options?: RequestInit
 ): Promise<verifyMfaResponse> => {
-  const res = await fetch(getVerifyMfaUrl(), {
+  return customFetch<verifyMfaResponse>(getVerifyMfaUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(authVerifyMfaRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: verifyMfaResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as verifyMfaResponse;
 };
 
-export const getVerifyMfaMutationFetcher = (options?: RequestInit) => {
+export const getVerifyMfaMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: AuthVerifyMfaRequest }) => {
     return verifyMfa(arg, options);
   };
@@ -717,28 +631,20 @@ export const handleOAuthCallback = async (
   authHandleCallbackRequest: AuthHandleCallbackRequest,
   options?: RequestInit
 ): Promise<handleOAuthCallbackResponse> => {
-  const res = await fetch(getHandleOAuthCallbackUrl(provider), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(authHandleCallbackRequest),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: handleOAuthCallbackResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as handleOAuthCallbackResponse;
+  return customFetch<handleOAuthCallbackResponse>(
+    getHandleOAuthCallbackUrl(provider),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(authHandleCallbackRequest),
+    }
+  );
 };
 
 export const getHandleOAuthCallbackMutationFetcher = (
   provider: string,
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: AuthHandleCallbackRequest }) => {
     return handleOAuthCallback(provider, arg, options);
@@ -793,19 +699,10 @@ export const startOAuthLogin = async (
   params: StartOAuthLoginParams,
   options?: RequestInit
 ): Promise<startOAuthLoginResponse> => {
-  const res = await fetch(getStartOAuthLoginUrl(params), {
+  return customFetch<startOAuthLoginResponse>(getStartOAuthLoginUrl(params), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: startOAuthLoginResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as startOAuthLoginResponse;
 };
 
 export const getStartOAuthLoginKey = (params: StartOAuthLoginParams) =>
@@ -846,19 +743,10 @@ export const getListPasskeysUrl = () => {
 export const listPasskeys = async (
   options?: RequestInit
 ): Promise<listPasskeysResponse> => {
-  const res = await fetch(getListPasskeysUrl(), {
+  return customFetch<listPasskeysResponse>(getListPasskeysUrl(), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listPasskeysResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as listPasskeysResponse;
 };
 
 export const getListPasskeysKey = () =>
@@ -905,29 +793,15 @@ export const deletePasskey = async (
   passkeyId: string,
   options?: RequestInit
 ): Promise<deletePasskeyResponse> => {
-  const res = await fetch(getDeletePasskeyUrl(passkeyId), {
+  return customFetch<deletePasskeyResponse>(getDeletePasskeyUrl(passkeyId), {
     ...options,
     method: 'DELETE',
   });
-
-  const contentType = (res.headers.get('content-type') ?? '').toLowerCase();
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: deletePasskeyResponse['data'] = body
-    ? contentType.includes('json')
-      ? JSON.parse(body)
-      : body
-    : undefined;
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as deletePasskeyResponse;
 };
 
 export const getDeletePasskeyMutationFetcher = (
   passkeyId: string,
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, __: { arg: Arguments }) => {
     return deletePasskey(passkeyId, options);
@@ -985,31 +859,17 @@ export const renamePasskey = async (
   authRenamePasskeyRequest: AuthRenamePasskeyRequest,
   options?: RequestInit
 ): Promise<renamePasskeyResponse> => {
-  const res = await fetch(getRenamePasskeyUrl(passkeyId), {
+  return customFetch<renamePasskeyResponse>(getRenamePasskeyUrl(passkeyId), {
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(authRenamePasskeyRequest),
   });
-
-  const contentType = (res.headers.get('content-type') ?? '').toLowerCase();
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: renamePasskeyResponse['data'] = body
-    ? contentType.includes('json')
-      ? JSON.parse(body)
-      : body
-    : undefined;
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as renamePasskeyResponse;
 };
 
 export const getRenamePasskeyMutationFetcher = (
   passkeyId: string,
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: AuthRenamePasskeyRequest }) => {
     return renamePasskey(passkeyId, arg, options);
@@ -1052,24 +912,17 @@ export const beginPasskeyLogin = async (
   authBeginPasskeyLoginRequest: AuthBeginPasskeyLoginRequest,
   options?: RequestInit
 ): Promise<beginPasskeyLoginResponse> => {
-  const res = await fetch(getBeginPasskeyLoginUrl(), {
+  return customFetch<beginPasskeyLoginResponse>(getBeginPasskeyLoginUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(authBeginPasskeyLoginRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: beginPasskeyLoginResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as beginPasskeyLoginResponse;
 };
 
-export const getBeginPasskeyLoginMutationFetcher = (options?: RequestInit) => {
+export const getBeginPasskeyLoginMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: AuthBeginPasskeyLoginRequest }) => {
     return beginPasskeyLogin(arg, options);
   };
@@ -1120,24 +973,17 @@ export const finishPasskeyLogin = async (
   authFinishPasskeyLoginRequest: AuthFinishPasskeyLoginRequest,
   options?: RequestInit
 ): Promise<finishPasskeyLoginResponse> => {
-  const res = await fetch(getFinishPasskeyLoginUrl(), {
+  return customFetch<finishPasskeyLoginResponse>(getFinishPasskeyLoginUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(authFinishPasskeyLoginRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: finishPasskeyLoginResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as finishPasskeyLoginResponse;
 };
 
-export const getFinishPasskeyLoginMutationFetcher = (options?: RequestInit) => {
+export const getFinishPasskeyLoginMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: AuthFinishPasskeyLoginRequest }) => {
     return finishPasskeyLogin(arg, options);
   };
@@ -1188,27 +1034,19 @@ export const beginPasskeyRegistration = async (
   authBeginPasskeyRegistrationRequest: AuthBeginPasskeyRegistrationRequest,
   options?: RequestInit
 ): Promise<beginPasskeyRegistrationResponse> => {
-  const res = await fetch(getBeginPasskeyRegistrationUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(authBeginPasskeyRegistrationRequest),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: beginPasskeyRegistrationResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as beginPasskeyRegistrationResponse;
+  return customFetch<beginPasskeyRegistrationResponse>(
+    getBeginPasskeyRegistrationUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(authBeginPasskeyRegistrationRequest),
+    }
+  );
 };
 
 export const getBeginPasskeyRegistrationMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: AuthBeginPasskeyRegistrationRequest }) => {
     return beginPasskeyRegistration(arg, options);
@@ -1260,27 +1098,19 @@ export const finishPasskeyRegistration = async (
   authFinishPasskeyRegistrationRequest: AuthFinishPasskeyRegistrationRequest,
   options?: RequestInit
 ): Promise<finishPasskeyRegistrationResponse> => {
-  const res = await fetch(getFinishPasskeyRegistrationUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(authFinishPasskeyRegistrationRequest),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: finishPasskeyRegistrationResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as finishPasskeyRegistrationResponse;
+  return customFetch<finishPasskeyRegistrationResponse>(
+    getFinishPasskeyRegistrationUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(authFinishPasskeyRegistrationRequest),
+    }
+  );
 };
 
 export const getFinishPasskeyRegistrationMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: AuthFinishPasskeyRegistrationRequest }) => {
     return finishPasskeyRegistration(arg, options);
@@ -1332,27 +1162,19 @@ export const confirmPasswordReset = async (
   authConfirmPasswordResetRequest: AuthConfirmPasswordResetRequest,
   options?: RequestInit
 ): Promise<confirmPasswordResetResponse> => {
-  const res = await fetch(getConfirmPasswordResetUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(authConfirmPasswordResetRequest),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: confirmPasswordResetResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as confirmPasswordResetResponse;
+  return customFetch<confirmPasswordResetResponse>(
+    getConfirmPasswordResetUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(authConfirmPasswordResetRequest),
+    }
+  );
 };
 
 export const getConfirmPasswordResetMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: AuthConfirmPasswordResetRequest }) => {
     return confirmPasswordReset(arg, options);
@@ -1397,27 +1219,19 @@ export const requestPasswordReset = async (
   authRequestPasswordResetRequest: AuthRequestPasswordResetRequest,
   options?: RequestInit
 ): Promise<requestPasswordResetResponse> => {
-  const res = await fetch(getRequestPasswordResetUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(authRequestPasswordResetRequest),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: requestPasswordResetResponse['data'] = body
-    ? JSON.parse(body)
-    : undefined;
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as requestPasswordResetResponse;
+  return customFetch<requestPasswordResetResponse>(
+    getRequestPasswordResetUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(authRequestPasswordResetRequest),
+    }
+  );
 };
 
 export const getRequestPasswordResetMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: AuthRequestPasswordResetRequest }) => {
     return requestPasswordReset(arg, options);
@@ -1468,26 +1282,17 @@ export const registerAccount = async (
   authRegisterRequest: AuthRegisterRequest,
   options?: RequestInit
 ): Promise<registerAccountResponse> => {
-  const res = await fetch(getRegisterAccountUrl(), {
+  return customFetch<registerAccountResponse>(getRegisterAccountUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(authRegisterRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: registerAccountResponse['data'] = body
-    ? JSON.parse(body)
-    : undefined;
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as registerAccountResponse;
 };
 
-export const getRegisterAccountMutationFetcher = (options?: RequestInit) => {
+export const getRegisterAccountMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: AuthRegisterRequest }) => {
     return registerAccount(arg, options);
   };
@@ -1528,19 +1333,10 @@ export const getGetSessionUrl = () => {
 export const getSession = async (
   options?: RequestInit
 ): Promise<getSessionResponse> => {
-  const res = await fetch(getGetSessionUrl(), {
+  return customFetch<getSessionResponse>(getGetSessionUrl(), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getSessionResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getSessionResponse;
 };
 
 export const getGetSessionKey = () =>
@@ -1587,24 +1383,17 @@ export const refreshSession = async (
   authRefreshSessionRequest?: AuthRefreshSessionRequest,
   options?: RequestInit
 ): Promise<refreshSessionResponse> => {
-  const res = await fetch(getRefreshSessionUrl(), {
+  return customFetch<refreshSessionResponse>(getRefreshSessionUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(authRefreshSessionRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: refreshSessionResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as refreshSessionResponse;
 };
 
-export const getRefreshSessionMutationFetcher = (options?: RequestInit) => {
+export const getRefreshSessionMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: AuthRefreshSessionRequest | undefined }) => {
     return refreshSession(arg, options);
   };
@@ -1647,25 +1436,14 @@ export const getBeginTOTPEnrollmentUrl = () => {
 export const beginTOTPEnrollment = async (
   options?: RequestInit
 ): Promise<beginTOTPEnrollmentResponse> => {
-  const res = await fetch(getBeginTOTPEnrollmentUrl(), {
+  return customFetch<beginTOTPEnrollmentResponse>(getBeginTOTPEnrollmentUrl(), {
     ...options,
     method: 'POST',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: beginTOTPEnrollmentResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as beginTOTPEnrollmentResponse;
 };
 
 export const getBeginTOTPEnrollmentMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, __: { arg: Arguments }) => {
     return beginTOTPEnrollment(options);
@@ -1717,27 +1495,19 @@ export const confirmTOTPEnrollment = async (
   authConfirmTOTPEnrollmentRequest: AuthConfirmTOTPEnrollmentRequest,
   options?: RequestInit
 ): Promise<confirmTOTPEnrollmentResponse> => {
-  const res = await fetch(getConfirmTOTPEnrollmentUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(authConfirmTOTPEnrollmentRequest),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: confirmTOTPEnrollmentResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as confirmTOTPEnrollmentResponse;
+  return customFetch<confirmTOTPEnrollmentResponse>(
+    getConfirmTOTPEnrollmentUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(authConfirmTOTPEnrollmentRequest),
+    }
+  );
 };
 
 export const getConfirmTOTPEnrollmentMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: AuthConfirmTOTPEnrollmentRequest }) => {
     return confirmTOTPEnrollment(arg, options);
@@ -1788,24 +1558,17 @@ export const verifyEmail = async (
   authVerifyEmailRequest: AuthVerifyEmailRequest,
   options?: RequestInit
 ): Promise<verifyEmailResponse> => {
-  const res = await fetch(getVerifyEmailUrl(), {
+  return customFetch<verifyEmailResponse>(getVerifyEmailUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(authVerifyEmailRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: verifyEmailResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as verifyEmailResponse;
 };
 
-export const getVerifyEmailMutationFetcher = (options?: RequestInit) => {
+export const getVerifyEmailMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: AuthVerifyEmailRequest }) => {
     return verifyEmail(arg, options);
   };
@@ -1848,26 +1611,17 @@ export const resendVerification = async (
   authResendVerificationRequest: AuthResendVerificationRequest,
   options?: RequestInit
 ): Promise<resendVerificationResponse> => {
-  const res = await fetch(getResendVerificationUrl(), {
+  return customFetch<resendVerificationResponse>(getResendVerificationUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(authResendVerificationRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: resendVerificationResponse['data'] = body
-    ? JSON.parse(body)
-    : undefined;
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as resendVerificationResponse;
 };
 
-export const getResendVerificationMutationFetcher = (options?: RequestInit) => {
+export const getResendVerificationMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: AuthResendVerificationRequest }) => {
     return resendVerification(arg, options);
   };

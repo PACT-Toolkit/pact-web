@@ -180,6 +180,10 @@ export const createFilterMockData = (db: DB): void => {
     db.decisions.create(buildEvent(offsetMs, payload));
   };
 
+  // A few rows declare a traffic_source (PACT-484) so the dashboard's
+  // source tabs (Client app / Test Lab / Benchmark) have every bucket
+  // populated on first load in dev:mock. Undeclared rows are real
+  // client-app traffic, same as on the live wire.
   seed(2 * min, {
     request_id: 'req-a1b2c3',
     decision: 'block',
@@ -201,12 +205,14 @@ export const createFilterMockData = (db: DB): void => {
     filter: { verdict: 'hostile', rule_id: 'role-001' },
     latency_ms: 5,
     created_at: '',
+    traffic_source: 'test_lab',
   });
   seed(12 * min, {
     request_id: 'req-j1k2l3',
     decision: 'allow',
     latency_ms: 3,
     created_at: '',
+    traffic_source: 'test_lab',
   });
   seed(15 * min, {
     request_id: 'req-m4n5o6',
@@ -215,12 +221,14 @@ export const createFilterMockData = (db: DB): void => {
     filter: { verdict: 'hostile', rule_id: 'inject-005' },
     latency_ms: 6,
     created_at: '',
+    traffic_source: 'benchmark',
   });
   seed(20 * min, {
     request_id: 'req-p7q8r9',
     decision: 'allow',
     latency_ms: 2,
     created_at: '',
+    traffic_source: 'benchmark',
   });
   seed(25 * min, {
     request_id: 'req-s1t2u3',
