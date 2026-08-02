@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-
 import type { Key } from 'swr';
 
 import type {
@@ -26,6 +24,10 @@ import type {
   ListBenchmarkRunsParams,
   ListBenchmarkTestLabRunsParams,
 } from './types';
+
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 export type saveBenchmarkCorpusEntryResponse201 = {
   data: BenchmarkSaveCorpusResponse;
@@ -75,27 +77,19 @@ export const saveBenchmarkCorpusEntry = async (
   benchmarkSaveCorpusRequest: BenchmarkSaveCorpusRequest,
   options?: RequestInit
 ): Promise<saveBenchmarkCorpusEntryResponse> => {
-  const res = await fetch(getSaveBenchmarkCorpusEntryUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(benchmarkSaveCorpusRequest),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: saveBenchmarkCorpusEntryResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as saveBenchmarkCorpusEntryResponse;
+  return customFetch<saveBenchmarkCorpusEntryResponse>(
+    getSaveBenchmarkCorpusEntryUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(benchmarkSaveCorpusRequest),
+    }
+  );
 };
 
 export const getSaveBenchmarkCorpusEntryMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: BenchmarkSaveCorpusRequest }) => {
     return saveBenchmarkCorpusEntry(arg, options);
@@ -149,21 +143,13 @@ export const getGetBenchmarkCorpusLibrarySummaryUrl = () => {
 export const getBenchmarkCorpusLibrarySummary = async (
   options?: RequestInit
 ): Promise<getBenchmarkCorpusLibrarySummaryResponse> => {
-  const res = await fetch(getGetBenchmarkCorpusLibrarySummaryUrl(), {
-    ...options,
-    method: 'GET',
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getBenchmarkCorpusLibrarySummaryResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getBenchmarkCorpusLibrarySummaryResponse;
+  return customFetch<getBenchmarkCorpusLibrarySummaryResponse>(
+    getGetBenchmarkCorpusLibrarySummaryUrl(),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetBenchmarkCorpusLibrarySummaryKey = () =>
@@ -217,24 +203,17 @@ export const submitBenchmarkJob = async (
   benchmarkSubmitJobRequest: BenchmarkSubmitJobRequest,
   options?: RequestInit
 ): Promise<submitBenchmarkJobResponse> => {
-  const res = await fetch(getSubmitBenchmarkJobUrl(), {
+  return customFetch<submitBenchmarkJobResponse>(getSubmitBenchmarkJobUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(benchmarkSubmitJobRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: submitBenchmarkJobResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as submitBenchmarkJobResponse;
 };
 
-export const getSubmitBenchmarkJobMutationFetcher = (options?: RequestInit) => {
+export const getSubmitBenchmarkJobMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: BenchmarkSubmitJobRequest }) => {
     return submitBenchmarkJob(arg, options);
   };
@@ -312,19 +291,13 @@ export const getBenchmarkJob = async (
   params?: GetBenchmarkJobParams,
   options?: RequestInit
 ): Promise<getBenchmarkJobResponse> => {
-  const res = await fetch(getGetBenchmarkJobUrl(id, params), {
-    ...options,
-    method: 'GET',
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getBenchmarkJobResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getBenchmarkJobResponse;
+  return customFetch<getBenchmarkJobResponse>(
+    getGetBenchmarkJobUrl(id, params),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetBenchmarkJobKey = (
@@ -395,19 +368,13 @@ export const listBenchmarkRuns = async (
   params?: ListBenchmarkRunsParams,
   options?: RequestInit
 ): Promise<listBenchmarkRunsResponse> => {
-  const res = await fetch(getListBenchmarkRunsUrl(params), {
-    ...options,
-    method: 'GET',
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listBenchmarkRunsResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as listBenchmarkRunsResponse;
+  return customFetch<listBenchmarkRunsResponse>(
+    getListBenchmarkRunsUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getListBenchmarkRunsKey = (params?: ListBenchmarkRunsParams) =>
@@ -475,21 +442,13 @@ export const listBenchmarkTestLabRuns = async (
   params?: ListBenchmarkTestLabRunsParams,
   options?: RequestInit
 ): Promise<listBenchmarkTestLabRunsResponse> => {
-  const res = await fetch(getListBenchmarkTestLabRunsUrl(params), {
-    ...options,
-    method: 'GET',
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listBenchmarkTestLabRunsResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as listBenchmarkTestLabRunsResponse;
+  return customFetch<listBenchmarkTestLabRunsResponse>(
+    getListBenchmarkTestLabRunsUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getListBenchmarkTestLabRunsKey = (
@@ -551,27 +510,19 @@ export const saveBenchmarkTestLabRun = async (
   benchmarkSaveTestLabRunRequest: BenchmarkSaveTestLabRunRequest,
   options?: RequestInit
 ): Promise<saveBenchmarkTestLabRunResponse> => {
-  const res = await fetch(getSaveBenchmarkTestLabRunUrl(), {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(benchmarkSaveTestLabRunRequest),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: saveBenchmarkTestLabRunResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as saveBenchmarkTestLabRunResponse;
+  return customFetch<saveBenchmarkTestLabRunResponse>(
+    getSaveBenchmarkTestLabRunUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(benchmarkSaveTestLabRunRequest),
+    }
+  );
 };
 
 export const getSaveBenchmarkTestLabRunMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: BenchmarkSaveTestLabRunRequest }) => {
     return saveBenchmarkTestLabRun(arg, options);

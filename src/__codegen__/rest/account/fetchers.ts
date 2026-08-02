@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-
 import type { Arguments, Key } from 'swr';
 
 import type {
@@ -20,6 +18,10 @@ import type {
   AccountUpdatePreferencesRequest,
   AccountUpdateProfileRequest,
 } from './types';
+
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 export type getAccountConsentsResponse200 = {
   data: AccountConsentsResponse;
@@ -54,19 +56,10 @@ export const getGetAccountConsentsUrl = () => {
 export const getAccountConsents = async (
   options?: RequestInit
 ): Promise<getAccountConsentsResponse> => {
-  const res = await fetch(getGetAccountConsentsUrl(), {
+  return customFetch<getAccountConsentsResponse>(getGetAccountConsentsUrl(), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getAccountConsentsResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getAccountConsentsResponse;
 };
 
 export const getGetAccountConsentsKey = () =>
@@ -114,27 +107,16 @@ export const postAccountConsents = async (
   accountRecordConsentRequest: AccountRecordConsentRequest,
   options?: RequestInit
 ): Promise<postAccountConsentsResponse> => {
-  const res = await fetch(getPostAccountConsentsUrl(), {
+  return customFetch<postAccountConsentsResponse>(getPostAccountConsentsUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(accountRecordConsentRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: postAccountConsentsResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as postAccountConsentsResponse;
 };
 
 export const getPostAccountConsentsMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: AccountRecordConsentRequest }) => {
     return postAccountConsents(arg, options);
@@ -177,22 +159,15 @@ export const getPostAccountErasureUrl = () => {
 export const postAccountErasure = async (
   options?: RequestInit
 ): Promise<postAccountErasureResponse> => {
-  const res = await fetch(getPostAccountErasureUrl(), {
+  return customFetch<postAccountErasureResponse>(getPostAccountErasureUrl(), {
     ...options,
     method: 'POST',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: postAccountErasureResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as postAccountErasureResponse;
 };
 
-export const getPostAccountErasureMutationFetcher = (options?: RequestInit) => {
+export const getPostAccountErasureMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, __: { arg: Arguments }) => {
     return postAccountErasure(options);
   };
@@ -233,21 +208,10 @@ export const getGetAccountExportUrl = () => {
 export const getAccountExport = async (
   options?: RequestInit
 ): Promise<getAccountExportResponse> => {
-  const res = await fetch(getGetAccountExportUrl(), {
+  return customFetch<getAccountExportResponse>(getGetAccountExportUrl(), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getAccountExportResponse['data'] = body
-    ? JSON.parse(body)
-    : undefined;
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getAccountExportResponse;
 };
 
 export const getGetAccountExportKey = () =>
@@ -287,21 +251,13 @@ export const getGetAccountPreferencesUrl = () => {
 export const getAccountPreferences = async (
   options?: RequestInit
 ): Promise<getAccountPreferencesResponse> => {
-  const res = await fetch(getGetAccountPreferencesUrl(), {
-    ...options,
-    method: 'GET',
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getAccountPreferencesResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getAccountPreferencesResponse;
+  return customFetch<getAccountPreferencesResponse>(
+    getGetAccountPreferencesUrl(),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
 };
 
 export const getGetAccountPreferencesKey = () =>
@@ -349,27 +305,19 @@ export const putAccountPreferences = async (
   accountUpdatePreferencesRequest: AccountUpdatePreferencesRequest,
   options?: RequestInit
 ): Promise<putAccountPreferencesResponse> => {
-  const res = await fetch(getPutAccountPreferencesUrl(), {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(accountUpdatePreferencesRequest),
-  });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: putAccountPreferencesResponse['data'] = body
-    ? JSON.parse(body)
-    : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as putAccountPreferencesResponse;
+  return customFetch<putAccountPreferencesResponse>(
+    getPutAccountPreferencesUrl(),
+    {
+      ...options,
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+      body: JSON.stringify(accountUpdatePreferencesRequest),
+    }
+  );
 };
 
 export const getPutAccountPreferencesMutationFetcher = (
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, { arg }: { arg: AccountUpdatePreferencesRequest }) => {
     return putAccountPreferences(arg, options);
@@ -411,19 +359,10 @@ export const getGetAccountProfileUrl = () => {
 export const getAccountProfile = async (
   options?: RequestInit
 ): Promise<getAccountProfileResponse> => {
-  const res = await fetch(getGetAccountProfileUrl(), {
+  return customFetch<getAccountProfileResponse>(getGetAccountProfileUrl(), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: getAccountProfileResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as getAccountProfileResponse;
 };
 
 export const getGetAccountProfileKey = () =>
@@ -470,24 +409,17 @@ export const putAccountProfile = async (
   accountUpdateProfileRequest: AccountUpdateProfileRequest,
   options?: RequestInit
 ): Promise<putAccountProfileResponse> => {
-  const res = await fetch(getPutAccountProfileUrl(), {
+  return customFetch<putAccountProfileResponse>(getPutAccountProfileUrl(), {
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(accountUpdateProfileRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: putAccountProfileResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as putAccountProfileResponse;
 };
 
-export const getPutAccountProfileMutationFetcher = (options?: RequestInit) => {
+export const getPutAccountProfileMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: AccountUpdateProfileRequest }) => {
     return putAccountProfile(arg, options);
   };

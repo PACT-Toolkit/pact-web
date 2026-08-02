@@ -12,8 +12,6 @@ import useSWRMutation from 'swr/mutation';
 import type { Arguments, Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
-import type { AxiosError, AxiosRequestConfig } from 'axios';
-
 import type {
   AuthBeginMfaPasskeyAssertionRequest,
   AuthBeginPasskeyLoginRequest,
@@ -314,6 +312,10 @@ import {
   getResendVerificationMutationKey,
 } from './fetchers';
 
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export type ListIdentitiesQueryResult = NonNullable<
   Awaited<ReturnType<typeof listIdentities>>
 >;
@@ -321,19 +323,19 @@ export type ListIdentitiesQueryResult = NonNullable<
 /**
  * @summary List the signed-in user's linked OAuth identities
  */
-export const useListIdentities = <TError = Promise<string>>(options?: {
+export const useListIdentities = <TError = string>(options?: {
   swr?: SWRConfiguration<Awaited<ReturnType<typeof listIdentities>>, TError> & {
     swrKey?: Key;
     enabled?: boolean;
   };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ?? (() => (isEnabled ? getListIdentitiesKey() : null));
-  const swrFn = () => listIdentities(fetchOptions);
+  const swrFn = () => listIdentities(requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -354,9 +356,7 @@ export type UnlinkIdentityMutationResult = NonNullable<
 /**
  * @summary Unlink a federated OAuth identity
  */
-export const useUnlinkIdentity = <
-  TError = Promise<string | BoundaryErrorResponse>,
->(
+export const useUnlinkIdentity = <TError = string | BoundaryErrorResponse>(
   provider: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -366,13 +366,13 @@ export const useUnlinkIdentity = <
       Arguments,
       Awaited<ReturnType<typeof unlinkIdentity>>
     > & { swrKey?: string };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getUnlinkIdentityMutationKey(provider);
-  const swrFn = getUnlinkIdentityMutationFetcher(provider, fetchOptions);
+  const swrFn = getUnlinkIdentityMutationFetcher(provider, requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -389,7 +389,7 @@ export type LoginMutationResult = NonNullable<
 /**
  * @summary Log in with email and password
  */
-export const useLogin = <TError = Promise<string>>(options?: {
+export const useLogin = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof login>>,
     TError,
@@ -397,12 +397,12 @@ export const useLogin = <TError = Promise<string>>(options?: {
     AuthLoginRequest,
     Awaited<ReturnType<typeof login>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getLoginMutationKey();
-  const swrFn = getLoginMutationFetcher(fetchOptions);
+  const swrFn = getLoginMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -419,7 +419,7 @@ export type LogoutMutationResult = NonNullable<
 /**
  * @summary Revoke the signed-in session
  */
-export const useLogout = <TError = Promise<string>>(options?: {
+export const useLogout = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof logout>>,
     TError,
@@ -427,12 +427,12 @@ export const useLogout = <TError = Promise<string>>(options?: {
     Arguments,
     Awaited<ReturnType<typeof logout>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getLogoutMutationKey();
-  const swrFn = getLogoutMutationFetcher(fetchOptions);
+  const swrFn = getLogoutMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -449,19 +449,19 @@ export type ListMfaFactorsQueryResult = NonNullable<
 /**
  * @summary List the signed-in user's enrolled MFA factors
  */
-export const useListMfaFactors = <TError = Promise<string>>(options?: {
+export const useListMfaFactors = <TError = string>(options?: {
   swr?: SWRConfiguration<Awaited<ReturnType<typeof listMfaFactors>>, TError> & {
     swrKey?: Key;
     enabled?: boolean;
   };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ?? (() => (isEnabled ? getListMfaFactorsKey() : null));
-  const swrFn = () => listMfaFactors(fetchOptions);
+  const swrFn = () => listMfaFactors(requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -482,9 +482,7 @@ export type RevokeMfaFactorMutationResult = NonNullable<
 /**
  * @summary Revoke an enrolled MFA factor
  */
-export const useRevokeMfaFactor = <
-  TError = Promise<string | BoundaryErrorResponse>,
->(
+export const useRevokeMfaFactor = <TError = string | BoundaryErrorResponse>(
   factorId: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -494,13 +492,13 @@ export const useRevokeMfaFactor = <
       Arguments,
       Awaited<ReturnType<typeof revokeMfaFactor>>
     > & { swrKey?: string };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getRevokeMfaFactorMutationKey(factorId);
-  const swrFn = getRevokeMfaFactorMutationFetcher(factorId, fetchOptions);
+  const swrFn = getRevokeMfaFactorMutationFetcher(factorId, requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -517,9 +515,7 @@ export type BeginMfaPasskeyAssertionMutationResult = NonNullable<
 /**
  * @summary Begin a passkey-assertion MFA step-up
  */
-export const useBeginMfaPasskeyAssertion = <
-  TError = Promise<string>,
->(options?: {
+export const useBeginMfaPasskeyAssertion = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof beginMfaPasskeyAssertion>>,
     TError,
@@ -527,12 +523,12 @@ export const useBeginMfaPasskeyAssertion = <
     AuthBeginMfaPasskeyAssertionRequest,
     Awaited<ReturnType<typeof beginMfaPasskeyAssertion>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getBeginMfaPasskeyAssertionMutationKey();
-  const swrFn = getBeginMfaPasskeyAssertionMutationFetcher(fetchOptions);
+  const swrFn = getBeginMfaPasskeyAssertionMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -549,9 +545,7 @@ export type FinishMfaPasskeyAssertionMutationResult = NonNullable<
 /**
  * @summary Finish a passkey-assertion MFA step-up
  */
-export const useFinishMfaPasskeyAssertion = <
-  TError = Promise<string>,
->(options?: {
+export const useFinishMfaPasskeyAssertion = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof finishMfaPasskeyAssertion>>,
     TError,
@@ -559,13 +553,13 @@ export const useFinishMfaPasskeyAssertion = <
     AuthFinishMfaPasskeyAssertionRequest,
     Awaited<ReturnType<typeof finishMfaPasskeyAssertion>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey =
     swrOptions?.swrKey ?? getFinishMfaPasskeyAssertionMutationKey();
-  const swrFn = getFinishMfaPasskeyAssertionMutationFetcher(fetchOptions);
+  const swrFn = getFinishMfaPasskeyAssertionMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -582,7 +576,7 @@ export type RegenerateRecoveryCodesMutationResult = NonNullable<
 /**
  * @summary Regenerate MFA recovery codes
  */
-export const useRegenerateRecoveryCodes = <TError = Promise<string>>(options?: {
+export const useRegenerateRecoveryCodes = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof regenerateRecoveryCodes>>,
     TError,
@@ -590,12 +584,12 @@ export const useRegenerateRecoveryCodes = <TError = Promise<string>>(options?: {
     Arguments,
     Awaited<ReturnType<typeof regenerateRecoveryCodes>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getRegenerateRecoveryCodesMutationKey();
-  const swrFn = getRegenerateRecoveryCodesMutationFetcher(fetchOptions);
+  const swrFn = getRegenerateRecoveryCodesMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -612,7 +606,7 @@ export type VerifyMfaMutationResult = NonNullable<
 /**
  * @summary Complete a partial-auth login with an MFA code
  */
-export const useVerifyMfa = <TError = Promise<string>>(options?: {
+export const useVerifyMfa = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof verifyMfa>>,
     TError,
@@ -620,12 +614,12 @@ export const useVerifyMfa = <TError = Promise<string>>(options?: {
     AuthVerifyMfaRequest,
     Awaited<ReturnType<typeof verifyMfa>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getVerifyMfaMutationKey();
-  const swrFn = getVerifyMfaMutationFetcher(fetchOptions);
+  const swrFn = getVerifyMfaMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -642,7 +636,7 @@ export type HandleOAuthCallbackMutationResult = NonNullable<
 /**
  * @summary Complete a federated OAuth login
  */
-export const useHandleOAuthCallback = <TError = Promise<string>>(
+export const useHandleOAuthCallback = <TError = string>(
   provider: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -652,14 +646,14 @@ export const useHandleOAuthCallback = <TError = Promise<string>>(
       AuthHandleCallbackRequest,
       Awaited<ReturnType<typeof handleOAuthCallback>>
     > & { swrKey?: string };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey =
     swrOptions?.swrKey ?? getHandleOAuthCallbackMutationKey(provider);
-  const swrFn = getHandleOAuthCallbackMutationFetcher(provider, fetchOptions);
+  const swrFn = getHandleOAuthCallbackMutationFetcher(provider, requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -676,23 +670,23 @@ export type StartOAuthLoginQueryResult = NonNullable<
 /**
  * @summary Start a federated OAuth login
  */
-export const useStartOAuthLogin = <TError = Promise<string>>(
+export const useStartOAuthLogin = <TError = string>(
   params: StartOAuthLoginParams,
   options?: {
     swr?: SWRConfiguration<
       Awaited<ReturnType<typeof startOAuthLogin>>,
       TError
     > & { swrKey?: Key; enabled?: boolean };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getStartOAuthLoginKey(params) : null));
-  const swrFn = () => startOAuthLogin(params, fetchOptions);
+  const swrFn = () => startOAuthLogin(params, requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -713,19 +707,19 @@ export type ListPasskeysQueryResult = NonNullable<
 /**
  * @summary List the signed-in user's passkeys
  */
-export const useListPasskeys = <TError = Promise<string>>(options?: {
+export const useListPasskeys = <TError = string>(options?: {
   swr?: SWRConfiguration<Awaited<ReturnType<typeof listPasskeys>>, TError> & {
     swrKey?: Key;
     enabled?: boolean;
   };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ?? (() => (isEnabled ? getListPasskeysKey() : null));
-  const swrFn = () => listPasskeys(fetchOptions);
+  const swrFn = () => listPasskeys(requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -746,9 +740,7 @@ export type DeletePasskeyMutationResult = NonNullable<
 /**
  * @summary Delete a passkey
  */
-export const useDeletePasskey = <
-  TError = Promise<string | BoundaryErrorResponse>,
->(
+export const useDeletePasskey = <TError = string | BoundaryErrorResponse>(
   passkeyId: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -758,13 +750,13 @@ export const useDeletePasskey = <
       Arguments,
       Awaited<ReturnType<typeof deletePasskey>>
     > & { swrKey?: string };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getDeletePasskeyMutationKey(passkeyId);
-  const swrFn = getDeletePasskeyMutationFetcher(passkeyId, fetchOptions);
+  const swrFn = getDeletePasskeyMutationFetcher(passkeyId, requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -781,9 +773,7 @@ export type RenamePasskeyMutationResult = NonNullable<
 /**
  * @summary Rename a passkey
  */
-export const useRenamePasskey = <
-  TError = Promise<string | BoundaryErrorResponse>,
->(
+export const useRenamePasskey = <TError = string | BoundaryErrorResponse>(
   passkeyId: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -793,13 +783,13 @@ export const useRenamePasskey = <
       AuthRenamePasskeyRequest,
       Awaited<ReturnType<typeof renamePasskey>>
     > & { swrKey?: string };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getRenamePasskeyMutationKey(passkeyId);
-  const swrFn = getRenamePasskeyMutationFetcher(passkeyId, fetchOptions);
+  const swrFn = getRenamePasskeyMutationFetcher(passkeyId, requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -816,7 +806,7 @@ export type BeginPasskeyLoginMutationResult = NonNullable<
 /**
  * @summary Begin a passkey login
  */
-export const useBeginPasskeyLogin = <TError = Promise<string>>(options?: {
+export const useBeginPasskeyLogin = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof beginPasskeyLogin>>,
     TError,
@@ -824,12 +814,12 @@ export const useBeginPasskeyLogin = <TError = Promise<string>>(options?: {
     AuthBeginPasskeyLoginRequest,
     Awaited<ReturnType<typeof beginPasskeyLogin>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getBeginPasskeyLoginMutationKey();
-  const swrFn = getBeginPasskeyLoginMutationFetcher(fetchOptions);
+  const swrFn = getBeginPasskeyLoginMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -846,7 +836,7 @@ export type FinishPasskeyLoginMutationResult = NonNullable<
 /**
  * @summary Finish a passkey login
  */
-export const useFinishPasskeyLogin = <TError = Promise<string>>(options?: {
+export const useFinishPasskeyLogin = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof finishPasskeyLogin>>,
     TError,
@@ -854,12 +844,12 @@ export const useFinishPasskeyLogin = <TError = Promise<string>>(options?: {
     AuthFinishPasskeyLoginRequest,
     Awaited<ReturnType<typeof finishPasskeyLogin>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getFinishPasskeyLoginMutationKey();
-  const swrFn = getFinishPasskeyLoginMutationFetcher(fetchOptions);
+  const swrFn = getFinishPasskeyLoginMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -876,9 +866,7 @@ export type BeginPasskeyRegistrationMutationResult = NonNullable<
 /**
  * @summary Begin passkey registration
  */
-export const useBeginPasskeyRegistration = <
-  TError = Promise<string>,
->(options?: {
+export const useBeginPasskeyRegistration = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof beginPasskeyRegistration>>,
     TError,
@@ -886,12 +874,12 @@ export const useBeginPasskeyRegistration = <
     AuthBeginPasskeyRegistrationRequest,
     Awaited<ReturnType<typeof beginPasskeyRegistration>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getBeginPasskeyRegistrationMutationKey();
-  const swrFn = getBeginPasskeyRegistrationMutationFetcher(fetchOptions);
+  const swrFn = getBeginPasskeyRegistrationMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -908,9 +896,7 @@ export type FinishPasskeyRegistrationMutationResult = NonNullable<
 /**
  * @summary Finish passkey registration
  */
-export const useFinishPasskeyRegistration = <
-  TError = Promise<string>,
->(options?: {
+export const useFinishPasskeyRegistration = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof finishPasskeyRegistration>>,
     TError,
@@ -918,13 +904,13 @@ export const useFinishPasskeyRegistration = <
     AuthFinishPasskeyRegistrationRequest,
     Awaited<ReturnType<typeof finishPasskeyRegistration>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey =
     swrOptions?.swrKey ?? getFinishPasskeyRegistrationMutationKey();
-  const swrFn = getFinishPasskeyRegistrationMutationFetcher(fetchOptions);
+  const swrFn = getFinishPasskeyRegistrationMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -941,7 +927,7 @@ export type ConfirmPasswordResetMutationResult = NonNullable<
 /**
  * @summary Confirm a password reset with the emailed token
  */
-export const useConfirmPasswordReset = <TError = Promise<string>>(options?: {
+export const useConfirmPasswordReset = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof confirmPasswordReset>>,
     TError,
@@ -949,12 +935,12 @@ export const useConfirmPasswordReset = <TError = Promise<string>>(options?: {
     AuthConfirmPasswordResetRequest,
     Awaited<ReturnType<typeof confirmPasswordReset>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getConfirmPasswordResetMutationKey();
-  const swrFn = getConfirmPasswordResetMutationFetcher(fetchOptions);
+  const swrFn = getConfirmPasswordResetMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -971,7 +957,7 @@ export type RequestPasswordResetMutationResult = NonNullable<
 /**
  * @summary Request a password-reset email
  */
-export const useRequestPasswordReset = <TError = Promise<string>>(options?: {
+export const useRequestPasswordReset = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof requestPasswordReset>>,
     TError,
@@ -979,12 +965,12 @@ export const useRequestPasswordReset = <TError = Promise<string>>(options?: {
     AuthRequestPasswordResetRequest,
     Awaited<ReturnType<typeof requestPasswordReset>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getRequestPasswordResetMutationKey();
-  const swrFn = getRequestPasswordResetMutationFetcher(fetchOptions);
+  const swrFn = getRequestPasswordResetMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -1002,7 +988,7 @@ export type RegisterAccountMutationResult = NonNullable<
  * @summary Register a new account
  */
 export const useRegisterAccount = <
-  TError = Promise<string | BoundaryErrorResponse>,
+  TError = string | BoundaryErrorResponse,
 >(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof registerAccount>>,
@@ -1011,12 +997,12 @@ export const useRegisterAccount = <
     AuthRegisterRequest,
     Awaited<ReturnType<typeof registerAccount>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getRegisterAccountMutationKey();
-  const swrFn = getRegisterAccountMutationFetcher(fetchOptions);
+  const swrFn = getRegisterAccountMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -1033,19 +1019,19 @@ export type GetSessionQueryResult = NonNullable<
 /**
  * @summary Introspect the bearer token's session
  */
-export const useGetSession = <TError = Promise<string>>(options?: {
+export const useGetSession = <TError = string>(options?: {
   swr?: SWRConfiguration<Awaited<ReturnType<typeof getSession>>, TError> & {
     swrKey?: Key;
     enabled?: boolean;
   };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ?? (() => (isEnabled ? getGetSessionKey() : null));
-  const swrFn = () => getSession(fetchOptions);
+  const swrFn = () => getSession(requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -1066,7 +1052,7 @@ export type RefreshSessionMutationResult = NonNullable<
 /**
  * @summary Redeem a refresh token for a new session
  */
-export const useRefreshSession = <TError = Promise<string>>(options?: {
+export const useRefreshSession = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof refreshSession>>,
     TError,
@@ -1074,12 +1060,12 @@ export const useRefreshSession = <TError = Promise<string>>(options?: {
     AuthRefreshSessionRequest | undefined,
     Awaited<ReturnType<typeof refreshSession>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getRefreshSessionMutationKey();
-  const swrFn = getRefreshSessionMutationFetcher(fetchOptions);
+  const swrFn = getRefreshSessionMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -1096,7 +1082,7 @@ export type BeginTOTPEnrollmentMutationResult = NonNullable<
 /**
  * @summary Begin TOTP enrollment
  */
-export const useBeginTOTPEnrollment = <TError = Promise<string>>(options?: {
+export const useBeginTOTPEnrollment = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof beginTOTPEnrollment>>,
     TError,
@@ -1104,12 +1090,12 @@ export const useBeginTOTPEnrollment = <TError = Promise<string>>(options?: {
     Arguments,
     Awaited<ReturnType<typeof beginTOTPEnrollment>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getBeginTOTPEnrollmentMutationKey();
-  const swrFn = getBeginTOTPEnrollmentMutationFetcher(fetchOptions);
+  const swrFn = getBeginTOTPEnrollmentMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -1126,7 +1112,7 @@ export type ConfirmTOTPEnrollmentMutationResult = NonNullable<
 /**
  * @summary Confirm TOTP enrollment with a generated code
  */
-export const useConfirmTOTPEnrollment = <TError = Promise<string>>(options?: {
+export const useConfirmTOTPEnrollment = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof confirmTOTPEnrollment>>,
     TError,
@@ -1134,12 +1120,12 @@ export const useConfirmTOTPEnrollment = <TError = Promise<string>>(options?: {
     AuthConfirmTOTPEnrollmentRequest,
     Awaited<ReturnType<typeof confirmTOTPEnrollment>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getConfirmTOTPEnrollmentMutationKey();
-  const swrFn = getConfirmTOTPEnrollmentMutationFetcher(fetchOptions);
+  const swrFn = getConfirmTOTPEnrollmentMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -1156,7 +1142,7 @@ export type VerifyEmailMutationResult = NonNullable<
 /**
  * @summary Verify an account email with the emailed token
  */
-export const useVerifyEmail = <TError = Promise<string>>(options?: {
+export const useVerifyEmail = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof verifyEmail>>,
     TError,
@@ -1164,12 +1150,12 @@ export const useVerifyEmail = <TError = Promise<string>>(options?: {
     AuthVerifyEmailRequest,
     Awaited<ReturnType<typeof verifyEmail>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getVerifyEmailMutationKey();
-  const swrFn = getVerifyEmailMutationFetcher(fetchOptions);
+  const swrFn = getVerifyEmailMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -1186,7 +1172,7 @@ export type ResendVerificationMutationResult = NonNullable<
 /**
  * @summary Resend the account verification email
  */
-export const useResendVerification = <TError = Promise<string>>(options?: {
+export const useResendVerification = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof resendVerification>>,
     TError,
@@ -1194,12 +1180,12 @@ export const useResendVerification = <TError = Promise<string>>(options?: {
     AuthResendVerificationRequest,
     Awaited<ReturnType<typeof resendVerification>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getResendVerificationMutationKey();
-  const swrFn = getResendVerificationMutationFetcher(fetchOptions);
+  const swrFn = getResendVerificationMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

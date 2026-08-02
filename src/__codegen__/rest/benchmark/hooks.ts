@@ -12,8 +12,6 @@ import useSWRMutation from 'swr/mutation';
 import type { Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
-import type { AxiosError, AxiosRequestConfig } from 'axios';
-
 import type {
   BenchmarkCorpusLibrarySummaryResponse,
   BenchmarkGetJobResponse,
@@ -107,6 +105,10 @@ import {
   getSaveBenchmarkTestLabRunMutationKey,
 } from './fetchers';
 
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export type SaveBenchmarkCorpusEntryMutationResult = NonNullable<
   Awaited<ReturnType<typeof saveBenchmarkCorpusEntry>>
 >;
@@ -115,7 +117,7 @@ export type SaveBenchmarkCorpusEntryMutationResult = NonNullable<
  * @summary Save one Test Lab corpus entry
  */
 export const useSaveBenchmarkCorpusEntry = <
-  TError = Promise<string | BoundaryErrorResponse>,
+  TError = string | BoundaryErrorResponse,
 >(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof saveBenchmarkCorpusEntry>>,
@@ -124,12 +126,12 @@ export const useSaveBenchmarkCorpusEntry = <
     BenchmarkSaveCorpusRequest,
     Awaited<ReturnType<typeof saveBenchmarkCorpusEntry>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getSaveBenchmarkCorpusEntryMutationKey();
-  const swrFn = getSaveBenchmarkCorpusEntryMutationFetcher(fetchOptions);
+  const swrFn = getSaveBenchmarkCorpusEntryMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -147,21 +149,21 @@ export type GetBenchmarkCorpusLibrarySummaryQueryResult = NonNullable<
  * @summary Get corpus library summary
  */
 export const useGetBenchmarkCorpusLibrarySummary = <
-  TError = Promise<string | BoundaryErrorResponse>,
+  TError = string | BoundaryErrorResponse,
 >(options?: {
   swr?: SWRConfiguration<
     Awaited<ReturnType<typeof getBenchmarkCorpusLibrarySummary>>,
     TError
   > & { swrKey?: Key; enabled?: boolean };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getGetBenchmarkCorpusLibrarySummaryKey() : null));
-  const swrFn = () => getBenchmarkCorpusLibrarySummary(fetchOptions);
+  const swrFn = () => getBenchmarkCorpusLibrarySummary(requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -183,7 +185,7 @@ export type SubmitBenchmarkJobMutationResult = NonNullable<
  * @summary Submit a benchmark corpus job
  */
 export const useSubmitBenchmarkJob = <
-  TError = Promise<string | BoundaryErrorResponse>,
+  TError = string | BoundaryErrorResponse,
 >(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof submitBenchmarkJob>>,
@@ -192,12 +194,12 @@ export const useSubmitBenchmarkJob = <
     BenchmarkSubmitJobRequest,
     Awaited<ReturnType<typeof submitBenchmarkJob>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getSubmitBenchmarkJobMutationKey();
-  const swrFn = getSubmitBenchmarkJobMutationFetcher(fetchOptions);
+  const swrFn = getSubmitBenchmarkJobMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -214,9 +216,7 @@ export type GetBenchmarkJobQueryResult = NonNullable<
 /**
  * @summary Poll a benchmark job's status and result
  */
-export const useGetBenchmarkJob = <
-  TError = Promise<string | BoundaryErrorResponse>,
->(
+export const useGetBenchmarkJob = <TError = string | BoundaryErrorResponse>(
   id: string,
   params?: GetBenchmarkJobParams,
   options?: {
@@ -224,17 +224,17 @@ export const useGetBenchmarkJob = <
       Awaited<ReturnType<typeof getBenchmarkJob>>,
       TError
     > & { swrKey?: Key; enabled?: boolean };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled =
     swrOptions?.enabled !== false && id !== null && id !== undefined;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getGetBenchmarkJobKey(id, params) : null));
-  const swrFn = () => getBenchmarkJob(id, params, fetchOptions);
+  const swrFn = () => getBenchmarkJob(id, params, requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -255,25 +255,23 @@ export type ListBenchmarkRunsQueryResult = NonNullable<
 /**
  * @summary List persisted benchmark run history
  */
-export const useListBenchmarkRuns = <
-  TError = Promise<string | BoundaryErrorResponse>,
->(
+export const useListBenchmarkRuns = <TError = string | BoundaryErrorResponse>(
   params?: ListBenchmarkRunsParams,
   options?: {
     swr?: SWRConfiguration<
       Awaited<ReturnType<typeof listBenchmarkRuns>>,
       TError
     > & { swrKey?: Key; enabled?: boolean };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getListBenchmarkRunsKey(params) : null));
-  const swrFn = () => listBenchmarkRuns(params, fetchOptions);
+  const swrFn = () => listBenchmarkRuns(params, requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -295,7 +293,7 @@ export type ListBenchmarkTestLabRunsQueryResult = NonNullable<
  * @summary List Test Lab run history
  */
 export const useListBenchmarkTestLabRuns = <
-  TError = Promise<string | BoundaryErrorResponse>,
+  TError = string | BoundaryErrorResponse,
 >(
   params?: ListBenchmarkTestLabRunsParams,
   options?: {
@@ -303,16 +301,16 @@ export const useListBenchmarkTestLabRuns = <
       Awaited<ReturnType<typeof listBenchmarkTestLabRuns>>,
       TError
     > & { swrKey?: Key; enabled?: boolean };
-    fetch?: RequestInit;
+    request?: SecondParameter<typeof customFetch>;
   }
 ) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getListBenchmarkTestLabRunsKey(params) : null));
-  const swrFn = () => listBenchmarkTestLabRuns(params, fetchOptions);
+  const swrFn = () => listBenchmarkTestLabRuns(params, requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -334,7 +332,7 @@ export type SaveBenchmarkTestLabRunMutationResult = NonNullable<
  * @summary Save one Test Lab run-history entry
  */
 export const useSaveBenchmarkTestLabRun = <
-  TError = Promise<string | BoundaryErrorResponse>,
+  TError = string | BoundaryErrorResponse,
 >(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof saveBenchmarkTestLabRun>>,
@@ -343,12 +341,12 @@ export const useSaveBenchmarkTestLabRun = <
     BenchmarkSaveTestLabRunRequest,
     Awaited<ReturnType<typeof saveBenchmarkTestLabRun>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getSaveBenchmarkTestLabRunMutationKey();
-  const swrFn = getSaveBenchmarkTestLabRunMutationFetcher(fetchOptions);
+  const swrFn = getSaveBenchmarkTestLabRunMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

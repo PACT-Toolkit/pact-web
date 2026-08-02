@@ -12,8 +12,6 @@ import useSWRMutation from 'swr/mutation';
 import type { Arguments, Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
-import type { AxiosError, AxiosRequestConfig } from 'axios';
-
 import type {
   AccountConsentResponse,
   AccountConsentsResponse,
@@ -99,6 +97,10 @@ import {
   getPutAccountProfileMutationKey,
 } from './fetchers';
 
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export type GetAccountConsentsQueryResult = NonNullable<
   Awaited<ReturnType<typeof getAccountConsents>>
 >;
@@ -106,20 +108,20 @@ export type GetAccountConsentsQueryResult = NonNullable<
 /**
  * @summary List the latest consent decision per document
  */
-export const useGetAccountConsents = <TError = Promise<string>>(options?: {
+export const useGetAccountConsents = <TError = string>(options?: {
   swr?: SWRConfiguration<
     Awaited<ReturnType<typeof getAccountConsents>>,
     TError
   > & { swrKey?: Key; enabled?: boolean };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getGetAccountConsentsKey() : null));
-  const swrFn = () => getAccountConsents(fetchOptions);
+  const swrFn = () => getAccountConsents(requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -140,7 +142,7 @@ export type PostAccountConsentsMutationResult = NonNullable<
 /**
  * @summary Record a consent decision (Art. 7 evidence)
  */
-export const usePostAccountConsents = <TError = Promise<string>>(options?: {
+export const usePostAccountConsents = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof postAccountConsents>>,
     TError,
@@ -148,12 +150,12 @@ export const usePostAccountConsents = <TError = Promise<string>>(options?: {
     AccountRecordConsentRequest,
     Awaited<ReturnType<typeof postAccountConsents>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getPostAccountConsentsMutationKey();
-  const swrFn = getPostAccountConsentsMutationFetcher(fetchOptions);
+  const swrFn = getPostAccountConsentsMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -170,7 +172,7 @@ export type PostAccountErasureMutationResult = NonNullable<
 /**
  * @summary Request erasure of the signed-in user's data (GDPR Art. 17)
  */
-export const usePostAccountErasure = <TError = Promise<string>>(options?: {
+export const usePostAccountErasure = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof postAccountErasure>>,
     TError,
@@ -178,12 +180,12 @@ export const usePostAccountErasure = <TError = Promise<string>>(options?: {
     Arguments,
     Awaited<ReturnType<typeof postAccountErasure>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getPostAccountErasureMutationKey();
-  const swrFn = getPostAccountErasureMutationFetcher(fetchOptions);
+  const swrFn = getPostAccountErasureMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -200,19 +202,19 @@ export type GetAccountExportQueryResult = NonNullable<
 /**
  * @summary Export pact-account-owned data (GDPR Art. 15)
  */
-export const useGetAccountExport = <TError = Promise<string>>(options?: {
+export const useGetAccountExport = <TError = string>(options?: {
   swr?: SWRConfiguration<
     Awaited<ReturnType<typeof getAccountExport>>,
     TError
   > & { swrKey?: Key; enabled?: boolean };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ?? (() => (isEnabled ? getGetAccountExportKey() : null));
-  const swrFn = () => getAccountExport(fetchOptions);
+  const swrFn = () => getAccountExport(requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -233,20 +235,20 @@ export type GetAccountPreferencesQueryResult = NonNullable<
 /**
  * @summary Get notification preferences
  */
-export const useGetAccountPreferences = <TError = Promise<string>>(options?: {
+export const useGetAccountPreferences = <TError = string>(options?: {
   swr?: SWRConfiguration<
     Awaited<ReturnType<typeof getAccountPreferences>>,
     TError
   > & { swrKey?: Key; enabled?: boolean };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getGetAccountPreferencesKey() : null));
-  const swrFn = () => getAccountPreferences(fetchOptions);
+  const swrFn = () => getAccountPreferences(requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -267,7 +269,7 @@ export type PutAccountPreferencesMutationResult = NonNullable<
 /**
  * @summary Patch notification preferences (mask semantics)
  */
-export const usePutAccountPreferences = <TError = Promise<string>>(options?: {
+export const usePutAccountPreferences = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof putAccountPreferences>>,
     TError,
@@ -275,12 +277,12 @@ export const usePutAccountPreferences = <TError = Promise<string>>(options?: {
     AccountUpdatePreferencesRequest,
     Awaited<ReturnType<typeof putAccountPreferences>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getPutAccountPreferencesMutationKey();
-  const swrFn = getPutAccountPreferencesMutationFetcher(fetchOptions);
+  const swrFn = getPutAccountPreferencesMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
@@ -297,20 +299,20 @@ export type GetAccountProfileQueryResult = NonNullable<
 /**
  * @summary Get the signed-in user's profile
  */
-export const useGetAccountProfile = <TError = Promise<string>>(options?: {
+export const useGetAccountProfile = <TError = string>(options?: {
   swr?: SWRConfiguration<
     Awaited<ReturnType<typeof getAccountProfile>>,
     TError
   > & { swrKey?: Key; enabled?: boolean };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getGetAccountProfileKey() : null));
-  const swrFn = () => getAccountProfile(fetchOptions);
+  const swrFn = () => getAccountProfile(requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -331,7 +333,7 @@ export type PutAccountProfileMutationResult = NonNullable<
 /**
  * @summary Patch the signed-in user's profile (mask semantics)
  */
-export const usePutAccountProfile = <TError = Promise<string>>(options?: {
+export const usePutAccountProfile = <TError = string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof putAccountProfile>>,
     TError,
@@ -339,12 +341,12 @@ export const usePutAccountProfile = <TError = Promise<string>>(options?: {
     AccountUpdateProfileRequest,
     Awaited<ReturnType<typeof putAccountProfile>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getPutAccountProfileMutationKey();
-  const swrFn = getPutAccountProfileMutationFetcher(fetchOptions);
+  const swrFn = getPutAccountProfileMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 
