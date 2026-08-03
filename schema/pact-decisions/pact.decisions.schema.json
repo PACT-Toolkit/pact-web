@@ -74,6 +74,9 @@
     "cel": {
       "$ref": "#/$defs/celDecision"
     },
+    "diagnostics": {
+      "$ref": "#/$defs/decisionDiagnostics"
+    },
     "latency_ms": {
       "type": "integer"
     },
@@ -118,6 +121,51 @@
         }
       }
     },
+    "matchedSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "description": "Byte-range within the filter's normalized input that triggered a block decision (PACT-734). start/end index the NORMALIZED (lowercased/preprocessed) input, not the original content.",
+      "properties": {
+        "start": {
+          "type": "integer"
+        },
+        "end": {
+          "type": "integer"
+        },
+        "excerpt": {
+          "type": "string",
+          "description": "Bounded, redactor-masked copy of the matched substring - never the full content."
+        }
+      }
+    },
+    "causalSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "description": "One byte-range in the ORIGINAL request content that the gateway's M12 causal replay identified as contributing to a block decision (PACT-734). Text is deliberately omitted (PII avoidance).",
+      "properties": {
+        "start": {
+          "type": "integer"
+        },
+        "end": {
+          "type": "integer"
+        }
+      }
+    },
+    "decisionDiagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Causal-replay diagnostics (PACT-734). Present only on block decisions when the gateway's M12 causal replay ran (PACT_DIAGNOSTICS_ENABLED) and span capture is enabled.",
+      "properties": {
+        "causal_spans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/causalSpan"
+          }
+        }
+      }
+    },
     "filterDecision": {
       "type": "object",
       "additionalProperties": false,
@@ -145,6 +193,9 @@
             "$ref": "#/$defs/controlRef"
           },
           "description": "Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
+        },
+        "matched_span": {
+          "$ref": "#/$defs/matchedSpan"
         }
       }
     },
