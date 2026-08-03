@@ -43,6 +43,7 @@ export interface PactDecisions {
   external_refs?: ExternalRefDecision;
   routing?: RoutingDecision;
   cel?: CelDecision;
+  diagnostics?: DecisionDiagnostics;
   latency_ms: number;
   created_at: string;
   /**
@@ -78,6 +79,7 @@ export interface FilterDecision {
    * Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed.
    */
   controls?: ControlRef[];
+  matched_span?: MatchedSpan;
 }
 /**
  * One compliance control a stage verdict enforces (PACT-611). Open set by design - new frameworks or control IDs are added without a schema change.
@@ -91,6 +93,17 @@ export interface ControlRef {
    * Framework-specific control identifier, e.g. "LLM01" under owasp_llm_top10 or "accuracy" under eu_ai_act_art15.
    */
   id: string;
+}
+/**
+ * Byte-range within the filter's normalized input that triggered a block decision (PACT-734). start/end index the NORMALIZED (lowercased/preprocessed) input, not the original content.
+ */
+export interface MatchedSpan {
+  start: number;
+  end: number;
+  /**
+   * Bounded, redactor-masked copy of the matched substring - never the full content.
+   */
+  excerpt?: string;
 }
 export interface ClassifierDecision {
   /**
@@ -264,4 +277,17 @@ export interface CelDecision {
    * Closed set - celeval.SkipReason* constants. Present only when the stage could not fully evaluate every active rule (fail-open): cel_stage_timeout/cel_rule_timeout are budget exhaustion, cel_rule_error covers both a CEL runtime error and an expression that evaluated cleanly to a non-boolean value. Absent when every active rule was attempted regardless of outcome.
    */
   skipped_reason?: "cel_stage_timeout" | "cel_rule_timeout" | "cel_rule_error";
+}
+/**
+ * Causal-replay diagnostics (PACT-734). Present only on block decisions when the gateway's M12 causal replay ran (PACT_DIAGNOSTICS_ENABLED) and span capture is enabled.
+ */
+export interface DecisionDiagnostics {
+  causal_spans?: CausalSpan[];
+}
+/**
+ * One byte-range in the ORIGINAL request content that the gateway's M12 causal replay identified as contributing to a block decision (PACT-734). Text is deliberately omitted (PII avoidance).
+ */
+export interface CausalSpan {
+  start: number;
+  end: number;
 }
