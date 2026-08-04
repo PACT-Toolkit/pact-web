@@ -66,25 +66,30 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         {dp.filter.shadow && (
           <span className="italic text-amber-500">shadow</span>
         )}
-        {dp.filter.matched_span && (
-          <span
-            className="flex flex-wrap items-center gap-1.5"
-            data-testid="audit-decision-matched-span"
-          >
-            <span className="text-muted-foreground">matched</span>
-            {dp.filter.matched_span.excerpt && (
-              // Rendered verbatim -- the excerpt is already redactor-masked
-              // server-side (PACT-734), so no client-side truncation or
-              // cleanup here that could hide the masking.
-              <code className="whitespace-pre-wrap break-words rounded bg-muted px-1.5 py-0.5">
-                {dp.filter.matched_span.excerpt}
-              </code>
-            )}
-            <span className="text-muted-foreground">
-              chars {dp.filter.matched_span.start}-{dp.filter.matched_span.end}
-            </span>
-          </span>
+      </div>
+    )}
+    {/* Matched span is gated on its own presence only (PACT-745 deliverable
+        2), independent of filter.verdict -- both fields are independently
+        optional in the wire schema, so coupling this to the verdict block
+        above would silently drop a masked excerpt whenever a producer sends
+        matched_span without a non-safe verdict. */}
+    {dp.filter?.matched_span && (
+      <div
+        className="flex flex-wrap items-center gap-1.5"
+        data-testid="audit-decision-matched-span"
+      >
+        <span className="text-muted-foreground">matched</span>
+        {dp.filter.matched_span.excerpt && (
+          // Rendered verbatim -- the excerpt is already redactor-masked
+          // server-side (PACT-734), so no client-side truncation or
+          // cleanup here that could hide the masking.
+          <code className="whitespace-pre-wrap break-words rounded bg-muted px-1.5 py-0.5">
+            {dp.filter.matched_span.excerpt}
+          </code>
         )}
+        <span className="text-muted-foreground">
+          chars {dp.filter.matched_span.start}-{dp.filter.matched_span.end}
+        </span>
       </div>
     )}
     {dp.redactor?.verdict && dp.redactor.verdict !== 'pass_through' && (
