@@ -77,6 +77,9 @@
     "diagnostics": {
       "$ref": "#/$defs/decisionDiagnostics"
     },
+    "content_delivery": {
+      "$ref": "#/$defs/contentDelivery"
+    },
     "latency_ms": {
       "type": "integer"
     },
@@ -491,6 +494,25 @@
           "type": "string",
           "enum": ["cel_stage_timeout", "cel_rule_timeout", "cel_rule_error"],
           "description": "Closed set - celeval.SkipReason* constants. Present only when the stage could not fully evaluate every active rule (fail-open): cel_stage_timeout/cel_rule_timeout are budget exhaustion, cel_rule_error covers both a CEL runtime error and an expression that evaluated cleanly to a non-boolean value. Absent when every active rule was attempted regardless of outcome."
+        }
+      }
+    },
+    "contentDelivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["delivery_id", "content_sha256", "sink_kind"],
+      "description": "Deterministic reference to an asynchronous tenant-custody content delivery (PACT-735). Present only on block decisions whose capture tier is redacted_full with a configured sink; a reference for tenant-side correlation - PACT persists no content. Generated at decision time, before delivery to tenant-owned storage completes.",
+      "properties": {
+        "delivery_id": {
+          "type": "string"
+        },
+        "content_sha256": {
+          "type": "string",
+          "description": "SHA-256 hex of the redacted payload as delivered."
+        },
+        "sink_kind": {
+          "type": "string",
+          "enum": ["webhook", "s3"]
         }
       }
     }

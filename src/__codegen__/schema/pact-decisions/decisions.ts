@@ -44,6 +44,7 @@ export interface PactDecisions {
   routing?: RoutingDecision;
   cel?: CelDecision;
   diagnostics?: DecisionDiagnostics;
+  content_delivery?: ContentDelivery;
   latency_ms: number;
   created_at: string;
   /**
@@ -290,4 +291,15 @@ export interface DecisionDiagnostics {
 export interface CausalSpan {
   start: number;
   end: number;
+}
+/**
+ * Deterministic reference to an asynchronous tenant-custody content delivery (PACT-735). Present only on block decisions whose capture tier is redacted_full with a configured sink; a reference for tenant-side correlation - PACT persists no content. Generated at decision time, before delivery to tenant-owned storage completes.
+ */
+export interface ContentDelivery {
+  delivery_id: string;
+  /**
+   * SHA-256 hex of the redacted payload as delivered.
+   */
+  content_sha256: string;
+  sink_kind: "webhook" | "s3";
 }
