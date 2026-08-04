@@ -108,12 +108,33 @@ definitions:
         type: object
     check.ConsensusInfo:
         properties:
+            confidence:
+                description: |-
+                    Confidence is the consensus stage's aggregated confidence score,
+                    mirroring decisions.ConsensusDecision.Confidence (PACT-704). 0 on the
+                    transport fail-open path.
+                type: number
             duration_ms:
                 description: |-
                     DurationMs is the consensus stage's wall-clock RPC time in fractional
                     milliseconds (PACT-613 convention); present whenever this sub-object
                     is. nil is never emitted as 0.
                 type: number
+            label:
+                description: |-
+                    Label is the consensus stage's aggregated outcome, mirroring
+                    decisions.ConsensusDecision.Label - the pact.decisions Kafka event's
+                    consensus sub-object - byte-for-byte in field name and value set
+                    (PACT-704). Empty on the transport fail-open path (the sub-object is
+                    still present for DurationMs, but the vote never produced a verdict).
+                enum:
+                    - unspecified
+                    - benign
+                    - prompt_injection
+                    - jailbreak
+                    - sensitive
+                    - unknown
+                type: string
         type: object
     check.DiagnosticsInfo:
         properties:
