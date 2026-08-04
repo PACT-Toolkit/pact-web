@@ -38,4 +38,9 @@ export interface LayerState {
   refsScanned?: number;
   refsBlocked?: number;
   refsMitigated?: number;
+  // Causal-replay diagnostics (PACT-745, wire field diagnostics.causal_spans
+  // -- PACT-734/735). Populated only on the layer that actually blocked the
+  // request; text is deliberately never included (PII avoidance), so this is
+  // offset ranges only, same as the wire shape.
+  causalSpans?: { start?: number; end?: number }[];
 }
