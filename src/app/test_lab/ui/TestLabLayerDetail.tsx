@@ -1,5 +1,6 @@
 import { type LayerState } from '@/src/app/test_lab/ui/types';
 import { Button } from '@/src/components/ui/button';
+import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
 
 export const TestLabLayerDetail = ({
   layer,
@@ -80,6 +81,12 @@ export const TestLabLayerDetail = ({
             {layer.refsMitigated ?? 0} mitigated)
           </span>
         </div>
+      )}
+      {layer.causalSpans && (
+        <CausalSpanList
+          spans={layer.causalSpans}
+          testId="test-lab-layer-causal-spans"
+        />
       )}
     </div>
     {layer.confidence !== undefined && layer.confidence > 0 && (

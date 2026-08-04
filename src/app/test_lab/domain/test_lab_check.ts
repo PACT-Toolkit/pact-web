@@ -219,6 +219,23 @@ export const parseCheckResponse = (raw: unknown): CheckResponse => {
     );
   }
 
+  // diagnostics.causal_spans (PACT-734/745) has no closed-set field of its
+  // own -- same reasoning as consensus above -- but each element must still
+  // be an object, same shape check as external_refs.refs.
+  const diagnostics = assertRecordField(raw.diagnostics, 'diagnostics');
+  if (diagnostics?.causal_spans !== undefined) {
+    assertArrayField(
+      diagnostics.causal_spans,
+      'diagnostics.causal_spans'
+    ).forEach((span, i) => {
+      if (!isRecord(span)) {
+        throw new CheckResponseParseError(
+          `check response diagnostics.causal_spans[${i}] is not an object`
+        );
+      }
+    });
+  }
+
   // The checks above have already validated every closed-set field and the
   // three required top-level fields; `raw` is a CheckResponse at this point.
   // Widened through `unknown` because `Record<string, unknown>` and
@@ -609,7 +626,20 @@ const blankDetail: Omit<LayerState, 'id' | 'label' | 'decision'> = {
   refsScanned: undefined,
   refsBlocked: undefined,
   refsMitigated: undefined,
+  causalSpans: undefined,
 };
+
+// stageCausalSpans (PACT-745) attaches diagnostics.causal_spans to whichever
+// stage actually blocked the request -- causal_spans is a top-level wire
+// field (not nested under any one stage's sub-object), so blockingStageId is
+// the single attribution authority here too, same as every other detail
+// field in deriveStageState.
+const stageCausalSpans = (
+  data: CheckResponse,
+  id: StageId,
+  blockingStage: StageId | undefined
+): LayerState['causalSpans'] =>
+  blockingStage === id ? data.diagnostics?.causal_spans : undefined;
 
 // deriveStageState computes one stage's real (non-skipped, non-bypassed)
 // state, reading only DETAIL from the structural sub-objects -- `blocked`
@@ -630,6 +660,7 @@ const deriveStageState = (
         ruleId: filterRuleId(data),
         reason: filterReason(data, blocked),
         latencyMs: roundMs(data.filter?.duration_ms),
+        causalSpans: stageCausalSpans(data, id, blockingStage),
       };
     case 'classifier':
       return {
@@ -639,6 +670,7 @@ const deriveStageState = (
         confidence: data.classifier?.score,
         classifierLabel: data.classifier?.label,
         latencyMs: roundMs(data.classifier?.duration_ms),
+        causalSpans: stageCausalSpans(data, id, blockingStage),
       };
     case 'sandbox':
       return {
@@ -648,6 +680,7 @@ const deriveStageState = (
         refsScanned: data.external_refs?.scanned,
         refsBlocked: data.external_refs?.blocked,
         refsMitigated: data.external_refs?.mitigated,
+        causalSpans: stageCausalSpans(data, id, blockingStage),
       };
     case 'consensus': {
       const decision: LayerDecision = blocked
@@ -661,6 +694,7 @@ const deriveStageState = (
         decision,
         reason: consensusReason(data, decision),
         latencyMs: roundMs(data.consensus?.duration_ms),
+        causalSpans: stageCausalSpans(data, id, blockingStage),
       };
     }
     case 'redactor': {

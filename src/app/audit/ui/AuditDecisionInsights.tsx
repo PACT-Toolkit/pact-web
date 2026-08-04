@@ -1,3 +1,4 @@
+import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 export { parseDecisionPayload } from '@/src/lib/decisions/decision_payload';
@@ -52,7 +53,7 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
       </div>
     )}
     {dp.filter?.verdict && dp.filter.verdict !== 'safe' && (
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         <span className="text-muted-foreground">Filter</span>
         <code className="rounded bg-muted px-1.5 py-0.5">
           {dp.filter.verdict}
@@ -65,6 +66,30 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         {dp.filter.shadow && (
           <span className="italic text-amber-500">shadow</span>
         )}
+      </div>
+    )}
+    {/* Matched span is gated on its own presence only (PACT-745 deliverable
+        2), independent of filter.verdict -- both fields are independently
+        optional in the wire schema, so coupling this to the verdict block
+        above would silently drop a masked excerpt whenever a producer sends
+        matched_span without a non-safe verdict. */}
+    {dp.filter?.matched_span && (
+      <div
+        className="flex flex-wrap items-center gap-1.5"
+        data-testid="audit-decision-matched-span"
+      >
+        <span className="text-muted-foreground">matched</span>
+        {dp.filter.matched_span.excerpt && (
+          // Rendered verbatim -- the excerpt is already redactor-masked
+          // server-side (PACT-734), so no client-side truncation or
+          // cleanup here that could hide the masking.
+          <code className="whitespace-pre-wrap break-words rounded bg-muted px-1.5 py-0.5">
+            {dp.filter.matched_span.excerpt}
+          </code>
+        )}
+        <span className="text-muted-foreground">
+          chars {dp.filter.matched_span.start}-{dp.filter.matched_span.end}
+        </span>
       </div>
     )}
     {dp.redactor?.verdict && dp.redactor.verdict !== 'pass_through' && (
@@ -147,6 +172,12 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
           </span>
         )}
       </div>
+    )}
+    {dp.diagnostics?.causal_spans && (
+      <CausalSpanList
+        spans={dp.diagnostics.causal_spans}
+        testId="audit-decision-causal-spans"
+      />
     )}
     {hasForensics(dp) && (
       <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1.5 border-t pt-2">

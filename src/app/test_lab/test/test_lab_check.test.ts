@@ -460,6 +460,48 @@ describe('applyLiveLayers - PACT-703 consensus/redactor/sandbox layer states', (
     expect(out.filter.latencyMs).toBe(3);
     expect(out.classifier.latencyMs).toBe(15);
   });
+
+  it('PACT-745: diagnostics.causal_spans attaches to the stage that blocked, not to any other stage', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'block',
+          reason: 'filter_hostile',
+          filter: { verdict: 'hostile', rule_id: 'inject-003' },
+          diagnostics: {
+            causal_spans: [
+              { start: 0, end: 11 },
+              { start: 76, end: 94 },
+            ],
+          },
+        }),
+        []
+      )
+    );
+    expect(out.filter.causalSpans).toEqual([
+      { start: 0, end: 11 },
+      { start: 76, end: 94 },
+    ]);
+    // classifier/consensus skip since filter halted the pipeline, and never
+    // inherit the blocking stage's diagnostics.
+    expect(out.classifier.causalSpans).toBeUndefined();
+    expect(out.consensus.causalSpans).toBeUndefined();
+  });
+
+  it('PACT-745: causal spans never leak onto an allow decision, even when diagnostics is present', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'allow',
+          diagnostics: { causal_spans: [] },
+        }),
+        []
+      )
+    );
+    expect(out.filter.causalSpans).toBeUndefined();
+  });
 });
 
 describe("parseCheckResponse - PACT-576 parse-don't-cast against the regenerated literal-union contract", () => {
@@ -618,6 +660,29 @@ describe("parseCheckResponse - PACT-576 parse-don't-cast against the regenerated
         external_refs: { refs: 'not-an-array' },
       })
     ).toThrow(/external_refs\.refs/);
+  });
+
+  it('PACT-745: accepts diagnostics.causal_spans (start/end only, no closed-set field)', () => {
+    const parsed = parseCheckResponse({
+      ...validResponse(),
+      diagnostics: { causal_spans: [{ start: 0, end: 11 }] },
+    });
+    expect(parsed.diagnostics?.causal_spans).toEqual([{ start: 0, end: 11 }]);
+  });
+
+  it('PACT-745: rejects a non-object diagnostics sub-object', () => {
+    expect(() =>
+      parseCheckResponse({ ...validResponse(), diagnostics: 'ran' })
+    ).toThrow(/diagnostics/);
+  });
+
+  it('PACT-745: rejects a non-array diagnostics.causal_spans', () => {
+    expect(() =>
+      parseCheckResponse({
+        ...validResponse(),
+        diagnostics: { causal_spans: 'not-an-array' },
+      })
+    ).toThrow(/diagnostics\.causal_spans/);
   });
 
   it('tolerates undefined optional sub-objects - only decision/latency_ms/request_id are required', () => {

@@ -27,7 +27,10 @@ const trafficBadgeText = (payload: DecisionPayload): string => {
 // those are what an operator scans for first; everything else lives in
 // AuditDecisionInsights behind the expand toggle. Declared synthetic traffic
 // (traffic_source, PACT-484) gets an origin badge; undeclared rows are real
-// client traffic and stay unbadged.
+// client traffic and stay unbadged. A blocked decision that carries `engine`
+// (PACT-745) gets a monochrome "blocked by <engine>" badge so the deciding
+// stage is visible without expanding -- rows without `engine` (older
+// payloads, or a decision the gateway didn't attribute) render unchanged.
 export const AuditDecisionRow = ({
   event,
   payload,
@@ -52,6 +55,11 @@ export const AuditDecisionRow = ({
             }`}
           >
             {payload.decision.toUpperCase()}
+          </span>
+        )}
+        {payload.decision === 'block' && payload.engine && (
+          <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+            blocked by {payload.engine}
           </span>
         )}
         {payload.reason && (
