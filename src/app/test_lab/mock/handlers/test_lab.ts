@@ -16,7 +16,9 @@ import { runRedactor } from '@/src/app/redactor/mock/data/redactor';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 import {
+  celMatchPattern,
   filterMatchPattern,
+  runCelRules,
   runClassifier,
   runConsensus,
   runFilter,
@@ -177,18 +179,34 @@ export const handlers: RequestHandler[] = [
     // (PACT-324) exercises the same detection logic as the live console.
     const redactorResult = !blocked ? runRedactor(content) : undefined;
 
+    // Stage 5 (virtual, PACT-757): the CEL rule engine, evaluated after
+    // every visualised stage per BLOCKING_STAGE_OF's comment in
+    // test_lab_check.ts -- only reached if nothing upstream already
+    // blocked. A fired CEL rule is deliberately never attributed to a
+    // visualised stage (no chip renders it; resultCausalSpans surfaces its
+    // diagnostics on the Result node instead).
+    const celFired = !blocked && runCelRules(content);
+    if (celFired) {
+      blocked = true;
+      reason = 'cel_rule_fired';
+    }
+
     const decision = blocked ? 'block' : 'allow';
 
     // Diagnostics (PACT-303/327): the causal-diagnostic harness only ever
     // replays a block decision, and only when the gateway build has it
-    // enabled. filterMatchPattern resolves the exact rule the filter stage
-    // matched so the span lines up with the submitted content byte-for-byte.
-    // No span for a suspicious-verdict block -- filterMatchPattern only
-    // covers the hostile pattern tables, matching maybeDiagnose's own
-    // reason-prefix gate on the real gateway.
+    // enabled. filterMatchPattern/celMatchPattern resolve the exact pattern
+    // the filter/CEL stage matched so the span lines up with the submitted
+    // content byte-for-byte. No span for a suspicious-verdict block --
+    // filterMatchPattern only covers the hostile pattern tables, matching
+    // maybeDiagnose's own reason-prefix gate on the real gateway.
     const diagnosticsResult = computeCausalSpans(
       content,
-      reason === 'filter_hostile' ? filterMatchPattern(content) : undefined,
+      reason === 'filter_hostile'
+        ? filterMatchPattern(content)
+        : reason === 'cel_rule_fired'
+          ? celMatchPattern(content)
+          : undefined,
       Boolean(gatewayConfig.diagnosticsEnabled),
       decision === 'block'
     );
@@ -234,6 +252,14 @@ export const handlers: RequestHandler[] = [
           ? { label: classifierResult.label, score: classifierResult.score }
           : undefined,
         redactor: redactorResult,
+        // PACT-757: mirror the response body's diagnostics field (below) so
+        // a dev:mock audit row carries the same causal_spans a live gateway
+        // would emit -- this was previously dropped, so a Test Lab probe's
+        // seeded decisions.ts row never matched what /v1/check actually
+        // returned to the caller.
+        diagnostics: diagnosticsResult
+          ? { causal_spans: diagnosticsResult }
+          : undefined,
         latency_ms: latencyMs,
         created_at: createdAt,
       }),

@@ -7,6 +7,7 @@ import {
   CheckResponseParseError,
   deriveLayerDefinitions,
   parseCheckResponse,
+  resultCausalSpans,
   type TestLabRunRecord,
   toTestRun,
 } from '@/src/app/test_lab/domain/test_lab_check';
@@ -336,6 +337,59 @@ describe('applyLiveLayers - PACT-702 reason-driven block attribution', () => {
     expect(out.filter.decision).toBe('skip');
     expect(out.classifier.decision).toBe('block');
     expect(out.classifier.classifierLabel).toBe('jailbreak');
+  });
+});
+
+describe('resultCausalSpans - PACT-757 unattributed-block spans on the Result node', () => {
+  it('cel_rule_fired with diagnostics: returns the causal spans', () => {
+    const spans = resultCausalSpans(
+      baseResponse({
+        decision: 'block',
+        reason: 'cel_rule_fired',
+        diagnostics: { causal_spans: [{ start: 4, end: 22 }] },
+      })
+    );
+    expect(spans).toEqual([{ start: 4, end: 22 }]);
+  });
+
+  it('policy_token_denied with diagnostics: returns the causal spans', () => {
+    const spans = resultCausalSpans(
+      baseResponse({
+        decision: 'block',
+        reason: 'policy_token_denied',
+        diagnostics: { causal_spans: [{ start: 0, end: 10 }] },
+      })
+    );
+    expect(spans).toEqual([{ start: 0, end: 10 }]);
+  });
+
+  it('filter_hostile: undefined -- this block IS attributed to the filter chip', () => {
+    const spans = resultCausalSpans(
+      baseResponse({
+        decision: 'block',
+        reason: 'filter_hostile',
+        filter: { verdict: 'hostile', rule_id: 'inject-001' },
+        diagnostics: { causal_spans: [{ start: 0, end: 5 }] },
+      })
+    );
+    expect(spans).toBeUndefined();
+  });
+
+  it('allow decision: undefined even if diagnostics happens to be present', () => {
+    const spans = resultCausalSpans(
+      baseResponse({
+        decision: 'allow',
+        diagnostics: { causal_spans: [{ start: 0, end: 5 }] },
+      })
+    );
+    expect(spans).toBeUndefined();
+  });
+
+  it('cel_rule_fired with no diagnostics (diagnostics disabled): undefined', () => {
+    const spans = resultCausalSpans(
+      baseResponse({ decision: 'block', reason: 'cel_rule_fired' })
+    );
+    expect(spans).toBeUndefined();
   });
 });
 
