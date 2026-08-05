@@ -30,6 +30,12 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
         { backend_id: 'gemini-flash', label: 'jailbreak', score: 0.93 },
       ],
     },
+    // PACT-750: causal spans (PACT-734) carry no text by design (PII
+    // avoidance) -- these offsets are illustrative byte ranges only, same
+    // convention as the pre-existing redactor.ts SCENARIOS spans.
+    diagnostics: {
+      causal_spans: [{ start: 0, end: 24 }],
+    },
     latency_ms: 340 + index,
   }),
   // Split: backends disagree on the winning label. Flagged (SPLIT).
@@ -52,6 +58,9 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
         { backend_id: 'gpt-4o-mini', label: 'suspicious', score: 0.55 },
         { backend_id: 'gemini-flash', label: 'jailbreak', score: 0.66 },
       ],
+    },
+    diagnostics: {
+      causal_spans: [{ start: 10, end: 38 }],
     },
     latency_ms: 410 + index,
   }),
@@ -120,6 +129,9 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
         { backend_id: 'gpt-4o-mini', label: 'jailbreak', score: 0.4 },
         { backend_id: 'gemini-flash', label: 'jailbreak', score: 0.41 },
       ],
+    },
+    diagnostics: {
+      causal_spans: [{ start: 5, end: 29 }],
     },
     latency_ms: 380 + index,
   }),

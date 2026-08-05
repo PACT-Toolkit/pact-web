@@ -36,6 +36,13 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
       score: 0.94,
       engine: 'deberta-v3-pact-injection-v1',
     },
+    // PACT-750: causal spans (PACT-734) -- like every span field on this
+    // schema, deliberately carries no text (PII avoidance), so the offsets
+    // here are illustrative byte ranges only, same convention as the
+    // pre-existing redactor.ts SCENARIOS spans.
+    diagnostics: {
+      causal_spans: [{ start: 0, end: 34 }],
+    },
     latency_ms: 22 + index,
   }),
   // Confident jailbreak: blocked without needing consensus.
@@ -47,6 +54,9 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
       label: 'jailbreak',
       score: 0.91,
       engine: 'deberta-v3-pact-injection-v1',
+    },
+    diagnostics: {
+      causal_spans: [{ start: 6, end: 27 }],
     },
     latency_ms: 25 + index,
   }),
