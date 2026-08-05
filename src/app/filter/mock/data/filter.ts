@@ -355,4 +355,28 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 3,
     created_at: '',
   });
+  // PACT-749: a block whose engine (cel) has no visualised-stage mapping, so
+  // the audit UI must render its causal spans as unattributed rather than
+  // silently dropping them. Exercises the same PACT-734 diagnostics field as
+  // the filter_hostile row above, but on an engine outside
+  // STAGE_ATTRIBUTED_ENGINES (decision_stage_attribution.ts). Seeded at the
+  // same 1-minute offset as the newest row above so it sorts onto the
+  // audit feed's default first page (PAGE_SIZE=50) instead of the tail end.
+  seed(1 * min, {
+    request_id: 'req-i7j8k9',
+    decision: 'block',
+    reason: 'cel_rule_fired',
+    engine: 'cel',
+    cel: {
+      rule_id: 'cel-tool-002',
+      rule_name: 'disallow tool chaining past budget',
+      outcome: 'block',
+      fired_count: 1,
+    },
+    diagnostics: {
+      causal_spans: [{ start: 4, end: 22 }],
+    },
+    latency_ms: 9,
+    created_at: '',
+  });
 };

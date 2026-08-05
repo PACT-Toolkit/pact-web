@@ -138,3 +138,80 @@ describe('AuditDecisionRow expanded detail - matched span and causal spans', () 
     expect(screen.queryByText(/^chars /)).not.toBeInTheDocument();
   });
 });
+
+// PACT-749: engine=cel (a PACT-335 tier-3 CEL rule escalation) and
+// engine=policy have no visualised-stage mapping (see
+// decision_stage_attribution.ts's STAGE_ATTRIBUTED_ENGINES), unlike
+// engine=filter above. Their causal spans must still render -- just with an
+// honest qualifier instead of a fabricated stage attribution.
+describe('AuditDecisionRow expanded detail - unattributed causal spans', () => {
+  it('renders causal spans plus a "not attributed to a stage" qualifier for a cel_rule_fired block', () => {
+    renderRow({
+      decision: 'block',
+      reason: 'cel_rule_fired',
+      engine: 'cel',
+      cel: {
+        rule_id: 'cel-tool-002',
+        rule_name: 'disallow tool chaining past budget',
+        outcome: 'block',
+        fired_count: 1,
+      },
+      diagnostics: {
+        causal_spans: [{ start: 4, end: 22 }],
+      },
+      latency_ms: 9,
+    });
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    const causalSpans = screen.getByTestId('audit-decision-causal-spans');
+    expect(causalSpans).toHaveTextContent('chars 4-22');
+    expect(causalSpans).toHaveTextContent('not attributed to a stage');
+  });
+
+  it('renders the qualifier for a policy_token_denied block too', () => {
+    renderRow({
+      decision: 'block',
+      reason: 'policy_token_denied',
+      engine: 'policy',
+      policy: { verdict: 'denied', agent_id: 'agent-7' },
+      diagnostics: {
+        causal_spans: [{ start: 0, end: 9 }],
+      },
+      latency_ms: 3,
+    });
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    const causalSpans = screen.getByTestId('audit-decision-causal-spans');
+    expect(causalSpans).toHaveTextContent('chars 0-9');
+    expect(causalSpans).toHaveTextContent('not attributed to a stage');
+  });
+
+  it('renders the qualifier when engine is absent entirely (pre-PACT-745 payload)', () => {
+    renderRow({
+      decision: 'block',
+      reason: 'filter_hostile',
+      diagnostics: {
+        causal_spans: [{ start: 1, end: 6 }],
+      },
+      latency_ms: 4,
+    });
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(screen.getByTestId('audit-decision-causal-spans')).toHaveTextContent(
+      'not attributed to a stage'
+    );
+  });
+
+  it('never shows the qualifier for an attributed block (engine=filter, unchanged from before PACT-749)', () => {
+    renderRow(SPAN_PAYLOAD);
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(
+      screen.getByTestId('audit-decision-causal-spans')
+    ).not.toHaveTextContent('not attributed to a stage');
+  });
+});
