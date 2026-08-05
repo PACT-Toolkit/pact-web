@@ -71,6 +71,60 @@ describe('AuditDecisionRow collapsed badges', () => {
   });
 });
 
+describe('AuditDecisionRow collapsed stage strip (PACT-748)', () => {
+  it('renders a chip per present stage, with the blocking stage distinguished, for a blocked decision with engine', () => {
+    renderRow({
+      decision: 'block',
+      engine: 'consensus',
+      classifier: { label: 'jailbreak', score: 0.58 },
+      consensus: { label: 'jailbreak', confidence: 0.93, quorum_reached: true },
+      latency_ms: 340,
+    });
+
+    const strip = screen.getByTestId('audit-decision-stage-strip');
+    expect(strip).toHaveTextContent('Classifier');
+    expect(strip).toHaveTextContent('Consensus');
+  });
+
+  it('omits the strip on an allow decision, even with per-stage data present', () => {
+    renderRow({
+      decision: 'allow',
+      engine: 'consensus',
+      classifier: { label: 'safe', score: 0.1 },
+      consensus: { label: 'safe', quorum_reached: true },
+      latency_ms: 12,
+    });
+
+    expect(
+      screen.queryByTestId('audit-decision-stage-strip')
+    ).not.toBeInTheDocument();
+  });
+
+  it('omits the strip on a blocked decision with no engine (matches the blocked-by badge gate)', () => {
+    renderRow({ decision: 'block', reason: 'filter_hostile', latency_ms: 4 });
+
+    expect(
+      screen.queryByTestId('audit-decision-stage-strip')
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders no strip and no crash on a blocked decision that carries engine but no stage sub-objects (older events)', () => {
+    renderRow({
+      decision: 'block',
+      reason: 'filter_hostile',
+      engine: 'filter',
+      latency_ms: 4,
+    });
+
+    // The row itself must still render (the blocked-by badge stays gated on
+    // engine alone, independent of stage sub-object presence).
+    expect(screen.getByText('blocked by filter')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('audit-decision-stage-strip')
+    ).not.toBeInTheDocument();
+  });
+});
+
 describe('AuditDecisionRow expanded detail - matched span and causal spans', () => {
   it('renders the masked excerpt verbatim and the offset range when filter.matched_span is present', () => {
     renderRow(SPAN_PAYLOAD);

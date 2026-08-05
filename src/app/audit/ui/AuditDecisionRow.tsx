@@ -1,9 +1,11 @@
 import { Shield } from 'lucide-react';
 
 import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
+import { derivePipelineStages } from '@/src/app/audit/domain/audit_decision_stage_strip';
 import { prettyPayload } from '@/src/app/audit/domain/audit_event_variant';
 import { AuditDecisionInsights } from '@/src/app/audit/ui/AuditDecisionInsights';
 import { AuditRowShell } from '@/src/app/audit/ui/AuditRowShell';
+import { StageStrip } from '@/src/framework/decisions/stage_strip';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import {
   TRAFFIC_BUCKET_LABELS,
@@ -29,8 +31,10 @@ const trafficBadgeText = (payload: DecisionPayload): string => {
 // (traffic_source, PACT-484) gets an origin badge; undeclared rows are real
 // client traffic and stay unbadged. A blocked decision that carries `engine`
 // (PACT-745) gets a monochrome "blocked by <engine>" badge so the deciding
-// stage is visible without expanding -- rows without `engine` (older
-// payloads, or a decision the gateway didn't attribute) render unchanged.
+// stage is visible without expanding, plus a per-stage strip (PACT-748,
+// Test Lab parity) showing every stage that fired with the blocker picked
+// out in red -- rows without `engine` (older payloads, or a decision the
+// gateway didn't attribute) render unchanged: no badge, no strip.
 export const AuditDecisionRow = ({
   event,
   payload,
@@ -58,9 +62,15 @@ export const AuditDecisionRow = ({
           </span>
         )}
         {payload.decision === 'block' && payload.engine && (
-          <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-            blocked by {payload.engine}
-          </span>
+          <>
+            <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+              blocked by {payload.engine}
+            </span>
+            <StageStrip
+              stages={derivePipelineStages(payload)}
+              testId="audit-decision-stage-strip"
+            />
+          </>
         )}
         {payload.reason && (
           <code className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">

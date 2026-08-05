@@ -1,27 +1,8 @@
-import {
-  Brain,
-  ChevronDown,
-  ChevronUp,
-  Eraser,
-  Globe,
-  Shield,
-  Users,
-  type LucideIcon,
-} from 'lucide-react';
+import { Brain, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { TestLabDecisionBadge } from '@/src/app/test_lab/ui/TestLabDecisionBadge';
 import { type LayerState } from '@/src/app/test_lab/ui/types';
-
-// One icon per pipeline stage id (PACT-703 added consensus/redactor/sandbox
-// alongside the original filter/classifier pair). Brain is the fallback for
-// any future stage id this map hasn't been updated for yet.
-const STAGE_ICON: Record<string, LucideIcon> = {
-  filter: Shield,
-  classifier: Brain,
-  consensus: Users,
-  redactor: Eraser,
-  sandbox: Globe,
-};
+import { PIPELINE_STAGE_ICON } from '@/src/framework/decisions/pipeline_stage';
 
 export const TestLabLayerNode = ({
   layer,
@@ -34,7 +15,7 @@ export const TestLabLayerNode = ({
   isSelected: boolean;
   onSelect: () => void;
 }) => {
-  const Icon = STAGE_ICON[layer.id] ?? Brain;
+  const Icon = PIPELINE_STAGE_ICON[layer.id] ?? Brain;
 
   return (
     <button
