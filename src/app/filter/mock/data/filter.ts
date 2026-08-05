@@ -473,4 +473,20 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 9,
     created_at: '',
   });
+  // PACT-758: a decision whose CEL stage ran but failed open on a budget
+  // timeout -- no rule ever finished evaluating, so rule_id/rule_name/outcome
+  // are absent (celeval only names a rule once its expression actually
+  // resolves) while skipped_reason still carries why. The pipeline's earlier
+  // stages allowed here, same as any other allow decision that reaches the
+  // CEL tier. Seeded near the fired-rule row above (same reasoning: sorts
+  // onto the audit feed's default first page instead of the tail end).
+  seed(3 * min, {
+    request_id: 'req-l4m5n6',
+    decision: 'allow',
+    cel: {
+      skipped_reason: 'cel_stage_timeout',
+    },
+    latency_ms: 11,
+    created_at: '',
+  });
 };

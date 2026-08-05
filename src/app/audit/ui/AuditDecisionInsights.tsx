@@ -1,3 +1,4 @@
+import { celSkippedReasonLabel } from '@/src/app/audit/domain/audit_decision_cel';
 import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import { isStageAttributed } from '@/src/lib/decisions/decision_stage_attribution';
@@ -170,6 +171,47 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         {dp.policy.agent_id && (
           <span className="text-muted-foreground">
             agent {dp.policy.agent_id}
+          </span>
+        )}
+      </div>
+    )}
+    {/* CEL (PACT-758): the tier-3 CEL rule engine (PACT-335), evaluated after
+        every visualised stage -- see decisions.ts's CelDecision doc comment.
+        Gated on dp.cel presence alone, independent of dp.decision, matching
+        every other stage section above: older payloads with no `cel`
+        sub-object render this section not at all. */}
+    {dp.cel && (
+      <div
+        className="flex flex-wrap items-center gap-1.5"
+        data-testid="audit-decision-cel"
+      >
+        <span className="text-muted-foreground">CEL</span>
+        {dp.cel.rule_name && (
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            {dp.cel.rule_name}
+          </code>
+        )}
+        {dp.cel.rule_id && (
+          <code className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+            {dp.cel.rule_id}
+          </code>
+        )}
+        {dp.cel.outcome && (
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            {dp.cel.outcome}
+          </code>
+        )}
+        {typeof dp.cel.fired_count === 'number' && dp.cel.fired_count > 0 && (
+          <span className="text-muted-foreground">
+            {dp.cel.fired_count} rule{dp.cel.fired_count === 1 ? '' : 's'} fired
+          </span>
+        )}
+        {dp.cel.skipped_reason && (
+          <span
+            className="italic text-amber-500"
+            title="CEL stage fail-open -- not every active rule was evaluated"
+          >
+            skipped ({celSkippedReasonLabel(dp.cel.skipped_reason)})
           </span>
         )}
       </div>

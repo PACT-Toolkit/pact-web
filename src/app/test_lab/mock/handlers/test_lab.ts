@@ -16,6 +16,8 @@ import { runRedactor } from '@/src/app/redactor/mock/data/redactor';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 import {
+  CEL_RULE_ID,
+  CEL_RULE_NAME,
   celMatchPattern,
   filterMatchPattern,
   runCelRules,
@@ -252,6 +254,20 @@ export const handlers: RequestHandler[] = [
           ? { label: classifierResult.label, score: classifierResult.score }
           : undefined,
         redactor: redactorResult,
+        // PACT-758: a fired CEL rule stamps the audit event's `cel`
+        // sub-object -- absent on the /v1/check response (see runCelRules's
+        // doc comment) but present on the pact.decisions Kafka payload,
+        // mirroring the audit feed's own req-i7j8k9 fixture
+        // (filter/mock/data/filter.ts) so a Test Lab probe that trips this
+        // rule produces the same shape a live gateway would emit.
+        cel: celFired
+          ? {
+              rule_id: CEL_RULE_ID,
+              rule_name: CEL_RULE_NAME,
+              outcome: 'block',
+              fired_count: 1,
+            }
+          : undefined,
         // PACT-757: mirror the response body's diagnostics field (below) so
         // a dev:mock audit row carries the same causal_spans a live gateway
         // would emit -- this was previously dropped, so a Test Lab probe's
