@@ -67,7 +67,14 @@ export function validateCorpusFile(
 
     const labelIndex = columns.indexOf('expected_label');
     for (let i = 1; i < lines.length; i++) {
-      const value = lines[i].split(',')[labelIndex]?.trim().toLowerCase() ?? '';
+      const cells = lines[i].split(',');
+      // A naive comma split misindexes RFC-4180-quoted fields (e.g. a
+      // content value containing a comma splits into extra cells) - skip the
+      // label check on rows the client can't reliably parse and let the
+      // server, which does proper CSV parsing, be authoritative for them.
+      if (cells.length !== columns.length) continue;
+
+      const value = cells[labelIndex]?.trim().toLowerCase() ?? '';
       if (!VALID_LABELS.includes(value)) {
         return invalidLabelError(i + 1, value);
       }
