@@ -27,7 +27,10 @@ type Props = {
   onChanged: () => void;
 };
 
-export const AuthSettingsConnectedAccountsCard = ({ identities, onChanged }: Props) => {
+export const AuthSettingsConnectedAccountsCard = ({
+  identities,
+  onChanged,
+}: Props) => {
   const [busyProvider, setBusyProvider] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
