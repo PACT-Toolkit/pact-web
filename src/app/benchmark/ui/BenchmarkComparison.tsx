@@ -40,13 +40,13 @@ const RunSelect = ({
   options: { id: string; label: string }[];
   onChange: (value: string) => void;
 }) => (
-  <label htmlFor={id} className="flex flex-1 flex-col gap-1">
+  <label htmlFor={id} className="flex min-w-0 flex-1 flex-col gap-1">
     <span className="text-xs font-medium text-muted-foreground">{label}</span>
     <select
       id={id}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="h-9 rounded-md border border-input bg-background px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      className="h-9 max-w-full truncate rounded-md border border-input bg-background px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
     >
       {options.map((o) => (
         <option key={o.id} value={o.id}>
@@ -104,7 +104,7 @@ const BenchmarkComparisonPanel = () => {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex min-w-0 flex-col gap-3 sm:flex-row">
               <RunSelect
                 id="benchmark-compare-baseline"
                 label="Baseline"
