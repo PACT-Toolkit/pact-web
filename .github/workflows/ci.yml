@@ -41,5 +41,8 @@ jobs:
       - name: ESLint
         run: pnpm run lint:eslint
 
+      - name: Prettier check
+        run: pnpm run prettier:check
+
       - name: Run unit tests
         run: pnpm test

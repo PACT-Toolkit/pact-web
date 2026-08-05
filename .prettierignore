@@ -5,6 +5,7 @@ CODEOWNERS
 .gitignore
 .prettierignore
 .tool-versions
+CLAUDE.md
 build/
 schema/
 node_modules

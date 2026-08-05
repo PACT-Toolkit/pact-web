@@ -1,4 +1,10 @@
-export const TestLabConnector = ({ active, dim }: { active: boolean; dim: boolean }) => (
+export const TestLabConnector = ({
+  active,
+  dim,
+}: {
+  active: boolean;
+  dim: boolean;
+}) => (
   <div className="relative flex h-14 min-w-8 flex-1 items-center">
     <div
       className={`h-0.5 w-full rounded transition-colors duration-500 ${

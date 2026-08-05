@@ -18,7 +18,10 @@ describe('MSW handler URL patterns', () => {
       if (!info?.path || typeof info.path !== 'string') return acc;
 
       if (info.path.startsWith('/')) {
-        return [...acc, `${info.method ?? 'HTTP'} ${info.path} — should use '*/...' glob`];
+        return [
+          ...acc,
+          `${info.method ?? 'HTTP'} ${info.path} — should use '*/...' glob`,
+        ];
       }
 
       return acc;
