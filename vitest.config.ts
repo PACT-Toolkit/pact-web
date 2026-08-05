@@ -15,6 +15,14 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // Pinned here (not a shell prefix) so `pnpm test` is shell-agnostic
+    // across cmd.exe, PowerShell, and Git Bash (PACT-763). `test.env` is
+    // applied to each worker's process.env before setupFiles or test files
+    // load, so it also reaches module-scope Intl/Date objects constructed
+    // during setupFiles' own import graph -- a setupFiles-body assignment
+    // runs too late for those (ES import hoisting evaluates the setup
+    // file's imports before its own top-level statements).
+    env: { TZ: 'CET' },
     setupFiles: ['./vitest.setup.ts'],
     include: [
       // Root-level pattern covers proxy.test.ts: Next.js requires proxy.ts

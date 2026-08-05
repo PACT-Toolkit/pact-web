@@ -27,7 +27,7 @@ pnpm api:update         # Fetch swagger specs + regenerate all REST hooks
 pnpm rest:codegen       # Regenerate REST hooks only
 ```
 
-To run a single Vitest test file: `TZ=CET vitest run src/app/my_feature/test/my_test.test.ts`
+To run a single Vitest test file: `vitest run src/app/my_feature/test/my_test.test.ts`
 
 ---
 
