@@ -1,5 +1,6 @@
 import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
+import { isStageAttributed } from '@/src/lib/decisions/decision_stage_attribution';
 
 export { parseDecisionPayload } from '@/src/lib/decisions/decision_payload';
 
@@ -177,6 +178,7 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
       <CausalSpanList
         spans={dp.diagnostics.causal_spans}
         testId="audit-decision-causal-spans"
+        attributed={isStageAttributed(dp)}
       />
     )}
     {hasForensics(dp) && (
