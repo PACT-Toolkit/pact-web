@@ -1,17 +1,22 @@
 import { Database } from 'lucide-react';
 
 import { type SaveState } from '@/src/app/test_lab/ui/types';
+import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
 
 export const TestLabResultNode = ({
   decision,
   latency,
   reason,
+  causalSpans,
   onSave,
   saveState,
 }: {
   decision?: 'allow' | 'block';
   latency?: number;
   reason?: string;
+  // Set only for a block that no visualised stage claims (cel_rule_fired,
+  // policy_token_denied) -- see resultCausalSpans in test_lab_check.ts.
+  causalSpans?: { start?: number; end?: number }[];
   onSave: () => void;
   saveState: SaveState;
 }) => (
@@ -48,6 +53,13 @@ export const TestLabResultNode = ({
     )}
     {latency !== undefined && (
       <span className="text-xs text-muted-foreground">{latency}ms total</span>
+    )}
+    {causalSpans && causalSpans.length > 0 && (
+      <CausalSpanList
+        spans={causalSpans}
+        attributed={false}
+        testId="test-lab-result-causal-spans"
+      />
     )}
     {decision === 'block' && (
       <button

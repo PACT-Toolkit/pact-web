@@ -17,6 +17,12 @@ export interface PipelineResult {
   decision: 'allow' | 'block';
   latencyMs: number;
   reason?: string;
+  // Causal-replay diagnostics (PACT-745/PACT-757) for a block that cannot be
+  // attributed to any one visualised stage (cel_rule_fired,
+  // policy_token_denied). Same offset-range-only shape as
+  // LayerState.causalSpans -- see that field's comment for why text is never
+  // included.
+  causalSpans?: { start?: number; end?: number }[];
 }
 
 export interface LayerState {

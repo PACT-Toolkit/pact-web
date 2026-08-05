@@ -426,12 +426,13 @@ export const createFilterMockData = (db: DB): void => {
     engine: 'filter',
     filter: {
       verdict: 'hostile',
-      rule_id: BLOCKED_RULES[Math.floor(Math.random() * BLOCKED_RULES.length)],
-      // rule_id above is picked at random from BLOCKED_RULES, so this
-      // excerpt is deliberately theme-generic (touches instruction-override,
-      // role-override, and jailbreak phrasing at once) rather than tied to
-      // one specific rule -- there is no single fixed rule_id here to author
-      // a rule-specific matched excerpt against.
+      // Fixed to BLOCKED_RULES[0] (PACT-757) -- dev:mock seed data must be
+      // reproducible run-to-run, which Math.random() at seed time was not.
+      // The excerpt stays deliberately theme-generic (touches
+      // instruction-override, role-override, and jailbreak phrasing at
+      // once) rather than tied to this one rule specifically, since the
+      // other rows above already cover rule-specific matched excerpts.
+      rule_id: BLOCKED_RULES[0],
       matched_span: {
         start: 0,
         end: 82,

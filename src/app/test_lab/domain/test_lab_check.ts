@@ -724,6 +724,22 @@ const deriveStageState = (
   }
 };
 
+// resultCausalSpans (PACT-757) surfaces diagnostics.causal_spans on the
+// Result node when a block cannot be attributed to any visualised stage
+// (cel_rule_fired, policy_token_denied, or any future unmapped reason).
+// stageCausalSpans above only ever attaches spans to the one stage that
+// actually blocked, so an unattributed block's spans would otherwise never
+// render anywhere in the pipeline view -- mirrors the audit feature's
+// PACT-749 pattern (CausalSpanList with attributed=false), just surfaced at
+// the overall-result level instead of a per-stage level since neither the
+// CEL nor the policy engine has a visualised chip.
+export const resultCausalSpans = (
+  data: CheckResponse
+): LayerState['causalSpans'] =>
+  data.decision === 'block' && !blockingStageId(data)
+    ? data.diagnostics?.causal_spans
+    : undefined;
+
 // applyLiveLayers assembles every visualised layer's final state for one
 // /v1/check response. It is the single inference path for both dev:mock and
 // the real gateway (PACT-702 deleted the mock-only `_mock_layers` escape

@@ -248,3 +248,28 @@ const URGENCY_MARKERS = /\b(urgent|immediately|right now|asap|do not delay)\b/i;
 export function runConsensus(content: string): { malicious: boolean } {
   return { malicious: URGENCY_MARKERS.test(content) };
 }
+
+// A "chain N tool calls" phrasing is this mock's deterministic stand-in for
+// pact-cel's per-session tool-call budget rule (cel-tool-002, "disallow tool
+// chaining past budget" -- same rule as the audit feed's req-i7j8k9 fixture
+// in filter/mock/data/filter.ts, so both mock surfaces describe the same
+// rule). PACT-757: the real CEL engine runs after every visualised stage
+// (test_lab_check.ts's BLOCKING_STAGE_OF comment), so runCelRules is only
+// ever consulted once filter/classifier/sandbox/redactor have all allowed.
+// Returns a plain boolean rather than a rule-detail object: the /v1/check
+// wire contract (CheckCheckResponse) has no `cel` sub-object to carry a
+// rule_id/rule_name onto, so nothing in this handler would ever read them.
+const CEL_TOOL_BUDGET_PATTERN = /chain\s+(more\s+than\s+)?\d+\s+tool\s+calls?/i;
+
+export function runCelRules(content: string): boolean {
+  return CEL_TOOL_BUDGET_PATTERN.test(content);
+}
+
+// celMatchPattern mirrors filterMatchPattern's role for the filter stage --
+// resolves the exact pattern a fired CEL rule matched so the diagnostics
+// harness can locate its byte offset without re-implementing the rule table.
+export function celMatchPattern(content: string): RegExp | undefined {
+  return CEL_TOOL_BUDGET_PATTERN.test(content)
+    ? CEL_TOOL_BUDGET_PATTERN
+    : undefined;
+}
