@@ -1,6 +1,7 @@
 import {
   type PactDecisions,
   type CausalSpan,
+  type CelDecision,
   type ClassifierDecision,
   type ConsensusDecision,
   type FilterDecision,
@@ -16,6 +17,7 @@ import {
 // past this module into the generated codegen directory directly.
 export type {
   CausalSpan,
+  CelDecision,
   ClassifierDecision,
   ConsensusDecision,
   FilterDecision,

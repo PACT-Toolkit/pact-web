@@ -269,3 +269,77 @@ describe('AuditDecisionRow expanded detail - unattributed causal spans', () => {
     ).not.toHaveTextContent('not attributed to a stage');
   });
 });
+
+// PACT-758: renders the CelDecision sub-object (rule_id, rule_name, outcome,
+// fired_count and, when present, skipped_reason) that PACT-749 already
+// exercised for its own purpose (unattributed causal spans) but never
+// asserted on directly.
+describe('AuditDecisionInsights - CEL section (PACT-758)', () => {
+  it('renders rule_id, rule_name, outcome and fired_count for a fired rule', () => {
+    renderRow({
+      decision: 'block',
+      reason: 'cel_rule_fired',
+      engine: 'cel',
+      cel: {
+        rule_id: 'cel-tool-002',
+        rule_name: 'disallow tool chaining past budget',
+        outcome: 'block',
+        fired_count: 1,
+      },
+      latency_ms: 9,
+    });
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    const cel = screen.getByTestId('audit-decision-cel');
+    expect(cel).toHaveTextContent('disallow tool chaining past budget');
+    expect(cel).toHaveTextContent('cel-tool-002');
+    expect(cel).toHaveTextContent('block');
+    expect(cel).toHaveTextContent('1 rule fired');
+  });
+
+  it('pluralizes fired_count when more than one rule fired', () => {
+    renderRow({
+      decision: 'block',
+      reason: 'cel_rule_fired',
+      engine: 'cel',
+      cel: {
+        rule_id: 'cel-tool-002',
+        rule_name: 'disallow tool chaining past budget',
+        outcome: 'block',
+        fired_count: 3,
+      },
+      latency_ms: 9,
+    });
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(screen.getByTestId('audit-decision-cel')).toHaveTextContent(
+      '3 rules fired'
+    );
+  });
+
+  it('renders a human skipped_reason label for a fail-open stage timeout, with no rule fields', () => {
+    renderRow({
+      decision: 'allow',
+      cel: {
+        skipped_reason: 'cel_stage_timeout',
+      },
+      latency_ms: 11,
+    });
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    const cel = screen.getByTestId('audit-decision-cel');
+    expect(cel).toHaveTextContent('skipped (stage timeout)');
+    expect(cel).not.toHaveTextContent('fired');
+  });
+
+  it('renders no CEL section when the payload carries no cel object (older rows)', () => {
+    renderRow(SPAN_PAYLOAD);
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(screen.queryByTestId('audit-decision-cel')).not.toBeInTheDocument();
+  });
+});
