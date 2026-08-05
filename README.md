@@ -184,7 +184,7 @@ pnpm rest:codegen        # Regenerate REST hooks only, from specs already in sch
 pnpm proto:gen           # Regenerate pact-auth proto stubs (src/__codegen__/proto)
 ```
 
-To run a single Vitest file: `TZ=CET vitest run src/app/my_feature/test/my_test.test.ts`.
+To run a single Vitest file: `vitest run src/app/my_feature/test/my_test.test.ts`.
 
 ---
 
