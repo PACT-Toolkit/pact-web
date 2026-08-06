@@ -6,14 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-
 import type { Key } from 'swr';
 
 import type {
+  BoundaryErrorResponse,
   ClassifierLabelVerdictRequest,
   ClassifierLabelVerdictResponse,
 } from './types';
+
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 export type labelVerdictResponse200 = {
   data: ClassifierLabelVerdictResponse;
@@ -41,7 +44,7 @@ export type labelVerdictResponse429 = {
 };
 
 export type labelVerdictResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 
@@ -86,24 +89,17 @@ export const labelVerdict = async (
   classifierLabelVerdictRequest: ClassifierLabelVerdictRequest,
   options?: RequestInit
 ): Promise<labelVerdictResponse> => {
-  const res = await fetch(getLabelVerdictUrl(), {
+  return customFetch<labelVerdictResponse>(getLabelVerdictUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(classifierLabelVerdictRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: labelVerdictResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as labelVerdictResponse;
 };
 
-export const getLabelVerdictMutationFetcher = (options?: RequestInit) => {
+export const getLabelVerdictMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: ClassifierLabelVerdictRequest }) => {
     return labelVerdict(arg, options);
   };

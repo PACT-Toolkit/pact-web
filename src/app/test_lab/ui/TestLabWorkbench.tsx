@@ -2,7 +2,10 @@
 
 import { useState } from 'react';
 
-import { STATIC_CHIPS } from '@/src/app/test_lab/domain/test_lab_check';
+import {
+  resultCausalSpans,
+  STATIC_CHIPS,
+} from '@/src/app/test_lab/domain/test_lab_check';
 import { useSaveToCorpus } from '@/src/app/test_lab/domain/use_save_to_corpus';
 import { useTestLabCorpusExamples } from '@/src/app/test_lab/domain/use_test_lab_corpus_examples';
 import { useTestLabRun } from '@/src/app/test_lab/domain/use_test_lab_run';
@@ -73,6 +76,7 @@ export const TestLabWorkbench = () => {
                   decision: result.decision,
                   latencyMs: result.latency_ms,
                   reason: result.reason,
+                  causalSpans: resultCausalSpans(result),
                 }
               : undefined
           }

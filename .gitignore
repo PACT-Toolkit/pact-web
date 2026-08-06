@@ -53,6 +53,7 @@
 !instrumentation.ts
 !middleware.ts
 !proxy.ts
+!proxy.test.ts
 !buf.gen.yaml
 !next.config.ts
 !orval.config.ts

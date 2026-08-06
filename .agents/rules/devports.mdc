@@ -19,8 +19,11 @@ This rule also fires when you are about to:
   `PACT_OTEL_EXPORTER_OTLP_ENDPOINT`.
 - Run `doppler secrets set` (any config: `dev`, `dev_personal`,
   `stg`, `prd`) for the same set of keys.
-- Wire `PACT_AUTH_GRPC_ADDR` / `PACT_GATEWAY_URL` in pact-web env
-  files.
+- Wire `PACT_GATEWAY_URL` in pact-web env files (pact-web no longer
+  dials pact-auth's gRPC port directly - see PACT-681 - so
+  `PACT_AUTH_GRPC_ADDR` is retired from the app runtime; only the
+  Playwright-only `PACT_AUTH_GRPC_ADDR_E2E` remains, for direct
+  test-fixture seeding).
 
 ## Quick reminders (full table lives in DEVPORTS.md)
 

@@ -5,8 +5,7 @@ import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
 import {
   MFA_TOKEN_COOKIE,
   MFA_TOKEN_TTL_SECONDS,
-  SESSION_COOKIE,
-  sessionCookieOptions,
+  setSessionCookies,
   shortLivedCookieOptions,
 } from '@/src/framework/auth/pact_auth/cookies';
 import {
@@ -113,13 +112,8 @@ export const POST = async (req: NextRequest) => {
     return res;
   }
 
-  const expiresAt = new Date(Number(resp.expiresAtUnix) * 1000);
   const res = NextResponse.json({ ok: true, userId: resp.userId });
-  res.cookies.set({
-    name: SESSION_COOKIE,
-    value: resp.sessionToken,
-    ...sessionCookieOptions(expiresAt),
-  });
+  setSessionCookies(res, resp);
 
   return res;
 };

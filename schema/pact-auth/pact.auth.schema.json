@@ -24,9 +24,11 @@
         "email_verified",
         "password_set_link_requested",
         "password_reset_requested",
-        "password_changed"
+        "password_changed",
+        "session_revoked",
+        "user_sessions_revoked"
       ],
-      "description": "Closed set - pact-auth's internal/kafka/producer.go Evt* constants (this module's auth.Evt* constants) only ever produce these ten values."
+      "description": "Closed set - pact-auth's internal/kafka/producer.go Evt* constants (this module's auth.Evt* constants) only ever produce these twelve values. The session-revocation pair was added for PACT-527 so pact-gateway can maintain its edge revocation set."
     },
     "user_id": {
       "type": "string"
@@ -72,6 +74,14 @@
     "avatar_url": {
       "type": "string",
       "description": "Profile seed value, same population rule as display_name."
+    },
+    "session_id": {
+      "type": "string",
+      "description": "Session row UUID revoked by a session_revoked event (PACT-527). Never a wire token - the PACT-515 rule applies to session credentials too."
+    },
+    "except_session_id": {
+      "type": "string",
+      "description": "Only on user_sessions_revoked: the one session a mass revoke deliberately kept alive (PACT-527). Absent means every session for user_id is revoked."
     }
   }
 }

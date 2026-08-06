@@ -3,7 +3,7 @@
 import { Download, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { exportAccountData } from '@/src/__codegen__/rest/account';
+import { getAccountExport } from '@/src/__codegen__/rest/account';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -12,8 +12,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { triggerDownload } from '@/src/framework/helpers';
 
-import { makeExportFilename, triggerDownload } from './helpers';
+import { makeExportFilename } from './helpers';
 
 export const AccountSettingsExportCard = () => {
   const [busy, setBusy] = useState(false);
@@ -23,7 +24,7 @@ export const AccountSettingsExportCard = () => {
     setError(null);
     setBusy(true);
     try {
-      const res = await exportAccountData();
+      const res = await getAccountExport();
       if (res.status !== 200) {
         throw new Error(`Unexpected status ${res.status}`);
       }

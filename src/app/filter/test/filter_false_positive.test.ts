@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import {
   applyOptimisticAnnotationFlag,
   buildAnnotateDecisionRequest,
@@ -11,7 +11,9 @@ import {
   resolveFlagRequestId,
 } from '@/src/app/filter/domain/filter_false_positive';
 
-const event = (overrides: Partial<AuditEvent>): AuditEvent => ({
+const event = (
+  overrides: Partial<AuditAuditEventResponse>
+): AuditAuditEventResponse => ({
   id: 'evt-1',
   topic: 'pact.decisions',
   eventId: 'filter.decision',
@@ -142,8 +144,8 @@ describe('applyOptimisticAnnotationFlag', () => {
     const updated = applyOptimisticAnnotationFlag(current, 'req-1');
 
     expect(updated?.annotations).toHaveLength(1);
-    expect(updated?.annotations[0]?.requestId).toBe('req-1');
-    expect(updated?.annotations[0]?.kind).toBe('false_positive');
+    expect(updated?.annotations?.[0]?.requestId).toBe('req-1');
+    expect(updated?.annotations?.[0]?.kind).toBe('false_positive');
   });
 
   it('does not duplicate an existing false_positive annotation for the same requestId', () => {
@@ -167,6 +169,6 @@ describe('applyOptimisticAnnotationFlag', () => {
     const updated = applyOptimisticAnnotationFlag(undefined, 'req-1');
 
     expect(updated.annotations).toHaveLength(1);
-    expect(updated.annotations[0]?.requestId).toBe('req-1');
+    expect(updated.annotations?.[0]?.requestId).toBe('req-1');
   });
 });

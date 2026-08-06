@@ -16,14 +16,13 @@ export const DashboardConsole = () => {
   const {
     stats,
     records,
-    error,
+    streamError,
+    statsError,
     statsForbidden,
     isLoading,
     isValidating,
     mutate,
   } = useDashboardPipelineStats(live);
-
-  const hasError = Boolean(error);
 
   return (
     <div className="flex flex-col gap-4">
@@ -32,7 +31,7 @@ export const DashboardConsole = () => {
         <DashboardLiveDecisions
           records={records}
           isLoading={isLoading}
-          error={hasError}
+          error={streamError}
           isValidating={isValidating}
           live={live}
           onToggleLive={setLive}
@@ -44,19 +43,19 @@ export const DashboardConsole = () => {
         <DashboardFilterWidget
           stats={stats}
           isLoading={isLoading}
-          error={hasError}
+          error={statsError}
           forbidden={statsForbidden}
         />
         <DashboardClassifierWidget
           stats={stats}
           isLoading={isLoading}
-          error={hasError}
+          error={statsError}
           forbidden={statsForbidden}
         />
         <DashboardRedactorWidget
           stats={stats}
           isLoading={isLoading}
-          error={hasError}
+          error={statsError}
           forbidden={statsForbidden}
         />
         <DashboardBenchmarkWidget />

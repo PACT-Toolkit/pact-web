@@ -5,6 +5,7 @@
 
 export * as account from './account';
 export * as audit from './audit';
+export * as auth from './auth';
 export * as benchmark from './benchmark';
 export * as check from './check';
 export * as classifier from './classifier';

@@ -11,7 +11,8 @@ For AI-assistant and agent guidance (commands, module boundaries, feature folder
 ## Architecture
 
 pact-web is the single browser-facing app for PACT.
-Almost all backend traffic is proxied server-side through `pact-gateway`; the one exception is authentication, which talks directly to `pact-auth` over gRPC from Server Components and route handlers.
+All backend traffic is proxied server-side through `pact-gateway`, including authentication: `pact-web` used to dial `pact-auth` directly over gRPC, but the mesh-mTLS rollout closed that listener to allowlisted workloads, so auth now goes through pact-gateway's `/v1/auth/*` REST proxy too.
+Auth still gets its own dedicated route handlers under `/api/auth/*` rather than the generic gateway catch-all, because those routes read and write the httpOnly `pact_session` cookie directly.
 In `dev:mock`, MSW intercepts every request (browser Service Worker and Node) before either path is reached, so the app runs with no backend at all.
 
 ```mermaid
@@ -22,12 +23,11 @@ flowchart TB
         MSW["MSW handlers<br/>(mocks/handlers.ts)<br/>dev:mock only"]
         ProxyRoutes["Gateway proxy routes<br/>/api/pact/gateway/v1/*<br/>/v1/account/*, /v1/audit/*, /v1/files/*<br/>(proxyToGateway: cookie to Bearer)"]
         AuthRoutes["Auth route handlers<br/>/api/auth/*, /v1/auth/callback/*<br/>+ Server Component session checks"]
-        AuthClient["pact_auth gRPC client<br/>(server-only, Connect-RPC)"]
+        AuthClient["pact_auth REST client<br/>(server-only, fetch)"]
     end
 
     Gateway["pact-gateway HTTP API<br/>:8110"]
-    Auth["pact-auth gRPC<br/>:9090"]
-    Downstream["account, audit, files, classifier,<br/>filter, redactor, policy, benchmark,<br/>consensus (via pact-gateway)"]
+    Downstream["auth, account, audit, files,<br/>classifier, filter, redactor, policy,<br/>benchmark, consensus (via pact-gateway)"]
 
     Browser -->|"fetch/XHR"| MSW
     Browser -->|"fetch (real mode)"| ProxyRoutes
@@ -39,7 +39,8 @@ flowchart TB
     Gateway --> Downstream
 
     AuthRoutes --> AuthClient
-    AuthClient -->|h2c gRPC| Auth
+    AuthClient -->|"Bearer token, /v1/auth/*"| Gateway
+    Gateway --> Downstream
 ```
 
 This topology (BFF-in-route-handlers, httpOnly-cookie-to-Bearer, contract-first
@@ -58,10 +59,10 @@ errors.
 Notes on what each edge is, verified against the code:
 
 - **Gateway proxy routes** - `app/api/pact/[...path]/route.ts` (catch-all for classifier/filter/policy/config/benchmark/rules) and the explicit `app/v1/{account,audit,files}/[...path]/route.ts` routes all call the shared `proxyToGateway()` helper (`src/lib/proxy/proxy_to_gateway.ts`).
-  It translates the `pact_session` cookie into an `Authorization: Bearer` header, forwards to `PACT_GATEWAY_URL`, and rolls a rotated session cookie forward if the gateway mints one.
-- **Auth is the one direct backend dependency.**
-  `src/framework/auth/pact_auth/client.ts` is the only place in the app that opens a gRPC client (Connect-RPC over h2c) against `PACT_AUTH_GRPC_ADDR`, used by login, register, MFA, passkey, OAuth, and session-validation code under `app/api/auth/*` and `app/(app)/layout.tsx`.
-- **Edge `proxy.ts`** (Next.js 16's renamed `middleware.ts`) is a cheap cookie-existence gate that redirects unauthenticated requests to `/login`; it does not validate the session itself and is skipped entirely when `NEXT_PUBLIC_API_MOCKING=enabled`.
+  It translates the `pact_session` cookie into an `Authorization: Bearer` header, forwards to `PACT_GATEWAY_URL`, and rolls both the session and refresh-token cookies forward from the gateway's rotation response headers if it minted a new pair.
+- **Auth goes through pact-gateway too, via its own client module.**
+  `src/framework/auth/pact_auth/client.ts` is a hand-written fetch client against pact-gateway's `/v1/auth/*` REST proxy (`PACT_GATEWAY_URL`), used by login, register, MFA, passkey, OAuth, and session-validation code under `app/api/auth/*` and `app/(app)/layout.tsx`. It used to dial `pact-auth`'s gRPC port directly; that stopped working once the mesh-mTLS rollout closed the port to allowlisted workloads. The generated SWR hooks under `src/__codegen__/rest/auth/` mirror the same OpenAPI contract but aren't used here - only their generated types are, for wire-shape parity - because they target the browser-facing catch-all proxy and have no way to attach the caller-supplied bearer token every session-authed method needs.
+- **Edge `proxy.ts`** (Next.js 16's renamed `middleware.ts`) redirects unauthenticated requests to `/login`, but first attempts a silent renewal: if the session cookie is absent but the `pact_refresh_token` cookie is present, it single-flights a bearer-less `POST /v1/auth/session/refresh` to pact-gateway and, on success, re-sets both cookies and lets the request through; only a missing/failed refresh falls through to the `/login` redirect. It does not itself validate an existing session token - that fail-closed check happens server-side on every render - and the whole gate is skipped when `NEXT_PUBLIC_API_MOCKING=enabled`.
 - **Mock mode** wires the same `mocks/handlers.ts` array into three runtimes: the browser Service Worker (`mocks/browser.ts`), the Next.js Node runtime (`instrumentation.ts`, so Server Components and route handlers are covered too), and Vitest (`vitest.setup.ts`).
   See the `pact-dev-mock` skill for the full auto-login and persona-switching mechanics.
 
@@ -94,7 +95,7 @@ Feature _logic_ (domain, UI, mocks, tests) lives separately in `src/app/{feature
 
 `/` itself has no route group; it redirects to `/dashboard?intro=1` (authenticated) or `/login?intro=1` (not) - see `app/page.tsx`.
 
-`app/api/` and `app/v1/` hold route handlers, not pages: the auth gRPC bridge (`app/api/auth/**`) and the gateway proxy routes described above.
+`app/api/` and `app/v1/` hold route handlers, not pages: the auth gateway proxy (`app/api/auth/**`) and the other gateway proxy routes described above.
 
 ---
 
@@ -117,17 +118,18 @@ See the `swr-best-practices` and `pact-react-patterns` skills for the rules on w
 There is no `.env.example` in this repo; environment is layered per-mode in `env/*.env`, loaded by `env-cmd` (see [Scripts](#scripts)).
 Values as of this writing:
 
-| Variable                         | `env/local.env` (mock)  | `env/local-real.env` (real) | `env/demo.env`                           |
-| -------------------------------- | ----------------------- | --------------------------- | ---------------------------------------- |
-| `NEXT_PUBLIC_API_MOCKING`        | `enabled`               | `disabled`                  | `disabled`                               |
-| `PACT_GATEWAY_URL`               | `http://localhost:8080` | `http://localhost:8110`     | `https://api-demo.pact.example.com`      |
-| `PACT_AUTH_GRPC_ADDR`            | `http://localhost:9090` | `http://localhost:9090`     | `https://auth-demo.pact.example.com:443` |
-| `NEXT_PUBLIC_VERCEL_ENVIRONMENT` | `development`           | `development`               | `preview`                                |
-| `NEXT_PUBLIC_MSW_DEBUG`          | `true`                  | `false`                     | (unset)                                  |
+| Variable                         | `env/local.env` (mock)  | `env/local-real.env` (real) | `env/demo.env`                      |
+| -------------------------------- | ----------------------- | --------------------------- | ----------------------------------- |
+| `NEXT_PUBLIC_API_MOCKING`        | `enabled`               | `disabled`                  | `disabled`                          |
+| `PACT_GATEWAY_URL`               | `http://localhost:8080` | `http://localhost:8110`     | `https://api-demo.pact.example.com` |
+| `NEXT_PUBLIC_VERCEL_ENVIRONMENT` | `development`           | `development`               | `preview`                           |
+| `NEXT_PUBLIC_MSW_DEBUG`          | `true`                  | `false`                     | (unset)                             |
 
 `env/local.env`'s `PACT_GATEWAY_URL` value is unused while mocking is enabled (nothing reaches the network) but is left pointed at pact-gateway's default port for parity.
-`env/local-real.env`'s `:8110` matches pact-gateway's canonical dev HTTP port; `:9090` matches pact-auth's canonical gRPC port.
-See `.github-private/doc/DEVPORTS.md` for the full port allocation across every PACT service.
+`env/local-real.env`'s `:8110` matches pact-gateway's canonical dev HTTP port.
+
+`PACT_AUTH_GRPC_ADDR` (the app-runtime var pact-web used to dial pact-auth directly) was retired once auth moved behind pact-gateway - `client.ts` now talks to pact-auth exclusively through `PACT_GATEWAY_URL`.
+`PACT_AUTH_GRPC_ADDR_E2E` is unrelated and still required: it's a Playwright-only var (see `e2e/lib/seed.ts`) for direct-to-pact-auth test fixture seeding, out of scope for the app runtime.
 
 ---
 
@@ -151,7 +153,7 @@ There are three dev modes, backed by three scripts:
 
 ```bash
 pnpm run dev:mock   # env/local.env - MSW mocks everything, no backend needed (most common)
-pnpm run dev:real   # env/local-real.env - talks to a real pact-gateway (:8110) and pact-auth (:9090) running locally
+pnpm run dev:real   # env/local-real.env - talks to a real pact-gateway (:8110), which proxies to pact-auth and the rest of the backend fleet running locally
 pnpm run dev        # `vercel env pull` then .env.local - talks to whatever backend the linked Vercel project's env points at
 ```
 
@@ -182,7 +184,7 @@ pnpm rest:codegen        # Regenerate REST hooks only, from specs already in sch
 pnpm proto:gen           # Regenerate pact-auth proto stubs (src/__codegen__/proto)
 ```
 
-To run a single Vitest file: `TZ=CET vitest run src/app/my_feature/test/my_test.test.ts`.
+To run a single Vitest file: `vitest run src/app/my_feature/test/my_test.test.ts`.
 
 ---
 
@@ -192,7 +194,7 @@ To run a single Vitest file: `TZ=CET vitest run src/app/my_feature/test/my_test.
 app/                  # Real Next.js App Router routes (route groups, layouts, route handlers)
 ├── (app)/            # Authenticated app shell - one folder per top-level page
 ├── (auth)/           # Login, register, password reset, MFA
-├── api/              # Route handlers: auth gRPC bridge, gateway proxy
+├── api/              # Route handlers: auth gateway proxy, other gateway proxy
 └── v1/               # Route handlers: account/audit/files gateway proxy
 
 src/
@@ -246,35 +248,35 @@ Run `ls .agents/skills` to see what's installed locally; `.claude/skills` and `.
 
 ## Backend services
 
-pact-web reaches every one of these except pact-auth exclusively through pact-gateway's HTTP proxy (see [Architecture](#architecture)).
+pact-web reaches every one of these exclusively through pact-gateway's HTTP proxy (see [Architecture](#architecture)).
 Service repositories are private; contact the maintainers for access.
 
-| Service         | Role                                                                                                 |
-| --------------- | ---------------------------------------------------------------------------------------------------- |
-| pact-gateway    | API gateway - single entry point for pact-web; enforces rate limits and quotas                       |
-| pact-auth       | Authentication, sessions, MFA, passkeys, OAuth - reached directly over gRPC, not through the gateway |
-| pact-account    | Account profile, consents, preferences                                                               |
-| pact-files      | File upload/storage                                                                                  |
-| pact-classifier | Classifies data for sensitivity, category, and prompt injection patterns                             |
-| pact-policy     | Policy management, evaluation, and agent scope/permission definitions                                |
-| pact-redactor   | Redacts sensitive data and system prompt patterns from inputs and outputs                            |
-| pact-filter     | Filters content against policy rules, bidirectionally on inputs and outputs                          |
-| pact-audit      | Audit trail and event logging                                                                        |
-| pact-consensus  | Fans classification requests to multiple classifier backends and returns a majority verdict          |
-| pact-benchmark  | Performance benchmarking, corpus runs, and Test Lab run history                                      |
+| Service         | Role                                                                                        |
+| --------------- | ------------------------------------------------------------------------------------------- |
+| pact-gateway    | API gateway - single entry point for pact-web; enforces rate limits and quotas              |
+| pact-auth       | Authentication, sessions, MFA, passkeys, OAuth                                              |
+| pact-account    | Account profile, consents, preferences                                                      |
+| pact-files      | File upload/storage                                                                         |
+| pact-classifier | Classifies data for sensitivity, category, and prompt injection patterns                    |
+| pact-policy     | Policy management, evaluation, and agent scope/permission definitions                       |
+| pact-redactor   | Redacts sensitive data and system prompt patterns from inputs and outputs                   |
+| pact-filter     | Filters content against policy rules, bidirectionally on inputs and outputs                 |
+| pact-audit      | Audit trail and event logging                                                               |
+| pact-consensus  | Fans classification requests to multiple classifier backends and returns a majority verdict |
+| pact-benchmark  | Performance benchmarking, corpus runs, and Test Lab run history                             |
 
 ---
 
 ## Tech stack
 
-| Layer           | Tool                                     |
-| --------------- | ---------------------------------------- |
-| Framework       | Next.js 16 (App Router)                  |
-| UI library      | React 19                                 |
-| Styling         | Tailwind CSS                             |
-| Components      | shadcn/ui + Radix primitives             |
-| Data fetching   | SWR + Orval-generated REST hooks         |
-| Auth transport  | Connect-RPC (gRPC over h2c) to pact-auth |
-| API mocking     | MSW                                      |
-| Testing         | Vitest (unit) and Playwright (E2E)       |
-| Package manager | pnpm                                     |
+| Layer           | Tool                                            |
+| --------------- | ----------------------------------------------- |
+| Framework       | Next.js 16 (App Router)                         |
+| UI library      | React 19                                        |
+| Styling         | Tailwind CSS                                    |
+| Components      | shadcn/ui + Radix primitives                    |
+| Data fetching   | SWR + Orval-generated REST hooks                |
+| Auth transport  | fetch to pact-gateway's `/v1/auth/*` REST proxy |
+| API mocking     | MSW                                             |
+| Testing         | Vitest (unit) and Playwright (E2E)              |
+| Package manager | pnpm                                            |

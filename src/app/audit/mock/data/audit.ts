@@ -2,8 +2,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { type DB } from '@/mocks/data/dbFactory';
 import {
-  type AuditEvent,
-  type DecisionAnnotation,
+  type AuditAuditEventResponse,
+  type AuditDecisionAnnotationResponse,
 } from '@/src/__codegen__/rest/audit';
 import { type AccountPayload } from '@/src/app/audit/domain/audit_account_payload';
 import { type AuthPayload } from '@/src/app/audit/domain/audit_auth_payload';
@@ -17,7 +17,9 @@ import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
 // doesn't consume that topic yet (PACT-306/308) and AuditWorkbench
 // documents selecting it as an honest empty result, not a bug -- seeding it
 // would contradict that documented behaviour.
-export const mockAuditEvent = (overrides: Partial<AuditEvent>): AuditEvent => ({
+export const mockAuditEvent = (
+  overrides: Partial<AuditAuditEventResponse>
+): AuditAuditEventResponse => ({
   id: uuidv4(),
   topic: 'pact.auth',
   eventId: '',
@@ -32,8 +34,8 @@ export const mockAuditEvent = (overrides: Partial<AuditEvent>): AuditEvent => ({
 // /v1/audit/annotations/query reads them back. See audit.ts's mock handlers
 // for both.
 export const mockDecisionAnnotation = (
-  overrides: Partial<DecisionAnnotation>
-): DecisionAnnotation => ({
+  overrides: Partial<AuditDecisionAnnotationResponse>
+): AuditDecisionAnnotationResponse => ({
   requestId: '',
   kind: 'false_positive',
   actor: MOCK_USER_ID,
@@ -45,7 +47,7 @@ const buildAuthEvent = (
   offsetMs: number,
   requestId: string,
   payload: AuthPayload
-): Partial<AuditEvent> => {
+): Partial<AuditAuditEventResponse> => {
   const createdAt = new Date(Date.now() - offsetMs).toISOString();
 
   return {
@@ -61,7 +63,7 @@ const buildAccountEvent = (
   offsetMs: number,
   requestId: string,
   payload: AccountPayload
-): Partial<AuditEvent> => {
+): Partial<AuditAuditEventResponse> => {
   const createdAt = new Date(Date.now() - offsetMs).toISOString();
 
   return {
@@ -77,7 +79,7 @@ const buildFilesEvent = (
   offsetMs: number,
   requestId: string,
   payload: FilesPayload
-): Partial<AuditEvent> => {
+): Partial<AuditAuditEventResponse> => {
   const createdAt = new Date(Date.now() - offsetMs).toISOString();
 
   return {
@@ -170,6 +172,18 @@ export const createAuditMockData = (db: DB): void => {
   seedAuth(2 * hour + 4 * min, 'req-auth-f6', {
     event_id: 'password_changed',
     user_id: MOCK_USER_ID,
+  });
+  // PACT-527's session-revocation pair, so pact-gateway's edge revocation
+  // set has a mock counterpart to observe in dev:mock's activity log.
+  seedAuth(2 * hour + 30 * min, 'req-auth-h8', {
+    event_id: 'session_revoked',
+    user_id: MOCK_USER_ID,
+    session_id: 'sess-9f2c1e4a',
+  });
+  seedAuth(2 * hour + 40 * min, 'req-auth-i9', {
+    event_id: 'user_sessions_revoked',
+    user_id: MOCK_USER_ID,
+    except_session_id: 'sess-9f2c1e4a',
   });
   // Method is closed to "password" | "oauth" on the wire (pact-auth's
   // producer.go / this schema's method enum -- passkey/WebAuthn sign-in

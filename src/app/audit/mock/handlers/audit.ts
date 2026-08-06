@@ -2,11 +2,11 @@ import { http, HttpResponse, type RequestHandler } from 'msw';
 
 import { db } from '@/mocks/data/dbFactory';
 import {
-  type AnnotateDecisionRequest,
-  type AnnotateDecisionResponse,
-  type AuditEvent,
-  type ListDecisionAnnotationsRequest,
-  type ListDecisionAnnotationsResponse,
+  type AuditAnnotateDecisionRequest,
+  type AuditAnnotateDecisionResponse,
+  type AuditAuditEventResponse,
+  type AuditListDecisionAnnotationsRequest,
+  type AuditListDecisionAnnotationsResponse,
 } from '@/src/__codegen__/rest/audit';
 import { persistDecisionAnnotationRequestId } from '@/src/app/audit/mock/data/audit';
 import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
@@ -35,7 +35,7 @@ export const handlers: RequestHandler[] = [
     const limit = Math.min(Number(url.searchParams.get('limit') ?? '50'), 200);
     const offset = Number(url.searchParams.get('offset') ?? '0');
 
-    const pools: Record<string, AuditEvent[]> = {
+    const pools: Record<string, AuditAuditEventResponse[]> = {
       'pact.auth': db.auditAuthEvents.getAll(),
       'pact.account': db.auditAccountEvents.getAll(),
       'pact.files': db.auditFilesEvents.getAll(),
@@ -49,7 +49,8 @@ export const handlers: RequestHandler[] = [
       .filter((event) => !requestId || event.requestId === requestId)
       .sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt ?? 0).getTime() -
+          new Date(a.createdAt ?? 0).getTime()
       );
 
     const page = all.slice(offset, offset + limit);
@@ -68,7 +69,7 @@ export const handlers: RequestHandler[] = [
   // choice PACT-473's gateway.ts PATCH handler already made for this exact
   // orval/plain-text mismatch.
   http.post('*/v1/audit/annotations', async ({ request }) => {
-    const body = (await request.json()) as AnnotateDecisionRequest;
+    const body = (await request.json()) as AuditAnnotateDecisionRequest;
 
     if (!body.requestId) {
       return HttpResponse.json('requestId is required', { status: 400 });
@@ -93,7 +94,7 @@ export const handlers: RequestHandler[] = [
       persistDecisionAnnotationRequestId(body.requestId);
     }
 
-    const response: AnnotateDecisionResponse = { created: !existing };
+    const response: AuditAnnotateDecisionResponse = { created: !existing };
 
     return HttpResponse.json(response);
   }),
@@ -102,7 +103,7 @@ export const handlers: RequestHandler[] = [
   // offset-paginated -- returns every db.auditAnnotations row matching the
   // requested ids in one response, mirroring the real RPC's contract.
   http.post('*/v1/audit/annotations/query', async ({ request }) => {
-    const body = (await request.json()) as ListDecisionAnnotationsRequest;
+    const body = (await request.json()) as AuditListDecisionAnnotationsRequest;
     const requestIds = body.requestIds ?? [];
 
     if (requestIds.length === 0) {
@@ -118,10 +119,10 @@ export const handlers: RequestHandler[] = [
     }
 
     const idSet = new Set(requestIds);
-    const response: ListDecisionAnnotationsResponse = {
+    const response: AuditListDecisionAnnotationsResponse = {
       annotations: db.auditAnnotations
         .getAll()
-        .filter((annotation) => idSet.has(annotation.requestId)),
+        .filter((annotation) => idSet.has(annotation.requestId ?? '')),
     };
 
     return HttpResponse.json(response);

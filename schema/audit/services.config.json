@@ -1,5 +1,8 @@
 {
-  "manual": true,
-  "baseUrl": "/v1/audit",
+  "repo": "pact-gateway",
+  "path": "/api/swagger/audit.yaml",
+  "branch": "master",
+  "baseUrl": "/api/pact/gateway/v1",
+  "stripPathPrefix": "/v1",
   "production": false
 }

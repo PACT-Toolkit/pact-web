@@ -35,6 +35,7 @@ const fakeAuthClient = (verifyMfa: () => Promise<VerifyMfaResult>) =>
   ({ verifyMfa }) as unknown as ReturnType<typeof getPactAuthClient>;
 
 const SESSION_COOKIE = 'pact_session';
+const REFRESH_TOKEN_COOKIE = 'pact_refresh_token';
 const MFA_TOKEN_COOKIE = 'pact_mfa_token';
 
 const makeRequest = (body: unknown) =>
@@ -71,7 +72,10 @@ describe('POST /api/auth/mfa/verify', () => {
           sessionToken: 'real-session-token',
           refreshToken: 'refresh-token',
           userId: 'user-1',
-          expiresAtUnix: BigInt(Math.floor(Date.now() / 1000) + 3600),
+          expiresAtUnix: Math.floor(Date.now() / 1000) + 3600,
+          mfaRequired: false,
+          mfaToken: '',
+          returnTo: '',
         } as VerifyMfaResult)
       )
     );
@@ -80,6 +84,7 @@ describe('POST /api/auth/mfa/verify', () => {
 
     expect(res.status).toBe(200);
     expect(res.cookies.get(SESSION_COOKIE)?.value).toBe('real-session-token');
+    expect(res.cookies.get(REFRESH_TOKEN_COOKIE)?.value).toBe('refresh-token');
     expect(res.cookies.get(MFA_TOKEN_COOKIE)?.value).toBe('');
   });
 
@@ -93,6 +98,10 @@ describe('POST /api/auth/mfa/verify', () => {
     const payload = (await res.json()) as { ok: boolean; userId: string };
     expect(payload.ok).toBe(true);
     expect(res.cookies.get(SESSION_COOKIE)?.value).toBeTruthy();
+    // dev:mock has no real refresh token to persist - proxyToGateway is a
+    // documented no-op fallback under MSW, so a synthetic refresh cookie
+    // here would have no consumer.
+    expect(res.cookies.get(REFRESH_TOKEN_COOKIE)).toBeUndefined();
     expect(res.cookies.get(MFA_TOKEN_COOKIE)?.value).toBe('');
     expect(mockGetPactAuthClient).not.toHaveBeenCalled();
   });
@@ -106,7 +115,10 @@ describe('POST /api/auth/mfa/verify', () => {
           sessionToken: 'real-session-token',
           refreshToken: 'refresh-token',
           userId: 'user-1',
-          expiresAtUnix: BigInt(Math.floor(Date.now() / 1000) + 3600),
+          expiresAtUnix: Math.floor(Date.now() / 1000) + 3600,
+          mfaRequired: false,
+          mfaToken: '',
+          returnTo: '',
         } as VerifyMfaResult)
       )
     );
@@ -135,5 +147,24 @@ describe('POST /api/auth/mfa/verify', () => {
     expect(res.status).toBe(401);
     const payload = (await res.json()) as { code: string };
     expect(payload.code).toBe('challenge_expired');
+  });
+
+  it('returns 400 with a mfa_unavailable code and clears the mfa cookie on FailedPrecondition', async () => {
+    cookieJar.set(MFA_TOKEN_COOKIE, 'real-challenge-token');
+    mockGetPactAuthClient.mockReturnValue(
+      fakeAuthClient(() =>
+        Promise.reject(
+          new ConnectError('invalid request', Code.FailedPrecondition)
+        )
+      )
+    );
+
+    const res = await POST(makeRequest({ code: '123456' }));
+
+    expect(res.status).toBe(400);
+    const payload = (await res.json()) as { code: string; error: string };
+    expect(payload.code).toBe('mfa_unavailable');
+    expect(payload.error).toContain('passkey');
+    expect(res.cookies.get(MFA_TOKEN_COOKIE)?.value).toBe('');
   });
 });

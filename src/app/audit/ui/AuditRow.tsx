@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { decodeAuditEventVariant } from '@/src/app/audit/domain/audit_event_variant';
 import { AuditAccountRow } from '@/src/app/audit/ui/AuditAccountRow';
 import { AuditAuthRow } from '@/src/app/audit/ui/AuditAuthRow';
@@ -14,9 +14,9 @@ import { AuditUnknownRow } from '@/src/app/audit/ui/AuditUnknownRow';
 // branch is exhaustive over AuditEventVariant['kind'] -- a topic we don't
 // recognise (or a payload that failed to decode) always falls through to
 // AuditUnknownRow rather than throwing or rendering nothing.
-export const AuditRow = ({ event }: { event: AuditEvent }) => {
+export const AuditRow = ({ event }: { event: AuditAuditEventResponse }) => {
   const variant = useMemo(
-    () => decodeAuditEventVariant(event.topic, event.payloadJson),
+    () => decodeAuditEventVariant(event.topic ?? '', event.payloadJson ?? ''),
     [event.topic, event.payloadJson]
   );
 

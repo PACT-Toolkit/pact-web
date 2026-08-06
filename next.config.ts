@@ -82,7 +82,15 @@ const nextConfig: NextConfig = {
             'midi=()',
             'payment=()',
             'picture-in-picture=()',
-            'publickey-credentials-get=()',
+            // This app's own top-level pages are the only origin that ever
+            // needs this (passkey login/registration, and PACT-697's MFA
+            // passkey step-up) - `=()` denies it even to self, which was
+            // silently breaking navigator.credentials.get() for every real
+            // browser (Chrome surfaces it as a generic NotAllowedError
+            // indistinguishable from "user has no passkey", so it went
+            // unnoticed). `(self)` keeps every embedded cross-origin iframe
+            // denied, matching the rest of this policy's intent.
+            'publickey-credentials-get=(self)',
             'screen-wake-lock=()',
             'usb=()',
             'web-share=()',

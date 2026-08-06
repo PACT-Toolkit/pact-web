@@ -43,6 +43,8 @@ export interface PactDecisions {
   external_refs?: ExternalRefDecision;
   routing?: RoutingDecision;
   cel?: CelDecision;
+  diagnostics?: DecisionDiagnostics;
+  content_delivery?: ContentDelivery;
   latency_ms: number;
   created_at: string;
   /**
@@ -74,6 +76,35 @@ export interface FilterDecision {
    * Staged-enforcement mode (PACT-257 vector enforcement); pipeline.EnforceModeShadow / EnforceModeEnforce.
    */
   enforce_mode?: "shadow" | "enforce";
+  /**
+   * Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed.
+   */
+  controls?: ControlRef[];
+  matched_span?: MatchedSpan;
+}
+/**
+ * One compliance control a stage verdict enforces (PACT-611). Open set by design - new frameworks or control IDs are added without a schema change.
+ */
+export interface ControlRef {
+  /**
+   * Compliance framework identifying the control vocabulary, e.g. "owasp_llm_top10" (control IDs "LLM01".."LLM10") or "eu_ai_act_art15" (control IDs "accuracy", "robustness", "cybersecurity"). Open set by design - decisions.FrameworkOWASPLLMTop10 and decisions.FrameworkEUAIActArt15 are the two known values today.
+   */
+  framework: string;
+  /**
+   * Framework-specific control identifier, e.g. "LLM01" under owasp_llm_top10 or "accuracy" under eu_ai_act_art15.
+   */
+  id: string;
+}
+/**
+ * Byte-range within the filter's normalized input that triggered a block decision (PACT-734). start/end index the NORMALIZED (lowercased/preprocessed) input, not the original content.
+ */
+export interface MatchedSpan {
+  start: number;
+  end: number;
+  /**
+   * Bounded, redactor-masked copy of the matched substring - never the full content.
+   */
+  excerpt?: string;
 }
 export interface ClassifierDecision {
   /**
@@ -89,6 +120,10 @@ export interface ClassifierDecision {
    * Free-form model/checkpoint tag (e.g. stub-v1, deberta-prompt-injection-v2@abcd1234). Open set - mirrors classifierpb.ClassifyResponse.model_version.
    */
   engine?: string;
+  /**
+   * Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed.
+   */
+  controls?: ControlRef[];
 }
 /**
  * Present only when classifier_score < PACT_CONSENSUS_THRESHOLD (stage 2.5 ran).
@@ -117,6 +152,10 @@ export interface ConsensusDecision {
    * PACT-432. Machine-readable cause of skipped=true: consensus_timeout, consensus_error (shadow-mode vote failures), or shadow_saturated (completion pool full). Open set by design, and not populated on the pre-existing inline-mode transport-error fail-open (skipped=true with no reason) to keep that path's wire output unchanged.
    */
   skipped_reason?: string;
+  /**
+   * Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed.
+   */
+  controls?: ControlRef[];
 }
 export interface ModelVote {
   backend_id: string;
@@ -132,6 +171,10 @@ export interface RedactorDecision {
    */
   verdict?: "pass_through" | "redacted" | "unknown";
   spans?: RedactedSpan[];
+  /**
+   * Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed.
+   */
+  controls?: ControlRef[];
 }
 export interface RedactedSpan {
   start: number;
@@ -154,6 +197,10 @@ export interface PolicyDecision {
    * Closed set per pipeline.Decision.ToolMitigationMode doc comment (PACT-304/PACT-247). The empty string is also valid but is dropped by omitempty, so it never appears on the wire.
    */
   tool_mitigation_mode?: "observe" | "block" | "redact" | "block_only";
+  /**
+   * Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed.
+   */
+  controls?: ControlRef[];
 }
 /**
  * Present when spotlight_chunks were wrapped, or when stripping was detected in an output check.
@@ -231,4 +278,28 @@ export interface CelDecision {
    * Closed set - celeval.SkipReason* constants. Present only when the stage could not fully evaluate every active rule (fail-open): cel_stage_timeout/cel_rule_timeout are budget exhaustion, cel_rule_error covers both a CEL runtime error and an expression that evaluated cleanly to a non-boolean value. Absent when every active rule was attempted regardless of outcome.
    */
   skipped_reason?: "cel_stage_timeout" | "cel_rule_timeout" | "cel_rule_error";
+}
+/**
+ * Causal-replay diagnostics (PACT-734). Present only on block decisions when the gateway's M12 causal replay ran (PACT_DIAGNOSTICS_ENABLED) and span capture is enabled.
+ */
+export interface DecisionDiagnostics {
+  causal_spans?: CausalSpan[];
+}
+/**
+ * One byte-range in the ORIGINAL request content that the gateway's M12 causal replay identified as contributing to a block decision (PACT-734). Text is deliberately omitted (PII avoidance).
+ */
+export interface CausalSpan {
+  start: number;
+  end: number;
+}
+/**
+ * Deterministic reference to an asynchronous tenant-custody content delivery (PACT-735). Present only on block decisions whose capture tier is redacted_full with a configured sink; a reference for tenant-side correlation - PACT persists no content. Generated at decision time, before delivery to tenant-owned storage completes.
+ */
+export interface ContentDelivery {
+  delivery_id: string;
+  /**
+   * SHA-256 hex of the redacted payload as delivered.
+   */
+  content_sha256: string;
+  sink_kind: "webhook" | "s3";
 }

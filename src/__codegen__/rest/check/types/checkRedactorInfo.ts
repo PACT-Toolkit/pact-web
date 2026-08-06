@@ -9,6 +9,10 @@ import type { CheckRedactedSpan } from './checkRedactedSpan';
 import type { CheckRedactorInfoVerdict } from './checkRedactorInfoVerdict';
 
 export interface CheckRedactorInfo {
+  /** DurationMs is the redactor stage's wall-clock RPC time in fractional
+   * milliseconds (PACT-613); present whenever this sub-object is, including
+   * the transport fail-open path (verdict "unknown"). */
+  duration_ms?: number;
   spans?: CheckRedactedSpan[];
   verdict?: CheckRedactorInfoVerdict;
 }

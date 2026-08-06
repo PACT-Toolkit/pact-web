@@ -1,4 +1,4 @@
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import {
   type DecisionPayload,
   parseDecisionPayload,
@@ -27,24 +27,25 @@ export type StageRecordBase = {
 // Malformed payload JSON never throws: parseDecisionPayload returns null
 // and the event is skipped, same as a payload without the sub-object.
 export const extractStageRecords = <TSubObject, TExtra>(
-  events: AuditEvent[],
+  events: AuditAuditEventResponse[],
   pick: (payload: DecisionPayload) => TSubObject | undefined,
   project: (subObject: TSubObject, payload: DecisionPayload) => TExtra
 ): (StageRecordBase & TExtra)[] => {
   const records: (StageRecordBase & TExtra)[] = [];
 
   for (const event of events) {
-    const payload = parseDecisionPayload(event.payloadJson);
+    const payloadJson = event.payloadJson ?? '';
+    const payload = parseDecisionPayload(payloadJson);
     if (!payload) continue;
     const subObject = pick(payload);
     if (!subObject) continue;
 
     records.push({
-      id: event.id,
-      createdAt: event.createdAt,
+      id: event.id ?? '',
+      createdAt: event.createdAt ?? '',
       requestId: event.requestId,
       latencyMs: payload.latency_ms,
-      rawPayload: event.payloadJson,
+      rawPayload: payloadJson,
       ...project(subObject, payload),
     });
   }

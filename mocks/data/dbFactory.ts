@@ -1,14 +1,19 @@
 import {
-  type Consent,
-  type Preferences,
-  type Profile,
+  type AccountConsentResponse,
+  type AccountPreferencesResponse,
+  type AccountProfileResponse,
 } from '@/src/__codegen__/rest/account';
 import {
-  type AuditEvent,
-  type DecisionAnnotation,
+  type AuditAuditEventResponse,
+  type AuditDecisionAnnotationResponse,
 } from '@/src/__codegen__/rest/audit';
+import {
+  type AuthMfaFactorResponse,
+  type AuthOAuthIdentityResponse,
+  type AuthPasskeyResponse,
+} from '@/src/__codegen__/rest/auth';
 import { type ConfigConfigResponse } from '@/src/__codegen__/rest/config';
-import { type FileRecord } from '@/src/__codegen__/rest/files';
+import { type FilesFileResponse } from '@/src/__codegen__/rest/files';
 import {
   createAccountMockData,
   mockConsent,
@@ -21,6 +26,14 @@ import {
   mockAuditEvent,
   mockDecisionAnnotation,
 } from '@/src/app/audit/mock/data/audit';
+import {
+  type AuthRecoveryCodesState,
+  createAuthMockData,
+  mockAuthIdentity,
+  mockAuthMfaFactor,
+  mockAuthPasskey,
+  mockAuthRecoveryCodesState,
+} from '@/src/app/auth/mock/data/auth';
 import { createClassifierMockData } from '@/src/app/classifier/mock/data/classifier';
 import { createConsensusMockData } from '@/src/app/consensus/mock/data/consensus';
 import {
@@ -48,18 +61,30 @@ import {
 import { MockRepository } from './repository';
 
 export const db = {
-  accountProfile: new MockRepository<Profile>(mockProfile),
-  accountPreferences: new MockRepository<Preferences>(mockPreferences),
-  accountConsents: new MockRepository<Consent>(mockConsent),
+  accountProfile: new MockRepository<AccountProfileResponse>(mockProfile),
+  accountPreferences: new MockRepository<AccountPreferencesResponse>(
+    mockPreferences
+  ),
+  accountConsents: new MockRepository<AccountConsentResponse>(mockConsent),
   attackExamples: new MockRepository<AttackExample>(mockAttackExample),
-  auditAnnotations: new MockRepository<DecisionAnnotation>(
+  auditAnnotations: new MockRepository<AuditDecisionAnnotationResponse>(
     mockDecisionAnnotation
   ),
-  auditAuthEvents: new MockRepository<AuditEvent>(mockAuditEvent),
-  auditAccountEvents: new MockRepository<AuditEvent>(mockAuditEvent),
-  auditFilesEvents: new MockRepository<AuditEvent>(mockAuditEvent),
-  decisions: new MockRepository<AuditEvent>(mockDecisionEvent),
-  files: new MockRepository<FileRecord>(mockFileRecord),
+  auditAuthEvents: new MockRepository<AuditAuditEventResponse>(mockAuditEvent),
+  auditAccountEvents: new MockRepository<AuditAuditEventResponse>(
+    mockAuditEvent
+  ),
+  auditFilesEvents: new MockRepository<AuditAuditEventResponse>(mockAuditEvent),
+  authMfaFactors: new MockRepository<AuthMfaFactorResponse>(mockAuthMfaFactor),
+  authPasskeys: new MockRepository<AuthPasskeyResponse>(mockAuthPasskey),
+  authIdentities: new MockRepository<AuthOAuthIdentityResponse>(
+    mockAuthIdentity
+  ),
+  authRecoveryCodesState: new MockRepository<AuthRecoveryCodesState>(
+    mockAuthRecoveryCodesState
+  ),
+  decisions: new MockRepository<AuditAuditEventResponse>(mockDecisionEvent),
+  files: new MockRepository<FilesFileResponse>(mockFileRecord),
   gatewayConfig: new MockRepository<ConfigConfigResponse>(mockGatewayConfig),
   testLabRuns: new MockRepository<TestLabRunRecord>(mockTestLabRun),
 };
@@ -68,6 +93,7 @@ export type DB = typeof db;
 
 createAccountMockData(db);
 createAuditMockData(db);
+createAuthMockData(db);
 // No ordering dependency on the decisions-producing seeders below --
 // annotations are independent rows keyed on requestId (PACT-464/PACT-474),
 // looked up by whatever the caller passes, not tied to a decision row

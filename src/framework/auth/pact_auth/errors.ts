@@ -18,6 +18,26 @@ export const AUTH_ERROR_CODES = {
 export type AuthErrorCode =
   (typeof AUTH_ERROR_CODES)[keyof typeof AUTH_ERROR_CODES];
 
+// MFA-step-up-specific codes layered on top of AUTH_ERROR_CODES. pact-auth's
+// MapMfaErr (internal/features/mfa/errors.go) collapses several distinct
+// outcomes onto Code.Unauthenticated for every mfa_token-scoped RPC
+// (VerifyMfa, BeginMfaPasskeyAssertion, FinishMfaPasskeyAssertion), so the
+// /api/auth/mfa/* routes classify the raw message before falling through to
+// mapPactAuthError - see isChallengeGoneMessage in route_helpers.ts. Kept
+// alongside AUTH_ERROR_CODES so every mfa route and
+// AuthLoginMfaChallengeForm read one canonical set instead of scattering
+// string literals per file.
+export const MFA_STEP_UP_ERROR_CODES = {
+  noChallenge: 'no_challenge',
+  challengeExpired: 'challenge_expired',
+  invalidCode: 'invalid_code',
+  mfaUnavailable: 'mfa_unavailable',
+  passkeyFailed: 'passkey_failed',
+} as const;
+
+export type MfaStepUpErrorCode =
+  (typeof MFA_STEP_UP_ERROR_CODES)[keyof typeof MFA_STEP_UP_ERROR_CODES];
+
 export type AuthErrorBody = {
   code: AuthErrorCode;
   error: string;
@@ -34,11 +54,18 @@ const trimRpcPrefix = (msg: string): string =>
 const friendlyRateLimited =
   "You're trying that too often. Please wait a moment and try again.";
 
-// mapPactAuthError turns any error thrown from the connect-node client
-// into a consistent `{ status, body }` shape for the /api/auth/* route
-// to return. Callers that need to special-case a code (e.g. register's
-// AlreadyExists with a domain-specific link block) should branch on the
-// ConnectError directly before falling through to this default mapping.
+// mapPactAuthError turns any error thrown from the pact_auth client
+// (client.ts synthesises a ConnectError with a mapped Code - preferring
+// pact-gateway's own error-body `code` slug (PACT-684) and falling back to
+// its HTTP status only when that slug is absent or unrecognised, e.g. on
+// pact-gateway's plain-text middleware error paths - see PACT-686) into a
+// consistent `{ status, body }` shape for the /api/auth/* route to return.
+// Callers that need to special-case a code (e.g. register's AlreadyExists
+// with a domain-specific link block, or login's FailedPrecondition for
+// "email not verified" - reachable again as of PACT-686, since
+// FailedPrecondition no longer collapses into InvalidArgument) should
+// branch on the ConnectError directly before falling through to this
+// default mapping.
 //
 // Non-ConnectError values get the generic `unknown` fallback so any
 // transport-level surprise (DNS, panic, etc.) doesn't leak into

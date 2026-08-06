@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+    boundary.ErrorResponse:
+        properties:
+            code:
+                type: string
+            error:
+                type: string
+        type: object
     filter.ListPacksResponse:
         properties:
             packs:
@@ -123,7 +130,7 @@ paths:
                 "502":
                     description: upstream error
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "503":
                     description: service unavailable
                     schema:
@@ -167,7 +174,7 @@ paths:
                 "502":
                     description: upstream error
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "503":
                     description: service unavailable
                     schema:

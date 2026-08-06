@@ -7,9 +7,21 @@
  * Each schema/{service}/services.config.json must exist with:
  *   { "repo": "pact-backend", "path": "/api/swagger.yaml", "production": false }
  *
- * production: true  — download failure exits non-zero (breaks CI).
- * production: false — download failure prints a warning and continues (safe during early dev).
- * manual: true      — skip download entirely; the swagger.yaml is hand-maintained
+ * A fetch failure for ANY configured service (regardless of the `production`
+ * flag) fails the whole run: every failing service is reported by name with
+ * its unreachable repo/path/branch, then the process exits non-zero. There is
+ * no "safe to skip" mode - a stale vendored spec that silently stops updating
+ * is worse than a loud CI failure.
+ *
+ * production: true  - the service's generated client ships in production
+ *                     builds. Still hard-fails on fetch errors, same as
+ *                     production: false.
+ * production: false - the service is excluded from production client builds
+ *                     (early development or unstable schema), but a fetch
+ *                     failure during `pnpm api:update` still hard-fails the
+ *                     run. This flag no longer controls fetch-error severity;
+ *                     see AGENTS.md for how the flag is meant to be consumed.
+ * manual: true      - skip download entirely; the swagger.yaml is hand-maintained
  *                     in-repo rather than pulled from a producing service. No
  *                     service uses this today (benchmark moved to the gateway's
  *                     per-tag slice); kept for specs with no upstream source.
@@ -32,7 +44,7 @@
 import { existsSync } from 'fs';
 import { readdir, readFile, writeFile, mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const SCHEMA_DIR = join(ROOT, 'schema');
@@ -62,7 +74,7 @@ const downloadFile = async (service, repo, path, branch) => {
 
   if (!res.ok) {
     throw new Error(
-      `GitHub API ${res.status} for ${GITHUB_ORG}/${repo}${path}: ${await res.text()}`
+      `GitHub API ${res.status} for ${GITHUB_ORG}/${repo}${path} (branch: ${branch}): ${await res.text()}`
     );
   }
 
@@ -80,10 +92,40 @@ const downloadFile = async (service, repo, path, branch) => {
 const targetsFor = (config) =>
   config.files ?? [{ path: config.path, schemaFile: config.schemaFile }];
 
-async function main() {
+/**
+ * Reduce the settled download results down to the services that failed,
+ * each carrying enough detail (service, repo, path, branch, message) to name
+ * the failure precisely. Pure and side-effect free so it can be unit tested
+ * without touching the network or the filesystem.
+ */
+export function summarizeFailures(configs, results) {
+  const failures = [];
+
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i];
+
+    if (result.status !== 'rejected') {
+      continue;
+    }
+
+    const { service, config } = configs[i];
+
+    failures.push({
+      service,
+      repo: config.repo,
+      path: config.path,
+      branch: config.branch ?? 'main',
+      message: result.reason?.message ?? String(result.reason),
+    });
+  }
+
+  return failures;
+}
+
+export async function main({ schemaDir = SCHEMA_DIR } = {}) {
   console.log('📥 Downloading API schemas\n');
 
-  if (!existsSync(SCHEMA_DIR)) {
+  if (!existsSync(schemaDir)) {
     console.log(
       'No schema/ directory found. Create schema/{service}/services.config.json to add a service.'
     );
@@ -91,12 +133,12 @@ async function main() {
     return;
   }
 
-  const entries = await readdir(SCHEMA_DIR, { withFileTypes: true });
+  const entries = await readdir(schemaDir, { withFileTypes: true });
   const services = entries
     .filter(
       (e) =>
         e.isDirectory() &&
-        existsSync(join(SCHEMA_DIR, e.name, 'services.config.json'))
+        existsSync(join(schemaDir, e.name, 'services.config.json'))
     )
     .map((e) => e.name);
 
@@ -110,7 +152,7 @@ async function main() {
 
   const allConfigs = await Promise.all(
     services.map(async (service) => {
-      const configPath = join(SCHEMA_DIR, service, 'services.config.json');
+      const configPath = join(schemaDir, service, 'services.config.json');
       const config = JSON.parse(await readFile(configPath, 'utf-8'));
 
       return { service, config };
@@ -127,49 +169,43 @@ async function main() {
     configs.map(async ({ service, config }) => {
       const { repo, branch = 'main' } = config;
 
-      await mkdir(join(SCHEMA_DIR, service), { recursive: true });
+      await mkdir(join(schemaDir, service), { recursive: true });
 
       for (const { path, schemaFile } of targetsFor(config)) {
         const spec = await downloadFile(service, repo, path, branch);
         const filename = schemaFile ?? 'swagger.yaml';
 
-        await writeFile(join(SCHEMA_DIR, service, filename), spec);
+        await writeFile(join(schemaDir, service, filename), spec);
       }
 
       console.log(`  ✅ ${service}`);
-
-      return { service, production: config.production ?? false };
     })
   );
 
-  let hasProductionFailure = false;
+  const failures = summarizeFailures(configs, results);
 
-  for (let i = 0; i < results.length; i++) {
-    const result = results[i];
+  if (failures.length > 0) {
+    console.error(`\n❌ ${failures.length} service(s) failed to download:\n`);
 
-    if (result.status === 'rejected') {
-      const { service, config } = configs[i];
-      const isProduction = config.production ?? false;
-
-      if (isProduction) {
-        console.error(`  ❌ ${service} (production): ${result.reason.message}`);
-        hasProductionFailure = true;
-      } else {
-        console.warn(
-          `  ⚠️  ${service} (pre-production): ${result.reason.message} — skipped`
-        );
-      }
+    for (const failure of failures) {
+      console.error(
+        `  - ${failure.service}: ${GITHUB_ORG}/${failure.repo}${failure.path ?? ''} (branch: ${failure.branch}) - ${failure.message}`
+      );
     }
-  }
 
-  if (hasProductionFailure) {
     process.exit(1);
   }
 
   console.log('\n✨ Done\n');
 }
 
-main().catch((err) => {
-  console.error('❌ Failed:', err.message);
-  process.exit(1);
-});
+const isEntryPoint =
+  process.argv[1] !== undefined &&
+  import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isEntryPoint) {
+  main().catch((err) => {
+    console.error('❌ Failed:', err.message);
+    process.exit(1);
+  });
+}

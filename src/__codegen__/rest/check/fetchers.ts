@@ -6,11 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-
 import type { Key } from 'swr';
 
 import type { CheckCheckRequest, CheckCheckResponse } from './types';
+
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 export type checkContentResponse200 = {
   data: CheckCheckResponse;
@@ -71,24 +73,17 @@ export const checkContent = async (
   checkCheckRequest: CheckCheckRequest,
   options?: RequestInit
 ): Promise<checkContentResponse> => {
-  const res = await fetch(getCheckContentUrl(), {
+  return customFetch<checkContentResponse>(getCheckContentUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(checkCheckRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: checkContentResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as checkContentResponse;
 };
 
-export const getCheckContentMutationFetcher = (options?: RequestInit) => {
+export const getCheckContentMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: CheckCheckRequest }) => {
     return checkContent(arg, options);
   };

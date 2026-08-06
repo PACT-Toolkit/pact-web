@@ -11,9 +11,8 @@ import useSWRMutation from 'swr/mutation';
 import type { Key } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
-import type { AxiosError, AxiosRequestConfig } from 'axios';
-
 import type {
+  BoundaryErrorResponse,
   ClassifierLabelVerdictRequest,
   ClassifierLabelVerdictResponse,
 } from './types';
@@ -36,6 +35,10 @@ import {
   getLabelVerdictMutationKey,
 } from './fetchers';
 
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export type LabelVerdictMutationResult = NonNullable<
   Awaited<ReturnType<typeof labelVerdict>>
 >;
@@ -43,7 +46,9 @@ export type LabelVerdictMutationResult = NonNullable<
 /**
  * @summary Label a classifier verdict
  */
-export const useLabelVerdict = <TError = Promise<string>>(options?: {
+export const useLabelVerdict = <
+  TError = string | BoundaryErrorResponse,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof labelVerdict>>,
     TError,
@@ -51,12 +56,12 @@ export const useLabelVerdict = <TError = Promise<string>>(options?: {
     ClassifierLabelVerdictRequest,
     Awaited<ReturnType<typeof labelVerdict>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getLabelVerdictMutationKey();
-  const swrFn = getLabelVerdictMutationFetcher(fetchOptions);
+  const swrFn = getLabelVerdictMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

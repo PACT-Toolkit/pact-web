@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { extractConsensusRecords } from '@/src/app/consensus/domain/consensus_record';
 
 const decisionEvent = (
   id: string,
   payload: Record<string, unknown>
-): AuditEvent => ({
+): AuditAuditEventResponse => ({
   id,
   topic: 'pact.decisions',
   eventId: 'decision.made',
@@ -72,7 +72,7 @@ describe('extractConsensusRecords', () => {
   });
 
   it('never throws on malformed payload JSON and simply excludes the event', () => {
-    const events: AuditEvent[] = [
+    const events: AuditAuditEventResponse[] = [
       {
         id: 'evt-4',
         topic: 'pact.decisions',

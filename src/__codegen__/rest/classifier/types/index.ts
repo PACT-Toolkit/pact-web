@@ -6,5 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './boundaryErrorResponse';
 export * from './classifierLabelVerdictRequest';
 export * from './classifierLabelVerdictResponse';

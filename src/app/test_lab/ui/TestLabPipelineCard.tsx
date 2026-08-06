@@ -80,6 +80,7 @@ export const TestLabPipelineCard = ({
             decision={result?.decision}
             latency={result?.latencyMs}
             reason={result?.reason}
+            causalSpans={result?.causalSpans}
             onSave={onSaveToCorpus}
             saveState={saveState}
           />

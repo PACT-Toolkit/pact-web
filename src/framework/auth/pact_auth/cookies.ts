@@ -1,11 +1,26 @@
 import 'server-only';
 
+import { type NextResponse } from 'next/server';
+
+import { authCookieBaseOptions } from '@/src/lib/cookie_options';
+import {
+  REFRESH_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS,
+  SESSION_COOKIE,
+} from '@/src/lib/session_cookie';
+
+import { type AuthSessionResult } from './client';
+
 // Shared cookie names + option builders for the httpOnly cookies pact-web's
 // auth routes write. Centralized so every route that hits the MFA step-up
 // gate (password login, OAuth callback, password-reset confirm) sets the
 // same cookie with the same semantics instead of re-deriving it per file.
 
-export { SESSION_COOKIE } from '@/src/lib/session_cookie';
+export {
+  REFRESH_TOKEN_COOKIE,
+  REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS,
+  SESSION_COOKIE,
+};
 
 export const MFA_TOKEN_COOKIE = 'pact_mfa_token';
 
@@ -29,10 +44,7 @@ export const MFA_TOKEN_TTL_SECONDS = 5 * 60;
 // OAuth callback, the sibling pending-return_to cookie). httpOnly,
 // sameSite=lax, capped to the MFA challenge TTL by default.
 export const shortLivedCookieOptions = (maxAge: number) => ({
-  httpOnly: true,
-  sameSite: 'lax' as const,
-  secure: process.env.NODE_ENV === 'production',
-  path: '/',
+  ...authCookieBaseOptions(),
   maxAge,
 });
 
@@ -41,9 +53,59 @@ export const shortLivedCookieOptions = (maxAge: number) => ({
 // confirm, email verify, OAuth callback), expiring in lockstep with the
 // pact-auth session it carries.
 export const sessionCookieOptions = (expires: Date) => ({
-  httpOnly: true,
-  sameSite: 'lax' as const,
-  secure: process.env.NODE_ENV === 'production',
-  path: '/',
+  ...authCookieBaseOptions(),
   expires,
 });
+
+// See REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS's own doc comment
+// (src/lib/session_cookie.ts) for why this doesn't mirror
+// sessionCookieOptions' expiry.
+export const refreshTokenCookieOptions = () => ({
+  ...authCookieBaseOptions(),
+  maxAge: REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS,
+});
+
+// Writes both the session cookie and (when present) the refresh-token
+// cookie from a pact-auth session result. Every route that completes a
+// login (password, MFA verify, passkey, OAuth callback, password-reset
+// confirm, email verify) mints a session the same way pact-gateway's
+// authMiddleware later needs to silently renew, so this is the single
+// place that pairs the two writes - PACT-705 exists because refreshToken
+// used to be parsed and dropped here.
+export const setSessionCookies = (
+  res: NextResponse,
+  session: Pick<
+    AuthSessionResult,
+    'sessionToken' | 'refreshToken' | 'expiresAtUnix'
+  >
+): void => {
+  res.cookies.set({
+    name: SESSION_COOKIE,
+    value: session.sessionToken,
+    ...sessionCookieOptions(new Date(session.expiresAtUnix * 1000)),
+  });
+  if (session.refreshToken) {
+    res.cookies.set({
+      name: REFRESH_TOKEN_COOKIE,
+      value: session.refreshToken,
+      ...refreshTokenCookieOptions(),
+    });
+  }
+};
+
+// Clears both cookies on sign-out. Mirrors setSessionCookies so the pair is
+// always managed together.
+export const clearSessionCookies = (res: NextResponse): void => {
+  res.cookies.set({
+    name: SESSION_COOKIE,
+    value: '',
+    ...authCookieBaseOptions(),
+    maxAge: 0,
+  });
+  res.cookies.set({
+    name: REFRESH_TOKEN_COOKIE,
+    value: '',
+    ...authCookieBaseOptions(),
+    maxAge: 0,
+  });
+};

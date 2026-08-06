@@ -8,6 +8,10 @@
 import type { CheckFilterInfoVerdict } from './checkFilterInfoVerdict';
 
 export interface CheckFilterInfo {
+  /** DurationMs is the filter stage's wall-clock RPC time in fractional
+   * milliseconds (PACT-613); present whenever this sub-object is, since the
+   * filter stage always ran to produce a verdict. nil is never emitted as 0. */
+  duration_ms?: number;
   rule_id?: string;
   /** true when the match was a dry-run / shadow rule */
   shadow?: boolean;

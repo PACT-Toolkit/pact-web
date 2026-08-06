@@ -1,8 +1,6 @@
 import { type DB } from '@/mocks/data/dbFactory';
-import {
-  type FileRecord,
-  FileRecordStatus,
-} from '@/src/__codegen__/rest/files';
+import { type FilesFileResponse } from '@/src/__codegen__/rest/files';
+import { type FileStatus } from '@/src/app/files/domain/file_status';
 
 // A file whose GET (download-URL mint) always fails upstream, even though
 // its own status is "ready". This is the PACT-417 regression fixture: the
@@ -12,7 +10,9 @@ import {
 // tab should show occasional SWR-backed-off retries, never a hammer.
 export const MINT_FAILURE_FILE_ID = 'file-mint-fails';
 
-export const mockFileRecord = (overrides: Partial<FileRecord>): FileRecord => {
+export const mockFileRecord = (
+  overrides: Partial<FilesFileResponse>
+): FilesFileResponse => {
   const now = new Date().toISOString();
 
   return {
@@ -22,7 +22,7 @@ export const mockFileRecord = (overrides: Partial<FileRecord>): FileRecord => {
     contentType: 'application/octet-stream',
     sizeBytes: 0,
     purpose: 'attachment',
-    status: FileRecordStatus.ready,
+    status: 'ready' satisfies FileStatus,
     storageKey: '',
     thumbnailKey: '',
     createdAt: now,
@@ -37,7 +37,7 @@ export const createFilesMockData = (db: DB): void => {
     filename: 'quarterly-report.pdf',
     contentType: 'application/pdf',
     sizeBytes: 245_760,
-    status: FileRecordStatus.ready,
+    status: 'ready' satisfies FileStatus,
     storageKey: 'mock/quarterly-report.pdf',
   });
   db.files.create({
@@ -45,7 +45,7 @@ export const createFilesMockData = (db: DB): void => {
     filename: 'diagram.png',
     contentType: 'image/png',
     sizeBytes: 51_200,
-    status: FileRecordStatus.processing,
+    status: 'processing' satisfies FileStatus,
     storageKey: 'mock/diagram.png',
   });
   db.files.create({
@@ -53,7 +53,7 @@ export const createFilesMockData = (db: DB): void => {
     filename: 'installer.exe',
     contentType: 'application/x-msdownload',
     sizeBytes: 12_288,
-    status: FileRecordStatus.rejected,
+    status: 'rejected' satisfies FileStatus,
     storageKey: 'mock/installer.exe',
   });
   db.files.create({
@@ -61,7 +61,7 @@ export const createFilesMockData = (db: DB): void => {
     filename: 'broken-download-link-demo.txt',
     contentType: 'text/plain',
     sizeBytes: 2_048,
-    status: FileRecordStatus.ready,
+    status: 'ready' satisfies FileStatus,
     storageKey: 'mock/broken-download-link-demo.txt',
   });
 };

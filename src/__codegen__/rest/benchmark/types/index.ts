@@ -21,6 +21,7 @@ export * from './benchmarkSaveTestLabRunResponse';
 export * from './benchmarkSubmitJobRequest';
 export * from './benchmarkSubmitJobResponse';
 export * from './benchmarkTestLabRunBody';
+export * from './boundaryErrorResponse';
 export * from './getBenchmarkJobParams';
 export * from './listBenchmarkRunsParams';
 export * from './listBenchmarkTestLabRunsParams';

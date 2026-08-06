@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+    boundary.ErrorResponse:
+        properties:
+            code:
+                type: string
+            error:
+                type: string
+        type: object
     rules.CreateRuleRequest:
         properties:
             name:
@@ -121,7 +128,7 @@ paths:
                 "400":
                     description: invalid request
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token
                     schema:
@@ -133,7 +140,7 @@ paths:
                 "404":
                     description: rule not found
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Publish a policy rule
@@ -158,7 +165,7 @@ paths:
                 "400":
                     description: invalid request
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token
                     schema:
@@ -170,7 +177,7 @@ paths:
                 "404":
                     description: rule not found
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Revoke a policy rule

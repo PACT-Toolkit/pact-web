@@ -14,7 +14,7 @@ import { BenchmarkTrendChart } from '@/src/app/benchmark/ui/BenchmarkTrendChart'
 import { BenchmarkUploadForm } from '@/src/app/benchmark/ui/BenchmarkUploadForm';
 
 const GATEWAY_URL =
-  process.env.NEXT_PUBLIC_PACT_GATEWAY_URL ?? 'http://localhost:8080';
+  process.env.NEXT_PUBLIC_PACT_GATEWAY_URL ?? 'http://localhost:8110';
 
 export const BenchmarkWorkbench = () => {
   const [jobId, setJobId] = useState<string | null>(null);

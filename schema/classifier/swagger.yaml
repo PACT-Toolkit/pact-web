@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+    boundary.ErrorResponse:
+        properties:
+            code:
+                type: string
+            error:
+                type: string
+        type: object
     classifier.LabelVerdictRequest:
         properties:
             content:
@@ -73,7 +80,7 @@ paths:
                 "502":
                     description: downstream classifier error
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "503":
                     description: classifier unavailable
                     schema:

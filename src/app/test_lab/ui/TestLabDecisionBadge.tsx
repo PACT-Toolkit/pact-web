@@ -1,4 +1,4 @@
-import  { type LayerDecision } from '@/src/app/test_lab/ui/types';
+import { type LayerDecision } from '@/src/app/test_lab/ui/types';
 
 export const TestLabDecisionBadge = ({ d }: { d: LayerDecision }) => (
   <span
@@ -12,6 +12,12 @@ export const TestLabDecisionBadge = ({ d }: { d: LayerDecision }) => (
             : 'animate-pulse bg-muted/50 text-muted-foreground'
     }`}
   >
-    {d === 'allow' ? 'ALLOW' : d === 'block' ? 'BLOCK' : d === 'skip' ? 'SKIP' : '…'}
+    {d === 'allow'
+      ? 'ALLOW'
+      : d === 'block'
+        ? 'BLOCK'
+        : d === 'skip'
+          ? 'SKIP'
+          : '…'}
   </span>
 );

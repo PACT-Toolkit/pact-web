@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyLiveLayers,
-  applyMockLayers,
   BLANK_LAYERS,
   type CheckResponse,
   CheckResponseParseError,
-  type MockLayer,
+  deriveLayerDefinitions,
   parseCheckResponse,
+  resultCausalSpans,
   type TestLabRunRecord,
   toTestRun,
 } from '@/src/app/test_lab/domain/test_lab_check';
@@ -23,313 +23,538 @@ const baseResponse = (over: Partial<CheckResponse> = {}): CheckResponse => ({
   ...over,
 });
 
-describe('applyLiveLayers — PACT-230 live-mode hardening', () => {
-  it('benign input: both layers allow, no rule_id, no classifier metadata', () => {
-    const out = applyLiveLayers(startingLayers(), baseResponse(), []);
-    expect(out.map((l) => [l.id, l.decision])).toEqual([
-      ['filter', 'allow'],
-      ['classifier', 'allow'],
+// byId indexes applyLiveLayers' output by stage id so a test can assert on
+// one stage without depending on array position -- important once sandbox's
+// position shifts consensus/redactor depending on whether it renders.
+const byId = (layers: ReturnType<typeof applyLiveLayers>) =>
+  Object.fromEntries(layers.map((l) => [l.id, l]));
+
+describe('applyLiveLayers - PACT-702 reason-driven block attribution', () => {
+  it('benign input: every stage allows, no rule_id, no classifier/redactor/consensus metadata leaks through', () => {
+    const out = byId(applyLiveLayers(startingLayers(), baseResponse(), []));
+    expect(out.filter.decision).toBe('allow');
+    expect(out.classifier.decision).toBe('allow');
+    expect(out.filter.ruleId).toBeUndefined();
+    expect(out.classifier.classifierLabel).toBeUndefined();
+    expect(out.classifier.confidence).toBeUndefined();
+    // Neither consensus nor redactor sub-object is present on this minimal
+    // fixture -- both stay honestly "skip", never a fabricated allow.
+    expect(out.consensus.decision).toBe('skip');
+    expect(out.redactor.decision).toBe('skip');
+  });
+
+  it('benign input with full sub-objects: consensus skips (never escalated), redactor passes through', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          classifier: { label: 'benign', score: 0.95 },
+          redactor: { verdict: 'pass_through', spans: [] },
+        }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('allow');
+    expect(out.classifier.decision).toBe('allow');
+    expect(out.consensus.decision).toBe('skip');
+    expect(out.consensus.reason).toMatch(
+      /confidence above threshold|not configured/i
+    );
+    expect(out.redactor.decision).toBe('allow');
+    expect(out.redactor.reason).toBeUndefined();
+  });
+
+  it('filter_hostile blocks the filter layer only; classifier/consensus/redactor all skip', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'block',
+          reason: 'filter_hostile',
+          filter: { verdict: 'hostile', rule_id: 'inject-001' },
+        }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('block');
+    expect(out.filter.ruleId).toBe('inject-001');
+    expect(out.filter.reason).toContain('inject-001');
+    expect(out.classifier.decision).toBe('skip');
+    expect(out.classifier.reason).toMatch(/filter blocked/i);
+    expect(out.consensus.decision).toBe('skip');
+    expect(out.redactor.decision).toBe('skip');
+  });
+
+  it('filter_suspicious_enforced blocks the filter layer with enforcement-nuance wording, rule id shown', () => {
+    // The user-reported PACT-702 bug: a suspicious verdict promoted to a
+    // block by vector enforcement must land on the FILTER chip, not read as
+    // an allow with the block unattributed anywhere.
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'block',
+          reason: 'filter_suspicious_enforced',
+          filter: { verdict: 'suspicious', rule_id: 'entropy-high-token' },
+        }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('block');
+    expect(out.filter.ruleId).toBe('entropy-high-token');
+    expect(out.filter.reason).toMatch(/enforced under vector mode/i);
+    expect(out.filter.reason).toContain('entropy-high-token');
+    expect(out.classifier.decision).toBe('skip');
+  });
+
+  it('filter blocks via legacy filter_rule_id when the structural sub-object is entirely absent', () => {
+    // Back-compat for gateway builds older than PACT-249: no `filter`
+    // sub-object at all, an arbitrary internal reason string, but
+    // filter_rule_id + decision=block is still authoritative.
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'block',
+          reason: 'engine_regex_match',
+          filter_rule_id: 'RULE-INJECT-001',
+        }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('block');
+    expect(out.filter.ruleId).toBe('RULE-INJECT-001');
+    expect(out.filter.reason).toContain('RULE-INJECT-001');
+    expect(out.classifier.decision).toBe('skip');
+  });
+
+  it('classifier_enforced blocks the classifier layer only; filter reads its own real allow', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'block',
+          reason: 'classifier_enforced',
+          classifier: { label: 'jailbreak', score: 0.94 },
+        }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('allow');
+    expect(out.classifier.decision).toBe('block');
+    expect(out.classifier.classifierLabel).toBe('jailbreak');
+    expect(out.classifier.confidence).toBe(0.94);
+    expect(out.consensus.decision).toBe('skip');
+    expect(out.consensus.reason).toMatch(/classifier blocked/i);
+    expect(out.redactor.decision).toBe('skip');
+  });
+
+  it('classifier_protocol_error blocks the classifier layer (fail-closed, corrects the spec prose against stages.go)', () => {
+    // pact-gateway's classifierStage `default:` branch sets VerdictBlock for
+    // an unrecognised label ("fail closed so a silent classifier regression
+    // cannot wave bad traffic through") -- classifier_protocol_error is a
+    // real block reason, even though the task spec's prose listed it among
+    // non-block diagnostics. Trusting stages.go (the spec's own cited
+    // authority) over that one line of prose.
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'block',
+          reason: 'classifier_protocol_error',
+        }),
+        []
+      )
+    );
+    expect(out.classifier.decision).toBe('block');
+    expect(out.classifier.reason).toMatch(/unrecognised label/i);
+    expect(out.consensus.decision).toBe('skip');
+  });
+
+  it('classifier_tagged (shadow / deferred): classifier=allow with label, nothing downstream force-skipped', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'allow',
+          reason: 'classifier_tagged',
+          classifier: { label: 'suspicious', score: 0.55 },
+        }),
+        []
+      )
+    );
+    expect(out.classifier.decision).toBe('allow');
+    expect(out.classifier.classifierLabel).toBe('suspicious');
+    expect(out.classifier.confidence).toBe(0.55);
+    expect(out.classifier.reason).toMatch(/deferred to consensus/i);
+  });
+
+  it('classifier_unreachable (fail-open halt): classifier=allow with fail-open note; sandbox/consensus/redactor force-skip', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({ reason: 'classifier_unreachable' }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('allow');
+    expect(out.classifier.decision).toBe('allow');
+    expect(out.classifier.reason).toMatch(/fail open/i);
+    expect(out.consensus.decision).toBe('skip');
+    expect(out.consensus.reason).toMatch(/pipeline halted/i);
+    expect(out.redactor.decision).toBe('skip');
+  });
+
+  it('consensus_enforced blocks the consensus layer; classifier stays allow with its own tag (the headline attribution bug)', () => {
+    // This is exactly the PACT-702 bug: a downstream block (here consensus)
+    // must not paint the classifier chip BLOCK just because the classifier
+    // responded with a label.
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'block',
+          reason: 'consensus_enforced',
+          classifier: { label: 'sensitive', score: 0.42 },
+          consensus: { duration_ms: 45 },
+        }),
+        []
+      )
+    );
+    expect(out.classifier.decision).toBe('allow');
+    expect(out.classifier.classifierLabel).toBe('sensitive');
+    expect(out.consensus.decision).toBe('block');
+    expect(out.consensus.reason).toMatch(/consensus vote confirmed/i);
+    expect(out.redactor.decision).toBe('skip');
+    expect(out.redactor.reason).toMatch(/consensus blocked/i);
+  });
+
+  it('policy_token_denied: every visualised stage skips -- nothing ran', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({ decision: 'block', reason: 'policy_token_denied' }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('skip');
+    expect(out.classifier.decision).toBe('skip');
+    expect(out.consensus.decision).toBe('skip');
+    expect(out.redactor.decision).toBe('skip');
+    expect(out.filter.reason).toMatch(/before the pipeline ran/i);
+  });
+
+  it('cel_rule_fired: unattributed block -- every stage renders its own natural (allow) state, none show block', () => {
+    // The CEL stage runs last, after every visualised stage, and is not
+    // itself visualised. A block here must not be force-attributed to any
+    // chip -- the Result node alone carries the block.
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'block',
+          reason: 'cel_rule_fired',
+          classifier: { label: 'benign', score: 0.97 },
+          redactor: { verdict: 'pass_through', spans: [] },
+        }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('allow');
+    expect(out.classifier.decision).toBe('allow');
+    expect(out.consensus.decision).toBe('skip');
+    expect(out.redactor.decision).toBe('allow');
+  });
+
+  it('policy_tool_mitigation: observe/redact override neutralised the block -- filter reads allow despite a hostile verdict', () => {
+    // Observe/redact mode suppresses filterStage's own block branch
+    // (`&& !sc.observeOrRedact`), so a hostile verdict can co-exist with an
+    // overall allow decision. The pre-PACT-702 heuristic
+    // (`verdict === 'hostile' && !shadow => block`) would have painted this
+    // chip BLOCK; the reason-driven fix must not.
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'allow',
+          reason: 'policy_tool_mitigation',
+          filter: { verdict: 'hostile', rule_id: 'inject-002', shadow: false },
+        }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('allow');
+    expect(out.filter.reason).toMatch(/not enforced/i);
+  });
+
+  it('filter.shadow=true: hostile verdict but decision=allow -> filter layer = allow with shadow note', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'allow',
+          filter: { verdict: 'hostile', rule_id: 'SHADOW-007', shadow: true },
+        }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('allow');
+    expect(out.filter.ruleId).toBe('SHADOW-007');
+    expect(out.filter.reason).toMatch(/shadow/i);
+    expect(out.filter.reason).toContain('SHADOW-007');
+  });
+
+  it('does not crash on an unmapped future reason code -- every stage resolves to its own natural state', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({ decision: 'allow', reason: 'some_future_reason' }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('allow');
+    expect(out.classifier.decision).toBe('allow');
+  });
+
+  it('respects bypassLayers - a bypassed layer is left untouched', () => {
+    const prev = startingLayers().map((l) =>
+      l.id === 'filter'
+        ? { ...l, bypassed: true, decision: 'skip' as const }
+        : l
+    );
+    const out = byId(
+      applyLiveLayers(
+        prev,
+        baseResponse({
+          decision: 'block',
+          reason: 'classifier_enforced',
+          classifier: { label: 'jailbreak', score: 0.9 },
+        }),
+        ['filter']
+      )
+    );
+    expect(out.filter.bypassed).toBe(true);
+    expect(out.filter.decision).toBe('skip');
+    expect(out.classifier.decision).toBe('block');
+    expect(out.classifier.classifierLabel).toBe('jailbreak');
+  });
+});
+
+describe('resultCausalSpans - PACT-757 unattributed-block spans on the Result node', () => {
+  it('cel_rule_fired with diagnostics: returns the causal spans', () => {
+    const spans = resultCausalSpans(
+      baseResponse({
+        decision: 'block',
+        reason: 'cel_rule_fired',
+        diagnostics: { causal_spans: [{ start: 4, end: 22 }] },
+      })
+    );
+    expect(spans).toEqual([{ start: 4, end: 22 }]);
+  });
+
+  it('policy_token_denied with diagnostics: returns the causal spans', () => {
+    const spans = resultCausalSpans(
+      baseResponse({
+        decision: 'block',
+        reason: 'policy_token_denied',
+        diagnostics: { causal_spans: [{ start: 0, end: 10 }] },
+      })
+    );
+    expect(spans).toEqual([{ start: 0, end: 10 }]);
+  });
+
+  it('filter_hostile: undefined -- this block IS attributed to the filter chip', () => {
+    const spans = resultCausalSpans(
+      baseResponse({
+        decision: 'block',
+        reason: 'filter_hostile',
+        filter: { verdict: 'hostile', rule_id: 'inject-001' },
+        diagnostics: { causal_spans: [{ start: 0, end: 5 }] },
+      })
+    );
+    expect(spans).toBeUndefined();
+  });
+
+  it('allow decision: undefined even if diagnostics happens to be present', () => {
+    const spans = resultCausalSpans(
+      baseResponse({
+        decision: 'allow',
+        diagnostics: { causal_spans: [{ start: 0, end: 5 }] },
+      })
+    );
+    expect(spans).toBeUndefined();
+  });
+
+  it('cel_rule_fired with no diagnostics (diagnostics disabled): undefined', () => {
+    const spans = resultCausalSpans(
+      baseResponse({ decision: 'block', reason: 'cel_rule_fired' })
+    );
+    expect(spans).toBeUndefined();
+  });
+});
+
+describe('applyLiveLayers - PACT-703 consensus/redactor/sandbox layer states', () => {
+  it('external_refs present: sandbox is spliced in between classifier and consensus, in true execution order', () => {
+    const defs = deriveLayerDefinitions(
+      baseResponse({ external_refs: { scanned: 1, blocked: 0, mitigated: 0 } })
+    );
+    expect(defs.map((d) => d.id)).toEqual([
+      'filter',
+      'classifier',
+      'sandbox',
+      'consensus',
+      'redactor',
     ]);
-    expect(out[0].ruleId).toBeUndefined();
-    expect(out[1].classifierLabel).toBeUndefined();
-    expect(out[1].confidence).toBeUndefined();
   });
 
-  it('filter blocks via filter_rule_id (no reason string match required)', () => {
-    // Structural signal only — reason field deliberately not 'filter_hostile'.
-    const out = applyLiveLayers(
-      startingLayers(),
-      baseResponse({
-        decision: 'block',
-        reason: 'engine_regex_match',
-        filter_rule_id: 'RULE-INJECT-001',
-      }),
-      []
-    );
-    expect(out[0].decision).toBe('block');
-    expect(out[0].ruleId).toBe('RULE-INJECT-001');
-    expect(out[0].reason).toContain('RULE-INJECT-001');
-    expect(out[1].decision).toBe('skip');
-    expect(out[1].reason).toMatch(/filter blocked/i);
+  it('external_refs absent: sandbox does not render at all', () => {
+    const defs = deriveLayerDefinitions(baseResponse());
+    expect(defs.map((d) => d.id)).toEqual([
+      'filter',
+      'classifier',
+      'consensus',
+      'redactor',
+    ]);
   });
 
-  it('filter blocks via legacy reason=filter_hostile when filter_rule_id is empty', () => {
-    // Backwards-compatible: older gateway builds may not always populate
-    // filter_rule_id; the legacy reason string still triggers the block.
-    const out = applyLiveLayers(
-      startingLayers(),
-      baseResponse({ decision: 'block', reason: 'filter_hostile' }),
-      []
-    );
-    expect(out[0].decision).toBe('block');
-    expect(out[1].decision).toBe('skip');
-  });
-
-  it('classifier blocks: surfaces label + score (confidence) on the classifier layer', () => {
-    const out = applyLiveLayers(
-      startingLayers(),
-      baseResponse({
-        decision: 'block',
-        reason: 'classifier_tagged',
-        classifier: { label: 'jailbreak', score: 0.94 },
-      }),
-      []
-    );
-    expect(out[0].decision).toBe('allow');
-    expect(out[1].decision).toBe('block');
-    expect(out[1].classifierLabel).toBe('jailbreak');
-    expect(out[1].confidence).toBe(0.94);
-  });
-
-  it('classifier tags but decision is allow (shadow): classifier=allow with label', () => {
-    const out = applyLiveLayers(
-      startingLayers(),
-      baseResponse({
-        decision: 'allow',
-        reason: 'classifier_tagged',
-        classifier: { label: 'suspicious', score: 0.55 },
-      }),
-      []
-    );
-    expect(out[1].decision).toBe('allow');
-    expect(out[1].classifierLabel).toBe('suspicious');
-    expect(out[1].confidence).toBe(0.55);
-  });
-
-  it('classifier unreachable (fail-open): classifier=skip with fail-open note', () => {
-    const out = applyLiveLayers(
-      startingLayers(),
-      baseResponse({ reason: 'classifier_unreachable' }),
-      []
-    );
-    expect(out[0].decision).toBe('allow');
-    expect(out[1].decision).toBe('skip');
-    expect(out[1].reason).toMatch(/fail open/i);
-  });
-
-  it('downstream block (e.g. policy_token_denied) does NOT attribute the block to the classifier', () => {
-    // Gateway returns decision=block but the classifier produced no label,
-    // so the block came from a downstream stage we don't visualise.
-    // Classifier layer reads "allow" — it didn't gate.
-    const out = applyLiveLayers(
-      startingLayers(),
-      baseResponse({ decision: 'block', reason: 'policy_token_denied' }),
-      []
-    );
-    expect(out[0].decision).toBe('allow');
-    expect(out[1].decision).toBe('allow');
-    expect(out[1].classifierLabel).toBeUndefined();
-  });
-
-  it('respects bypassLayers — bypassed layer is left untouched', () => {
-    const prev = startingLayers().map((l) =>
-      l.id === 'filter'
-        ? { ...l, bypassed: true, decision: 'skip' as const }
-        : l
-    );
-    const out = applyLiveLayers(
-      prev,
-      baseResponse({
-        decision: 'block',
-        reason: 'classifier_tagged',
-        classifier: { label: 'jailbreak', score: 0.9 },
-      }),
-      ['filter']
-    );
-    expect(out[0].bypassed).toBe(true);
-    expect(out[0].decision).toBe('skip');
-    expect(out[1].decision).toBe('block');
-    expect(out[1].classifierLabel).toBe('jailbreak');
-  });
-
-  it('does not crash when the response contains an unknown reason code', () => {
-    // Forward-compatibility: pact-gateway may add new reason values that
-    // pact-web hasn't been updated for. The structural inference path
-    // means the layers still resolve sensibly.
-    const out = applyLiveLayers(
-      startingLayers(),
-      baseResponse({ decision: 'allow', reason: 'some_future_reason' }),
-      []
-    );
-    expect(out[0].decision).toBe('allow');
-    expect(out[1].decision).toBe('allow');
-  });
-});
-
-describe('applyLiveLayers — PACT-252 structural /v1/check fields', () => {
-  it('filter.verdict=hostile blocks without filter_rule_id or reason string match', () => {
-    // Pure structural path: the gateway only emits the filter sub-object,
-    // no top-level filter_rule_id, and a reason value web has never seen.
-    const out = applyLiveLayers(
-      startingLayers(),
-      baseResponse({
-        decision: 'block',
-        reason: 'some_future_filter_code',
-        filter: { verdict: 'hostile', rule_id: 'STRUCTURAL-001' },
-      }),
-      []
-    );
-    expect(out[0].decision).toBe('block');
-    expect(out[0].ruleId).toBe('STRUCTURAL-001');
-    expect(out[0].reason).toContain('STRUCTURAL-001');
-    expect(out[1].decision).toBe('skip');
-    expect(out[1].reason).toMatch(/filter blocked/i);
-  });
-
-  it('filter.shadow=true: hostile verdict but decision=allow → filter layer = allow with shadow note', () => {
-    // PACT-249's shadow mode: the rule fired but the gateway did NOT
-    // enforce. The filter layer must NOT report block — it should surface
-    // the shadow match in the reason text so reviewers can see the dry-run
-    // rule that matched.
-    const out = applyLiveLayers(
-      startingLayers(),
-      baseResponse({
-        decision: 'allow',
-        filter: { verdict: 'hostile', rule_id: 'SHADOW-007', shadow: true },
-      }),
-      []
-    );
-    expect(out[0].decision).toBe('allow');
-    expect(out[0].ruleId).toBe('SHADOW-007');
-    expect(out[0].reason).toMatch(/shadow/i);
-    expect(out[0].reason).toContain('SHADOW-007');
-    expect(out[1].decision).toBe('allow');
-  });
-
-  it('filter.verdict=suspicious does not block (only hostile gates)', () => {
-    const out = applyLiveLayers(
-      startingLayers(),
-      baseResponse({
-        decision: 'allow',
-        filter: { verdict: 'suspicious' },
-      }),
-      []
-    );
-    expect(out[0].decision).toBe('allow');
-    expect(out[0].reason).toBeUndefined();
-    expect(out[1].decision).toBe('allow');
-  });
-
-  it('structural filter sub-object is authoritative — verdict=safe overrides legacy filter_rule_id', () => {
-    // If pact-gateway started populating both surfaces during a migration
-    // and the structural verdict says safe, web must trust the structural
-    // signal even if filter_rule_id is set (e.g. a shadow rule that didn't
-    // promote to hostile).
-    const out = applyLiveLayers(
-      startingLayers(),
-      baseResponse({
-        decision: 'allow',
-        filter_rule_id: 'LEGACY-NOISE',
-        filter: { verdict: 'safe' },
-      }),
-      []
-    );
-    expect(out[0].decision).toBe('allow');
-    expect(out[1].decision).toBe('allow');
-  });
-
-  it('forward-compat: redactor sub-object on the response does not affect layer resolution', () => {
-    // The Test Lab does not visualise a redactor layer today, but pact-gateway
-    // emits redactor.{verdict, spans} on the /v1/check response. The presence
-    // of those fields must not perturb filter/classifier inference.
-    const out = applyLiveLayers(
-      startingLayers(),
-      baseResponse({
-        decision: 'allow',
-        redactor: {
-          verdict: 'redacted',
-          spans: [{ start: 12, end: 28, label: 'EMAIL' }],
-        },
-      }),
-      []
-    );
-    expect(out[0].decision).toBe('allow');
-    expect(out[1].decision).toBe('allow');
-  });
-});
-
-describe('applyMockLayers - PACT-580 matches by MockLayer.name, not array position', () => {
-  const mockLayer = (
-    over: Partial<MockLayer> & Pick<MockLayer, 'name' | 'decision'>
-  ): MockLayer => ({
-    ...over,
-  });
-
-  it('matches each mock layer to its pipeline stage by name in the normal (in-order) case', () => {
-    const out = applyMockLayers(
-      startingLayers(),
-      [
-        mockLayer({
-          name: 'filter',
-          decision: 'allow',
-          reason: 'No rule match',
-        }),
-        mockLayer({
-          name: 'classifier',
+  it('external_ref_hostile blocks the sandbox layer; consensus/redactor after it skip, classifier stays allow', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
           decision: 'block',
-          label: 'jailbreak',
+          reason: 'external_ref_hostile',
+          classifier: { label: 'benign', score: 0.9 },
+          external_refs: { scanned: 2, blocked: 1, mitigated: 0 },
         }),
-      ],
-      []
+        []
+      )
     );
-    expect(out[0].decision).toBe('allow');
-    expect(out[0].reason).toBe('No rule match');
-    expect(out[1].decision).toBe('block');
-    expect(out[1].classifierLabel).toBe('jailbreak');
+    expect(out.classifier.decision).toBe('allow');
+    expect(out.sandbox.decision).toBe('block');
+    expect(out.sandbox.refsScanned).toBe(2);
+    expect(out.sandbox.refsBlocked).toBe(1);
+    expect(out.consensus.decision).toBe('skip');
+    expect(out.consensus.reason).toMatch(/sandbox blocked/i);
+    expect(out.redactor.decision).toBe('skip');
   });
 
-  it('still matches correctly when the mock payload lists layers out of order', () => {
-    const out = applyMockLayers(
-      startingLayers(),
-      [
-        mockLayer({
-          name: 'classifier',
+  it('sandbox allows (refs scanned, none hostile) when no reason blocks it', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          external_refs: { scanned: 3, blocked: 0, mitigated: 1 },
+        }),
+        []
+      )
+    );
+    expect(out.sandbox.decision).toBe('allow');
+    expect(out.sandbox.refsScanned).toBe(3);
+    expect(out.sandbox.refsMitigated).toBe(1);
+  });
+
+  it('consensus skip reason distinguishes classifier_unknown from an ordinary above-threshold/unconfigured skip', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({ reason: 'classifier_unknown' }),
+        []
+      )
+    );
+    expect(out.consensus.decision).toBe('skip');
+    expect(out.consensus.reason).toMatch(/classifier declined to score/i);
+  });
+
+  it('redactor.verdict=redacted surfaces span count and labels; never reads as a block', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          redactor: {
+            verdict: 'redacted',
+            spans: [
+              { start: 0, end: 10, label: 'EMAIL' },
+              { start: 20, end: 30, label: 'PHONE' },
+            ],
+          },
+        }),
+        []
+      )
+    );
+    expect(out.redactor.decision).toBe('allow');
+    expect(out.redactor.redactedSpanCount).toBe(2);
+    expect(out.redactor.redactedSpanLabels).toEqual(['EMAIL', 'PHONE']);
+    expect(out.redactor.reason).toMatch(/redacted 2 span/i);
+  });
+
+  it('redactor.verdict=unknown (fail-open): allow, with a fail-open note, content unmodified', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({ redactor: { verdict: 'unknown', spans: [] } }),
+        []
+      )
+    );
+    expect(out.redactor.decision).toBe('allow');
+    expect(out.redactor.reason).toMatch(/fail open/i);
+  });
+
+  it('duration_ms fields round to whole milliseconds for display', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          filter: { verdict: 'safe', duration_ms: 3.482 },
+          classifier: { label: 'benign', score: 0.9, duration_ms: 14.9 },
+        }),
+        []
+      )
+    );
+    expect(out.filter.latencyMs).toBe(3);
+    expect(out.classifier.latencyMs).toBe(15);
+  });
+
+  it('PACT-745: diagnostics.causal_spans attaches to the stage that blocked, not to any other stage', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
           decision: 'block',
-          label: 'jailbreak',
+          reason: 'filter_hostile',
+          filter: { verdict: 'hostile', rule_id: 'inject-003' },
+          diagnostics: {
+            causal_spans: [
+              { start: 0, end: 11 },
+              { start: 76, end: 94 },
+            ],
+          },
         }),
-        mockLayer({
-          name: 'filter',
+        []
+      )
+    );
+    expect(out.filter.causalSpans).toEqual([
+      { start: 0, end: 11 },
+      { start: 76, end: 94 },
+    ]);
+    // classifier/consensus skip since filter halted the pipeline, and never
+    // inherit the blocking stage's diagnostics.
+    expect(out.classifier.causalSpans).toBeUndefined();
+    expect(out.consensus.causalSpans).toBeUndefined();
+  });
+
+  it('PACT-745: causal spans never leak onto an allow decision, even when diagnostics is present', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
           decision: 'allow',
-          reason: 'No rule match',
+          diagnostics: { causal_spans: [] },
         }),
-      ],
-      []
+        []
+      )
     );
-    expect(out[0].id).toBe('filter');
-    expect(out[0].decision).toBe('allow');
-    expect(out[0].reason).toBe('No rule match');
-    expect(out[1].id).toBe('classifier');
-    expect(out[1].decision).toBe('block');
-    expect(out[1].classifierLabel).toBe('jailbreak');
-  });
-
-  it('marks a stage skip when the mock payload omits that stage entirely', () => {
-    const out = applyMockLayers(
-      startingLayers(),
-      [mockLayer({ name: 'filter', decision: 'allow' })],
-      []
-    );
-    expect(out[0].decision).toBe('allow');
-    expect(out[1].decision).toBe('skip');
-  });
-
-  it('leaves a bypassed layer untouched even if a mock entry with its name is present', () => {
-    const prev = startingLayers().map((l) =>
-      l.id === 'filter'
-        ? { ...l, bypassed: true, decision: 'skip' as const }
-        : l
-    );
-    const out = applyMockLayers(
-      prev,
-      [
-        mockLayer({ name: 'filter', decision: 'allow' }),
-        mockLayer({ name: 'classifier', decision: 'allow' }),
-      ],
-      ['filter']
-    );
-    expect(out[0].bypassed).toBe(true);
-    expect(out[0].decision).toBe('skip');
-    expect(out[1].decision).toBe('allow');
+    expect(out.filter.causalSpans).toBeUndefined();
   });
 });
 
@@ -468,6 +693,20 @@ describe("parseCheckResponse - PACT-576 parse-don't-cast against the regenerated
     ).toThrow(/filter/);
   });
 
+  it('rejects a non-object consensus sub-object', () => {
+    expect(() =>
+      parseCheckResponse({ ...validResponse(), consensus: 'ran' })
+    ).toThrow(/consensus/);
+  });
+
+  it('accepts a consensus sub-object (duration_ms only -- PACT-623 has no closed-set field on it yet)', () => {
+    const parsed = parseCheckResponse({
+      ...validResponse(),
+      consensus: { duration_ms: 42 },
+    });
+    expect(parsed.consensus?.duration_ms).toBe(42);
+  });
+
   it('rejects a non-array external_refs.refs', () => {
     expect(() =>
       parseCheckResponse({
@@ -475,6 +714,29 @@ describe("parseCheckResponse - PACT-576 parse-don't-cast against the regenerated
         external_refs: { refs: 'not-an-array' },
       })
     ).toThrow(/external_refs\.refs/);
+  });
+
+  it('PACT-745: accepts diagnostics.causal_spans (start/end only, no closed-set field)', () => {
+    const parsed = parseCheckResponse({
+      ...validResponse(),
+      diagnostics: { causal_spans: [{ start: 0, end: 11 }] },
+    });
+    expect(parsed.diagnostics?.causal_spans).toEqual([{ start: 0, end: 11 }]);
+  });
+
+  it('PACT-745: rejects a non-object diagnostics sub-object', () => {
+    expect(() =>
+      parseCheckResponse({ ...validResponse(), diagnostics: 'ran' })
+    ).toThrow(/diagnostics/);
+  });
+
+  it('PACT-745: rejects a non-array diagnostics.causal_spans', () => {
+    expect(() =>
+      parseCheckResponse({
+        ...validResponse(),
+        diagnostics: { causal_spans: 'not-an-array' },
+      })
+    ).toThrow(/diagnostics\.causal_spans/);
   });
 
   it('tolerates undefined optional sub-objects - only decision/latency_ms/request_id are required', () => {

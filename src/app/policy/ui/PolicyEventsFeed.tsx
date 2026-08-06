@@ -140,7 +140,7 @@ export const PolicyEventsFeed = () => {
                       </span>
                     )}
                     <span className="ml-auto text-xs text-muted-foreground">
-                      {formatTimestamp(evt.createdAt, 'compact')}
+                      {formatTimestamp(evt.createdAt ?? '', 'compact')}
                     </span>
                   </div>
                 );

@@ -1,8 +1,8 @@
 import {
   listDecisionAnnotations,
-  type AnnotateDecisionRequest,
-  type AuditEvent,
-  type ListDecisionAnnotationsResponse,
+  type AuditAnnotateDecisionRequest,
+  type AuditAuditEventResponse,
+  type AuditListDecisionAnnotationsResponse,
 } from '@/src/__codegen__/rest/audit';
 import { type ClassifierLabelVerdictRequest } from '@/src/__codegen__/rest/classifier';
 import { type DecisionPayload } from '@/src/app/filter/domain/filter_decision';
@@ -53,7 +53,7 @@ export const buildFilterFalsePositiveLabelRequest = (
 // back to the payload's own request_id copy for older mock fixtures that
 // only ever populated the payload field.
 export const resolveFlagRequestId = (
-  event: AuditEvent,
+  event: AuditAuditEventResponse,
   payload: DecisionPayload | null
 ): string | undefined => event.requestId || payload?.request_id;
 
@@ -74,7 +74,7 @@ export const resolveFlagRequestId = (
 // would imply an un-flag path that does not exist.
 export const buildAnnotateDecisionRequest = (
   requestId: string
-): AnnotateDecisionRequest => ({
+): AuditAnnotateDecisionRequest => ({
   requestId,
   kind: 'false_positive',
 });
@@ -98,7 +98,7 @@ export const buildDecisionAnnotationsQueryKey = (
 // "if no hook exists, use useSWR directly."
 export const fetchDecisionAnnotations = async (
   key: readonly [string, ...string[]]
-): Promise<ListDecisionAnnotationsResponse> => {
+): Promise<AuditListDecisionAnnotationsResponse> => {
   const [, ...requestIds] = key;
   const response = await listDecisionAnnotations({ requestIds });
   if (response.status !== 200) {
@@ -115,12 +115,13 @@ export const fetchDecisionAnnotations = async (
 // even though false_positive is the only kind that exists today, so this
 // keeps working unmodified if a second kind is ever introduced.
 export const extractFlaggedFalsePositiveRequestIds = (
-  data: ListDecisionAnnotationsResponse | undefined
+  data: AuditListDecisionAnnotationsResponse | undefined
 ): ReadonlySet<string> =>
   new Set(
     (data?.annotations ?? [])
       .filter((annotation) => annotation.kind === 'false_positive')
       .map((annotation) => annotation.requestId)
+      .filter((requestId): requestId is string => requestId !== undefined)
   );
 
 export const isFlaggedFalsePositive = (
@@ -144,9 +145,9 @@ export const isFlaggedFalsePositive = (
 // is the correct optimistic guess anyway (an empty page render swapped for
 // the real page on the revalidate this call is paired with).
 export const applyOptimisticAnnotationFlag = (
-  current: ListDecisionAnnotationsResponse | undefined,
+  current: AuditListDecisionAnnotationsResponse | undefined,
   requestId: string
-): ListDecisionAnnotationsResponse => {
+): AuditListDecisionAnnotationsResponse => {
   const annotations = current?.annotations ?? [];
   if (
     annotations.some(

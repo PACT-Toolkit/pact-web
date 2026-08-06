@@ -2,9 +2,12 @@
 # smoke-auth.sh — end-to-end smoke test for pact-web ↔ pact-auth.
 #
 # Exercises the /api/auth/* routes against a live pact-web (default :3000)
-# backed by a running pact-auth on PACT_AUTH_GRPC_ADDR (default
-# postgres://pact:pact@localhost:5432/pact_auth on :9090). Curl-only, no
-# Node/Playwright deps, suitable for CI smoke or pre-merge sanity.
+# backed by a running pact-gateway + pact-auth stack (pact-web talks to
+# pact-auth exclusively through pact-gateway's /v1/auth/* proxy as of
+# PACT-681; this script still reaches Postgres directly at
+# postgres://pact:pact@localhost:5432/pact_auth to seed/verify users).
+# Curl-only, no Node/Playwright deps, suitable for CI smoke or pre-merge
+# sanity.
 #
 # Usage:
 #   ./scripts/smoke-auth.sh                # against http://localhost:3000
@@ -195,9 +198,21 @@ echo "$LAST_BODY" | grep -q '"code":"email_already_registered"' \
   && ok "register collision response carries code=email_already_registered" \
   || bad "register collision response missing stable code: $LAST_BODY"
 
-# ─── Login: unverified → 403 ───────────────────────────────────────────────
+# --- Login: unverified -> 403 -----------------------------------------------
+#
+# KNOWN REGRESSION (PACT-681): this assertion is expected to FAIL until
+# pact-gateway fixes its gRPC-to-HTTP error mapping
+# (internal/boundary.HTTPStatusFromGRPC), which currently collapses
+# FailedPrecondition into the same generic HTTP 400 "invalid request" body
+# as InvalidArgument - it cannot distinguish "email not verified" from "bad
+# input" over the wire. login/route.ts's `Code.FailedPrecondition` branch
+# (the 403 email_not_verified path) is unreachable in practice today; the
+# request falls through to the generic 400 validation_error mapping
+# instead. Left asserting the correct/intended 403 (not the regressed 400)
+# so this step keeps failing loudly until the gateway-side fix lands (a
+# distinguishable `code` field in the 400 body) - not fixed here.
 
-step "Login — unverified email → 403"
+step "Login - unverified email -> 403"
 
 expect_status POST /api/auth/login 403 \
   "{\"email\":\"$NEW_EMAIL\",\"password\":\"$PASSWORD\"}"
