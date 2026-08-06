@@ -35,6 +35,8 @@ export const AUTH_EVENT_LABELS: Record<PactAuth['event_id'], string> = {
   password_set_link_requested: 'Password set link requested',
   password_reset_requested: 'Password reset requested',
   password_changed: 'Password changed',
+  session_revoked: 'Session revoked',
+  user_sessions_revoked: 'All sessions revoked',
 };
 
 export const decodeAuthPayload = (raw: string): AuthPayload | null => {

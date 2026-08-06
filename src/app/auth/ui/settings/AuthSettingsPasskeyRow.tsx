@@ -16,7 +16,12 @@ type Props = {
   onDelete: () => Promise<void> | void;
 };
 
-export const AuthSettingsPasskeyRow = ({ passkey, busy, onRename, onDelete }: Props) => {
+export const AuthSettingsPasskeyRow = ({
+  passkey,
+  busy,
+  onRename,
+  onDelete,
+}: Props) => {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(passkey.label);
 

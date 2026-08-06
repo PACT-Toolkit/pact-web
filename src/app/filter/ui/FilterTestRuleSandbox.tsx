@@ -10,6 +10,7 @@ import {
   TEST_RULE_KIND_OPTIONS,
   TEST_RULE_VERDICT_OPTIONS,
   buildTestRuleRequest,
+  extractServerErrorMessage,
   isRuleMatch,
   validateTestRuleForm,
   verdictBadgeClass,
@@ -46,7 +47,9 @@ export const FilterTestRuleSandbox = () => {
   const requestFailed =
     Boolean(error) || (data !== undefined && data.status !== 200);
   const serverErrorMessage =
-    data !== undefined && data.status !== 200 ? data.data : undefined;
+    data !== undefined && data.status !== 200
+      ? extractServerErrorMessage(data.data)
+      : undefined;
 
   const setField = <K extends keyof TestRuleFormState>(
     key: K,

@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+    boundary.ErrorResponse:
+        properties:
+            code:
+                type: string
+            error:
+                type: string
+        type: object
     policy.IssueTokenRequest:
         properties:
             agentId:
@@ -61,7 +68,7 @@ paths:
                 "502":
                     description: upstream error
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "503":
                     description: service unavailable
                     schema:

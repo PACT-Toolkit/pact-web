@@ -1,4 +1,4 @@
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import {
   extractStageRecords,
@@ -37,7 +37,7 @@ export interface RedactorRecord extends StageRecordBase {
 // pipeline stage or failed to decode. See extractStageRecords for the
 // shared guard and malformed-payload semantics.
 export const extractRedactorRecords = (
-  events: AuditEvent[]
+  events: AuditAuditEventResponse[]
 ): RedactorRecord[] =>
   extractStageRecords(
     events,

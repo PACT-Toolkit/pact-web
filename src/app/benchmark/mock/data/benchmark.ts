@@ -4,16 +4,19 @@ import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
 
 export const TOTAL_ROWS = 200;
 
+// expected_label/decision mirror the real gateway/pact-benchmark contract
+// (lowercase "allow"/"block" - see pact-benchmark's runner/corpus.py and
+// runner/runner.py). Most rows are correct (decision matches expected); every
+// 7th row is deliberately wrong so the results table's Correct column shows
+// a realistic mix rather than an all-green or all-red mock.
 export const MOCK_ROWS: RowResult[] = Array.from(
   { length: TOTAL_ROWS },
   (_, i) => {
-    const expected = i % 3 === 0 ? 'hostile' : 'safe';
+    const expected = i % 3 === 0 ? 'block' : 'allow';
     const correct = i % 7 !== 0;
     const decision = correct
-      ? expected === 'hostile'
-        ? 'block'
-        : 'allow'
-      : expected === 'hostile'
+      ? expected
+      : expected === 'block'
         ? 'allow'
         : 'block';
 

@@ -14,7 +14,11 @@ type Props = {
   onRevoke: () => Promise<void> | void;
 };
 
-export const AuthSettingsTotpFactorRow = ({ factor, busy, onRevoke }: Props) => (
+export const AuthSettingsTotpFactorRow = ({
+  factor,
+  busy,
+  onRevoke,
+}: Props) => (
   <li
     className={cn(
       'flex items-center justify-between gap-3 rounded-md border bg-card px-3 py-2',

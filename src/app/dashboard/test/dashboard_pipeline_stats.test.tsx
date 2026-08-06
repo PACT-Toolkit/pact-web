@@ -31,7 +31,36 @@ describe('useDashboardPipelineStats - PACT-363 audit:stats 403 gate (PACT-377)',
     // /v1/audit/events (the live stream, a separate permission) is
     // unaffected -- the console's Quick Probe / Live Decisions widgets
     // keep working for a caller who merely lacks audit:stats.
-    expect(result.current.error).toBe(false);
+    expect(result.current.streamError).toBe(false);
+    expect(result.current.statsError).toBe(false);
+    expect(result.current.stats.total).toBe(0);
+  });
+
+  it('exposes statsForbidden=true when the 403 body is text/plain (real gateway shape, PACT-737)', async () => {
+    // The real gateway's authz middleware answers 403 with a text/plain
+    // body, not JSON. The generated custom fetch must resolve that as
+    // { data: '...', status: 403 } instead of throwing from JSON.parse --
+    // pre-PACT-737 the parse threw, SWR saw an error, and this gate never
+    // engaged outside mock mode (where the 403 body happens to be JSON).
+    server.use(
+      http.get(
+        '*/v1/audit/stats',
+        () =>
+          new HttpResponse('missing required permission\n', {
+            status: 403,
+            headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+          })
+      )
+    );
+
+    const { result } = renderHook(() => useDashboardPipelineStats(false), {
+      wrapper: SWRTestProvider,
+    });
+
+    await waitFor(() => expect(result.current.statsForbidden).toBe(true));
+
+    expect(result.current.streamError).toBe(false);
+    expect(result.current.statsError).toBe(false);
     expect(result.current.stats.total).toBe(0);
   });
 
@@ -67,7 +96,8 @@ describe('useDashboardPipelineStats - PACT-363 audit:stats 403 gate (PACT-377)',
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.statsForbidden).toBe(false);
-    expect(result.current.error).toBe(false);
+    expect(result.current.streamError).toBe(false);
+    expect(result.current.statsError).toBe(false);
   });
 });
 

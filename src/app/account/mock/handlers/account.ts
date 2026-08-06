@@ -2,12 +2,12 @@ import { http, HttpResponse } from 'msw';
 
 import { db } from '@/mocks/data/dbFactory';
 import {
-  type Consent,
-  type Preferences,
-  type Profile,
-  type RecordConsentRequest,
-  type UpdatePreferencesRequest,
-  type UpdateProfileRequest,
+  type AccountConsentResponse,
+  type AccountPreferencesResponse,
+  type AccountProfileResponse,
+  type AccountRecordConsentRequest,
+  type AccountUpdatePreferencesRequest,
+  type AccountUpdateProfileRequest,
 } from '@/src/__codegen__/rest/account';
 import { getMockUserType } from '@/src/framework/helpers/mock_user_type';
 
@@ -38,7 +38,7 @@ const applyMask = <T extends object>(
   }
 };
 
-const profileMaskMap: Record<string, keyof Profile> = {
+const profileMaskMap: Record<string, keyof AccountProfileResponse> = {
   display_name: 'displayName',
   avatar_url: 'avatarUrl',
   locale: 'locale',
@@ -46,13 +46,14 @@ const profileMaskMap: Record<string, keyof Profile> = {
   bio: 'bio',
 };
 
-const preferencesMaskMap: Record<string, keyof Preferences> = {
+const preferencesMaskMap: Record<string, keyof AccountPreferencesResponse> = {
   marketing_email: 'marketingEmail',
   product_email: 'productEmail',
 };
 
-const getProfile = (): Profile => db.accountProfile.findFirst(() => true)!;
-const getPreferences = (): Preferences =>
+const getProfile = (): AccountProfileResponse =>
+  db.accountProfile.findFirst(() => true)!;
+const getPreferences = (): AccountPreferencesResponse =>
   db.accountPreferences.findFirst(() => true)!;
 
 export const handlers = [
@@ -70,7 +71,7 @@ export const handlers = [
   }),
 
   http.put('*/v1/account/profile', async ({ request }) => {
-    const body = (await request.json()) as UpdateProfileRequest;
+    const body = (await request.json()) as AccountUpdateProfileRequest;
     const profile = getProfile();
     applyMask(profile, body, body.updateMask ?? [], profileMaskMap);
 
@@ -82,7 +83,7 @@ export const handlers = [
   ),
 
   http.put('*/v1/account/preferences', async ({ request }) => {
-    const body = (await request.json()) as UpdatePreferencesRequest;
+    const body = (await request.json()) as AccountUpdatePreferencesRequest;
     const preferences = getPreferences();
     applyMask(preferences, body, body.updateMask ?? [], preferencesMaskMap);
 
@@ -94,7 +95,7 @@ export const handlers = [
   ),
 
   http.post('*/v1/account/consents', async ({ request }) => {
-    const body = (await request.json()) as RecordConsentRequest;
+    const body = (await request.json()) as AccountRecordConsentRequest;
     if (!body.document || !body.version) {
       return HttpResponse.json(
         { error: 'document and version are required' },
@@ -105,7 +106,7 @@ export const handlers = [
     const existing = db.accountConsents.findFirst(
       (c) => c.document === body.document
     );
-    const next: Consent = {
+    const next: AccountConsentResponse = {
       document: body.document,
       version: body.version,
       granted: body.granted,

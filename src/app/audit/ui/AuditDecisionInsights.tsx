@@ -1,4 +1,7 @@
+import { celSkippedReasonLabel } from '@/src/app/audit/domain/audit_decision_cel';
+import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
+import { isStageAttributed } from '@/src/lib/decisions/decision_stage_attribution';
 
 export { parseDecisionPayload } from '@/src/lib/decisions/decision_payload';
 
@@ -52,7 +55,7 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
       </div>
     )}
     {dp.filter?.verdict && dp.filter.verdict !== 'safe' && (
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
         <span className="text-muted-foreground">Filter</span>
         <code className="rounded bg-muted px-1.5 py-0.5">
           {dp.filter.verdict}
@@ -65,6 +68,30 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         {dp.filter.shadow && (
           <span className="italic text-amber-500">shadow</span>
         )}
+      </div>
+    )}
+    {/* Matched span is gated on its own presence only (PACT-745 deliverable
+        2), independent of filter.verdict -- both fields are independently
+        optional in the wire schema, so coupling this to the verdict block
+        above would silently drop a masked excerpt whenever a producer sends
+        matched_span without a non-safe verdict. */}
+    {dp.filter?.matched_span && (
+      <div
+        className="flex flex-wrap items-center gap-1.5"
+        data-testid="audit-decision-matched-span"
+      >
+        <span className="text-muted-foreground">matched</span>
+        {dp.filter.matched_span.excerpt && (
+          // Rendered verbatim -- the excerpt is already redactor-masked
+          // server-side (PACT-734), so no client-side truncation or
+          // cleanup here that could hide the masking.
+          <code className="whitespace-pre-wrap break-words rounded bg-muted px-1.5 py-0.5">
+            {dp.filter.matched_span.excerpt}
+          </code>
+        )}
+        <span className="text-muted-foreground">
+          chars {dp.filter.matched_span.start}-{dp.filter.matched_span.end}
+        </span>
       </div>
     )}
     {dp.redactor?.verdict && dp.redactor.verdict !== 'pass_through' && (
@@ -147,6 +174,54 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
           </span>
         )}
       </div>
+    )}
+    {/* CEL (PACT-758): the tier-3 CEL rule engine (PACT-335), evaluated after
+        every visualised stage -- see decisions.ts's CelDecision doc comment.
+        Gated on dp.cel presence alone, independent of dp.decision, matching
+        every other stage section above: older payloads with no `cel`
+        sub-object render this section not at all. */}
+    {dp.cel && (
+      <div
+        className="flex flex-wrap items-center gap-1.5"
+        data-testid="audit-decision-cel"
+      >
+        <span className="text-muted-foreground">CEL</span>
+        {dp.cel.rule_name && (
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            {dp.cel.rule_name}
+          </code>
+        )}
+        {dp.cel.rule_id && (
+          <code className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+            {dp.cel.rule_id}
+          </code>
+        )}
+        {dp.cel.outcome && (
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            {dp.cel.outcome}
+          </code>
+        )}
+        {typeof dp.cel.fired_count === 'number' && dp.cel.fired_count > 0 && (
+          <span className="text-muted-foreground">
+            {dp.cel.fired_count} rule{dp.cel.fired_count === 1 ? '' : 's'} fired
+          </span>
+        )}
+        {dp.cel.skipped_reason && (
+          <span
+            className="italic text-amber-500"
+            title="CEL stage fail-open -- not every active rule was evaluated"
+          >
+            skipped ({celSkippedReasonLabel(dp.cel.skipped_reason)})
+          </span>
+        )}
+      </div>
+    )}
+    {dp.diagnostics?.causal_spans && (
+      <CausalSpanList
+        spans={dp.diagnostics.causal_spans}
+        testId="audit-decision-causal-spans"
+        attributed={isStageAttributed(dp)}
+      />
     )}
     {hasForensics(dp) && (
       <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1.5 border-t pt-2">

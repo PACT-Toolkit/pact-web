@@ -1,4 +1,4 @@
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { type AuditEventVariant } from '@/src/app/audit/domain/audit_event_variant';
 
 // Actor/user filtering has no server-side query param -- pact-gateway's
@@ -12,7 +12,7 @@ import { type AuditEventVariant } from '@/src/app/audit/domain/audit_event_varia
 // fields (email on pact.auth) that help distinguish rows when userId is
 // absent (system-initiated events) or opaque.
 const actorCandidates = (
-  event: AuditEvent,
+  event: AuditAuditEventResponse,
   variant: AuditEventVariant
 ): string[] => {
   const out: string[] = [];
@@ -36,7 +36,7 @@ const actorCandidates = (
 // Case-insensitive substring match against every actor candidate on the
 // row. An empty query always matches (filter is a no-op).
 export const matchesActorFilter = (
-  event: AuditEvent,
+  event: AuditAuditEventResponse,
   variant: AuditEventVariant,
   query: string
 ): boolean => {

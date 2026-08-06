@@ -6,14 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-
 import type { Key } from 'swr';
 
 import type {
+  BoundaryErrorResponse,
   PolicyIssueTokenRequest,
   PolicyIssueTokenResponse,
 } from './types';
+
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 export type issueTokenResponse201 = {
   data: PolicyIssueTokenResponse;
@@ -36,7 +39,7 @@ export type issueTokenResponse429 = {
 };
 
 export type issueTokenResponse502 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 502;
 };
 
@@ -80,24 +83,17 @@ export const issueToken = async (
   policyIssueTokenRequest: PolicyIssueTokenRequest,
   options?: RequestInit
 ): Promise<issueTokenResponse> => {
-  const res = await fetch(getIssueTokenUrl(), {
+  return customFetch<issueTokenResponse>(getIssueTokenUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(policyIssueTokenRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: issueTokenResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as issueTokenResponse;
 };
 
-export const getIssueTokenMutationFetcher = (options?: RequestInit) => {
+export const getIssueTokenMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: PolicyIssueTokenRequest }) => {
     return issueToken(arg, options);
   };

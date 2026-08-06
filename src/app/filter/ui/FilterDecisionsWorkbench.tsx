@@ -6,8 +6,8 @@ import useSWR from 'swr';
 
 import {
   useAnnotateDecision,
-  type AuditEvent,
-  type ListDecisionAnnotationsResponse,
+  type AuditAuditEventResponse,
+  type AuditListDecisionAnnotationsResponse,
 } from '@/src/__codegen__/rest/audit';
 import { useLabelVerdict } from '@/src/__codegen__/rest/classifier';
 import {
@@ -73,7 +73,9 @@ export const FilterDecisionsWorkbench = () => {
   // them all up in a single POST /v1/audit/annotations/query call.
   const pageRequestIds = useMemo(() => {
     const ids = pageEvents
-      .map((evt) => resolveFlagRequestId(evt, parsePayload(evt.payloadJson)))
+      .map((evt) =>
+        resolveFlagRequestId(evt, parsePayload(evt.payloadJson ?? ''))
+      )
       .filter((id): id is string => Boolean(id));
 
     return Array.from(new Set(ids)).sort();
@@ -85,7 +87,7 @@ export const FilterDecisionsWorkbench = () => {
   );
 
   const { data: annotationsData, mutate: mutateAnnotations } =
-    useSWR<ListDecisionAnnotationsResponse>(
+    useSWR<AuditListDecisionAnnotationsResponse>(
       annotationsKey,
       fetchDecisionAnnotations,
       { revalidateOnFocus: false }
@@ -105,30 +107,31 @@ export const FilterDecisionsWorkbench = () => {
   // settles; rolls back on failure. See filter_false_positive.ts's docblock
   // for why this is a one-way action -- there is no un-flag endpoint.
   const handleFlagFP = async (
-    event: AuditEvent,
+    event: AuditAuditEventResponse,
     payload: DecisionPayload | null
   ) => {
+    const eventId = event.id ?? '';
     const requestId = resolveFlagRequestId(event, payload);
     if (
       !requestId ||
       isFlaggedFalsePositive(flaggedRequestIds, requestId) ||
-      flaggingEventId === event.id ||
+      flaggingEventId === eventId ||
       !annotationsKey
     ) {
       return;
     }
 
-    setFlaggingEventId(event.id);
+    setFlaggingEventId(eventId);
     setFailedEventIds((prev) => {
-      if (!prev.has(event.id)) return prev;
+      if (!prev.has(eventId)) return prev;
       const next = new Set(prev);
-      next.delete(event.id);
+      next.delete(eventId);
 
       return next;
     });
 
     const submit = async (): Promise<
-      ListDecisionAnnotationsResponse | undefined
+      AuditListDecisionAnnotationsResponse | undefined
     > => {
       const [labelResponse, annotateResponse] = await Promise.all([
         submitFalsePositiveLabel(
@@ -159,9 +162,9 @@ export const FilterDecisionsWorkbench = () => {
         revalidate: true,
       });
     } catch {
-      setFailedEventIds((prev) => new Set(prev).add(event.id));
+      setFailedEventIds((prev) => new Set(prev).add(eventId));
     } finally {
-      setFlaggingEventId((prev) => (prev === event.id ? null : prev));
+      setFlaggingEventId((prev) => (prev === eventId ? null : prev));
     }
   };
 
@@ -248,16 +251,17 @@ export const FilterDecisionsWorkbench = () => {
         pagination={pagination}
       >
         {pageEvents.map((evt) => {
-          const payload = parsePayload(evt.payloadJson);
+          const payload = parsePayload(evt.payloadJson ?? '');
           const requestId = resolveFlagRequestId(evt, payload);
+          const eventId = evt.id ?? '';
 
           return (
             <FilterDecisionRow
               key={evt.id}
               event={evt}
               isFlagged={isFlaggedFalsePositive(flaggedRequestIds, requestId)}
-              isFlagging={flaggingEventId === evt.id}
-              flagFailed={failedEventIds.has(evt.id)}
+              isFlagging={flaggingEventId === eventId}
+              flagFailed={failedEventIds.has(eventId)}
               onFlagFP={() => void handleFlagFP(evt, payload)}
             />
           );

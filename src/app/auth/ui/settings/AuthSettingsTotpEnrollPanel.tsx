@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, Copy, Loader2, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { Check, Copy, Loader2, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import useSWRMutation from 'swr/mutation';
 
@@ -14,7 +14,10 @@ import {
   type BeginTotpEnrollmentResult,
   confirmTotpEnrollmentFetcher,
 } from '@/src/framework/auth/pact_auth/web_mutations';
+import { RecoveryCodesList } from '@/src/framework/auth/recovery_codes_list';
 import { cn } from '@/src/lib/utils';
+
+import { AuthSettingsTotpEnrollQrCode } from './AuthSettingsTotpEnrollQrCode';
 
 type Props = {
   onComplete: () => void;
@@ -23,7 +26,10 @@ type Props = {
 
 type Stage = 'begin' | 'verify' | 'recovery';
 
-export const AuthSettingsTotpEnrollPanel = ({ onComplete, onCancel }: Props) => {
+export const AuthSettingsTotpEnrollPanel = ({
+  onComplete,
+  onCancel,
+}: Props) => {
   const [stage, setStage] = useState<Stage>('begin');
   const [enrollment, setEnrollment] =
     useState<BeginTotpEnrollmentResult | null>(null);
@@ -31,7 +37,6 @@ export const AuthSettingsTotpEnrollPanel = ({ onComplete, onCancel }: Props) => 
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [copiedSecret, setCopiedSecret] = useState(false);
-  const [copiedCodes, setCopiedCodes] = useState(false);
 
   const beginMutation = useSWRMutation(
     AUTH_KEYS.mfaEnrollBegin,
@@ -102,16 +107,6 @@ export const AuthSettingsTotpEnrollPanel = ({ onComplete, onCancel }: Props) => 
     }
   };
 
-  const onCopyCodes = async () => {
-    if (recoveryCodes.length === 0) return;
-    try {
-      await navigator.clipboard.writeText(recoveryCodes.join('\n'));
-      setCopiedCodes(true);
-    } catch {
-      setError('Could not copy to clipboard.');
-    }
-  };
-
   if (stage === 'begin') {
     return (
       <div
@@ -160,10 +155,14 @@ export const AuthSettingsTotpEnrollPanel = ({ onComplete, onCancel }: Props) => 
         data-stage="verify"
         className="flex flex-col gap-4 rounded-md border bg-muted/30 p-4"
       >
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-3">
           <p className="text-sm">
-            Add this secret to your authenticator app, then enter the 6-digit
-            code it shows.
+            Scan this QR code with your authenticator app, then enter the
+            6-digit code it shows.
+          </p>
+          <AuthSettingsTotpEnrollQrCode value={enrollment.otpauthUrl} />
+          <p className="text-center text-xs text-muted-foreground">
+            Can&apos;t scan? Enter this code manually instead.
           </p>
           <div className="flex items-center gap-2">
             <code
@@ -186,12 +185,15 @@ export const AuthSettingsTotpEnrollPanel = ({ onComplete, onCancel }: Props) => 
               )}
             </Button>
           </div>
-          <p
-            data-testid="totp-otpauth-url"
-            className="break-all text-xs text-muted-foreground"
-          >
-            <span className="sr-only">otpauth URL: </span>
-            {enrollment.otpauthUrl}
+          {/*
+            Visually hidden - the QR code and the secret field above cover
+            sighted and manual-entry use. Screen-reader users who can't
+            scan the QR still need the full otpauth:// URI: some
+            authenticator apps accept pasting it directly instead of a
+            manual secret.
+          */}
+          <p data-testid="totp-otpauth-url" className="sr-only">
+            Authenticator setup link: {enrollment.otpauthUrl}
           </p>
         </div>
 
@@ -260,36 +262,13 @@ export const AuthSettingsTotpEnrollPanel = ({ onComplete, onCancel }: Props) => 
         />
         <span>Authenticator enabled. Save your recovery codes now.</span>
       </p>
-      <p className="flex items-start gap-2 rounded-md border bg-background/60 px-3 py-2 text-sm text-muted-foreground">
-        <TriangleAlert
-          className="mt-0.5 h-4 w-4 shrink-0 text-warning"
-          aria-hidden
-        />
-        <span>
-          We&apos;ll only show these once. Without them, losing your
-          authenticator means losing access.
-        </span>
-      </p>
-      <ul
-        data-testid="totp-recovery-codes"
-        className="grid grid-cols-2 gap-1 font-mono text-sm sm:grid-cols-3"
-      >
-        {recoveryCodes.map((c) => (
-          <li key={c} className="rounded bg-background px-2 py-1">
-            {c}
-          </li>
-        ))}
-      </ul>
+      <RecoveryCodesList codes={recoveryCodes} testId="totp-recovery-codes" />
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" variant="outline" onClick={onCopyCodes}>
-          <Copy className="mr-2 h-4 w-4" aria-hidden />
-          {copiedCodes ? 'Copied' : 'Copy all'}
-        </Button>
+      <div>
         <Button
           type="button"
           onClick={onComplete}

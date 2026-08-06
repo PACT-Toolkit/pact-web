@@ -4,10 +4,11 @@ import { RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 import {
-  type FileRecord,
-  deleteFile,
-  useGetFile,
+  type FilesFileResponse,
+  deleteFilesId,
+  useGetFilesId,
 } from '@/src/__codegen__/rest/files';
+import { DEFAULT_FILE_STATUS } from '@/src/app/files/domain/file_status';
 import { humanSize } from '@/src/app/files/domain/files_upload';
 import { FilesStatusBadge } from '@/src/app/files/ui/FilesStatusBadge';
 import { Button } from '@/src/components/ui/button';
@@ -33,17 +34,18 @@ export const FilesRow = ({
   file,
   onListChange,
 }: {
-  file: FileRecord;
+  file: FilesFileResponse;
   onListChange: () => void;
 }) => {
   const [busy, setBusy] = useState(false);
+  const fileId = file.id ?? '';
 
   const {
     data,
     error,
     isLoading,
     mutate: revalidateDownloadUrl,
-  } = useGetFile(file.id, {
+  } = useGetFilesId(fileId, {
     swr: {
       enabled: file.status === 'ready',
       revalidateOnFocus: false,
@@ -71,7 +73,7 @@ export const FilesRow = ({
   const handleDelete = async () => {
     setBusy(true);
     try {
-      await deleteFile(file.id);
+      await deleteFilesId(fileId);
     } catch {
       // DELETE is idempotent; transient errors resolve on next list refresh.
     }
@@ -84,11 +86,11 @@ export const FilesRow = ({
       <div className="min-w-0">
         <div className="text-sm font-medium truncate">{file.filename}</div>
         <div className="text-xs text-muted-foreground">
-          <FilesStatusBadge status={file.status} />
+          <FilesStatusBadge status={file.status ?? DEFAULT_FILE_STATUS} />
           {' • '}
           <span>{file.contentType}</span>
           {' • '}
-          <span>{humanSize(file.sizeBytes)}</span>
+          <span>{humanSize(file.sizeBytes ?? 0)}</span>
           {errorLabel && (
             <span className="ml-2 text-destructive">{errorLabel}</span>
           )}

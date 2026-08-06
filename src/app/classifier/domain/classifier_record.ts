@@ -1,4 +1,4 @@
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import {
   extractStageRecords,
@@ -43,7 +43,7 @@ export interface ClassifierRecord extends StageRecordBase {
 // become records -- see extractStageRecords for the shared guard and
 // malformed-payload semantics.
 export const extractClassifierRecords = (
-  events: AuditEvent[]
+  events: AuditAuditEventResponse[]
 ): ClassifierRecord[] =>
   extractStageRecords(
     events,

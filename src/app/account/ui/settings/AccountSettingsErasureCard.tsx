@@ -4,7 +4,7 @@ import { AlertTriangle, Loader2, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { useRequestAccountErasure } from '@/src/__codegen__/rest/account';
+import { usePostAccountErasure } from '@/src/__codegen__/rest/account';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -27,7 +27,7 @@ import { ERASURE_CONFIRM } from './helpers';
 
 export const AccountSettingsErasureCard = () => {
   const router = useRouter();
-  const erase = useRequestAccountErasure();
+  const erase = usePostAccountErasure();
 
   const [confirmText, setConfirmText] = useState('');
   const [error, setError] = useState<string | null>(null);

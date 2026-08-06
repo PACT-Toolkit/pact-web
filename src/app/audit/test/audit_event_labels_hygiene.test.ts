@@ -40,6 +40,8 @@ const CANONICAL_AUTH_EVENTS = [
   'password_set_link_requested',
   'password_reset_requested',
   'password_changed',
+  'session_revoked',
+  'user_sessions_revoked',
 ];
 
 const CANONICAL_ACCOUNT_EVENTS = [
@@ -77,7 +79,7 @@ describe('audit event-label drift guard', () => {
   it('every seeded pact.auth event has a matching AUTH_EVENT_LABELS entry', () => {
     const unlabelled = db.auditAuthEvents
       .getAll()
-      .map((event) => decodeAuthPayload(event.payloadJson)?.event_id)
+      .map((event) => decodeAuthPayload(event.payloadJson ?? '')?.event_id)
       .filter((eventId): eventId is NonNullable<typeof eventId> =>
         Boolean(eventId)
       )
@@ -89,7 +91,7 @@ describe('audit event-label drift guard', () => {
   it('every seeded pact.account event has a matching ACCOUNT_EVENT_LABELS entry', () => {
     const unlabelled = db.auditAccountEvents
       .getAll()
-      .map((event) => decodeAccountPayload(event.payloadJson)?.event_id)
+      .map((event) => decodeAccountPayload(event.payloadJson ?? '')?.event_id)
       .filter((eventId): eventId is NonNullable<typeof eventId> =>
         Boolean(eventId)
       )
@@ -101,7 +103,7 @@ describe('audit event-label drift guard', () => {
   it('every seeded pact.files event has a matching FILES_EVENT_LABELS entry', () => {
     const unlabelled = db.auditFilesEvents
       .getAll()
-      .map((event) => decodeFilesPayload(event.payloadJson)?.event_type)
+      .map((event) => decodeFilesPayload(event.payloadJson ?? '')?.event_type)
       .filter((eventType): eventType is NonNullable<typeof eventType> =>
         Boolean(eventType)
       )
@@ -117,7 +119,7 @@ describe('audit event-label drift guard', () => {
     const seeded = new Set<string>(
       db.auditAuthEvents
         .getAll()
-        .map((event) => decodeAuthPayload(event.payloadJson)?.event_id)
+        .map((event) => decodeAuthPayload(event.payloadJson ?? '')?.event_id)
         .filter((eventId): eventId is NonNullable<typeof eventId> =>
           Boolean(eventId)
         )
@@ -132,7 +134,7 @@ describe('audit event-label drift guard', () => {
     const seeded = new Set<string>(
       db.auditAccountEvents
         .getAll()
-        .map((event) => decodeAccountPayload(event.payloadJson)?.event_id)
+        .map((event) => decodeAccountPayload(event.payloadJson ?? '')?.event_id)
         .filter((eventId): eventId is NonNullable<typeof eventId> =>
           Boolean(eventId)
         )
@@ -147,7 +149,7 @@ describe('audit event-label drift guard', () => {
     const seeded = new Set<string>(
       db.auditFilesEvents
         .getAll()
-        .map((event) => decodeFilesPayload(event.payloadJson)?.event_type)
+        .map((event) => decodeFilesPayload(event.payloadJson ?? '')?.event_type)
         .filter((eventType): eventType is NonNullable<typeof eventType> =>
           Boolean(eventType)
         )

@@ -34,7 +34,11 @@ const getServerSnapshot = (): MockUserType => 'admin';
 // MSW handlers on the next render. Hidden entirely in non-mock builds
 // because the cookie has no meaning there.
 export const MockUserTypeSwitcher = () => {
-  const current = useSyncExternalStore(noopSubscribe, getMockUserType, getServerSnapshot);
+  const current = useSyncExternalStore(
+    noopSubscribe,
+    getMockUserType,
+    getServerSnapshot
+  );
 
   if (!isMock()) return null;
 
@@ -53,7 +57,10 @@ export const MockUserTypeSwitcher = () => {
               <SidebarMenuButton className="text-sidebar-foreground/70">
                 <FlaskConical className="text-sidebar-foreground/70" />
                 <span>
-                  Mock user: <span className="font-medium text-sidebar-foreground">{current}</span>
+                  Mock user:{' '}
+                  <span className="font-medium text-sidebar-foreground">
+                    {current}
+                  </span>
                 </span>
                 <ChevronDown className="ml-auto h-3 w-3 text-sidebar-foreground/50" />
               </SidebarMenuButton>
@@ -61,7 +68,7 @@ export const MockUserTypeSwitcher = () => {
             <DropdownMenuContent side="right" align="start" className="w-44">
               <DropdownMenuLabel>Mock user type</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {MOCK_USER_TYPES.map(t => (
+              {MOCK_USER_TYPES.map((t) => (
                 <DropdownMenuCheckboxItem
                   key={t}
                   checked={t === current}

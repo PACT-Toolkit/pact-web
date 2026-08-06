@@ -11,9 +11,8 @@ import useSWRMutation from 'swr/mutation';
 import type { Key } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
-import type { AxiosError, AxiosRequestConfig } from 'axios';
-
 import type {
+  BoundaryErrorResponse,
   PolicyIssueTokenRequest,
   PolicyIssueTokenResponse,
 } from './types';
@@ -35,6 +34,10 @@ import {
   getIssueTokenMutationKey,
 } from './fetchers';
 
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export type IssueTokenMutationResult = NonNullable<
   Awaited<ReturnType<typeof issueToken>>
 >;
@@ -42,7 +45,9 @@ export type IssueTokenMutationResult = NonNullable<
 /**
  * @summary Mint a capability token
  */
-export const useIssueToken = <TError = Promise<string>>(options?: {
+export const useIssueToken = <
+  TError = string | BoundaryErrorResponse,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof issueToken>>,
     TError,
@@ -50,12 +55,12 @@ export const useIssueToken = <TError = Promise<string>>(options?: {
     PolicyIssueTokenRequest,
     Awaited<ReturnType<typeof issueToken>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getIssueTokenMutationKey();
-  const swrFn = getIssueTokenMutationFetcher(fetchOptions);
+  const swrFn = getIssueTokenMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

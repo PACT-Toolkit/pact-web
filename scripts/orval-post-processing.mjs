@@ -44,6 +44,13 @@ export const splitHooksFile = async (serviceName, outputDir) => {
   const swrImports = [];
   const swrTypeImports = [];
   const typeImports = [];
+  const mutatorImports = [];
+
+  // Orval's mutator support (the custom_fetch override wired in by
+  // rest-codegen.mjs) emits a non-exported helper type above the first
+  // export. The export-block scan below never sees it, so it is captured
+  // here and re-emitted into whichever split file references it.
+  let secondParameterDecl = null;
 
   let firstExportLine = lines.length;
   let currentImport = null;
@@ -72,6 +79,8 @@ export const splitHooksFile = async (serviceName, outputDir) => {
           } else {
             swrImports.push(line);
           }
+        } else if (line.includes('custom_fetch')) {
+          mutatorImports.push(line);
         } else if (line.includes('./types')) {
           typeImports.push(line);
         }
@@ -98,12 +107,16 @@ export const splitHooksFile = async (serviceName, outputDir) => {
           } else {
             swrImports.push(fullImport);
           }
+        } else if (fullImport.includes('custom_fetch')) {
+          mutatorImports.push(fullImport);
         } else if (fullImport.includes('./types')) {
           typeImports.push(fullImport);
         }
         currentImport = null;
         currentImportLines = [];
       }
+    } else if (line.trim().startsWith('type SecondParameter')) {
+      secondParameterDecl = line.trim();
     }
   }
 
@@ -212,27 +225,55 @@ export const splitHooksFile = async (serviceName, outputDir) => {
     return [...constMatches, ...typeMatches];
   });
 
+  const fetcherCode = fetcherBlocks.join('\n');
+  const hooksCode = hookBlocks.join('\n\n');
+
+  // With the custom_fetch mutator, orval emits no axios references at all,
+  // so the axios type imports are injected only when the generated code
+  // actually mentions them -- otherwise the split output carries dead
+  // imports forever.
   const hasAxiosTypeImport = axiosImports.some(
     (imp) => imp.includes('import type') && imp.includes('from')
   );
-  const axiosTypeImport = hasAxiosTypeImport
-    ? ''
-    : "import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';";
+  const axiosTypeImport =
+    fetcherCode.includes('Axios') && !hasAxiosTypeImport
+      ? "import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';"
+      : '';
+  const fetcherAxiosImports = fetcherCode.includes('Axios') ? axiosImports : [];
+  const hooksAxiosImport = hooksCode.includes('Axios')
+    ? "import type { AxiosError, AxiosRequestConfig } from 'axios';"
+    : '';
 
-  const fetcherCode = fetcherBlocks.join('\n');
   const needsArguments = fetcherCode.includes('Arguments');
   const swrTypeImport = needsArguments
     ? "import type { Arguments, Key } from 'swr';"
     : "import type { Key } from 'swr';";
 
+  // Fetchers call customFetch directly; hooks reference it in their
+  // SecondParameter<typeof customFetch> option types. Each split file gets
+  // the import (and the captured non-exported helper type) only when its
+  // code references them.
+  const mutatorHeader = (code) => {
+    if (mutatorImports.length === 0 || !code.includes('customFetch')) {
+      return '';
+    }
+    const parts = [mutatorImports.join('\n')];
+    if (secondParameterDecl && code.includes('SecondParameter')) {
+      parts.push('', secondParameterDecl);
+    }
+
+    return `${parts.join('\n')}\n`;
+  };
+
   const fetchersContent = `${header}
-${axiosImports.join('\n')}
+${fetcherAxiosImports.join('\n')}
 ${axiosTypeImport}
 
 ${swrTypeImport}
 
 ${typeImports.join('\n')}
 
+${mutatorHeader(fetcherCode)}
 ${fetcherBlocks.join('\n\n')}
 `;
 
@@ -242,7 +283,7 @@ ${header}
 ${swrImports.join('\n')}
 ${swrTypeImports.join('\n')}
 
-import type { AxiosError, AxiosRequestConfig } from 'axios';
+${hooksAxiosImport}
 
 ${typeImports.join('\n')}
 
@@ -250,6 +291,7 @@ import {
   ${fetcherExports.join(',\n  ')},
 } from './fetchers';
 
+${mutatorHeader(hooksCode)}
 ${hookBlocks.join('\n\n')}
 `;
 

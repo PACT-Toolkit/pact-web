@@ -1,8 +1,11 @@
 import {
   type PactDecisions,
+  type CausalSpan,
+  type CelDecision,
   type ClassifierDecision,
   type ConsensusDecision,
   type FilterDecision,
+  type MatchedSpan,
   type ModelVote,
   type PolicyDecision,
   type RedactedSpan,
@@ -13,9 +16,12 @@ import {
 // off a different wire contract, see dashboard_probe.ts) don't have to reach
 // past this module into the generated codegen directory directly.
 export type {
+  CausalSpan,
+  CelDecision,
   ClassifierDecision,
   ConsensusDecision,
   FilterDecision,
+  MatchedSpan,
   ModelVote,
   PolicyDecision,
   RedactedSpan,

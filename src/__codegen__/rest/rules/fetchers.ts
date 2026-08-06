@@ -6,15 +6,18 @@
  * OpenAPI spec version: 0.1.0
  */
 
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from 'axios';
-
 import type { Arguments, Key } from 'swr';
 
 import type {
+  BoundaryErrorResponse,
   RulesCreateRuleRequest,
   RulesListRulesResponse,
   RulesRuleResponse,
 } from './types';
+
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 export type listRulesResponse200 = {
   data: RulesListRulesResponse;
@@ -48,19 +51,10 @@ export const getListRulesUrl = () => {
 export const listRules = async (
   options?: RequestInit
 ): Promise<listRulesResponse> => {
-  const res = await fetch(getListRulesUrl(), {
+  return customFetch<listRulesResponse>(getListRulesUrl(), {
     ...options,
     method: 'GET',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: listRulesResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as listRulesResponse;
 };
 
 export const getListRulesKey = () => [`/api/pact/gateway/v1/rules`] as const;
@@ -106,24 +100,17 @@ export const createRule = async (
   rulesCreateRuleRequest: RulesCreateRuleRequest,
   options?: RequestInit
 ): Promise<createRuleResponse> => {
-  const res = await fetch(getCreateRuleUrl(), {
+  return customFetch<createRuleResponse>(getCreateRuleUrl(), {
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(rulesCreateRuleRequest),
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: createRuleResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as createRuleResponse;
 };
 
-export const getCreateRuleMutationFetcher = (options?: RequestInit) => {
+export const getCreateRuleMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
   return (_: Key, { arg }: { arg: RulesCreateRuleRequest }) => {
     return createRule(arg, options);
   };
@@ -138,7 +125,7 @@ export type publishRuleResponse200 = {
 };
 
 export type publishRuleResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -153,7 +140,7 @@ export type publishRuleResponse403 = {
 };
 
 export type publishRuleResponse404 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 404;
 };
 
@@ -185,24 +172,15 @@ export const publishRule = async (
   id: string,
   options?: RequestInit
 ): Promise<publishRuleResponse> => {
-  const res = await fetch(getPublishRuleUrl(id), {
+  return customFetch<publishRuleResponse>(getPublishRuleUrl(id), {
     ...options,
     method: 'POST',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: publishRuleResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as publishRuleResponse;
 };
 
 export const getPublishRuleMutationFetcher = (
   id: string,
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, __: { arg: Arguments }) => {
     return publishRule(id, options);
@@ -218,7 +196,7 @@ export type revokeRuleResponse200 = {
 };
 
 export type revokeRuleResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -233,7 +211,7 @@ export type revokeRuleResponse403 = {
 };
 
 export type revokeRuleResponse404 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 404;
 };
 
@@ -265,24 +243,15 @@ export const revokeRule = async (
   id: string,
   options?: RequestInit
 ): Promise<revokeRuleResponse> => {
-  const res = await fetch(getRevokeRuleUrl(id), {
+  return customFetch<revokeRuleResponse>(getRevokeRuleUrl(id), {
     ...options,
     method: 'POST',
   });
-
-  const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-
-  const data: revokeRuleResponse['data'] = body ? JSON.parse(body) : {};
-  return {
-    data,
-    status: res.status,
-    headers: res.headers,
-  } as revokeRuleResponse;
 };
 
 export const getRevokeRuleMutationFetcher = (
   id: string,
-  options?: RequestInit
+  options?: SecondParameter<typeof customFetch>
 ) => {
   return (_: Key, __: { arg: Arguments }) => {
     return revokeRule(id, options);

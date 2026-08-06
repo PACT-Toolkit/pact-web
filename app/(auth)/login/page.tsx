@@ -24,6 +24,7 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
     'Your session expired before the OAuth flow finished. Try again.',
   state_or_code_invalid: 'OAuth response failed verification. Try again.',
   callback_failed: 'OAuth sign-in failed. Try again.',
+  provider_timeout: 'The sign-in provider took too long to respond. Try again.',
   access_denied: 'You declined the sign-in request.',
   email_already_linked:
     'That email is already linked to a different sign-in method. Sign in with the original provider, then connect this one from your account settings.',

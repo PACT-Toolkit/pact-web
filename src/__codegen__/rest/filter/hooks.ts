@@ -12,9 +12,8 @@ import useSWRMutation from 'swr/mutation';
 import type { Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
-import type { AxiosError, AxiosRequestConfig } from 'axios';
-
 import type {
+  BoundaryErrorResponse,
   FilterListPacksResponse,
   FilterTestRuleRequest,
   FilterTestRuleResponse,
@@ -47,6 +46,10 @@ import {
   getTestRuleMutationKey,
 } from './fetchers';
 
+import { customFetch } from '../custom_fetch';
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 export type ListLoadedPacksQueryResult = NonNullable<
   Awaited<ReturnType<typeof listLoadedPacks>>
 >;
@@ -54,19 +57,21 @@ export type ListLoadedPacksQueryResult = NonNullable<
 /**
  * @summary List loaded rule packs and engines
  */
-export const useListLoadedPacks = <TError = Promise<string>>(options?: {
+export const useListLoadedPacks = <
+  TError = string | BoundaryErrorResponse,
+>(options?: {
   swr?: SWRConfiguration<
     Awaited<ReturnType<typeof listLoadedPacks>>,
     TError
   > & { swrKey?: Key; enabled?: boolean };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const isEnabled = swrOptions?.enabled !== false;
   const swrKey =
     swrOptions?.swrKey ?? (() => (isEnabled ? getListLoadedPacksKey() : null));
-  const swrFn = () => listLoadedPacks(fetchOptions);
+  const swrFn = () => listLoadedPacks(requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
@@ -87,7 +92,7 @@ export type TestRuleMutationResult = NonNullable<
 /**
  * @summary Test a candidate rule against a sample
  */
-export const useTestRule = <TError = Promise<string>>(options?: {
+export const useTestRule = <TError = string | BoundaryErrorResponse>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof testRule>>,
     TError,
@@ -95,12 +100,12 @@ export const useTestRule = <TError = Promise<string>>(options?: {
     FilterTestRuleRequest,
     Awaited<ReturnType<typeof testRule>>
   > & { swrKey?: string };
-  fetch?: RequestInit;
+  request?: SecondParameter<typeof customFetch>;
 }) => {
-  const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
 
   const swrKey = swrOptions?.swrKey ?? getTestRuleMutationKey();
-  const swrFn = getTestRuleMutationFetcher(fetchOptions);
+  const swrFn = getTestRuleMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

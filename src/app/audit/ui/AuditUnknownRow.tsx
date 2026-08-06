@@ -1,4 +1,4 @@
-import { type AuditEvent } from '@/src/__codegen__/rest/audit';
+import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { prettyPayload } from '@/src/app/audit/domain/audit_event_variant';
 import { AuditRowShell } from '@/src/app/audit/ui/AuditRowShell';
 
@@ -10,12 +10,12 @@ export const AuditUnknownRow = ({
   event,
   raw,
 }: {
-  event: AuditEvent;
+  event: AuditAuditEventResponse;
   raw: string;
 }) => (
   <AuditRowShell
-    topic={event.topic}
-    createdAt={event.createdAt}
+    topic={event.topic ?? ''}
+    createdAt={event.createdAt ?? ''}
     requestId={event.requestId}
     rawPayload={prettyPayload(raw)}
     badges={

@@ -77,5 +77,13 @@ export const POST = async (req: NextRequest) => {
     );
   }
 
-  return NextResponse.json({ credentialId: resp.credentialId });
+  // recoveryCodes is only present when pact-auth issued a fresh batch (an
+  // account with no codes provisioned yet) - JSON.stringify drops an
+  // `undefined` property, so this stays entirely absent from the response
+  // body in that case rather than serialising as `"recoveryCodes": null`
+  // or an empty array.
+  return NextResponse.json({
+    credentialId: resp.credentialId,
+    recoveryCodes: resp.recoveryCodes,
+  });
 };

@@ -1,16 +1,20 @@
 import { useMemo } from 'react';
 
 import {
-  type AuditEvent,
-  type DecisionStatsLabelCount,
-  type QueryDecisionStatsResponse,
-  useQueryAuditEvents,
-  useQueryDecisionStats,
+  type AuditAuditEventResponse,
+  useGetAuditEvents,
+  useGetAuditStats,
 } from '@/src/__codegen__/rest/audit';
 import { BENIGN_LABELS } from '@/src/__codegen__/schema/pact-decisions';
 import {
+  type DecisionStatsClassifier,
+  type DecisionStatsFilter,
+  type DecisionStatsLabelCount,
+  type DecisionStatsRedactor,
+  type DecisionStatsSummary,
   decisionStatsPollingConfig,
   isDecisionStatsForbidden,
+  normalizeDecisionStats,
 } from '@/src/app/audit/domain/audit_decision_stats_access';
 import {
   type DecisionPayload,
@@ -49,51 +53,23 @@ export const BENIGN_CLASSIFIER_LABELS = new Set(
   BENIGN_LABELS.map((label) => label.toLowerCase())
 );
 
-// The dashboard's headline stats, straight from GET /v1/audit/stats. Derived
-// from the generated response types rather than redeclared, so the UI can
-// never drift from the wire contract (see pact-domain-layer). All rates are
-// 0-100 and label arrays are always present (possibly empty), never null --
-// pact-gateway's DTOs have no omitempty and every field here is required in
-// schema/audit/swagger.yaml, so no NonNullable<...> unwrapping is needed.
-export type PipelineStats = QueryDecisionStatsResponse;
-export type FilterStats = PipelineStats['filter'];
-export type ClassifierStats = PipelineStats['classifier'];
-export type RedactorStats = PipelineStats['redactor'];
+// The dashboard's headline stats, straight from GET /v1/audit/stats. Every
+// field here is fully required -- see normalizeDecisionStats in
+// audit_decision_stats_access.ts, which is the single place that fills in
+// pact-gateway's all-optional generated response type with zero-value
+// defaults, shared with useFilterDecisionStats so the widgets below never
+// need optional-chaining over the aggregate.
+export type PipelineStats = DecisionStatsSummary;
+export type FilterStats = DecisionStatsFilter;
+export type ClassifierStats = DecisionStatsClassifier;
+export type RedactorStats = DecisionStatsRedactor;
 export type LabelCount = DecisionStatsLabelCount;
-
-const EMPTY_STATS: PipelineStats = {
-  total: 0,
-  latest_at_unix: 0,
-  filter: {
-    flagged: 0,
-    blocked: 0,
-    block_rate: 0,
-    top_rule_id: '',
-    suspicious: 0,
-    hostile: 0,
-    top_rules: [],
-  },
-  classifier: {
-    responded: 0,
-    tagged: 0,
-    top_label: '',
-    avg_tagged_score: 0,
-    consensus: 0,
-    labels: [],
-  },
-  redactor: {
-    redacted: 0,
-    spans: 0,
-    redaction_rate: 0,
-    span_labels: [],
-  },
-};
 
 // A parsed pact.decisions row: the raw audit event plus its decoded payload.
 // Feeds the live stream (DashboardLiveDecisions), which still reads its own
 // event window -- only the headline stat widgets moved server-side.
 export interface DecisionRecord {
-  event: AuditEvent;
+  event: AuditAuditEventResponse;
   dp: DecisionPayload;
 }
 
@@ -132,10 +108,12 @@ export const decisionSeverity = (dp: DecisionPayload): DecisionSeverity => {
   return 'clean';
 };
 
-export const parseDecisions = (events: AuditEvent[]): DecisionRecord[] => {
+export const parseDecisions = (
+  events: AuditAuditEventResponse[]
+): DecisionRecord[] => {
   const records: DecisionRecord[] = [];
   for (const event of events) {
-    const dp = parseDecisionPayload(event.payloadJson);
+    const dp = parseDecisionPayload(event.payloadJson ?? '');
     if (dp) records.push({ event, dp });
   }
 
@@ -162,7 +140,7 @@ export const useDashboardPipelineStats = (live: boolean) => {
     []
   );
 
-  const eventsQuery = useQueryAuditEvents(eventsParams, {
+  const eventsQuery = useGetAuditEvents(eventsParams, {
     swr: {
       refreshInterval: live ? LIVE_REFRESH_MS : 0,
       revalidateOnFocus: false,
@@ -170,7 +148,7 @@ export const useDashboardPipelineStats = (live: boolean) => {
     },
   });
 
-  const statsQuery = useQueryDecisionStats(undefined, {
+  const statsQuery = useGetAuditStats(undefined, {
     swr: {
       ...decisionStatsPollingConfig(STATS_REFRESH_MS),
       revalidateOnFocus: false,
@@ -181,14 +159,16 @@ export const useDashboardPipelineStats = (live: boolean) => {
   const records = useMemo(
     () =>
       eventsQuery.data?.status === 200
-        ? parseDecisions(eventsQuery.data.data.events)
+        ? parseDecisions(eventsQuery.data.data.events ?? [])
         : [],
     [eventsQuery.data]
   );
 
   const stats = useMemo(
     () =>
-      statsQuery.data?.status === 200 ? statsQuery.data.data : EMPTY_STATS,
+      normalizeDecisionStats(
+        statsQuery.data?.status === 200 ? statsQuery.data.data : undefined
+      ),
     [statsQuery.data]
   );
 
@@ -203,10 +183,16 @@ export const useDashboardPipelineStats = (live: boolean) => {
     void statsQuery.mutate();
   };
 
+  // The two queries fail independently, and their consumers must not share
+  // one error flag: a stats-side failure (e.g. the real gateway's
+  // text/plain 403 body throwing in the generated fetcher's JSON.parse -
+  // see PACT-363's permission gate) would otherwise paint the live stream's
+  // "failed to load decisions" banner while the stream itself is healthy.
   return {
     stats,
     records,
-    error: Boolean(eventsQuery.error) || Boolean(statsQuery.error),
+    streamError: Boolean(eventsQuery.error),
+    statsError: Boolean(statsQuery.error),
     statsForbidden,
     isLoading: eventsQuery.isLoading || statsQuery.isLoading,
     isValidating: eventsQuery.isValidating || statsQuery.isValidating,

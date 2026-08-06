@@ -7,6 +7,7 @@
  */
 import type { CheckCheckResponseDecision } from './checkCheckResponseDecision';
 import type { CheckClassifierInfo } from './checkClassifierInfo';
+import type { CheckConsensusInfo } from './checkConsensusInfo';
 import type { CheckDiagnosticsInfo } from './checkDiagnosticsInfo';
 import type { CheckExternalRefsInfo } from './checkExternalRefsInfo';
 import type { CheckFilterInfo } from './checkFilterInfo';
@@ -15,6 +16,7 @@ import type { CheckSpotlightInfo } from './checkSpotlightInfo';
 
 export interface CheckCheckResponse {
   classifier?: CheckClassifierInfo;
+  consensus?: CheckConsensusInfo;
   decision: CheckCheckResponseDecision;
   diagnostics?: CheckDiagnosticsInfo;
   external_refs?: CheckExternalRefsInfo;

@@ -74,6 +74,12 @@
     "cel": {
       "$ref": "#/$defs/celDecision"
     },
+    "diagnostics": {
+      "$ref": "#/$defs/decisionDiagnostics"
+    },
+    "content_delivery": {
+      "$ref": "#/$defs/contentDelivery"
+    },
     "latency_ms": {
       "type": "integer"
     },
@@ -102,6 +108,67 @@
         }
       }
     },
+    "controlRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["framework", "id"],
+      "description": "One compliance control a stage verdict enforces (PACT-611). Open set by design - new frameworks or control IDs are added without a schema change.",
+      "properties": {
+        "framework": {
+          "type": "string",
+          "description": "Compliance framework identifying the control vocabulary, e.g. \"owasp_llm_top10\" (control IDs \"LLM01\"..\"LLM10\") or \"eu_ai_act_art15\" (control IDs \"accuracy\", \"robustness\", \"cybersecurity\"). Open set by design - decisions.FrameworkOWASPLLMTop10 and decisions.FrameworkEUAIActArt15 are the two known values today."
+        },
+        "id": {
+          "type": "string",
+          "description": "Framework-specific control identifier, e.g. \"LLM01\" under owasp_llm_top10 or \"accuracy\" under eu_ai_act_art15."
+        }
+      }
+    },
+    "matchedSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "description": "Byte-range within the filter's normalized input that triggered a block decision (PACT-734). start/end index the NORMALIZED (lowercased/preprocessed) input, not the original content.",
+      "properties": {
+        "start": {
+          "type": "integer"
+        },
+        "end": {
+          "type": "integer"
+        },
+        "excerpt": {
+          "type": "string",
+          "description": "Bounded, redactor-masked copy of the matched substring - never the full content."
+        }
+      }
+    },
+    "causalSpan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "description": "One byte-range in the ORIGINAL request content that the gateway's M12 causal replay identified as contributing to a block decision (PACT-734). Text is deliberately omitted (PII avoidance).",
+      "properties": {
+        "start": {
+          "type": "integer"
+        },
+        "end": {
+          "type": "integer"
+        }
+      }
+    },
+    "decisionDiagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Causal-replay diagnostics (PACT-734). Present only on block decisions when the gateway's M12 causal replay ran (PACT_DIAGNOSTICS_ENABLED) and span capture is enabled.",
+      "properties": {
+        "causal_spans": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/causalSpan"
+          }
+        }
+      }
+    },
     "filterDecision": {
       "type": "object",
       "additionalProperties": false,
@@ -122,6 +189,16 @@
           "type": "string",
           "enum": ["shadow", "enforce"],
           "description": "Staged-enforcement mode (PACT-257 vector enforcement); pipeline.EnforceModeShadow / EnforceModeEnforce."
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlRef"
+          },
+          "description": "Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
+        },
+        "matched_span": {
+          "$ref": "#/$defs/matchedSpan"
         }
       }
     },
@@ -144,6 +221,13 @@
         "engine": {
           "type": "string",
           "description": "Free-form model/checkpoint tag (e.g. stub-v1, deberta-prompt-injection-v2@abcd1234). Open set - mirrors classifierpb.ClassifyResponse.model_version."
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlRef"
+          },
+          "description": "Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
         }
       }
     },
@@ -202,6 +286,13 @@
         "skipped_reason": {
           "type": "string",
           "description": "PACT-432. Machine-readable cause of skipped=true: consensus_timeout, consensus_error (shadow-mode vote failures), or shadow_saturated (completion pool full). Open set by design, and not populated on the pre-existing inline-mode transport-error fail-open (skipped=true with no reason) to keep that path's wire output unchanged."
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlRef"
+          },
+          "description": "Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
         }
       }
     },
@@ -236,6 +327,13 @@
           "items": {
             "$ref": "#/$defs/redactedSpan"
           }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlRef"
+          },
+          "description": "Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
         }
       }
     },
@@ -267,6 +365,13 @@
           "type": "string",
           "enum": ["observe", "block", "redact", "block_only"],
           "description": "Closed set per pipeline.Decision.ToolMitigationMode doc comment (PACT-304/PACT-247). The empty string is also valid but is dropped by omitempty, so it never appears on the wire."
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlRef"
+          },
+          "description": "Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
         }
       }
     },
@@ -389,6 +494,25 @@
           "type": "string",
           "enum": ["cel_stage_timeout", "cel_rule_timeout", "cel_rule_error"],
           "description": "Closed set - celeval.SkipReason* constants. Present only when the stage could not fully evaluate every active rule (fail-open): cel_stage_timeout/cel_rule_timeout are budget exhaustion, cel_rule_error covers both a CEL runtime error and an expression that evaluated cleanly to a non-boolean value. Absent when every active rule was attempted regardless of outcome."
+        }
+      }
+    },
+    "contentDelivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["delivery_id", "content_sha256", "sink_kind"],
+      "description": "Deterministic reference to an asynchronous tenant-custody content delivery (PACT-735). Present only on block decisions whose capture tier is redacted_full with a configured sink; a reference for tenant-side correlation - PACT persists no content. Generated at decision time, before delivery to tenant-owned storage completes.",
+      "properties": {
+        "delivery_id": {
+          "type": "string"
+        },
+        "content_sha256": {
+          "type": "string",
+          "description": "SHA-256 hex of the redacted payload as delivered."
+        },
+        "sink_kind": {
+          "type": "string",
+          "enum": ["webhook", "s3"]
         }
       }
     }

@@ -95,7 +95,8 @@ export const handlers: RequestHandler[] = [
       .filter((event) => !requestId || event.requestId === requestId)
       .sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt ?? 0).getTime() -
+          new Date(a.createdAt ?? 0).getTime()
       );
     const page = all.slice(offset, offset + limit);
 

@@ -69,13 +69,16 @@ export const BenchmarkResultsTable = ({
                 <th scope="col" className="px-4 py-2 font-medium tabular-nums">
                   Latency (ms)
                 </th>
+                <th scope="col" className="px-4 py-2 font-medium">
+                  Error
+                </th>
               </tr>
             </thead>
             <tbody>
               {isLoading && rows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-4 py-6 text-center text-muted-foreground"
                   >
                     Loading…
@@ -84,7 +87,7 @@ export const BenchmarkResultsTable = ({
               ) : !isLoading && rows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={4}
+                    colSpan={5}
                     className="px-4 py-6 text-center text-muted-foreground"
                   >
                     No rows returned.
@@ -170,6 +173,12 @@ const BenchmarkResultRow = ({ row }: { row: RowResult }) => {
       </td>
       <td className="px-4 py-2 tabular-nums text-muted-foreground">
         {row.latency_ms?.toFixed(1) ?? '—'}
+      </td>
+      <td
+        className="max-w-xs truncate px-4 py-2 text-xs text-muted-foreground"
+        title={row.error}
+      >
+        {row.error}
       </td>
     </tr>
   );
