@@ -7,7 +7,7 @@ tags: subscription, dedup
 
 ## Same Key Shares a Single Subscription
 
-`useSWRSubscription` dedupes by key the same way `useSWR` does. Multiple components subscribing to the same key share one underlying connection — the subscriber function runs once, and SWR closes it when the last consumer unmounts. Don't try to share connections by hand.
+`useSWRSubscription` dedupes by key the same way `useSWR` does. Multiple components subscribing to the same key share one underlying connection - the subscriber function runs once, and SWR closes it when the last consumer unmounts. Don't try to share connections by hand.
 
 **Incorrect (manually managing a singleton socket):**
 
@@ -31,7 +31,7 @@ function useStream(url) {
     return () => socket.close();
   });
 }
-// Multiple components can call useStream(url) — one socket
+// Multiple components can call useStream(url) - one socket
 ```
 
-Reference: [SWR — Subscription](https://swr.vercel.app/docs/subscription)
+Reference: [SWR - Subscription](https://swr.vercel.app/docs/subscription)

@@ -7,7 +7,7 @@ tags: mutation
 
 ## Pass an Async Function to mutate for Read-Modify-Write
 
-`mutate(key, asyncFn)` accepts an async updater that receives the current cache value and returns the new one. This is the right primitive for "fetch the new value, then patch it on top of the current cache" — better than reading from cache, computing, and passing a literal value (which can race).
+`mutate(key, asyncFn)` accepts an async updater that receives the current cache value and returns the new one. This is the right primitive for "fetch the new value, then patch it on top of the current cache" - better than reading from cache, computing, and passing a literal value (which can race).
 
 **Incorrect (reads cache before any concurrent mutation lands):**
 
@@ -30,4 +30,4 @@ mutate(
 );
 ```
 
-Reference: [SWR — Mutation](https://swr.vercel.app/docs/mutation)
+Reference: [SWR - Mutation](https://swr.vercel.app/docs/mutation)

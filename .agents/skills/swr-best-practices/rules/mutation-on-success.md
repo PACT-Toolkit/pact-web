@@ -41,6 +41,6 @@ const { trigger } = useSWRMutation('/api/user', updateUser, {
 const onSubmit = (values) => trigger(values);
 ```
 
-`useSWR` exposes a parallel `onSuccess` and `onDiscarded` (the latter fires when a stale result is dropped because a newer request superseded it) — same idea applies for query-side side effects.
+`useSWR` exposes a parallel `onSuccess` and `onDiscarded` (the latter fires when a stale result is dropped because a newer request superseded it) - same idea applies for query-side side effects.
 
-Reference: [SWR — API Options](https://swr.vercel.app/docs/api)
+Reference: [SWR - API Options](https://swr.vercel.app/docs/api)

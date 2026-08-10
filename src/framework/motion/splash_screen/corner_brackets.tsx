@@ -14,7 +14,7 @@ type CornerBracketsProps = {
   prefersReducedMotion: boolean;
 };
 
-// Eight thin strokes — two per corner — drawn just outside the parent's
+// Eight thin strokes - two per corner - drawn just outside the parent's
 // content box so each L sits in the margin rather than overlapping text.
 // The horizontal stroke scales along X and the vertical stroke along Y,
 // each pinned at the corner via `transform-origin`, so the stroke
@@ -22,7 +22,7 @@ type CornerBracketsProps = {
 // `CORNER_DELAY_S` so they appear in unison rather than sweeping around
 // the box.
 //
-// Used by both the welcome copy and the Continue button — they take
+// Used by both the welcome copy and the Continue button - they take
 // identical bracket frames, so this is the single source of truth.
 // Caller is responsible for being `relative` (the brackets are
 // `absolute` and depend on the parent for positioning).

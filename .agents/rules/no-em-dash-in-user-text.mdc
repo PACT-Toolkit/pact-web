@@ -1,49 +1,70 @@
 ---
-description: Never use em-dashes (U+2014) in any text a user can see — UI copy, error messages, email bodies, validation strings.
+description: Never use em dashes or en dashes (U+2014 / U+2013) anywhere in authored repo content - user-facing text, code comments, internal docs, Makefile echoes, commit messages.
 alwaysApply: true
 ---
 
-# No em-dashes in user-facing text
+# No em dashes in authored repo content
 
-Em-dashes (`—`, U+2014) read as AI-generated, render unpredictably in
-email clients and assistive tech, and break visually on small screens.
-Use period, comma, semicolon, or colon instead, depending on the
-sentence shape.
+Em dashes (`—`, U+2014) and en dashes (`–`, U+2013) read as AI-generated,
+render unpredictably in email clients and assistive tech, and break
+visually on small screens. This is a fleet-wide rule: plain dash (`-`)
+everywhere in content this repo's authors write, not just user-facing
+copy. Use period, comma, semicolon, or colon instead of an em dash,
+depending on the sentence shape. En dashes in numeric ranges (`10-20`)
+become a plain dash too.
 
 ## Where this rule applies
 
 - JSX / TSX text inside components and pages
 - Form validation messages and yup / zod schemas
 - Toast, banner, dialog, and inline error copy
-- API route response bodies — anything in `error`, `message`,
+- API route response bodies - anything in `error`, `message`,
   `description`, etc.
-- Email templates (subject, plain-text, HTML) — `pact-notify/internal/templates/files/*`
-- Backend error strings that bubble to the UI — e.g. `status.Error`,
+- Email templates (subject, plain-text, HTML) - `pact-notify/internal/templates/files/*`
+- Backend error strings that bubble to the UI - e.g. `status.Error`,
   `status.Errorf`, `errors.New` returned by gRPC handlers when the
   Connect code is `InvalidArgument` (pact-web surfaces these via
   `err.rawMessage`)
 - Any string an end user can read
-
-## Where it does NOT apply
-
 - Code comments
-- Test names, `t.Skip` / `t.Errorf` messages
-- Makefile and shell-script echoes
-- CI annotation strings (`::error::…`)
-- Generated code (`__codegen__`, `*.pb.go`)
+- Test names, `t.Skip` / `t.Errorf` messages, `describe` / `it` labels
 - Internal docs (`.cursor/rules/`, `.claude/`, `.agents/`, `AGENTS.md`,
-  this file's own description / examples)
+  README files, and this file's own prose)
+- Makefile and shell-script echoes, help text, and CLI output
+- CI annotation strings (`::error::...`)
+- Commit messages and PR bodies
+
+## Where this rule does NOT apply
+
+- Generated code (`src/__codegen__/**`, orval/buf output, and anything
+  else produced by a codegen script rather than typed by a contributor)
+  and `CHANGELOG.md`, which is auto-generated and must never be
+  hand-edited
+- Vendored/mirrored files pulled from another repo (e.g.
+  `schema/**/swagger.yaml`, downloaded by `scripts/api-download.mjs`)
+- Quoted external content or test fixtures where the assertion depends
+  on byte-exact reproduction of input that isn't ours to rewrite
+- CI annotation strings that echo external tool output verbatim
+- This file's own illustrative uses of the characters: the diff example
+  block below (whose em dashes are the pattern being illustrated -
+  rewriting them would make the before/after lines identical), the
+  Pattern column of the replacement guide, and the backtick character
+  references naming `—` and `–` in the opening paragraph
 
 ## Replacement guide
 
 | Pattern | Replace with | Why |
 |---|---|---|
-| Sentence break: `A — B.` | `A. B.` (capitalize B) | Two thoughts → two sentences |
+| Sentence break: `A — B.` | `A. B.` (capitalize B) | Two thoughts, two sentences |
 | Tight aside: `X, Y — Z` | `X, Y, Z` (comma) | Aside is light enough |
 | Apposition: `name — definition` | `name: definition` | Colon introduces a definition |
 | Recovery instruction: `bad state — do X` | `bad state; do X` or `bad state. Do X.` | Semicolon for tight pairs |
+| Numeric range: `10–20` | `10-20` | Plain dash, no special en dash |
 
 ## Examples (from this codebase)
+
+These illustrative diffs intentionally keep their em dashes on the
+`-` side, to show the exact character being replaced:
 
 ```diff
 - Save these now — we'll only show them once.
@@ -62,6 +83,15 @@ sentence shape.
 ## Quick check before merging
 
 ```bash
-# Inside any user-text file, this should return nothing:
-rg '"[^"]*\u2014[^"]*"|>[^<]*\u2014[^<]*<' src/ app/
+# Repo-wide, this should return nothing. Generated/vendored content and
+# this rule file's own three copies are excluded, since their
+# illustrative examples are exempt (see above):
+git grep -P '\xe2\x80\x94|\xe2\x80\x93' -- . \
+  ':!CHANGELOG.md' \
+  ':!pnpm-lock.yaml' \
+  ':!src/__codegen__' \
+  ':!schema/*/swagger.yaml' \
+  ':!.cursor/rules/no-em-dash-in-user-text.mdc' \
+  ':!.claude/rules/no-em-dash-in-user-text.mdc' \
+  ':!.agents/rules/no-em-dash-in-user-text.mdc'
 ```

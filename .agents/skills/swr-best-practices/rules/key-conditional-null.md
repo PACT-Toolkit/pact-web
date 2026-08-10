@@ -26,4 +26,4 @@ const { data } = useSWR(userId ? `/api/user/${userId}` : null, fetcher);
 
 A `null` key keeps `useSWR` mounted (so the slot in the rules of hooks is preserved) but skips the network request entirely. `data` is `undefined` and `isLoading` is `false`.
 
-Reference: [SWR — Conditional Fetching](https://swr.vercel.app/docs/conditional-fetching)
+Reference: [SWR - Conditional Fetching](https://swr.vercel.app/docs/conditional-fetching)

@@ -8,7 +8,7 @@
 4. [Anti-Patterns](#anti-patterns)
 5. [Troubleshooting](#troubleshooting)
 
-> **When to use**: Detecting unintended visual changes—layout shifts, style regressions, broken responsive designs—that functional assertions miss.
+> **When to use**: Detecting unintended visual changes-layout shifts, style regressions, broken responsive designs-that functional assertions miss.
 
 ## Quick Reference
 
@@ -184,7 +184,7 @@ export default defineConfig({
 
 ### CI Configuration
 
-**Use when**: Running visual tests in CI. Consistent rendering is critical—the same test must produce identical screenshots every time.
+**Use when**: Running visual tests in CI. Consistent rendering is critical-the same test must produce identical screenshots every time.
 
 **The problem**: Font rendering and anti-aliasing differ across operating systems. macOS snapshots won't match Linux.
 
@@ -341,7 +341,7 @@ export default defineConfig({
 
 ### Component Visual Testing
 
-**Use when**: Testing individual UI components in isolation—buttons, cards, forms, modals. Faster and more stable than full-page screenshots.
+**Use when**: Testing individual UI components in isolation-buttons, cards, forms, modals. Faster and more stable than full-page screenshots.
 
 ```typescript
 test.describe('Button visual states', () => {
@@ -399,7 +399,7 @@ test.describe('Card component', () => {
 
 ### Updating Snapshots
 
-**Use when**: Intentionally changed UI—design refresh, rebrand, new feature. Never update when diff is unexpected.
+**Use when**: Intentionally changed UI-design refresh, rebrand, new feature. Never update when diff is unexpected.
 
 ```bash
 # Update all snapshots
@@ -450,7 +450,7 @@ npx playwright test --grep @visual --update-snapshots
 
 **Use when**: Users span Chrome, Firefox, Safari and you need per-browser rendering verification.
 
-Playwright separates snapshots by project name automatically. Each browser gets its own baseline—browsers render fonts and shadows differently.
+Playwright separates snapshots by project name automatically. Each browser gets its own baseline-browsers render fonts and shadows differently.
 
 ```typescript
 // playwright.config.ts

@@ -7,7 +7,7 @@ tags: fetcher, error
 
 ## Throw From the Fetcher to Populate error
 
-SWR populates `error` only when the fetcher throws. Returning `null` or an error object on a non-2xx response leaves `error` empty and `data` set to that error shape — every consumer then has to re-derive "did this fail?" from the data.
+SWR populates `error` only when the fetcher throws. Returning `null` or an error object on a non-2xx response leaves `error` empty and `data` set to that error shape - every consumer then has to re-derive "did this fail?" from the data.
 
 **Incorrect:**
 
@@ -34,6 +34,6 @@ const fetcher = async (url) => {
 };
 ```
 
-Axios already throws on non-2xx by default — codegen tools that wrap Axios (Orval, openapi-typescript-codegen) inherit this behavior for free.
+Axios already throws on non-2xx by default - codegen tools that wrap Axios (Orval, openapi-typescript-codegen) inherit this behavior for free.
 
-Reference: [SWR — Status Code and Error Object](https://swr.vercel.app/docs/error-handling#status-code-and-error-object)
+Reference: [SWR - Status Code and Error Object](https://swr.vercel.app/docs/error-handling#status-code-and-error-object)

@@ -262,7 +262,7 @@ use: {
 
 | Value | Records | Keeps | Disk Cost |
 |---|---|---|---|
-| `'off'` | Never | — | None |
+| `'off'` | Never | - | None |
 | `'on'` | Every test | All | Very high |
 | `'on-first-retry'` | On retry | Retried | Low |
 | `'retain-on-failure'` | Every test | Failed | Medium |

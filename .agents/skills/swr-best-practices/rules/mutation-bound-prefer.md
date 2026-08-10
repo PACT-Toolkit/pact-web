@@ -25,6 +25,6 @@ const { data, mutate: refreshUser } = useSWR('/api/user', fetcher);
 const refresh = () => refreshUser();
 ```
 
-Use the global `mutate` only when you need to invalidate a key from a component that doesn't own the hook (e.g. a sibling component triggering revalidation across features) — and prefer `useSWRConfig()` over the imported singleton in that case.
+Use the global `mutate` only when you need to invalidate a key from a component that doesn't own the hook (e.g. a sibling component triggering revalidation across features) - and prefer `useSWRConfig()` over the imported singleton in that case.
 
-Reference: [SWR — Mutation](https://swr.vercel.app/docs/mutation)
+Reference: [SWR - Mutation](https://swr.vercel.app/docs/mutation)

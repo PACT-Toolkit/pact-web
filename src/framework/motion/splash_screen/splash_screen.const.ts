@@ -1,12 +1,12 @@
 // All the splash's tunable timings, copy, and easing curves live here so the
 // choreography can be re-tuned without touching any of the presentational
-// components. Pure values — no React, no DOM. Comments explain the WHY of
+// components. Pure values - no React, no DOM. Comments explain the WHY of
 // each number; the WHAT is self-evident from the constant name.
 
 // ── Top-level pacing ────────────────────────────────────────────────────
 
 // How long the on-mount entry choreography takes. The logo's fade is 2.2 s
-// (longest of the entry animations — the percent block finishes at
+// (longest of the entry animations - the percent block finishes at
 // 0.35 + 1.6 = 1.95 s), so we hold the count + breath at their starting
 // values until this point so the loading sweep visibly begins only once
 // both the mark and the number are settled on screen.
@@ -16,7 +16,7 @@ export const ENTRY_DURATION_MS = 2200;
 // gentle ease-out (see SWEEP_EASE) gives it a "little faster at the start,
 // slowly slower toward the end" feel without the dramatic burst-then-crawl
 // we used to get from layered per-signal animations. Real load signals are
-// still awaited — they gate the Continue button — but they no longer nudge
+// still awaited - they gate the Continue button - but they no longer nudge
 // the count.
 export const VISIBLE_DURATION_MS = 7800;
 
@@ -46,13 +46,13 @@ export const BREATH_CYCLE_S = 2.2;
 export const BREATH_BAND_HALF_PCT = 30;
 
 // The mark SVG (1254×1254 viewBox) has ~16% transparent padding on top and
-// bottom — the artwork sits between roughly y=200 and y=1057. The fill mask
+// bottom - the artwork sits between roughly y=200 and y=1057. The fill mask
 // is sized to this band so progress=100 fills exactly the visible artwork.
 export const ARTWORK_TOP_PCT = 16;
 export const ARTWORK_BOTTOM_PCT = 84;
 
 // Once the count crosses this threshold, the diagonal breath starts
-// dissolving into a steady upward fill — by progress=100 the fill covers the
+// dissolving into a steady upward fill - by progress=100 the fill covers the
 // artwork edge to edge and the breath is masked out behind it.
 export const FILL_TRANSITION_START = 70;
 
@@ -60,7 +60,7 @@ export const FILL_TRANSITION_START = 70;
 
 // Duration of the number's slide-down exit animation, in milliseconds.
 // Used both inline on the exit `transition` and to gate when the welcome
-// copy + Continue button are allowed to mount — they don't appear until
+// copy + Continue button are allowed to mount - they don't appear until
 // the number has fully cleared the row so the two don't visually overlap.
 // A small buffer is added on the gate side, not here, so the exit easing
 // curve stays unchanged.
@@ -71,7 +71,7 @@ export const POST_NUMBER_BUFFER_MS = 80;
 
 // Split-text entry for the percent block. Each character of the placeholder
 // `0%` slides up from below an `overflow-hidden` baseline; chars are
-// staggered so the eye follows the reveal across the line. Pure Y motion —
+// staggered so the eye follows the reveal across the line. Pure Y motion -
 // no opacity animation. Once the reveal completes we swap the markup to a
 // live `{count}%` so subsequent ticks update without re-animating the
 // individual glyphs.
@@ -102,7 +102,7 @@ export const CORNER_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 // Four corner anchors. Each entry pairs the Tailwind position utilities
 // (offsetting the bracket slightly outside the wrapper box so the L sits
 // in the margin, not over the text) with the CSS transform-origin that
-// pins each line's scale anchor at the same corner — that's what makes
+// pins each line's scale anchor at the same corner - that's what makes
 // the strokes grow *outward from* the corner rather than from the
 // element's centre.
 //
@@ -131,7 +131,7 @@ export const CORNER_ANCHORS = [
 // the real characters lock in left-to-right at REVEAL_STAGGER_MS apart.
 //
 // Width is locked to the final text's natural width via an invisible
-// measurement span underneath the scramble overlay — without this, the
+// measurement span underneath the scramble overlay - without this, the
 // random glyphs (different widths in a proportional font like Space
 // Grotesk) would jiggle the parent's bounding box on every tick, which
 // would in turn drag the corner-bracket frame anchored to its edges.
@@ -189,7 +189,7 @@ export const SUBTITLE_LINE_2_REVEAL_START_MS =
 
 // ── Exit transition (splash → destination) ──────────────────────────────
 
-// On Continue, the splash visual is frozen and rendered twice — once
+// On Continue, the splash visual is frozen and rendered twice - once
 // clipped to the top half of the viewport, once to the bottom half. A
 // thin horizontal seam line draws across the centre first (rendered as
 // two overlapping strokes, one pinned to the bottom edge of the top
@@ -201,7 +201,7 @@ export const SUBTITLE_LINE_2_REVEAL_START_MS =
 // unmount → mount swap is invisible.
 
 // Seam line draws across the centre before the halves move. Deliberate
-// pace — slow enough to register as a "cut", not a flash.
+// pace - slow enough to register as a "cut", not a flash.
 export const SPLIT_LINE_DRAW_S = 0.4;
 export const SPLIT_LINE_DRAW_EASE: [number, number, number, number] = [
   0.16, 1, 0.3, 1,
@@ -212,7 +212,7 @@ export const SPLIT_LINE_DRAW_EASE: [number, number, number, number] = [
 // line itself dragging the halves apart, not as a separate phase.
 export const SPLIT_SLIDE_DELAY_S = SPLIT_LINE_DRAW_S + 0.2;
 
-// Halves slide off-screen — strong ease-in/out cubic so the motion is
+// Halves slide off-screen - strong ease-in/out cubic so the motion is
 // felt as decisive (slow start, fast middle, soft landing offstage).
 // 1.4 s gives the reveal real weight: the viewer has time to watch the
 // splash physically pull apart instead of just blinking out.
@@ -221,7 +221,7 @@ export const SPLIT_SLIDE_EASE: [number, number, number, number] = [
   0.83, 0, 0.17, 1,
 ];
 
-// Total duration of the exit transition in ms — used to schedule the
+// Total duration of the exit transition in ms - used to schedule the
 // router.replace so it fires the instant the halves have cleared.
 export const SPLIT_TOTAL_MS = (SPLIT_SLIDE_DELAY_S + SPLIT_SLIDE_S) * 1000;
 
@@ -230,6 +230,6 @@ export const SPLIT_TOTAL_MS = (SPLIT_SLIDE_DELAY_S + SPLIT_SLIDE_S) * 1000;
 // sessionStorage key for the "splash already played this session" flag.
 // Prefixed with `pact:` so it's grep-able and can't collide with any third-
 // party SDK that decides to squat on a bare `splash` key. Scoped to the
-// tab session by sessionStorage — closing the tab clears it and the next
+// tab session by sessionStorage - closing the tab clears it and the next
 // app-open gets a fresh splash. See `splash_throttle.ts`.
 export const SPLASH_SESSION_KEY = 'pact:splash:shown';

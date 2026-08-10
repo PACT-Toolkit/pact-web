@@ -7,7 +7,7 @@ tags: perf, dedup
 
 ## Tune dedupingInterval Per Resource
 
-Default `dedupingInterval` is 2000ms — within that window, identical-key requests collapse to one network call. For frequently-rendered hooks (a header avatar, a balance widget) bumping this to 30–60s avoids redundant requests; for a critical "current price" widget you may want less.
+Default `dedupingInterval` is 2000ms - within that window, identical-key requests collapse to one network call. For frequently-rendered hooks (a header avatar, a balance widget) bumping this to 30-60s avoids redundant requests; for a critical "current price" widget you may want less.
 
 **Incorrect (relying on default for everything):**
 
@@ -24,4 +24,4 @@ const { data } = useSWR('/api/balance', fetcher, {
 });
 ```
 
-Reference: [SWR — Performance](https://swr.vercel.app/docs/advanced/performance#deduplication)
+Reference: [SWR - Performance](https://swr.vercel.app/docs/advanced/performance#deduplication)

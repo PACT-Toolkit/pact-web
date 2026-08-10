@@ -7,7 +7,7 @@ tags: key, patterns
 
 ## Wrap useSWR in a Custom Hook Per Resource
 
-The first idiom in the SWR docs: build a custom hook for each resource (`useUser`, `useOrders`, `useProject(id)`) instead of calling `useSWR` directly at every consumer. The wrapper owns the key shape, the fetcher, the generics, and any shared options — so changing the endpoint or its shape is one edit instead of dozens.
+The first idiom in the SWR docs: build a custom hook for each resource (`useUser`, `useOrders`, `useProject(id)`) instead of calling `useSWR` directly at every consumer. The wrapper owns the key shape, the fetcher, the generics, and any shared options - so changing the endpoint or its shape is one edit instead of dozens.
 
 **Incorrect (key + fetcher repeated at every call site):**
 
@@ -39,6 +39,6 @@ function HeaderAvatar() {
 }
 ```
 
-Multiple consumers of the same key share one underlying request — call the hook freely without worrying about extra requests.
+Multiple consumers of the same key share one underlying request - call the hook freely without worrying about extra requests.
 
-Reference: [SWR — Getting Started](https://swr.vercel.app/docs/getting-started)
+Reference: [SWR - Getting Started](https://swr.vercel.app/docs/getting-started)

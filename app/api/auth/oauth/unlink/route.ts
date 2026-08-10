@@ -19,7 +19,7 @@ type Body = { provider?: unknown };
 
 // POST /api/auth/oauth/unlink
 // Body: { provider }
-// Refuses if it would leave the user with no other sign-in method —
+// Refuses if it would leave the user with no other sign-in method -
 // surfaced as HTTP 409 so the UI can render a "set a password / add a
 // passkey first" hint instead of a generic error.
 export const POST = async (req: NextRequest) => {

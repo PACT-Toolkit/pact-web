@@ -16,7 +16,7 @@ Use all three patterns together. Most projects benefit from a hybrid approach:
 - **Custom fixtures** for test infrastructure (auth state, database, API clients, anything with lifecycle)
 - **Helper functions** for stateless utilities (generate data, format values, simple waits)
 
-If only using one pattern, choose **custom fixtures** — they handle setup/teardown, compose well, and Playwright is built around them.
+If only using one pattern, choose **custom fixtures** - they handle setup/teardown, compose well, and Playwright is built around them.
 
 ## Pattern Comparison
 
@@ -127,7 +127,7 @@ test('complete reservation with standard room', async ({ page }) => {
 
 ## Custom Fixtures
 
-Best for resources needing setup before and teardown after tests — auth state, database connections, API clients, test users.
+Best for resources needing setup before and teardown after tests - auth state, database connections, API clients, test users.
 
 ```typescript
 // fixtures/base.fixture.ts
@@ -182,7 +182,7 @@ test('new member sees welcome prompt', async ({ loggedInPage, member }) => {
 ```
 
 **Fixture principles:**
-- Use `test.extend()` — never module-level variables
+- Use `test.extend()` - never module-level variables
 - `use()` callback separates setup from teardown
 - Teardown runs even if test fails
 - Fixtures compose: one can depend on another
@@ -191,7 +191,7 @@ test('new member sees welcome prompt', async ({ loggedInPage, member }) => {
 
 ## Helper Functions
 
-Best for stateless utilities — generating test data, formatting values, building URLs, parsing responses.
+Best for stateless utilities - generating test data, formatting values, building URLs, parsing responses.
 
 ```typescript
 // helpers/data.ts
@@ -250,7 +250,7 @@ test('update account email', async ({ page }) => {
 
 **Helper principles:**
 - Pure functions with no side effects
-- No browser state — take `page` as parameter if needed
+- No browser state - take `page` as parameter if needed
 - Promote to fixture if setup/teardown needed
 - Promote to page object if many page interactions grow
 - Keep small and focused
@@ -284,9 +284,9 @@ playwright.config.ts
 | Layer | Pattern | Responsibility |
 |---|---|---|
 | **Test file** | `test()` | Describes behavior, orchestrates layers |
-| **Fixtures** | `test.extend()` | Resource lifecycle — setup, provide, teardown |
-| **Page objects** | Classes | UI interaction — navigation, actions, locators |
-| **Helpers** | Functions | Utilities — data generation, formatting, assertions |
+| **Fixtures** | `test.extend()` | Resource lifecycle - setup, provide, teardown |
+| **Page objects** | Classes | UI interaction - navigation, actions, locators |
+| **Helpers** | Functions | Utilities - data generation, formatting, assertions |
 
 ## Anti-Patterns
 

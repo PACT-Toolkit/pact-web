@@ -14,21 +14,21 @@
 ## Quick Reference
 
 ```typescript
-// Storage state reuse — the #1 pattern for fast auth
+// Storage state reuse - the #1 pattern for fast auth
 await page.goto("/login");
 await page.getByLabel("Username").fill("testuser@example.com");
 await page.getByLabel("Password").fill("secretPass123");
 await page.getByRole("button", { name: "Log in" }).click();
 await page.context().storageState({ path: ".auth/session.json" });
 
-// Reuse in config — every test starts authenticated
+// Reuse in config - every test starts authenticated
 {
   use: {
     storageState: ".auth/session.json"
   }
 }
 
-// API login — skip the UI entirely
+// API login - skip the UI entirely
 const context = await browser.newContext();
 const response = await context.request.post("/api/auth/login", {
   data: { email: "testuser@example.com", password: "secretPass123" },
@@ -46,7 +46,7 @@ await context.storageState({ path: ".auth/session.json" });
 `storageState` serializes cookies and localStorage to a JSON file. Load it in any browser context to start authenticated instantly.
 
 ```typescript
-// scripts/generate-auth.ts — run once to generate the state file
+// scripts/generate-auth.ts - run once to generate the state file
 import { chromium } from "@playwright/test";
 
 async function generateAuthState() {
@@ -68,7 +68,7 @@ generateAuthState();
 ```
 
 ```typescript
-// playwright.config.ts — load saved state for all tests
+// playwright.config.ts - load saved state for all tests
 import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
@@ -80,7 +80,7 @@ export default defineConfig({
 ```
 
 ```typescript
-// tests/home.spec.ts — test starts already logged in
+// tests/home.spec.ts - test starts already logged in
 import { test, expect } from "@playwright/test";
 
 test("authenticated user sees home page", async ({ page }) => {
@@ -191,7 +191,7 @@ test("update display name", async ({ authenticatedContext }) => {
 **Avoid when**: Your app has a single user role.
 
 ```typescript
-// global-setup.ts — authenticate all roles
+// global-setup.ts - authenticate all roles
 import { chromium, type FullConfig } from "@playwright/test";
 
 const accounts = [
@@ -235,7 +235,7 @@ export default globalSetup;
 ```
 
 ```typescript
-// playwright.config.ts — one project per role
+// playwright.config.ts - one project per role
 import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
@@ -291,7 +291,7 @@ test("guest cannot access admin panel", async ({ page }) => {
 **Alternative**: Use a fixture that accepts a role parameter when you need role switching within a single spec file.
 
 ```typescript
-// fixtures/auth.ts — role-based fixture
+// fixtures/auth.ts - role-based fixture
 import { test as base, type Page } from "@playwright/test";
 import fs from "fs";
 
@@ -353,12 +353,12 @@ A typical OAuth flow works like this:
 2. User authenticates on the provider's page → provider redirects back to your app's **callback route** (e.g. `http://localhost:4000/auth/callback?code=ABC&state=XYZ`)
 3. Your backend exchanges the `code` for an access token, creates a session, and redirects the user to a logged-in page
 
-In tests you can short-circuit step 2 with `page.route()`: intercept the outbound request to the provider and respond with a `302` redirect straight to your callback route, supplying a mock `code` and `state`. Your backend still executes its normal callback handler — the only part that's mocked is the provider's authorization page.
+In tests you can short-circuit step 2 with `page.route()`: intercept the outbound request to the provider and respond with a `302` redirect straight to your callback route, supplying a mock `code` and `state`. Your backend still executes its normal callback handler - the only part that's mocked is the provider's authorization page.
 
 For cases where you want to skip the browser redirect entirely, a second approach calls a **test-only API endpoint** that creates the session server-side and returns the session cookie directly.
 
 ```typescript
-// tests/oauth-login.spec.ts — mock the callback route
+// tests/oauth-login.spec.ts - mock the callback route
 import { test, expect } from "@playwright/test";
 
 test("login via mocked OAuth flow", async ({ page }) => {
@@ -381,7 +381,7 @@ test("login via mocked OAuth flow", async ({ page }) => {
 ```
 
 ```typescript
-// tests/oauth-login.spec.ts — API-based session injection
+// tests/oauth-login.spec.ts - API-based session injection
 import { test, expect } from "@playwright/test";
 
 test("bypass OAuth entirely via API session injection", async ({
@@ -614,7 +614,7 @@ test.describe("login page", () => {
 API login is typically 5-10x faster than UI login.
 
 ```typescript
-// global-setup.ts — API-based login (fastest)
+// global-setup.ts - API-based login (fastest)
 import { request, type FullConfig } from "@playwright/test";
 
 async function globalSetup(config: FullConfig) {
@@ -643,7 +643,7 @@ export default globalSetup;
 ```
 
 ```typescript
-// fixtures/api-auth.ts — fixture version for per-test authentication
+// fixtures/api-auth.ts - fixture version for per-test authentication
 import { test as base } from "@playwright/test";
 
 export const test = base.extend({
@@ -844,7 +844,7 @@ projects: [
 - Use the per-worker authentication fixture pattern
 - Make tests idempotent
 
-### OAuth mock does not work — still redirects to real provider
+### OAuth mock does not work - still redirects to real provider
 
 **Cause**: `page.route()` was registered after the navigation that triggers the OAuth redirect.
 
@@ -863,9 +863,9 @@ page.on("request", (req) => {
 
 ## Related
 
-- [fixtures-hooks.md](../core/fixtures-hooks.md) — custom fixtures for auth setup and teardown
-- [configuration.md](../core/configuration.md) — `storageState`, projects, and global setup configuration
-- [global-setup.md](../core/global-setup.md) — global setup patterns and project dependencies
-- [network-advanced.md](network-advanced.md) — route interception patterns used in OAuth mocking
-- [api-testing.md](../testing-patterns/api-testing.md) — API request context used in API-based login
-- [flaky-tests.md](../debugging/flaky-tests.md) — diagnosing auth-related flakiness
+- [fixtures-hooks.md](../core/fixtures-hooks.md) - custom fixtures for auth setup and teardown
+- [configuration.md](../core/configuration.md) - `storageState`, projects, and global setup configuration
+- [global-setup.md](../core/global-setup.md) - global setup patterns and project dependencies
+- [network-advanced.md](network-advanced.md) - route interception patterns used in OAuth mocking
+- [api-testing.md](../testing-patterns/api-testing.md) - API request context used in API-based login
+- [flaky-tests.md](../debugging/flaky-tests.md) - diagnosing auth-related flakiness

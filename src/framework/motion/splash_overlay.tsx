@@ -52,7 +52,7 @@ const SplashOverlayInner = () => {
   // Per-session throttle (see `splash_throttle.ts`): if the splash was
   // already acknowledged in this browser session, suppress it on this
   // visit even though `?intro=1` is present. Computed lazily once per
-  // mount — re-evaluating on every render would race the strip-flag
+  // mount - re-evaluating on every render would race the strip-flag
   // effect below (the session flag would still read "shown" mid-strip
   // and we'd render `null` forever even after the suppress had
   // completed). `useState` with an initializer is the right shape for
@@ -61,7 +61,7 @@ const SplashOverlayInner = () => {
   // SSR returns `false` (no `window`); the first client render then sees
   // the real value. The Suspense fallback above swallows the SSR pass for
   // `useSearchParams`, so the first paint of this component is already
-  // client-side — there is no flash of splash between SSR and hydration.
+  // client-side - there is no flash of splash between SSR and hydration.
   const [suppressed] = useState<boolean>(() =>
     introPresent ? wasShownThisSession() : false
   );
@@ -85,7 +85,7 @@ const SplashOverlayInner = () => {
   // The close animation runs entirely inside `SplashScreen` (it
   // schedules `onClose` via a setTimeout sized to `SPLIT_TOTAL_MS`),
   // so by the time we get here the halves are already off-screen and
-  // the splash root is transparent. We just strip `?intro=1` — the
+  // the splash root is transparent. We just strip `?intro=1` - the
   // resulting re-render flips `introPresent` to false and the splash
   // unmounts cleanly. The destination route was visible behind the
   // splash for the entire close, so the unmount doesn't reveal

@@ -76,7 +76,7 @@ const ChartContainer = ({
   );
 };
 
-// Re-export Tooltip directly — callers supply their own content component
+// Re-export Tooltip directly - callers supply their own content component
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
 type TooltipItem = {

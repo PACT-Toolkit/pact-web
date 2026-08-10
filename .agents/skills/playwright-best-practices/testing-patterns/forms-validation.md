@@ -87,7 +87,7 @@ test("dismiss suggestions and enter custom value", async ({ page }) => {
 });
 ```
 
-### Dynamic Forms — Conditional Fields
+### Dynamic Forms - Conditional Fields
 
 **Use when**: Form fields appear, disappear, or change based on the value of other fields.
 
@@ -214,7 +214,7 @@ test("wizard supports going back without losing data", async ({ page }) => {
 
 ### Form Submission and Response Handling
 
-**Use when**: Testing what happens after a form is submitted — success messages, redirects, error responses from the server, and loading states during submission.
+**Use when**: Testing what happens after a form is submitted - success messages, redirects, error responses from the server, and loading states during submission.
 
 ```typescript
 test("successful form submission shows confirmation", async ({ page }) => {
@@ -279,7 +279,7 @@ test("form redirects after successful submission", async ({ page }) => {
 
 ### Filling Basic Form Fields
 
-**Use when**: Testing any form with standard HTML inputs — text, email, password, number, textarea, select, checkbox, radio.
+**Use when**: Testing any form with standard HTML inputs - text, email, password, number, textarea, select, checkbox, radio.
 
 ```typescript
 test("fill and submit a signup form", async ({ page }) => {
@@ -425,7 +425,7 @@ test("validates password strength rules", async ({ page }) => {
   await expect(page.getByText(/Minimum|Include/)).not.toBeVisible();
 });
 
-test("validates custom business rule — minimum amount", async ({ page }) => {
+test("validates custom business rule - minimum amount", async ({ page }) => {
   await page.goto("/transfer");
 
   await page.getByLabel("Amount").fill("5");
@@ -481,7 +481,7 @@ test("confirmation dialog before resetting a dirty form", async ({ page }) => {
 | Need keystroke events (autocomplete) | `pressSequentially()` with delay                       | `locator.pressSequentially('text', { delay: 100 })`          |
 | Native `<select>` dropdown           | `selectOption()` by value or label                     | `locator.selectOption('US')` or `{ label: 'United States' }` |
 | Custom dropdown (ARIA listbox)       | Click trigger, then select option role                 | `getByRole('option', { name: '...' }).click()`               |
-| Checkbox                             | `check()` / `uncheck()` (idempotent)                   | `locator.check()` — safe to call even if already checked     |
+| Checkbox                             | `check()` / `uncheck()` (idempotent)                   | `locator.check()` - safe to call even if already checked     |
 | Radio button                         | `check()` on the target radio                          | `page.getByLabel('Option').check()`                          |
 | Date input (native)                  | `fill()` with ISO format                               | `locator.fill('2025-03-15')`                                 |
 | Date picker (third-party)            | Click to open, navigate, select day                    | `getByRole('gridcell', { name: '15' }).click()`              |
@@ -497,11 +497,11 @@ test("confirmation dialog before resetting a dirty form", async ({ page }) => {
 | Don't Do This                                           | Problem                                                    | Do This Instead                                        |
 | ------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------ |
 | `await page.getByLabel('Field').type('value')`          | `type()` appends to existing content; does not clear first | `await page.getByLabel('Field').fill('value')`         |
-| `await page.getByLabel('Option').click()`               | `click()` toggles — if already checked, it unchecks        | `await page.getByLabel('Option').check()`              |
+| `await page.getByLabel('Option').click()`               | `click()` toggles - if already checked, it unchecks        | `await page.getByLabel('Option').check()`              |
 | `await page.fill('#email', 'test@test.com')`            | CSS selector is fragile                                    | `await page.getByLabel('Email').fill('test@test.com')` |
 | `await page.selectOption('select', 'US')` without label | Targets first `<select>` on page; ambiguous                | `await page.getByLabel('Country').selectOption('US')`  |
 | Testing every invalid input in one test                 | Test becomes huge, slow, and hard to debug                 | One test per validation rule or group related rules    |
-| `expect(await input.inputValue()).toBe('value')`        | Resolves once — no retry. Race condition.                  | `await expect(input).toHaveValue('value')`             |
+| `expect(await input.inputValue()).toBe('value')`        | Resolves once - no retry. Race condition.                  | `await expect(input).toHaveValue('value')`             |
 | Filling fields with `page.evaluate()`                   | Bypasses event handlers (no `input`, `change` events fire) | Use `fill()` or `pressSequentially()`                  |
 | Not waiting for conditional fields before filling       | `fill()` fails on hidden/detached elements                 | `await expect(field).toBeVisible()` first              |
 | Hardcoding wait after selecting a dropdown              | `waitForTimeout(500)` is flaky and slow                    | Wait for the dependent element to appear               |

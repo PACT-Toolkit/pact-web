@@ -4,11 +4,11 @@ Load this when reaching for `page.clock.runFor` / `fastForward`, or when a polli
 
 ## What `page.clock` does
 
-`page.clock` patches `setTimeout` / `setInterval` in the browser with Sinon-style fake timers. `runFor(N)` fires callbacks **synchronously** — it does **not** `await` async work inside callbacks. `fastForward` has the same limitation.
+`page.clock` patches `setTimeout` / `setInterval` in the browser with Sinon-style fake timers. `runFor(N)` fires callbacks **synchronously** - it does **not** `await` async work inside callbacks. `fastForward` has the same limitation.
 
 ## Where it breaks
 
-If a timer callback does `async` work — e.g., a polling loop that calls `await fetch(...)` between sleeps — `runFor` fires the first sleep timer, the callback starts, hits `await fetch`, and `runFor` returns immediately, before the fetch completes. The next sleep timer is never set up, so the loop stalls after one iteration.
+If a timer callback does `async` work - e.g., a polling loop that calls `await fetch(...)` between sleeps - `runFor` fires the first sleep timer, the callback starts, hits `await fetch`, and `runFor` returns immediately, before the fetch completes. The next sleep timer is never set up, so the loop stalls after one iteration.
 
 - **Works fine for** pure-synchronous transitions: `useTimeout`, animation delays, debounces with no async body (like `loans.spec.ts`'s 6 s animation timers).
 - **Does NOT work for** polling loops that mix async I/O with sleep timers (like `useDocumentation`'s getPayment polling).
@@ -24,12 +24,12 @@ If a timer callback does `async` work — e.g., a polling loop that calls `await
 ## Examples
 
 ```ts
-// Option 1 – consecutive-errors path (fast, ~6 s)
+// Option 1 - consecutive-errors path (fast, ~6 s)
 await page.context().addCookies([{ name: 'MOCK_INTL_GET_PAYMENT_FAIL', value: 'true', url: BASE_URL }]);
 await expect(page.getByTestId('toast-notification')).toBeVisible({ timeout: 20_000 });
 await expect(page.getByTestId('toast-notification')).toContainText('Unable to check document status.');
 
-// Option 2 – real-time timeout path (~60 s) — use test.slow()
+// Option 2 - real-time timeout path (~60 s) - use test.slow()
 // MSW: skip await delay() when MOCK_INTL_DOC_STALL_PROCESSING=true
 // Spec:
 test.slow(); // 3 × 30 s = 90 s budget

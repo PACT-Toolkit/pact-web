@@ -4,14 +4,14 @@
 
 This skill dynamically fetches content from an external GitHub repository and
 injects it into the agent's prompt context. Fetching from `main` means any
-upstream push — accidental or malicious — immediately affects our tooling.
+upstream push - accidental or malicious - immediately affects our tooling.
 
 Pinning to a specific commit hash gives us:
 
-- **Deterministic behavior** — same results today and in 6 months
-- **Reproducible audits** — every team member gets the same rules
-- **Supply chain protection** — upstream changes require explicit opt-in
-- **Clear upgrade control** — changes go through PR review
+- **Deterministic behavior** - same results today and in 6 months
+- **Reproducible audits** - every team member gets the same rules
+- **Supply chain protection** - upstream changes require explicit opt-in
+- **Clear upgrade control** - changes go through PR review
 
 Think of it as `eslint@8.47.0` instead of `eslint@latest`.
 
@@ -43,8 +43,8 @@ https://github.com/vercel-labs/web-interface-guidelines/compare/3f6b1449dee15847
 
 ## Upgrade Process
 
-1. Run the check command above — if the hash matches the current pin, there's nothing to do
-2. Open the compare URL and **review all changes to `command.md`** — this is the file that gets injected into agent prompts
+1. Run the check command above - if the hash matches the current pin, there's nothing to do
+2. Open the compare URL and **review all changes to `command.md`** - this is the file that gets injected into agent prompts
 3. In `SKILL.md`, update:
    - The `pinned-commit` field in frontmatter
    - The `pinned-date` field in frontmatter
@@ -53,7 +53,7 @@ https://github.com/vercel-labs/web-interface-guidelines/compare/3f6b1449dee15847
    - The "Current Pinned Version" table
    - The compare URL in "Checking for Updates"
    - Add an entry to the Changelog below
-5. Commit and open a PR — the diff shows exactly what changed
+5. Commit and open a PR - the diff shows exactly what changed
 
 ## Changelog
 

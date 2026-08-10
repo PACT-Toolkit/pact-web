@@ -134,7 +134,7 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         {dp.consensus.skipped ? (
           <span
             className="italic text-muted-foreground"
-            title="Consensus backend unreachable — classifier result preserved (fail-open)"
+            title="Consensus backend unreachable - classifier result preserved (fail-open)"
           >
             skipped
           </span>

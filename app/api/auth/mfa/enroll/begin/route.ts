@@ -16,14 +16,14 @@ export const runtime = 'nodejs';
 // otpauth URL back to the client so the UI can render a QR code (or
 // fall back to manual entry into an authenticator app).
 //
-// The session token is read from the httpOnly pact_session cookie —
+// The session token is read from the httpOnly pact_session cookie -
 // never trust a body-supplied token on an enrollment endpoint.
 //
 // The factor remains in the "pending" state (verified=false) until the
 // caller round-trips a valid 6-digit code through
 // /api/auth/mfa/enroll/confirm. Abandoning the flow leaves a pending
 // row server-side that pact-auth's enrollment quota and TTL clean up
-// — see internal/mfa/service.go.
+// - see internal/mfa/service.go.
 export const POST = async () => {
   const sessionToken = await getSessionToken();
   if (!sessionToken) {

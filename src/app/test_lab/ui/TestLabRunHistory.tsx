@@ -27,7 +27,7 @@ const TestLabRunRow = ({ run }: { run: TestRun }) => {
       setCopied(true);
       setTimeout(() => setCopied(false), COPY_FEEDBACK_MS);
     } catch {
-      // Clipboard can reject (insecure context / permissions). Swallow —
+      // Clipboard can reject (insecure context / permissions). Swallow -
       // a failed copy shouldn't surface an error in a read-only history list.
     }
   };

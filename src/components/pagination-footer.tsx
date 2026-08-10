@@ -31,7 +31,7 @@ export const PaginationFooter = ({
   <div className="flex items-center justify-between text-sm text-muted-foreground">
     <span data-testid={`${testIdPrefix}-page-info`}>
       {pagination.totalCount > 0
-        ? `Showing ${pagination.rangeStart}–${pagination.rangeEnd} of ${pagination.totalCount}`
+        ? `Showing ${pagination.rangeStart}-${pagination.rangeEnd} of ${pagination.totalCount}`
         : emptyText}
     </span>
     <div className="flex items-center gap-2">

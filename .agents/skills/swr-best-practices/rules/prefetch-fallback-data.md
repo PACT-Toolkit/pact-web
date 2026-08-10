@@ -25,4 +25,4 @@ const { data } = useSWR('/api/user', fetcher, { fallbackData: serverUser });
 
 Use `fallback` on `<SWRConfig>` instead when many hooks across the tree need hydration. See also `revalidation-on-mount-with-fallback` for skipping the post-mount refetch.
 
-Reference: [SWR — Data Pre-filling](https://swr.vercel.app/docs/prefetching#pre-fill-data)
+Reference: [SWR - Data Pre-filling](https://swr.vercel.app/docs/prefetching#pre-fill-data)

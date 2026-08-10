@@ -7,7 +7,7 @@ tags: pagination, hooks
 
 ## Don't Call SWR Hooks in a Loop
 
-For "preload N pages" patterns, calling `useSWR` inside a loop violates the rules of hooks (the count must be stable across renders). Render a Page subcomponent for each page instead — each Page calls `useSWR` exactly once.
+For "preload N pages" patterns, calling `useSWR` inside a loop violates the rules of hooks (the count must be stable across renders). Render a Page subcomponent for each page instead - each Page calls `useSWR` exactly once.
 
 **Incorrect:**
 
@@ -34,4 +34,4 @@ function Pages({ count }) {
 }
 ```
 
-Reference: [SWR — Pagination](https://swr.vercel.app/docs/pagination)
+Reference: [SWR - Pagination](https://swr.vercel.app/docs/pagination)

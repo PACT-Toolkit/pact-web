@@ -27,4 +27,4 @@ const { data } = useSWR(key, fetcher, { refreshInterval: 5_000 });
 
 For long-poll backends, prefer `useSWRSubscription` over either pattern.
 
-Reference: [SWR — Revalidate on Interval](https://swr.vercel.app/docs/revalidation#revalidate-on-interval)
+Reference: [SWR - Revalidate on Interval](https://swr.vercel.app/docs/revalidation#revalidate-on-interval)

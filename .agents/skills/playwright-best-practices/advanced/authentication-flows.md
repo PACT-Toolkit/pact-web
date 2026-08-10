@@ -346,15 +346,15 @@ test('logs out from all devices', async ({ page }) => {
 
 ## Tips
 
-1. **Configure shorter session timeouts in test environments** — Enables testing timeout behavior without slow tests
-2. **Test token expiration edge cases** — Expired tokens, invalid tokens, already-used tokens
-3. **Verify cleanup on logout** — Check both cookies and localStorage are cleared
-4. **Test the full flow end-to-end** — Password reset should verify login with new password works
+1. **Configure shorter session timeouts in test environments** - Enables testing timeout behavior without slow tests
+2. **Test token expiration edge cases** - Expired tokens, invalid tokens, already-used tokens
+3. **Verify cleanup on logout** - Check both cookies and localStorage are cleared
+4. **Test the full flow end-to-end** - Password reset should verify login with new password works
 
 ---
 
 ## Related
 
-- [authentication.md](authentication.md) — Storage state, OAuth mocking, MFA, role-based access, API login
-- [fixtures-hooks.md](../core/fixtures-hooks.md) — Creating auth fixtures
-- [third-party.md](./third-party.md) — Mocking external auth providers
+- [authentication.md](authentication.md) - Storage state, OAuth mocking, MFA, role-based access, API login
+- [fixtures-hooks.md](../core/fixtures-hooks.md) - Creating auth fixtures
+- [third-party.md](./third-party.md) - Mocking external auth providers

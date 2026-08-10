@@ -7,7 +7,7 @@ tags: key, cache
 
 ## Use Array Keys for Multi-Argument Requests
 
-When a request depends on multiple values (id, token, filter), put them all in the key. Variables baked into the fetcher closure are invisible to SWR's cache — different values produce the same cache hit and stale data leaks across users / contexts.
+When a request depends on multiple values (id, token, filter), put them all in the key. Variables baked into the fetcher closure are invisible to SWR's cache - different values produce the same cache hit and stale data leaks across users / contexts.
 
 **Incorrect (token captured in closure):**
 
@@ -25,6 +25,6 @@ const { data } = useSWR(
 );
 ```
 
-Since SWR 2.0 the array is passed as a single argument — destructure it. The whole array participates in the cache key, so changing any element produces a fresh request.
+Since SWR 2.0 the array is passed as a single argument - destructure it. The whole array participates in the cache key, so changing any element produces a fresh request.
 
-Reference: [SWR — Multiple Arguments](https://swr.vercel.app/docs/arguments)
+Reference: [SWR - Multiple Arguments](https://swr.vercel.app/docs/arguments)

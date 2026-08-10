@@ -127,7 +127,7 @@ export default defineConfig({
 
 **Use when**: Testing complex interactive Vue components in isolation (data tables, form components, custom dropdowns).
 
-**Avoid when**: Component depends heavily on Pinia stores, Vue Router, or backend data—use E2E tests instead.
+**Avoid when**: Component depends heavily on Pinia stores, Vue Router, or backend data-use E2E tests instead.
 
 ```typescript
 // tests/components/Stepper.ct.ts
@@ -175,7 +175,7 @@ test('renders slot content', async ({ mount }) => {
 
 **Use when**: Verifying Pinia stores produce correct UI behavior. If the UI is correct, the store is correct.
 
-**Avoid when**: Testing pure store logic with no UI side effect—use unit tests with Vitest.
+**Avoid when**: Testing pure store logic with no UI side effect-use unit tests with Vitest.
 
 ```typescript
 import { test, expect } from '@playwright/test';

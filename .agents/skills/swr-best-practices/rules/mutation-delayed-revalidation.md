@@ -7,7 +7,7 @@ tags: mutation, revalidation, optimistic
 
 ## Delay Revalidation After Optimistic Updates
 
-Backends are often eventually consistent — calling `mutate(key)` immediately after a successful write frequently refetches a stale value and overwrites the optimistic UI. Delay the revalidation by a few seconds (or trigger it from a server-sent event) so the read-after-write actually sees the new value.
+Backends are often eventually consistent - calling `mutate(key)` immediately after a successful write frequently refetches a stale value and overwrites the optimistic UI. Delay the revalidation by a few seconds (or trigger it from a server-sent event) so the read-after-write actually sees the new value.
 
 A small `useDelayedRevalidation` helper that debounces revalidation and survives unmount is the right shape, so a successful mutation followed by navigation still triggers the eventual sync.
 
@@ -36,4 +36,4 @@ const onSubmit = async (values) => {
 };
 ```
 
-Reference: [SWR — Optimistic UI](https://swr.vercel.app/docs/mutation#optimistic-updates)
+Reference: [SWR - Optimistic UI](https://swr.vercel.app/docs/mutation#optimistic-updates)

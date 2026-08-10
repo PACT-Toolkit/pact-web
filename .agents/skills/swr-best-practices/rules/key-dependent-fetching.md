@@ -7,7 +7,7 @@ tags: key, conditional, dependent
 
 ## Use Function Keys for Dependent Fetches
 
-When request B needs a field from request A, return the key for B from a function. SWR catches the throw / falsy and automatically retries when the dependency resolves — no `useEffect` needed.
+When request B needs a field from request A, return the key for B from a function. SWR catches the throw / falsy and automatically retries when the dependency resolves - no `useEffect` needed.
 
 **Incorrect:**
 
@@ -33,4 +33,4 @@ const { data: projects } = useSWR(
 
 Independent calls remain parallel; only the dependency chain serializes.
 
-Reference: [SWR — Dependent Fetching](https://swr.vercel.app/docs/conditional-fetching#dependent)
+Reference: [SWR - Dependent Fetching](https://swr.vercel.app/docs/conditional-fetching#dependent)

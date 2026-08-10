@@ -320,7 +320,7 @@ export const toTestRun = (r: TestLabRunRecord): TestRun => {
 // Attack examples are fetched via useTestLabCorpusExamples (see
 // use_test_lab_corpus_examples.ts and
 // app/api/pact/benchmark/v1/corpus/examples/route.ts).
-// Custom is the only static chip — it has no pre-filled example.
+// Custom is the only static chip - it has no pre-filled example.
 export const STATIC_CHIPS: AttackChip[] = [
   { id: 'custom', label: 'Custom', example: '' },
 ];

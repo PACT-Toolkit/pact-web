@@ -90,7 +90,7 @@ jobs:
 ### Sharded Execution
 
 **Use when**: Test suite exceeds 10 minutes. Sharding cuts wall-clock time significantly.
-**Avoid when**: Suite runs under 5 minutes—sharding overhead negates benefits.
+**Avoid when**: Suite runs under 5 minutes-sharding overhead negates benefits.
 
 ```yaml
 # .github/workflows/e2e-sharded.yml
@@ -177,7 +177,7 @@ jobs:
           retention-days: 14
 ```
 
-**Config for sharding**—enable blob reporter:
+**Config for sharding**-enable blob reporter:
 
 ```typescript
 // playwright.config.ts
@@ -287,7 +287,7 @@ jobs:
 
 ### Scheduled Runs
 
-**Use when**: Full regression suite is too slow for every PR—run nightly instead.
+**Use when**: Full regression suite is too slow for every PR-run nightly instead.
 **Avoid when**: Suite runs under 15 minutes and can run on every PR.
 
 ```yaml
@@ -538,9 +538,9 @@ export default defineConfig({
 
 ## Related
 
-- [test-tags.md](../core/test-tags.md) — tagging and filtering tests
-- [parallel-sharding.md](parallel-sharding.md) — sharding strategies
-- [reporting.md](reporting.md) — reporter configuration
-- [docker.md](docker.md) — container images
-- [gitlab.md](gitlab.md) — GitLab CI equivalent
-- [other-providers.md](other-providers.md) — CircleCI, Azure DevOps, Jenkins
+- [test-tags.md](../core/test-tags.md) - tagging and filtering tests
+- [parallel-sharding.md](parallel-sharding.md) - sharding strategies
+- [reporting.md](reporting.md) - reporter configuration
+- [docker.md](docker.md) - container images
+- [gitlab.md](gitlab.md) - GitLab CI equivalent
+- [other-providers.md](other-providers.md) - CircleCI, Azure DevOps, Jenkins

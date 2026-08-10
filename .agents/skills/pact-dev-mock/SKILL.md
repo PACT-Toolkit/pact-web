@@ -1,6 +1,6 @@
 ---
 name: pact-dev-mock
-description: How `pnpm run dev` and `pnpm run dev:mock` are separated in pact-web — the `isMock()` env helper, MSW browser + Node bootstrap (instrumentation.ts), auto-login short-circuit in `validateSessionFromCookies()`, persona switching via `MockUserType` cookie, OAuth route handler bypass, server-side `getApiBaseUrl()`, and the handler URL-pattern hygiene test. Use when touching auth flow, server-side fetch wiring, mock-mode plumbing, or anything env-conditional.
+description: How `pnpm run dev` and `pnpm run dev:mock` are separated in pact-web - the `isMock()` env helper, MSW browser + Node bootstrap (instrumentation.ts), auto-login short-circuit in `validateSessionFromCookies()`, persona switching via `MockUserType` cookie, OAuth route handler bypass, server-side `getApiBaseUrl()`, and the handler URL-pattern hygiene test. Use when touching auth flow, server-side fetch wiring, mock-mode plumbing, or anything env-conditional.
 ---
 
 # pact-dev-mock
@@ -9,8 +9,8 @@ How the two dev modes are wired and where to branch on `isMock()`.
 
 ## Modes
 
-- **`pnpm run dev`** — talks to a real `pact-gateway` (and through it, every other PACT service). Requires services running locally; auth flow is real.
-- **`pnpm run dev:mock`** — sets `NEXT_PUBLIC_API_MOCKING=enabled`. MSW intercepts every HTTP call (browser worker + Node setupServer), the login flow is skipped, and a synthetic user identity is stitched together so the rest of the app behaves as if a real user is signed in.
+- **`pnpm run dev`** - talks to a real `pact-gateway` (and through it, every other PACT service). Requires services running locally; auth flow is real.
+- **`pnpm run dev:mock`** - sets `NEXT_PUBLIC_API_MOCKING=enabled`. MSW intercepts every HTTP call (browser worker + Node setupServer), the login flow is skipped, and a synthetic user identity is stitched together so the rest of the app behaves as if a real user is signed in.
 
 The whole separation hinges on one boolean: `isMock()`.
 
@@ -26,7 +26,7 @@ The whole separation hinges on one boolean: `isMock()`.
 | `isProduction()` | `NEXT_PUBLIC_VERCEL_ENVIRONMENT === 'production'` | Production. |
 | `MOCK_USER_ID` | constant | Stable UUID used by the mock session + mock account profile. Production never sees it. |
 
-**`isMock()` works in every runtime** — Server Components, route handlers, middleware, client components, and Node tests. It just reads a `NEXT_PUBLIC_*` var, no async, no module side effects.
+**`isMock()` works in every runtime** - Server Components, route handlers, middleware, client components, and Node tests. It just reads a `NEXT_PUBLIC_*` var, no async, no module side effects.
 
 ## MSW bootstrap
 
@@ -53,7 +53,7 @@ The actual guard is a shared readiness gate, not a per-spec workaround:
 
 If you add a new HTTP transport to the app (a raw `XMLHttpRequest`, `navigator.sendBeacon`, a WebSocket-based request/response pattern, etc.), it needs its own await on `mswReady` - the fetch patch and the axios interceptor only cover those two transports.
 
-`instrumentation.ts` is in the repo root and is allowlisted in `.gitignore` (the repo uses an allowlist-style ignore — adding a new root-level file means adding `!filename` to `.gitignore`).
+`instrumentation.ts` is in the repo root and is allowlisted in `.gitignore` (the repo uses an allowlist-style ignore - adding a new root-level file means adding `!filename` to `.gitignore`).
 
 ## Auto-login in mock mode
 
@@ -75,14 +75,14 @@ This means in `dev:mock`:
 
 The root page `app/page.tsx` also branches: `redirect(isMock() ? '/dashboard' : '/login')`.
 
-**When you add another server-side auth check** (e.g. a new `requireRole()` helper), follow the same pattern — early-return a synthetic value in `isMock()` mode rather than mocking the gRPC client.
+**When you add another server-side auth check** (e.g. a new `requireRole()` helper), follow the same pattern - early-return a synthetic value in `isMock()` mode rather than mocking the gRPC client.
 
 ## OAuth in mock mode
 
 The OAuth route handlers (`app/api/auth/oauth/start/route.ts`, `app/v1/auth/callback/[provider]/route.ts`) short-circuit at the top with `if (isMock()) { ... }`:
 
 - **`/api/auth/oauth/start`**: skip `startLogin()` gRPC, redirect straight to our own callback with synthetic `code` + `state` + state cookie.
-- **`/v1/auth/callback/{provider}`**: skip `handleCallback()` gRPC, set a synthetic `pact_session` cookie (cosmetic — `validateSessionFromCookies` ignores its value in mock mode anyway), redirect to `return_to`.
+- **`/v1/auth/callback/{provider}`**: skip `handleCallback()` gRPC, set a synthetic `pact_session` cookie (cosmetic - `validateSessionFromCookies` ignores its value in mock mode anyway), redirect to `return_to`.
 
 The result: SSO buttons on `/login` are clickable in dev:mock without pact-auth or real OAuth providers being reachable.
 
@@ -96,13 +96,13 @@ export type MockUserType = 'admin' | 'auditor' | 'developer';
 
 The active persona lives in the `mock-user-type` cookie. Helpers:
 
-- `getMockUserType()` — reads `document.cookie` client-side; returns `'admin'` server-side (server-side reads should plumb through request headers when persona-aware).
-- `setMockUserType(t)` — writes the cookie with `path=/`; caller is responsible for triggering a refresh.
-- `isMockUserType(types)` — predicate.
+- `getMockUserType()` - reads `document.cookie` client-side; returns `'admin'` server-side (server-side reads should plumb through request headers when persona-aware).
+- `setMockUserType(t)` - writes the cookie with `path=/`; caller is responsible for triggering a refresh.
+- `isMockUserType(types)` - predicate.
 
 The switcher UI lives at `src/components/mock-user-type-switcher.tsx` (mounted by `app-sidebar.tsx` inside `SidebarContent`). It uses `useSyncExternalStore` so the snapshot stays consistent across SSR/client without violating `react-hooks/set-state-in-effect`.
 
-**To make a handler persona-aware**, read the cookie at request time and overlay onto the seeded data — don't re-seed (see `pact-mock-data` skill for the pattern).
+**To make a handler persona-aware**, read the cookie at request time and overlay onto the seeded data - don't re-seed (see `pact-mock-data` skill for the pattern).
 
 ## Server-side fetch
 
@@ -114,9 +114,9 @@ import { getApiBaseUrl } from '@/src/framework/helpers/api_base_url';
 const res = await fetch(`${getApiBaseUrl()}/api/pact/account/v1/profile`);
 ```
 
-The helper returns `http://localhost:${PORT}` — pointing at the dev server itself, so MSW (via `instrumentation.ts`) intercepts in mock mode and the catch-all proxy forwards in real mode. No client/server divergence.
+The helper returns `http://localhost:${PORT}` - pointing at the dev server itself, so MSW (via `instrumentation.ts`) intercepts in mock mode and the catch-all proxy forwards in real mode. No client/server divergence.
 
-The helper is `'server-only'` — importing from a `'use client'` file fails the build.
+The helper is `'server-only'` - importing from a `'use client'` file fails the build.
 
 **Browser code keeps using relative paths** (`fetch('/api/pact/...')`). They resolve against `location.origin` and the browser SW / proxy handle them.
 
@@ -130,13 +130,13 @@ The test runs as part of `pnpm run test` and fails CI listing every offender.
 
 Default: branch as **deep** as you can, not at the top level. If only one method on a service stub needs to fake a value, branch inside that method, not at the import.
 
-Bad — replaces the whole client in mock mode, fragile and hard to read in real mode:
+Bad - replaces the whole client in mock mode, fragile and hard to read in real mode:
 
 ```ts
 export const getPactAuthClient = () => isMock() ? mockClient : realClient;
 ```
 
-Good — early-return inside the function that actually wants the synthetic value:
+Good - early-return inside the function that actually wants the synthetic value:
 
 ```ts
 export const validateSessionFromCookies = async () => {
@@ -149,7 +149,7 @@ The pattern: `isMock()` checks are **local guards inside real functions**, not s
 
 ## What NOT to do
 
-- **Don't add ad-hoc env-var checks.** Use `isMock()` / `isLocalDevelopment()` / `isPreview()` / `isProduction()` — every other branch in the codebase uses those exact helpers, and the lint setup expects them.
+- **Don't add ad-hoc env-var checks.** Use `isMock()` / `isLocalDevelopment()` / `isPreview()` / `isProduction()` - every other branch in the codebase uses those exact helpers, and the lint setup expects them.
 - **Don't bypass MSW with a parallel mock server.** Every mock lives behind MSW so the same handler array works in browser, Node, and tests. Adding a separate Express/Node side-server fragments the surface.
 - **Don't put `'use client'` on any file that imports `'server-only'` code or otherwise holds session/auth secrets.** `framework/auth/pact_auth/{session,client,cookies,factors,mock,return_to}.ts` and `framework/helpers/api_base_url.ts` are `'server-only'` and must stay that way - Next.js already fails the build if a `'server-only'` import reaches a client bundle, so don't fight that by adding `'use client'` nearby. `'use client'` is fine elsewhere in `framework/` for cross-cutting client infrastructure that isn't feature-specific: providers (`msw/msw_provider.tsx`, `swr/swr_provider.tsx`, `theme/theme_provider.tsx`), framework-level interactive UI (`motion/splash_screen/*`, `theme/theme_toggle.tsx`), and headless hooks (`auth/pact_auth/sign_out.ts`). If something is client-side but feature-specific, it still belongs in `src/components/` or `src/app/<feature>/ui/`, not `framework/`.
 - **Don't reach for `next/headers` in client components.** Use `document.cookie` (or a hook around it) for client-side state; reserve `cookies()` for Server Components and route handlers.
@@ -157,4 +157,4 @@ The pattern: `isMock()` checks are **local guards inside real functions**, not s
 
 ## Related skills
 
-- `pact-mock-data` — how to structure per-feature `mock/data` + `mock/handlers` against the central `db`.
+- `pact-mock-data` - how to structure per-feature `mock/data` + `mock/handlers` against the central `db`.

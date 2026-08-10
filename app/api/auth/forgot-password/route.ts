@@ -15,7 +15,7 @@ type Body = { email?: unknown; returnTo?: unknown };
 
 // Anti-enumeration mirror of pact-auth's RequestPasswordReset: returns 200
 // regardless of whether the email maps to an account. Validation errors
-// (malformed email) DO surface — they leak nothing about account state.
+// (malformed email) DO surface - they leak nothing about account state.
 export const POST = async (req: NextRequest) => {
   const body = await readJsonBody<Body>(req);
   if (body === null) {
@@ -29,7 +29,7 @@ export const POST = async (req: NextRequest) => {
 
   // The reset link in the email lands on the UI page; that page POSTs to
   // /api/auth/reset-password with the new password. Whatever return_to we
-  // pass here is what pact-auth echoes back to the UI — we just want a
+  // pass here is what pact-auth echoes back to the UI - we just want a
   // post-success destination.
   try {
     await getPactAuthClient().requestPasswordReset({

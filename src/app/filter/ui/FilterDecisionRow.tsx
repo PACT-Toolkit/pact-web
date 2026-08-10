@@ -38,7 +38,7 @@ export const FilterDecisionRow = ({
                 : 'bg-green-500/10 text-green-600 dark:text-green-400'
             }`}
           >
-            {payload?.decision ?? '—'}
+            {payload?.decision ?? '-'}
           </span>
           {(payload?.filter?.rule_id ?? payload?.reason) && (
             <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
@@ -46,7 +46,7 @@ export const FilterDecisionRow = ({
             </span>
           )}
           <span className="truncate font-mono text-xs text-muted-foreground">
-            {event.requestId ?? payload?.request_id ?? '—'}
+            {event.requestId ?? payload?.request_id ?? '-'}
           </span>
         </div>
         <span className="text-xs text-muted-foreground">

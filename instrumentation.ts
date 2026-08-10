@@ -4,7 +4,7 @@
 // running on the server bypasses MSW and hits the real backend.
 //
 // The `mocks/server.ts` module is the same one vitest.setup.ts already
-// uses for unit tests — one handler array powers browser, Node dev, and
+// uses for unit tests - one handler array powers browser, Node dev, and
 // tests.
 
 export async function register() {

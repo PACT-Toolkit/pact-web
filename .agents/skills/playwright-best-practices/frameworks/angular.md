@@ -483,7 +483,7 @@ test('no hydration errors', async ({ page }) => {
 | `element(by.model('user.name'))` | `page.getByLabel('Name')` |
 | `element(by.binding('user.name'))` | `page.getByText(expectedValue)` |
 | `element(by.repeater('item in items'))` | `page.getByRole('listitem')` |
-| `browser.waitForAngular()` | Not needed — Playwright auto-waits |
+| `browser.waitForAngular()` | Not needed - Playwright auto-waits |
 | `browser.sleep(3000)` | `await expect(locator).toBeVisible()` |
 | `browser.get('/path')` | `await page.goto('/path')` |
 | `protractor.ExpectedConditions` | `await expect(locator).toBeVisible()` |
@@ -524,7 +524,7 @@ const listbox = page.getByRole('listbox');
 
 ## Related
 
-- [core/locators.md](../core/locators.md) — locator strategies for Angular Material
-- [core/assertions-waiting.md](../core/assertions-waiting.md) — auto-waiting assertions
-- [core/forms-validation.md](../testing-patterns/forms-validation.md) — form testing patterns
-- [architecture/test-architecture.md](../architecture/test-architecture.md) — E2E vs unit tests with TestBed
+- [core/locators.md](../core/locators.md) - locator strategies for Angular Material
+- [core/assertions-waiting.md](../core/assertions-waiting.md) - auto-waiting assertions
+- [core/forms-validation.md](../testing-patterns/forms-validation.md) - form testing patterns
+- [architecture/test-architecture.md](../architecture/test-architecture.md) - E2E vs unit tests with TestBed

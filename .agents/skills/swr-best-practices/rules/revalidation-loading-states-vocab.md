@@ -28,4 +28,4 @@ return <Button loading={isMutating}>Save</Button>;
 
 Use `isLoading` for first-paint skeletons; use `isValidating` only when you specifically want to indicate background refresh; use `isMutating` for write-in-flight UI.
 
-Reference: [SWR — useSWR API](https://swr.vercel.app/docs/api)
+Reference: [SWR - useSWR API](https://swr.vercel.app/docs/api)

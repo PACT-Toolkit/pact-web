@@ -28,6 +28,6 @@ mutate(key, updateUser(values), {
 });
 ```
 
-Pass a function to `optimisticData` when the new value depends on the current cache — it receives the current value and avoids stale closures.
+Pass a function to `optimisticData` when the new value depends on the current cache - it receives the current value and avoids stale closures.
 
-Reference: [SWR — Optimistic UI](https://swr.vercel.app/docs/mutation#optimistic-updates)
+Reference: [SWR - Optimistic UI](https://swr.vercel.app/docs/mutation#optimistic-updates)

@@ -16,13 +16,13 @@ export const runtime = 'nodejs';
 type Body = { factorId?: unknown; code?: unknown };
 
 // POST /api/auth/mfa/enroll/confirm
-// Body: { factorId, code }   — `code` is the 6-digit TOTP from the user's
+// Body: { factorId, code }   - `code` is the 6-digit TOTP from the user's
 //                              authenticator app
 // Returns: { recoveryCodes: string[] }
 //
 // On success pact-auth flips the pending factor to verified and rotates
 // a fresh batch of recovery codes. The caller MUST display these once
-// and prompt the user to save them — pact-web never persists or surfaces
+// and prompt the user to save them - pact-web never persists or surfaces
 // them again. Users who lose them can regenerate via
 // /api/auth/mfa/recovery-codes (which invalidates the prior batch).
 export const POST = async (req: NextRequest) => {

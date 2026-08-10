@@ -1,13 +1,13 @@
 ---
 name: gitmoji
-description: Pick the right gitmoji and write a commit message in pact-web's style — emoji prefix + lowercase imperative subject, optional body. Use ONLY for commits in pact-web; every other repo uses plain subjects with no emoji.
+description: Pick the right gitmoji and write a commit message in pact-web's style - emoji prefix + lowercase imperative subject, optional body. Use ONLY for commits in pact-web; every other repo uses plain subjects with no emoji.
 ---
 
 # Gitmoji Commit Messages
 
 **Scope: pact-web only.** This convention applies to this repository and nowhere else - in any other repo, write plain subjects with no emoji, even if that repo's history contains stray gitmoji commits.
 
-This repo uses [gitmoji](https://gitmoji.dev/) emoji prefixes on commit subjects. One emoji, then a single space, then a lowercase imperative subject. No conventional-commits scope (`feat:`, `fix:`) — the emoji replaces it.
+This repo uses [gitmoji](https://gitmoji.dev/) emoji prefixes on commit subjects. One emoji, then a single space, then a lowercase imperative subject. No conventional-commits scope (`feat:`, `fix:`) - the emoji replaces it.
 
 ## Format
 
@@ -18,20 +18,20 @@ This repo uses [gitmoji](https://gitmoji.dev/) emoji prefixes on commit subjects
 ```
 
 - **Emoji as a glyph** (`✨`), not as a code (`:sparkles:`). Glyphs render correctly in `git log`, GitHub, and Linear.
-- **Imperative mood**: "add", "fix", "remove" — never "added" / "adds" / "adding".
+- **Imperative mood**: "add", "fix", "remove" - never "added" / "adds" / "adding".
 - **No trailing period** on the subject.
 - **One emoji** per commit. If the change spans concerns, split the commit.
 - **Body explains _why_**, not _what_. The diff already shows what.
 
 ## Picking the right emoji
 
-Pick from this short list first — these cover ~95% of commits in this repo:
+Pick from this short list first - these cover ~95% of commits in this repo:
 
 | Emoji | Code | When to use |
 | --- | --- | --- |
 | ✨ | `:sparkles:` | Introduce a new user-visible feature or capability |
 | 🐛 | `:bug:` | Fix a bug |
-| ♻️ | `:recycle:` | Refactor — same behaviour, cleaner code |
+| ♻️ | `:recycle:` | Refactor - same behaviour, cleaner code |
 | 🎨 | `:art:` | Improve code structure / formatting (no behaviour change) |
 | ⚡️ | `:zap:` | Improve performance |
 | 🔥 | `:fire:` | Remove code or files |
@@ -40,7 +40,7 @@ Pick from this short list first — these cover ~95% of commits in this repo:
 | ✅ | `:white_check_mark:` | Add or update tests (unit or E2E) |
 | 🔒 | `:lock:` | Fix a security issue or harden security |
 | 🛂 | `:passport_control:` | Auth / authorization / sessions / permissions changes |
-| 🚧 | `:construction:` | Work in progress — only on feature branches, never on `main` |
+| 🚧 | `:construction:` | Work in progress - only on feature branches, never on `main` |
 | 💄 | `:lipstick:` | UI / styling changes (Tailwind, shadcn tweaks) |
 | ♿️ | `:wheelchair:` | Accessibility improvements |
 | 🏗️ | `:building_construction:` | Architectural change (module boundaries, folder layout) |
@@ -67,12 +67,12 @@ For anything outside this list, consult [gitmoji.dev](https://gitmoji.dev/).
 
 ## Decision rules when several emojis fit
 
-1. **Refactor vs feature** — if behaviour changes, it's ✨; if not, it's ♻️.
-2. **Bug vs refactor** — if it fixes incorrect behaviour, it's 🐛 (even if the diff looks like a refactor).
-3. **Style vs format** — UI/CSS = 💄; code formatting only = 🎨.
-4. **Config vs CI** — files under `.github/` = 👷; everything else config = 🔧.
-5. **Auth-adjacent** — anything touching login, sessions, OAuth, tokens, permissions = 🛂; only use 🔒 for security hardening unrelated to auth.
-6. **Docs vs skills** — README/inline docs = 📝; `.agents/skills/`, `AGENTS.md`, `CLAUDE.md` = 📚.
+1. **Refactor vs feature** - if behaviour changes, it's ✨; if not, it's ♻️.
+2. **Bug vs refactor** - if it fixes incorrect behaviour, it's 🐛 (even if the diff looks like a refactor).
+3. **Style vs format** - UI/CSS = 💄; code formatting only = 🎨.
+4. **Config vs CI** - files under `.github/` = 👷; everything else config = 🔧.
+5. **Auth-adjacent** - anything touching login, sessions, OAuth, tokens, permissions = 🛂; only use 🔒 for security hardening unrelated to auth.
+6. **Docs vs skills** - README/inline docs = 📝; `.agents/skills/`, `AGENTS.md`, `CLAUDE.md` = 📚.
 7. **When in doubt**, pick the emoji that best describes the **primary intent** of the change, not the largest file in the diff.
 
 ## Examples (matching this repo's actual style)
@@ -114,19 +114,19 @@ client's perspective; session cookie name is preserved.
 
 ## Anti-patterns
 
-- ❌ `:sparkles: add login form` — use the rendered glyph `✨`, not the code.
-- ❌ `✨ Added login form.` — past tense + trailing period.
-- ❌ `✨ 🐛 add login form and fix register bug` — two emojis = two commits.
-- ❌ `feat: ✨ add login form` — don't combine conventional-commits prefix with gitmoji; pick one (this repo uses gitmoji).
-- ❌ `✨ stuff` — vague subject. Say what was added.
-- ❌ Skipping the emoji entirely on `main` — every commit on `main` should have one.
+- ❌ `:sparkles: add login form` - use the rendered glyph `✨`, not the code.
+- ❌ `✨ Added login form.` - past tense + trailing period.
+- ❌ `✨ 🐛 add login form and fix register bug` - two emojis = two commits.
+- ❌ `feat: ✨ add login form` - don't combine conventional-commits prefix with gitmoji; pick one (this repo uses gitmoji).
+- ❌ `✨ stuff` - vague subject. Say what was added.
+- ❌ Skipping the emoji entirely on `main` - every commit on `main` should have one.
 
 ## Workflow
 
 When asked to write a commit message:
 
 1. Run `git diff --staged` (or `git diff` if nothing is staged yet) to see the actual change.
-2. Identify the **primary intent** — feature, fix, refactor, etc. Apply the decision rules above.
+2. Identify the **primary intent** - feature, fix, refactor, etc. Apply the decision rules above.
 3. Pick the emoji from the table.
 4. Write the subject in lowercase imperative, under ~72 chars, no period.
 5. If the _why_ isn't obvious from the subject, add a body wrapped at ~80 chars.

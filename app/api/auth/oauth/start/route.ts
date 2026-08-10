@@ -18,7 +18,7 @@ const ALLOWED_PROVIDERS = new Set(['github', 'google', 'meta']);
 // envelope. The signed state goes into an httpOnly cookie that pact-auth
 // will read back when the provider redirects to /v1/auth/callback/{provider}.
 //
-// We use GET (not POST) so the buttons can be plain <a href="…"> — that's
+// We use GET (not POST) so the buttons can be plain <a href="…"> - that's
 // the OAuth-button convention and avoids a redundant client-side fetch.
 // The "side effect" of setting the cookie is integral to the security
 // envelope, not a hidden mutation.
@@ -35,7 +35,7 @@ export const GET = async (req: NextRequest) => {
     // Skip the provider round-trip entirely in dev:mock. Bounce straight
     // to our own callback with synthetic code+state and a state cookie
     // the callback handler will accept (it also bypasses the gRPC call
-    // in mock mode). Real OAuth UX is not exercised — the goal here is
+    // in mock mode). Real OAuth UX is not exercised - the goal here is
     // to keep the SSO buttons clickable without pact-auth running.
     const cb = new URL(`/v1/auth/callback/${provider}`, req.nextUrl.origin);
     cb.searchParams.set('code', 'mock-code');

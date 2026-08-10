@@ -39,4 +39,4 @@ For non-string keys (e.g. array-tuple keys), wrap with `unstable_serialize`:
 fallback: { [unstable_serialize(['api', 'user', id])]: userPromise }
 ```
 
-Reference: [SWR — Pre-rendering with Default Data](https://swr.vercel.app/docs/with-nextjs#pre-rendering-with-default-data)
+Reference: [SWR - Pre-rendering with Default Data](https://swr.vercel.app/docs/with-nextjs#pre-rendering-with-default-data)

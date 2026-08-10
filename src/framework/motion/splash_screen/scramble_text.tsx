@@ -21,7 +21,7 @@ type ScrambleTextProps = {
 // from the case-matching SCRAMBLE_* pool (uppercase → uppercase, etc.).
 // Whitespace is preserved so word boundaries stay readable through the
 // scramble. Math.random() lives here, NOT in the component's render
-// body, so render stays pure / idempotent — the impure call only runs
+// body, so render stays pure / idempotent - the impure call only runs
 // inside state setters and effect callbacks.
 const buildScrambleSnapshot = (text: string, lockedCount: number): string =>
   text
@@ -61,7 +61,7 @@ export const ScrambleText = ({
   // immediately and so the first off-screen paint of the animated path
   // doesn't show an empty span. The first scramble interval tick
   // (≤ SCRAMBLE_INTERVAL_MS after mount) replaces this with a random
-  // snapshot — and by that point the parent slide is still well off-
+  // snapshot - and by that point the parent slide is still well off-
   // screen, so the brief initial "real" snapshot isn't visible.
   const [display, setDisplay] = useState(text);
 
@@ -86,7 +86,7 @@ export const ScrambleText = ({
   // Reveal loop: after `revealStartMs`, advance lockedCount by 1 every
   // REVEAL_STAGGER_MS until the whole string is revealed. On each tick
   // we also bump `display` directly with the new lockedCount, so the
-  // just-locked character renders as its real glyph this frame —
+  // just-locked character renders as its real glyph this frame -
   // without this, the position would keep showing a random char until
   // the next scramble tick (up to SCRAMBLE_INTERVAL_MS later) and the
   // reveal would visibly stutter.

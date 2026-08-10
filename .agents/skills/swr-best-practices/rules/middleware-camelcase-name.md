@@ -7,7 +7,7 @@ tags: middleware
 
 ## Name Middleware in camelCase
 
-SWR middleware is a function that calls hooks (`useSWRNext`). React's rules-of-hooks lint treats PascalCase identifiers as components and bans hook calls in non-component scopes — so a PascalCase middleware function trips the rule even though it's used correctly.
+SWR middleware is a function that calls hooks (`useSWRNext`). React's rules-of-hooks lint treats PascalCase identifiers as components and bans hook calls in non-component scopes - so a PascalCase middleware function trips the rule even though it's used correctly.
 
 **Incorrect:**
 
@@ -25,4 +25,4 @@ const logger = (useSWRNext) => (key, fetcher, config) => {
 };
 ```
 
-Reference: [SWR — Middleware](https://swr.vercel.app/docs/middleware)
+Reference: [SWR - Middleware](https://swr.vercel.app/docs/middleware)

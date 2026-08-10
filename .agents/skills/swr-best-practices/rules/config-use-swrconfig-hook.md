@@ -7,7 +7,7 @@ tags: config, mutation, cache
 
 ## Use useSWRConfig Over Imported Singletons
 
-`useSWRConfig()` returns the `mutate` and `cache` bound to the current provider scope. The imported `mutate` from `'swr'` and `cache` from `'swr/_internal'` always target the default provider — they silently no-op inside subtrees with custom providers (tests, persisted caches, isolated subapps).
+`useSWRConfig()` returns the `mutate` and `cache` bound to the current provider scope. The imported `mutate` from `'swr'` and `cache` from `'swr/_internal'` always target the default provider - they silently no-op inside subtrees with custom providers (tests, persisted caches, isolated subapps).
 
 **Incorrect:**
 
@@ -28,4 +28,4 @@ function ResetButton() {
 }
 ```
 
-Reference: [SWR — useSWRConfig](https://swr.vercel.app/docs/global-configuration#access-to-global-configurations)
+Reference: [SWR - useSWRConfig](https://swr.vercel.app/docs/global-configuration#access-to-global-configurations)

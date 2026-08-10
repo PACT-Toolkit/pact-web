@@ -49,7 +49,7 @@ export const BenchmarkResultsTable = ({
           Per-row verdicts
         </CardTitle>
         <span className="text-xs text-muted-foreground">
-          {totalRows > 0 ? `${from}–${to} of ${totalRows}` : '0 rows'}
+          {totalRows > 0 ? `${from}-${to} of ${totalRows}` : '0 rows'}
         </span>
       </CardHeader>
       <CardContent className="flex flex-col gap-0 p-0">
@@ -152,12 +152,12 @@ const BenchmarkResultRow = ({ row }: { row: RowResult }) => {
         {hasError ? (
           <span className="text-xs text-destructive">error</span>
         ) : (
-          <VerdictLabel text={row.decision ?? '—'} />
+          <VerdictLabel text={row.decision ?? '-'} />
         )}
       </td>
       <td className="px-4 py-2">
         {hasError ? (
-          <span className="text-xs text-muted-foreground">—</span>
+          <span className="text-xs text-muted-foreground">-</span>
         ) : (
           <span
             aria-label={correct ? 'Correct' : 'Incorrect'}
@@ -172,7 +172,7 @@ const BenchmarkResultRow = ({ row }: { row: RowResult }) => {
         )}
       </td>
       <td className="px-4 py-2 tabular-nums text-muted-foreground">
-        {row.latency_ms?.toFixed(1) ?? '—'}
+        {row.latency_ms?.toFixed(1) ?? '-'}
       </td>
       <td
         className="max-w-xs truncate px-4 py-2 text-xs text-muted-foreground"

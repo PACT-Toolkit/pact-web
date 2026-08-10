@@ -62,19 +62,19 @@ test.describe('Redactor console', () => {
 
   test('pagination moves to a second page of records', async ({ page }) => {
     const pageInfo = page.getByTestId('redactor-page-info');
-    await expect(pageInfo).toContainText('1–25 of');
+    await expect(pageInfo).toContainText('1-25 of');
 
     const nextButton = page.getByTestId('redactor-page-next');
     await expect(nextButton).toBeEnabled();
     await nextButton.click();
 
-    await expect(pageInfo).toContainText('26–');
+    await expect(pageInfo).toContainText('26-');
 
     const prevButton = page.getByTestId('redactor-page-prev');
     await expect(prevButton).toBeEnabled();
     await prevButton.click();
 
-    await expect(pageInfo).toContainText('1–25 of');
+    await expect(pageInfo).toContainText('1-25 of');
   });
 
   test('ad-hoc test panel runs text through /v1/check and renders masked output plus spans', async ({

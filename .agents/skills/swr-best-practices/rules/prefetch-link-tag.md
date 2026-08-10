@@ -26,6 +26,6 @@ const { data } = useSWR('/api/me', fetcher);
 // fetcher hits the browser cache, no extra RTT
 ```
 
-The `crossorigin` attribute must match how `fetch` is called (with or without credentials) — a mismatch causes the browser to discard the preload and re-issue the request.
+The `crossorigin` attribute must match how `fetch` is called (with or without credentials) - a mismatch causes the browser to discard the preload and re-issue the request.
 
-Reference: [SWR — Prefetching](https://swr.vercel.app/docs/prefetching)
+Reference: [SWR - Prefetching](https://swr.vercel.app/docs/prefetching)

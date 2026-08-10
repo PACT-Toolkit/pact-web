@@ -7,7 +7,7 @@ tags: subscription, state
 
 ## Pass a Function to next() for Incremental Updates
 
-`next(error, data)` accepts a function for `data` — it receives the previous value and returns the next. Use this for streams that should accumulate (chat messages, log lines) rather than replace.
+`next(error, data)` accepts a function for `data` - it receives the previous value and returns the next. Use this for streams that should accumulate (chat messages, log lines) rather than replace.
 
 **Incorrect (loses prior messages):**
 
@@ -30,4 +30,4 @@ useSWRSubscription(url, (key, { next }) => {
 });
 ```
 
-Reference: [SWR — Subscription](https://swr.vercel.app/docs/subscription)
+Reference: [SWR - Subscription](https://swr.vercel.app/docs/subscription)

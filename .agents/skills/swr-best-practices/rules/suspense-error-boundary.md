@@ -28,6 +28,6 @@ With `suspense: true`, SWR throws on error to the nearest error boundary instead
 </ErrorBoundary>;
 ```
 
-Also: `suspense` may not toggle across renders for the same hook — pick at mount and keep it stable.
+Also: `suspense` may not toggle across renders for the same hook - pick at mount and keep it stable.
 
-Reference: [SWR — Suspense](https://swr.vercel.app/docs/suspense)
+Reference: [SWR - Suspense](https://swr.vercel.app/docs/suspense)

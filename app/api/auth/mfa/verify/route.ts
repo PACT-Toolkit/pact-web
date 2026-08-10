@@ -123,8 +123,8 @@ export const POST = async (req: NextRequest) => {
 };
 
 // pact-auth packs two distinct failures under Code.Unauthenticated:
-// "invalid MFA code" (user mistyped — let them try again) and
-// "MFA challenge invalid or expired" (token revoked / TTL hit — they
+// "invalid MFA code" (user mistyped - let them try again) and
+// "MFA challenge invalid or expired" (token revoked / TTL hit - they
 // need to re-enter their password). We split them by raw message so
 // the form can offer the right next step. Everything else - including the
 // generic fallback for a code this route doesn't special-case - defers to

@@ -129,7 +129,7 @@ Add `suppressHydrationWarning` to `<body>` to suppress hydration mismatches caus
 
 ## Root Layout Provider Pattern
 
-Keep `app/layout.tsx` as a thin RSC — extract all client-side providers into a dedicated `app/Providers.tsx` client component:
+Keep `app/layout.tsx` as a thin RSC - extract all client-side providers into a dedicated `app/Providers.tsx` client component:
 
 ```tsx
 // app/Providers.tsx

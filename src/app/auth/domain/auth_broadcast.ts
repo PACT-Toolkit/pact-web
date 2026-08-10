@@ -2,7 +2,7 @@
 // tab A (the form-submitted screen left over from `/register` or
 // `/forgot-password`) can react instantly when tab B finishes the
 // email handoff and lands on the success page. The session cookie is
-// already shared between the tabs since they're same-origin — the
+// already shared between the tabs since they're same-origin - the
 // only thing missing is the nudge to navigate.
 //
 // This DOES NOT work across devices: a user who registers on a laptop
@@ -35,7 +35,7 @@ const supportsBroadcastChannel = (): boolean =>
   typeof window.BroadcastChannel === 'function';
 
 // Fire-and-forget: open a channel, post, close. Closing immediately is
-// fine — the message is queued before close() resolves on the dispatch
+// fine - the message is queued before close() resolves on the dispatch
 // side, so listeners on other tabs still receive it.
 const notifyKind = (kind: AuthEventKind): void => {
   if (typeof window === 'undefined') return;
@@ -59,7 +59,7 @@ const notifyKind = (kind: AuthEventKind): void => {
     // events when the value is unchanged).
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch {
-    // Storage might be disabled — at this point the visible "Continue
+    // Storage might be disabled - at this point the visible "Continue
     // here" button on the success page is the only path forward, which
     // is acceptable.
   }
@@ -92,7 +92,7 @@ const subscribeToKind = (
       const data = JSON.parse(e.newValue) as AuthEvent;
       if (data?.kind === kind) handler();
     } catch {
-      // Ignore malformed payloads — another tab on a different version
+      // Ignore malformed payloads - another tab on a different version
       // may have written something unexpected.
     }
   };

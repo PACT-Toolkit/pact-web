@@ -2,7 +2,7 @@
 #
 # Run: pnpm run proto:gen
 #
-# Inputs reference ../pact-auth/proto — the same sibling-checkout layout
+# Inputs reference ../pact-auth/proto - the same sibling-checkout layout
 # pact-gateway uses. Once pact-auth's proto is published to BSR, switch
 # `inputs` to a `module:` reference and drop the relative path.
 

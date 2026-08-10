@@ -11,7 +11,7 @@
 7. [Variations](#variations)
 8. [Tips](#tips)
 
-> **When to use**: Testing drag-and-drop interactions — sortable lists, kanban boards, file drop zones, or repositionable elements.
+> **When to use**: Testing drag-and-drop interactions - sortable lists, kanban boards, file drop zones, or repositionable elements.
 
 ---
 
@@ -567,10 +567,10 @@ test('drags via touch events', async ({ page }) => {
 
 1. **Start with `dragTo()`, fall back to manual mouse events**. Playwright's `dragTo()` handles most HTML5 drag-and-drop. Use `page.mouse.down()` / `move()` / `up()` only for custom libraries (react-beautiful-dnd, dnd-kit, SortableJS) that need specific event sequences.
 
-2. **Add intermediate mouse steps for drag libraries**. Libraries like `react-beautiful-dnd` require multiple `mousemove` events. Use `{ steps: 10 }` or a manual loop — a single jump often fails silently.
+2. **Add intermediate mouse steps for drag libraries**. Libraries like `react-beautiful-dnd` require multiple `mousemove` events. Use `{ steps: 10 }` or a manual loop - a single jump often fails silently.
 
-3. **Assert final state, not just the drop event**. Verify DOM reflects the change — item order, column contents, position coordinates. Visual feedback during drag is secondary to the persisted state.
+3. **Assert final state, not just the drop event**. Verify DOM reflects the change - item order, column contents, position coordinates. Visual feedback during drag is secondary to the persisted state.
 
 4. **Use `boundingBox()` for coordinate assertions**. For canvas editors or position-sensitive drops, capture bounding box after the operation and compare with `toBeCloseTo()` for tolerance.
 
-5. **Test undo after drag operations**. If your app supports Ctrl+Z, verify the drag is reversible — this catches state management bugs.
+5. **Test undo after drag operations**. If your app supports Ctrl+Z, verify the drag is reversible - this catches state management bugs.

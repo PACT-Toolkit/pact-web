@@ -31,4 +31,4 @@ const onLogout = async () => {
 
 The pattern is `mutate(filter, undefined, { revalidate: false })`: `() => true` matches every key, `undefined` clears the value, `revalidate: false` prevents the immediate refetch.
 
-Reference: [SWR — Mutate Multiple Items](https://swr.vercel.app/docs/mutation#mutate-multiple-items)
+Reference: [SWR - Mutate Multiple Items](https://swr.vercel.app/docs/mutation#mutate-multiple-items)

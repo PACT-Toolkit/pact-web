@@ -34,4 +34,4 @@ const { data } = useSWR(key, fetcher, { shouldRetryOnError: false });
 </SWRConfig>
 ```
 
-Reference: [SWR — Error Retry](https://swr.vercel.app/docs/error-handling#error-retry)
+Reference: [SWR - Error Retry](https://swr.vercel.app/docs/error-handling#error-retry)

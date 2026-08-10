@@ -530,8 +530,8 @@ export function Container({ className, size, ...props }: ContainerProps) {
 
 For advanced animation and dark mode patterns, see [references/advanced-patterns.md](references/advanced-patterns.md):
 
-- **Pattern 5: Native CSS Animations** — dialog `@keyframes`, native popover API with `@starting-style`, `allow-discrete` transitions, and a full `DialogContent`/`DialogOverlay` implementation using Radix UI
-- **Pattern 6: Dark Mode** — `ThemeProvider` context with `localStorage` persistence, `prefers-color-scheme` detection, meta `theme-color` update, and a `ThemeToggle` button component
+- **Pattern 5: Native CSS Animations** - dialog `@keyframes`, native popover API with `@starting-style`, `allow-discrete` transitions, and a full `DialogContent`/`DialogOverlay` implementation using Radix UI
+- **Pattern 6: Dark Mode** - `ThemeProvider` context with `localStorage` persistence, `prefers-color-scheme` detection, meta `theme-color` update, and a `ThemeToggle` button component
 
 ## Utility Functions
 
@@ -556,10 +556,10 @@ export const disabled = "disabled:pointer-events-none disabled:opacity-50";
 
 For advanced v4 CSS patterns, the full v3-to-v4 migration checklist, and complete best practices, see [references/advanced-patterns.md](references/advanced-patterns.md):
 
-- **Custom `@utility`** — reusable CSS utilities for decorative lines and text gradients
-- **Theme modifiers** — `@theme inline` (reference other CSS vars), `@theme static` (always output), `@import "tailwindcss" theme(static)`
-- **Namespace overrides** — clearing default Tailwind color scales with `--color-*: initial`
-- **Semi-transparent variants** — `color-mix()` for alpha scale generation
-- **Container queries** — `--container-*` token definitions
-- **v3→v4 migration checklist** — 10-item checklist covering config, directives, colors, dark mode, animations, React 19 ref changes
-- **Best practices** — full Do's and Don'ts list
+- **Custom `@utility`** - reusable CSS utilities for decorative lines and text gradients
+- **Theme modifiers** - `@theme inline` (reference other CSS vars), `@theme static` (always output), `@import "tailwindcss" theme(static)`
+- **Namespace overrides** - clearing default Tailwind color scales with `--color-*: initial`
+- **Semi-transparent variants** - `color-mix()` for alpha scale generation
+- **Container queries** - `--container-*` token definitions
+- **v3→v4 migration checklist** - 10-item checklist covering config, directives, colors, dark mode, animations, React 19 ref changes
+- **Best practices** - full Do's and Don'ts list

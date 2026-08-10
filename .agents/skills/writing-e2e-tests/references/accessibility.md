@@ -1,4 +1,4 @@
-# Accessibility Testing — Deep Reference
+# Accessibility Testing - Deep Reference
 
 Load this when adding or debugging `makeAxeBuilder` a11y tests.
 
@@ -8,7 +8,7 @@ One a11y test per **distinct view/route**. Discover all routes for a feature und
 
 ## Use the shared fixture
 
-Always import the project's `makeAxeBuilder` — do **not** install `@axe-core/playwright` directly, and do **not** call `.disableRules()` per-test:
+Always import the project's `makeAxeBuilder` - do **not** install `@axe-core/playwright` directly, and do **not** call `.disableRules()` per-test:
 
 ```ts
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
@@ -23,7 +23,7 @@ Per-test `.disableRules()` overrides the global allow-list instead of appending 
 
 ## Secondary views
 
-For a11y on a non-default view, navigate first and assert the destination rendered before analyzing — analyzing mid-transition produces flaky results:
+For a11y on a non-default view, navigate first and assert the destination rendered before analyzing - analyzing mid-transition produces flaky results:
 
 ```ts
 test('Should pass a11y on create', async ({ page }) => {

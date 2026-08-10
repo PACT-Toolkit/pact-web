@@ -7,7 +7,7 @@ tags: error, retry
 
 ## Don't Retry 4xx Statuses
 
-`403`, `404`, `409`, `422` are deterministic responses — retrying won't change the outcome and just adds latency for the user and load for the backend. The only reasonable 4xx to retry is `401` (after a token refresh) and `429` / `408` (with backoff that honors `Retry-After`).
+`403`, `404`, `409`, `422` are deterministic responses - retrying won't change the outcome and just adds latency for the user and load for the backend. The only reasonable 4xx to retry is `401` (after a token refresh) and `429` / `408` (with backoff that honors `Retry-After`).
 
 **Incorrect (retries every status, including 404):**
 
@@ -29,4 +29,4 @@ onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
 };
 ```
 
-Reference: [SWR — Error Retry](https://swr.vercel.app/docs/error-handling#error-retry)
+Reference: [SWR - Error Retry](https://swr.vercel.app/docs/error-handling#error-retry)

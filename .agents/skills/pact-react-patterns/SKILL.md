@@ -9,17 +9,17 @@ Combine with the generic [`swr-best-practices`](../swr-best-practices/SKILL.md) 
 
 ---
 
-## Rule 1 — Never fetch in `useEffect`
+## Rule 1 - Never fetch in `useEffect`
 
 `useEffect` + `fetch`/`axios` is banned for server data. It causes double-fetching, no deduplication, no cache, and manual loading/error state that diverges from the rest of the app.
 
 ```tsx
-// ✗ BAD — manual fetch in effect
+// ✗ BAD - manual fetch in effect
 useEffect(() => {
   fetch('/v1/files').then(r => r.json()).then(setFiles);
 }, []);
 
-// ✓ GOOD — orval-generated SWR hook
+// ✓ GOOD - orval-generated SWR hook
 const { data, error, isLoading } = useListFiles({ limit: 100, offset: 0 });
 ```
 
@@ -27,9 +27,9 @@ Always use the generated hook from `@/src/__codegen__/rest/{service}/`. If no ho
 
 ---
 
-## Rule 2 — Use `useSWRMutation` (or orval mutation hooks) for writes
+## Rule 2 - Use `useSWRMutation` (or orval mutation hooks) for writes
 
-POST / PATCH / DELETE must go through `useSWRMutation` or the generated `mutateX` wrapper — not a fire-and-forget `fetch` inside an event handler, and certainly not inside a `useEffect`.
+POST / PATCH / DELETE must go through `useSWRMutation` or the generated `mutateX` wrapper - not a fire-and-forget `fetch` inside an event handler, and certainly not inside a `useEffect`.
 
 ```tsx
 // ✗ BAD
@@ -38,7 +38,7 @@ const handleDelete = async (id: string) => {
   setFiles(prev => prev.filter(f => f.id !== id));
 };
 
-// ✓ GOOD — orval mutation + bound SWR mutate for cache invalidation
+// ✓ GOOD - orval mutation + bound SWR mutate for cache invalidation
 const handleDelete = async (id: string) => {
   await deleteFile(id);   // orval REST call
   await mutate();         // revalidate the list key
@@ -47,12 +47,12 @@ const handleDelete = async (id: string) => {
 
 ---
 
-## Rule 3 — Optimistic updates via SWR, not local state
+## Rule 3 - Optimistic updates via SWR, not local state
 
 When you need instant UI feedback, use SWR's `optimisticData` + `rollbackOnError`, not a parallel `useState` that you synchronise after the request resolves.
 
 ```tsx
-// ✗ BAD — local shadow state
+// ✗ BAD - local shadow state
 const [optimistic, setOptimistic] = useState(items);
 const handleAdd = async (item) => {
   setOptimistic(prev => [...prev, item]);
@@ -60,7 +60,7 @@ const handleAdd = async (item) => {
   await mutate();
 };
 
-// ✓ GOOD — SWR optimistic
+// ✓ GOOD - SWR optimistic
 const handleAdd = async (item) => {
   await mutate(postItem(item), {
     optimisticData: (current) => [...(current ?? []), item],
@@ -73,18 +73,18 @@ const handleAdd = async (item) => {
 
 ---
 
-## Rule 4 — Derive state; don't sync it with `useEffect`
+## Rule 4 - Derive state; don't sync it with `useEffect`
 
 If a value can be computed from props, existing state, or SWR data, compute it inline with `useMemo` (or just a plain expression). Do not copy it into a second `useState` and keep them in sync via `useEffect`.
 
 ```tsx
-// ✗ BAD — derived state synced via effect
+// ✗ BAD - derived state synced via effect
 const [blocked, setBlocked] = useState(0);
 useEffect(() => {
   setBlocked(events.filter(e => e.decision === 'block').length);
 }, [events]);
 
-// ✓ GOOD — derived with useMemo
+// ✓ GOOD - derived with useMemo
 const blocked = useMemo(
   () => events.filter(e => e.decision === 'block').length,
   [events]
@@ -93,35 +93,35 @@ const blocked = useMemo(
 
 ---
 
-## Rule 5 — Use event handlers, not effects, for user actions
+## Rule 5 - Use event handlers, not effects, for user actions
 
-Side effects triggered by a user action (click, submit, change) belong in the event handler. `useEffect` that watches a state variable set by a user action is an indirect handler — remove the indirection.
+Side effects triggered by a user action (click, submit, change) belong in the event handler. `useEffect` that watches a state variable set by a user action is an indirect handler - remove the indirection.
 
 ```tsx
-// ✗ BAD — effect watching state set by click
+// ✗ BAD - effect watching state set by click
 const [shouldSubmit, setShouldSubmit] = useState(false);
 useEffect(() => {
   if (shouldSubmit) { submitForm(); setShouldSubmit(false); }
 }, [shouldSubmit]);
 
-// ✓ GOOD — direct event handler
+// ✓ GOOD - direct event handler
 const handleSubmit = () => submitForm();
 ```
 
 ---
 
-## Rule 6 — Polling via SWR `refreshInterval`, not `setInterval` in `useEffect`
+## Rule 6 - Polling via SWR `refreshInterval`, not `setInterval` in `useEffect`
 
 SWR's built-in polling is deduped, respects tab visibility, and tears down automatically. A manual `setInterval` in `useEffect` is harder to reason about and easy to leak.
 
 ```tsx
-// ✗ BAD — manual interval
+// ✗ BAD - manual interval
 useEffect(() => {
   const id = setInterval(() => refetch(), 5000);
   return () => clearInterval(id);
 }, []);
 
-// ✓ GOOD — SWR refreshInterval
+// ✓ GOOD - SWR refreshInterval
 const { data } = useQueryAuditEvents(params, {
   swr: { refreshInterval: 5_000, revalidateOnFocus: false },
 });
@@ -131,14 +131,14 @@ const { data } = useQueryAuditEvents(params, {
 
 ---
 
-## Rule 7 — Use `httpClient` for PACT backend calls, not raw `fetch`
+## Rule 7 - Use `httpClient` for PACT backend calls, not raw `fetch`
 
 All imperative HTTP calls to PACT backend services must use `httpClient` from `@/src/framework/http`. It is an Axios instance that provides: automatic JSON serialisation, typed response generics, and a centralised 401 → `/login` redirect.
 
 ```tsx
 import { httpClient } from '@/src/framework/http';
 
-// ✗ BAD — manual JSON, no 401 handling
+// ✗ BAD - manual JSON, no 401 handling
 const resp = await fetch('/api/pact/gateway/v1/check', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
@@ -146,21 +146,21 @@ const resp = await fetch('/api/pact/gateway/v1/check', {
 });
 const data = await resp.json() as CheckResponse;
 
-// ✓ GOOD — typed, JSON handled, 401 intercepted
+// ✓ GOOD - typed, JSON handled, 401 intercepted
 const { data } = await httpClient.post<CheckResponse>(
   '/api/pact/gateway/v1/check',
   payload,
 );
 ```
 
-Use full paths — `httpClient` has no `baseURL`:
+Use full paths - `httpClient` has no `baseURL`:
 - PACT gateway calls: `/api/pact/gateway/v1/...`
 - Direct service calls: `/v1/files/...`, `/v1/account/...`
 
 **Keep native `fetch` for:**
-- Next.js API routes (`/api/auth/*`) — auth layer has different 401 semantics; the interceptor would loop on login failures
-- External APIs (`https://api.pwnedpasswords.com/*`) — no PACT session
-- S3 presigned URLs — external object storage with its own auth
+- Next.js API routes (`/api/auth/*`) - auth layer has different 401 semantics; the interceptor would loop on login failures
+- External APIs (`https://api.pwnedpasswords.com/*`) - no PACT session
+- S3 presigned URLs - external object storage with its own auth
 
 **SWR fetcher with `httpClient`** (for raw `useSWR` calls, not orval hooks):
 ```tsx
@@ -207,12 +207,12 @@ When you do write a `useEffect`:
   const { data } = useQueryAuditEvents(params);
   ```
 - **Return `null` from the key factory to disable** a hook conditionally instead of wrapping it in `if`.
-- **Never construct keys with inline object literals** directly in the hook call — they create a new key on every render, defeating the cache.
+- **Never construct keys with inline object literals** directly in the hook call - they create a new key on every render, defeating the cache.
 
 ---
 
 ## References
 
-- [`swr-best-practices`](../swr-best-practices/SKILL.md) — full SWR API rules (mutations, pagination, subscriptions, middleware)
-- [SWR docs](https://swr.vercel.app/docs) — canonical source
-- React docs — [You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect)
+- [`swr-best-practices`](../swr-best-practices/SKILL.md) - full SWR API rules (mutations, pagination, subscriptions, middleware)
+- [SWR docs](https://swr.vercel.app/docs) - canonical source
+- React docs - [You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect)

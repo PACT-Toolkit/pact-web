@@ -71,7 +71,7 @@ export const AccountSettingsPreferencesForm = () => {
         <CardTitle>Notifications</CardTitle>
         <CardDescription>
           What we email you about. Transactional messages (password resets,
-          security alerts) are not configurable — they go to the email on your
+          security alerts) are not configurable - they go to the email on your
           account regardless.
         </CardDescription>
       </CardHeader>

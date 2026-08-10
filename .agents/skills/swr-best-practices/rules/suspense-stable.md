@@ -24,4 +24,4 @@ const { data } = useSWR(key, fetcher, { suspense: true });
 
 If you really need both modes, mount a different component for each (so each `useSWR` sees a stable option).
 
-Reference: [SWR — Suspense](https://swr.vercel.app/docs/suspense)
+Reference: [SWR - Suspense](https://swr.vercel.app/docs/suspense)

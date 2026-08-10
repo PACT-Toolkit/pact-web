@@ -4,7 +4,7 @@ import { type NextRequest } from 'next/server';
 
 // Returns the inbound request's origin (`scheme://host[:port]`), respecting
 // `x-forwarded-*` for prod-style reverse proxies and the `Host` header for
-// dev. Next.js's `req.nextUrl.origin` is unreliable here — in dev it's
+// dev. Next.js's `req.nextUrl.origin` is unreliable here - in dev it's
 // sticky to whatever the listener was started with, not the actual Host
 // on the wire.
 export const requestOrigin = (req: NextRequest): string => {
@@ -18,14 +18,14 @@ export const requestOrigin = (req: NextRequest): string => {
 };
 
 // Default post-auth redirect target. Derived from `requestOrigin` so the
-// same handler works for `localhost:3000` AND for the dev box's LAN IP —
+// same handler works for `localhost:3000` AND for the dev box's LAN IP -
 // clicking a verify link from a phone on the same WiFi lands back on the
 // LAN URL the phone can reach, not localhost (which would resolve to the
 // phone itself).
 //
 // `PACT_AUTH_DEFAULT_RETURN_TO` always wins when set: in prod we want a
 // canonical URL that doesn't drift per request. NOTE: when the env var
-// is set the `path` argument is ignored — every caller gets the same
+// is set the `path` argument is ignored - every caller gets the same
 // final URL regardless of what they passed. All current callers default
 // to `/dashboard` so this is fine in practice; if a future caller
 // genuinely needs a different post-auth destination, switch to
@@ -49,7 +49,7 @@ export const defaultReturnTo = (
 // somewhere it can reach.
 //
 // SECURITY: this rebase is **dev-only by default**. In production we
-// trust pact-auth's allowlist over the inbound `Host` header — a
+// trust pact-auth's allowlist over the inbound `Host` header - a
 // malicious upstream sending `Host: evil.example` would otherwise turn
 // every post-auth redirect into a phishing target. Outside dev we use
 // the URL pact-auth gave us as-is (it has already been canonicalized
@@ -67,7 +67,7 @@ export const rebaseReturnTo = (req: NextRequest, returnTo: string): URL => {
     try {
       return new URL(returnTo);
     } catch {
-      // Stored URL was relative — resolve against the inbound origin as
+      // Stored URL was relative - resolve against the inbound origin as
       // a last resort. pact-auth never stores relative URLs today, but
       // the fallback keeps the function total.
       return new URL(returnTo, requestOrigin(req));

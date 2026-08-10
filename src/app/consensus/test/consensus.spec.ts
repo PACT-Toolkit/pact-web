@@ -56,19 +56,19 @@ test.describe('Consensus console', () => {
 
   test('pagination moves to a second page of records', async ({ page }) => {
     const pageInfo = page.getByTestId('consensus-page-info');
-    await expect(pageInfo).toContainText('1–25 of');
+    await expect(pageInfo).toContainText('1-25 of');
 
     const nextButton = page.getByTestId('consensus-page-next');
     await expect(nextButton).toBeEnabled();
     await nextButton.click();
 
-    await expect(pageInfo).toContainText('26–');
+    await expect(pageInfo).toContainText('26-');
 
     const prevButton = page.getByTestId('consensus-page-prev');
     await expect(prevButton).toBeEnabled();
     await prevButton.click();
 
-    await expect(pageInfo).toContainText('1–25 of');
+    await expect(pageInfo).toContainText('1-25 of');
   });
 
   test('raw payload toggle reveals the underlying JSON for a record', async ({

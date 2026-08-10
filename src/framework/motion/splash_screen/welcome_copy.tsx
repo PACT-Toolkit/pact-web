@@ -17,14 +17,14 @@ type WelcomeCopyProps = {
   prefersReducedMotion: boolean;
 };
 
-// Welcome copy — at `md+` anchored to the screen's left edge and vertically
+// Welcome copy - at `md+` anchored to the screen's left edge and vertically
 // centered to the row that also holds the (centered) count and the
 // (right-anchored) Continue button. Below `md` the row is a column and
 // the welcome flows as a normal flex item, picking up the row's
 // `items-center` to sit horizontally centered above the (also-centered)
 // Continue button. The wrapper is `relative` (overridden to
 // `md:absolute` on desktop) so the corner brackets inside have a
-// containing block to anchor to — without it they'd climb the DOM until
+// containing block to anchor to - without it they'd climb the DOM until
 // they hit the row container and sit at the viewport's edges.
 //
 // Either way, two lines slide in from offstage left with a small

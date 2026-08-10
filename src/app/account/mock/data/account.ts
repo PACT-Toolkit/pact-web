@@ -13,15 +13,15 @@ const PROFILE_BY_USER_TYPE: Record<
 > = {
   admin: {
     displayName: 'Ada Lovelace',
-    bio: 'Platform admin — full policy and audit access.',
+    bio: 'Platform admin - full policy and audit access.',
   },
   auditor: {
     displayName: 'Audrey Ito',
-    bio: 'Auditor — read-only access to decisions and audit trail.',
+    bio: 'Auditor - read-only access to decisions and audit trail.',
   },
   developer: {
     displayName: 'Dev Patel',
-    bio: 'Developer — test lab and benchmark workflows.',
+    bio: 'Developer - test lab and benchmark workflows.',
   },
 };
 

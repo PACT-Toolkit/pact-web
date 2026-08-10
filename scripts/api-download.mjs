@@ -160,7 +160,7 @@ export async function main({ schemaDir = SCHEMA_DIR } = {}) {
   );
 
   for (const { service } of allConfigs.filter((c) => c.config.manual)) {
-    console.log(`  ⏭️  ${service} (manual) — hand-maintained, not downloaded`);
+    console.log(`  ⏭️  ${service} (manual) - hand-maintained, not downloaded`);
   }
 
   const configs = allConfigs.filter(({ config }) => !config.manual);

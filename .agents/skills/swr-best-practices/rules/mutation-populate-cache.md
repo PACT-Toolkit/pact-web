@@ -25,6 +25,6 @@ mutate(key, addItem(item), {
 });
 ```
 
-Note: `populateCache` defaults to `true` for `mutate` and `false` for `useSWRMutation` — set it explicitly on `useSWRMutation` if you want the response written into the query cache.
+Note: `populateCache` defaults to `true` for `mutate` and `false` for `useSWRMutation` - set it explicitly on `useSWRMutation` if you want the response written into the query cache.
 
-Reference: [SWR — populateCache](https://swr.vercel.app/docs/mutation#useswrmutation)
+Reference: [SWR - populateCache](https://swr.vercel.app/docs/mutation#useswrmutation)

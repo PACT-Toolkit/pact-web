@@ -7,7 +7,7 @@
 3. [Anti-Patterns](#anti-patterns)
 4. [Troubleshooting](#troubleshooting)
 
-> **When to use**: Testing REST APIs directly — validating endpoints, seeding test data, or verifying backend behavior without browser overhead.
+> **When to use**: Testing REST APIs directly - validating endpoints, seeding test data, or verifying backend behavior without browser overhead.
 > **See also**: [graphql-testing.md](graphql-testing.md) for GraphQL-specific patterns.
 
 ## Patterns
@@ -15,7 +15,7 @@
 ### Request Fixtures for Authenticated Clients
 
 **Use when**: Multiple tests need an authenticated API client with shared configuration.
-**Avoid when**: A single test makes one-off API calls — use the built-in `request` fixture directly.
+**Avoid when**: A single test makes one-off API calls - use the built-in `request` fixture directly.
 
 ```typescript
 // fixtures/api-fixtures.ts
@@ -82,7 +82,7 @@ test("admin retrieves all accounts", async ({ adminApi }) => {
 
 ### CRUD Operations
 
-**Use when**: Making HTTP requests — GET, POST, PUT, PATCH, DELETE with headers, query params, and bodies.
+**Use when**: Making HTTP requests - GET, POST, PUT, PATCH, DELETE with headers, query params, and bodies.
 **Avoid when**: You need to test browser-rendered responses (redirects, cookies with `HttpOnly`).
 
 ```typescript
@@ -106,7 +106,7 @@ test("full CRUD cycle", async ({ request }) => {
   expect(createResp.status()).toBe(201);
   const created = await createResp.json();
 
-  // PUT — full replacement
+  // PUT - full replacement
   const putResp = await request.put(`/api/items/${created.id}`, {
     data: {
       title: "Claw Hammer",
@@ -116,7 +116,7 @@ test("full CRUD cycle", async ({ request }) => {
   });
   expect(putResp.ok()).toBeTruthy();
 
-  // PATCH — partial update
+  // PATCH - partial update
   const patchResp = await request.patch(`/api/items/${created.id}`, {
     data: { price: 22.5 },
   });
@@ -180,7 +180,7 @@ export default defineConfig({
 ### Response Assertions
 
 **Use when**: Validating response status, headers, and body structure.
-**Avoid when**: Never skip these — every API test should assert on status and body.
+**Avoid when**: Never skip these - every API test should assert on status and body.
 
 ```typescript
 import { test, expect } from "@playwright/test";
@@ -188,7 +188,7 @@ import { test, expect } from "@playwright/test";
 test("comprehensive response validation", async ({ request }) => {
   const resp = await request.get("/api/items/101");
 
-  // Status code — always check first
+  // Status code - always check first
   expect(resp.status()).toBe(200);
   expect(resp.ok()).toBeTruthy();
 
@@ -202,7 +202,7 @@ test("comprehensive response validation", async ({ request }) => {
   expect(item.id).toBe(101);
   expect(item.title).toBe("Widget");
 
-  // Partial match — ignore fields you don't care about
+  // Partial match - ignore fields you don't care about
   expect(item).toMatchObject({
     id: 101,
     title: "Widget",
@@ -323,13 +323,13 @@ test("user sees workspace on dashboard", async ({
 
 ### Error Response Testing
 
-**Use when**: Every API has error paths — test them. A missing 401 test today is a security hole tomorrow.
+**Use when**: Every API has error paths - test them. A missing 401 test today is a security hole tomorrow.
 
 ```typescript
 import { test, expect } from "@playwright/test";
 
 test.describe("Error responses", () => {
-  test("400 — validation error with details", async ({ request }) => {
+  test("400 - validation error with details", async ({ request }) => {
     const resp = await request.post("/api/items", {
       data: { title: "", price: -5 },
     });
@@ -354,7 +354,7 @@ test.describe("Error responses", () => {
     );
   });
 
-  test("401 — missing authentication", async ({ request }) => {
+  test("401 - missing authentication", async ({ request }) => {
     const resp = await request.get("/api/protected/resource", {
       headers: { Authorization: "" },
     });
@@ -363,21 +363,21 @@ test.describe("Error responses", () => {
     expect(body.error).toMatch(/unauthorized|unauthenticated/i);
   });
 
-  test("403 — insufficient permissions", async ({ request }) => {
+  test("403 - insufficient permissions", async ({ request }) => {
     const resp = await request.delete("/api/admin/items/1");
     expect(resp.status()).toBe(403);
     const body = await resp.json();
     expect(body.error).toMatch(/forbidden|insufficient permissions/i);
   });
 
-  test("404 — resource not found", async ({ request }) => {
+  test("404 - resource not found", async ({ request }) => {
     const resp = await request.get("/api/items/999999");
     expect(resp.status()).toBe(404);
     const body = await resp.json();
     expect(body).toMatchObject({ error: expect.stringMatching(/not found/i) });
   });
 
-  test("409 — conflict on duplicate", async ({ request }) => {
+  test("409 - conflict on duplicate", async ({ request }) => {
     const sku = `SKU-${Date.now()}`;
     await request.post("/api/items", { data: { title: "First", sku } });
 
@@ -387,7 +387,7 @@ test.describe("Error responses", () => {
     expect(resp.status()).toBe(409);
   });
 
-  test("422 — unprocessable entity", async ({ request }) => {
+  test("422 - unprocessable entity", async ({ request }) => {
     const resp = await request.post("/api/orders", {
       data: { items: [] },
     });
@@ -396,7 +396,7 @@ test.describe("Error responses", () => {
     expect(body.error).toContain("at least one item");
   });
 
-  test("429 — rate limiting", async ({ request }) => {
+  test("429 - rate limiting", async ({ request }) => {
     const responses = await Promise.all(
       Array.from({ length: 50 }, () =>
         request.get("/api/search", { params: { q: "test" } })
@@ -412,7 +412,7 @@ test.describe("Error responses", () => {
 ### File Upload via API
 
 **Use when**: Testing file upload endpoints with multipart form data.
-**Avoid when**: You need to test the browser file picker dialog — use `page.setInputFiles()` instead.
+**Avoid when**: You need to test the browser file picker dialog - use `page.setInputFiles()` instead.
 
 ```typescript
 import { test, expect } from "@playwright/test";
@@ -464,7 +464,7 @@ test("rejects oversized files", async ({ request }) => {
 
 ### Chained API Calls
 
-**Use when**: Testing multi-step workflows — create, read, update, delete sequences; order flows; state machine transitions.
+**Use when**: Testing multi-step workflows - create, read, update, delete sequences; order flows; state machine transitions.
 **Avoid when**: You can test each endpoint in isolation and the interactions are trivial.
 
 ```typescript
@@ -518,7 +518,7 @@ test("complete order workflow", async ({ request }) => {
   await request.delete(`/api/products/${product.id}`);
 });
 
-test("state machine transitions — publish workflow", async ({ request }) => {
+test("state machine transitions - publish workflow", async ({ request }) => {
   const createResp = await request.post("/api/articles", {
     data: { title: "Draft Article", body: "Content here." },
   });
@@ -551,7 +551,7 @@ test("state machine transitions — publish workflow", async ({ request }) => {
   await request.delete(`/api/articles/${article.id}`);
 });
 
-test("API + E2E hybrid — seed via API, verify in browser", async ({
+test("API + E2E hybrid - seed via API, verify in browser", async ({
   request,
   page,
 }) => {
@@ -574,8 +574,8 @@ test("API + E2E hybrid — seed via API, verify in browser", async ({
 
 ### Schema Validation with Zod
 
-**Use when**: Verifying API responses match a contract — field types, required fields, value constraints.
-**Avoid when**: You only need to check one or two specific fields — use `toMatchObject` instead.
+**Use when**: Verifying API responses match a contract - field types, required fields, value constraints.
+**Avoid when**: You only need to check one or two specific fields - use `toMatchObject` instead.
 
 ```typescript
 import { test, expect } from "@playwright/test";
@@ -640,10 +640,10 @@ test("GET /api/items matches schema", async ({ request }) => {
 
 | Don't Do This                                        | Problem                                                                                | Do This Instead                                                   |
 | ---------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| Use E2E tests to validate pure API responses         | Slow, flaky, launches a browser for no reason                                          | Use `request` fixture — no browser, direct HTTP                   |
+| Use E2E tests to validate pure API responses         | Slow, flaky, launches a browser for no reason                                          | Use `request` fixture - no browser, direct HTTP                   |
 | Ignore `response.status()`                           | A 500 with a fallback body can pass all body assertions                                | Always assert status first: `expect(response.status()).toBe(200)` |
 | Skip response header checks                          | Missing `Content-Type`, `Cache-Control`, CORS headers cause production bugs            | Assert critical headers                                           |
-| Only test the happy path                             | Real users trigger 400, 401, 403, 404, 409, 422 — every one needs a test               | Dedicate a `describe` block to error responses                    |
+| Only test the happy path                             | Real users trigger 400, 401, 403, 404, 409, 422 - every one needs a test               | Dedicate a `describe` block to error responses                    |
 | Hardcode IDs in API tests                            | Tests break when database is reset or IDs are reassigned                               | Create resources in the test, use returned IDs                    |
 | Share mutable state between tests                    | Tests that depend on execution order are flaky and cannot run in parallel              | Each test creates and cleans up its own data                      |
 | Parse `response.text()` then `JSON.parse()` manually | Playwright's `response.json()` handles this and throws clear errors on non-JSON        | Use `await response.json()`                                       |
@@ -670,11 +670,11 @@ export default defineConfig({
 });
 ```
 
-### "response.json() failed — body is not valid JSON"
+### "response.json() failed - body is not valid JSON"
 
 **Cause**: The endpoint returned HTML (error page), plain text, or an empty body instead of JSON.
 
-**Fix**: Check `response.status()` first — a 500 or 302 often returns HTML. Log `await response.text()` to see the actual body. Verify the `Accept: application/json` header is set.
+**Fix**: Check `response.status()` first - a 500 or 302 often returns HTML. Log `await response.text()` to see the actual body. Verify the `Accept: application/json` header is set.
 
 ```typescript
 const resp = await request.get("/api/endpoint");

@@ -24,7 +24,7 @@ Wrap each resource in a custom hook so the key + fetcher live in one place (see 
 
 ## Writes → `useSWRMutation`
 
-Never use `mutate(key, fetcher())` for writes — it conflates "POST to server" with "update cache" and surfaces the wrong loading flag. Use `useSWRMutation`:
+Never use `mutate(key, fetcher())` for writes - it conflates "POST to server" with "update cache" and surfaces the wrong loading flag. Use `useSWRMutation`:
 
 ```typescript
 'use client';
@@ -53,21 +53,21 @@ SWR populates `error` only when the fetcher throws. The shared `postJson`/`getJs
 
 `useSWR` / `useSWRMutation` require `'use client'`. Server Components fetch data directly (RSC + `fetch`) and pass it down as props. After a client mutation, call `router.refresh()` from `onSuccess` to re-render the RSC.
 
-`SWRConfig` and `unstable_serialize` are RSC-safe and exist for handing fallback data down — use them, not the hooks.
+`SWRConfig` and `unstable_serialize` are RSC-safe and exist for handing fallback data down - use them, not the hooks.
 
 ## Orval-generated hooks: use directly, don't wrap
 
-`src/__codegen__/rest/<feature>/` already exports typed SWR hooks. Use them **directly** in components — do not create wrapper hooks just to flatten the response envelope.
+`src/__codegen__/rest/<feature>/` already exports typed SWR hooks. Use them **directly** in components - do not create wrapper hooks just to flatten the response envelope.
 
 ```typescript
-// ❌ BAD — pointless wrapper in domain/
+// ❌ BAD - pointless wrapper in domain/
 export const useAccountProfile = () => {
   const query = useGetAccountProfile();
   const profile = query.data?.status === 200 ? (query.data.data as Profile) : undefined;
   return { profile, isLoading: query.isLoading, error: query.error };
 };
 
-// ✅ GOOD — inline the envelope-flattening in the component
+// ✅ GOOD - inline the envelope-flattening in the component
 const query = useGetAccountProfile();
 const profile = query.data?.status === 200 ? (query.data.data as Profile) : undefined;
 ```
@@ -85,4 +85,4 @@ Domain files (`domain/`) are for genuine logic: validation schemas, WebAuthn cer
 
 ## When in doubt
 
-The full conventions live under `.agents/skills/swr-best-practices/rules/` — read the relevant `*.md` before introducing a new pattern (caching, pagination, prefetch, optimistic update, suspense, websockets).
+The full conventions live under `.agents/skills/swr-best-practices/rules/` - read the relevant `*.md` before introducing a new pattern (caching, pagination, prefetch, optimistic update, suspense, websockets).

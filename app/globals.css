@@ -13,7 +13,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Theme tokens — based on the "Zerefez" tweakcn theme
+ * Theme tokens - based on the "Zerefez" tweakcn theme
  * (https://tweakcn.com/r/themes/cmozkbc9r000204ifhfvaa5yd), a stark
  * monochrome palette with Inter + JetBrains Mono.
  *
@@ -42,7 +42,7 @@
      font is fetched. */
   --font-display: var(--font-ndot), var(--font-jetbrains-mono), monospace;
 
-  /* Space Grotesk — geometric proportional sans. Generates a `font-grotesk`
+  /* Space Grotesk - geometric proportional sans. Generates a `font-grotesk`
      utility; currently powers the splash screen's percent counter and
      welcome copy. Falls back to the sans stack so the layout stays stable
      while the font is fetched. */
@@ -129,7 +129,7 @@
   --input: oklch(0.9702 0 0);
   --ring: oklch(0 0 0);
 
-  /* Status — overridden vs upstream theme. */
+  /* Status - overridden vs upstream theme. */
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.985 0 0);
   --positive: oklch(0.55 0.18 145);
@@ -172,7 +172,7 @@
   --input: oklch(0.2178 0 0);
   --ring: oklch(0.9702 0 0);
 
-  /* Status — slightly lighter chroma in dark mode for legibility. */
+  /* Status - slightly lighter chroma in dark mode for legibility. */
   --destructive: oklch(0.704 0.191 22.216);
   --destructive-foreground: oklch(0.145 0 0);
   --positive: oklch(0.74 0.16 145);

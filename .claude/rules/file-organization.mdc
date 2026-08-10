@@ -1,5 +1,5 @@
 ---
-description: File layout conventions for pact-web — components, helpers, tests, comments
+description: File layout conventions for pact-web - components, helpers, tests, comments
 globs: **/*.{ts,tsx}
 alwaysApply: false
 ---
@@ -22,11 +22,11 @@ src/app/auth/ui/settings/
 ```
 
 ```tsx
-// ❌ BAD — two components in one file
+// ❌ BAD - two components in one file
 export const PasskeyRow = (...) => <li>…</li>;
 export const PasskeysCard = (...) => <ul>…</ul>;
 
-// ✅ GOOD — one file each
+// ✅ GOOD - one file each
 // PasskeyRow.tsx
 export const PasskeyRow = (...) => <li>…</li>;
 ```
@@ -43,12 +43,12 @@ Pure functions, formatters, constants, and type guards must **not** live in a `.
 | Cross-feature utilities | `src/lib/` |
 
 ```typescript
-// ❌ BAD — helper in the component file
+// ❌ BAD - helper in the component file
 // ConsentsList.tsx
 const titleCase = (slug: string) => slug.split('_').map(…).join(' ');
 export const ConsentsList = () => { … };
 
-// ✅ GOOD — helper in a sibling file
+// ✅ GOOD - helper in a sibling file
 // helpers.ts
 export const titleCase = (slug: string) => slug.split('_').map(…).join(' ');
 
@@ -58,14 +58,14 @@ import { titleCase } from './helpers';
 
 ## No comments in component files
 
-Component files (`*.tsx`) must contain **zero** prose comments — no `//` or `/* */` lines.
+Component files (`*.tsx`) must contain **zero** prose comments - no `//` or `/* */` lines.
 
 - Explaining *what* a block does → the code itself should make it obvious; if it can't, refactor.
 - Explaining *why* a non-obvious trade-off was made → put it in the `domain/` or helper file where the logic lives.
 - TODOs → open a Linear issue instead.
 
 ```tsx
-// ❌ BAD — comments in a component file
+// ❌ BAD - comments in a component file
 export const ProfileForm = () => {
   // Reset form once the profile loads
   useEffect(() => { form.reset(…); }, [profile]);
@@ -75,8 +75,8 @@ export const ProfileForm = () => {
   …
 };
 
-// ✅ GOOD — self-describing code, comments only in domain/
-// domain/use_account_profile.ts (non-obvious session invariant — comment is fine here)
+// ✅ GOOD - self-describing code, comments only in domain/
+// domain/use_account_profile.ts (non-obvious session invariant - comment is fine here)
 // Reset is gated on `profile` (a stable reference per SWR fetch) so
 // the user's in-flight edits aren't clobbered on every revalidation.
 ```
@@ -85,7 +85,7 @@ This rule applies to `.tsx` files only. Comments **are** allowed in `.ts` files 
 
 ## Test files in `__tests__/`
 
-Test files go in a `__tests__/` folder **sibling to the directory under test** — not colocated alongside the source file.
+Test files go in a `__tests__/` folder **sibling to the directory under test** - not colocated alongside the source file.
 
 ```
 src/app/account/

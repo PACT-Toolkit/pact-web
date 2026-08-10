@@ -1,6 +1,6 @@
 // Client-side fetchers for the /api/auth/* proxy routes. These are the
 // functions you hand to `useSWRMutation` from settings cards and auth
-// forms — keeping them centralized means:
+// forms - keeping them centralized means:
 //
 //   1. Every consumer benefits from the same JSON-error contract
 //      (`ApiError` carries the HTTP status and the parsed body).
@@ -50,7 +50,7 @@ export const postJson = async <TBody, TResp = void>(
   }
   if (res.status === 204) return undefined as TResp;
 
-  // Some endpoints return only `{ ok: true }` — callers that need a real
+  // Some endpoints return only `{ ok: true }` - callers that need a real
   // payload pass a non-void TResp; callers that don't ignore it.
   return (await res.json().catch(() => undefined)) as TResp;
 };
@@ -175,7 +175,7 @@ export const revokeFactorFetcher = (
   { arg }: { arg: RevokeFactorArg }
 ) => postJson<RevokeFactorArg>(url, arg, 'Could not revoke factor.');
 
-// /api/auth/mfa/recovery-codes takes no body — `useSWRMutation` always
+// /api/auth/mfa/recovery-codes takes no body - `useSWRMutation` always
 // supplies an `arg`, but here we ignore it.
 export type RegenerateRecoveryCodesResult = { recoveryCodes: string[] };
 export const regenerateRecoveryCodesFetcher = (
@@ -187,7 +187,7 @@ export const regenerateRecoveryCodesFetcher = (
     'Could not generate recovery codes.'
   );
 
-// /api/auth/mfa/enroll/begin — provision a pending TOTP factor. No body;
+// /api/auth/mfa/enroll/begin - provision a pending TOTP factor. No body;
 // reads the session cookie server-side. Returns the secret + otpauth URL
 // the UI displays for QR-code / manual entry into an authenticator app.
 export type BeginTotpEnrollmentResult = {
@@ -204,7 +204,7 @@ export const beginTotpEnrollmentFetcher = (
     'Could not start authenticator enrollment.'
   );
 
-// /api/auth/mfa/verify — completes the password+TOTP login flow. The
+// /api/auth/mfa/verify - completes the password+TOTP login flow. The
 // route picks the challenge token off the pact_mfa_token cookie, so the
 // only thing the client needs to send is the code itself (TOTP or
 // recovery). On success the response sets pact_session and the form
@@ -213,7 +213,7 @@ export type VerifyMfaArg = { code: string; isRecovery?: boolean };
 export const verifyMfaFetcher = (url: string, { arg }: { arg: VerifyMfaArg }) =>
   postJson<VerifyMfaArg>(url, arg, 'Could not verify the code.');
 
-// /api/auth/mfa/enroll/confirm — verify the 6-digit code, flip the
+// /api/auth/mfa/enroll/confirm - verify the 6-digit code, flip the
 // factor to verified, and return a fresh batch of recovery codes.
 export type ConfirmTotpEnrollmentArg = { factorId: string; code: string };
 export type ConfirmTotpEnrollmentResult = { recoveryCodes: string[] };

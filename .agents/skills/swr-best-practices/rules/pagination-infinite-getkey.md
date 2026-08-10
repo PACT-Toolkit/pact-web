@@ -27,6 +27,6 @@ const getKey = (pageIndex, previousPageData) => {
 const { data, size, setSize } = useSWRInfinite(getKey, fetcher);
 ```
 
-Note: `previousPageData` is `null` when `parallel: true` — terminate via response-length checks based on the current page's expected size in that mode.
+Note: `previousPageData` is `null` when `parallel: true` - terminate via response-length checks based on the current page's expected size in that mode.
 
-Reference: [SWR — useSWRInfinite](https://swr.vercel.app/docs/pagination#useswrinfinite)
+Reference: [SWR - useSWRInfinite](https://swr.vercel.app/docs/pagination#useswrinfinite)
