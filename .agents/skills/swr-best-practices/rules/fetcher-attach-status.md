@@ -34,6 +34,6 @@ const fetcher = async (url) => {
 };
 ```
 
-For Axios, the `AxiosError` already exposes `error.response.status` and `error.response.data` — the same branching works without a custom fetcher.
+For Axios, the `AxiosError` already exposes `error.response.status` and `error.response.data` - the same branching works without a custom fetcher.
 
-Reference: [SWR — Error Handling](https://swr.vercel.app/docs/error-handling)
+Reference: [SWR - Error Handling](https://swr.vercel.app/docs/error-handling)

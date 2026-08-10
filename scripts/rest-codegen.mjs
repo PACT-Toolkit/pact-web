@@ -111,7 +111,7 @@ const stripPathPrefix = async (openApiPath, prefix) => {
     }
     if (!inPaths) return line;
 
-    // Path-item keys are the route strings under `paths:` — a `/`-leading,
+    // Path-item keys are the route strings under `paths:` - a `/`-leading,
     // space-free key ending in `:` (optionally quoted), e.g.
     // `  /v1/benchmark/jobs/{id}:`. Nested $ref/description lines never match.
     const match = line.match(/^(\s+)('|"|)(\/[^'"\s]*)\2:\s*$/);

@@ -75,7 +75,7 @@ export const TestLabResultNode = ({
           : saveState === 'saving'
             ? 'Saving…'
             : saveState === 'error'
-              ? 'Failed — retry?'
+              ? 'Failed - retry?'
               : 'Save to corpus'}
       </button>
     )}

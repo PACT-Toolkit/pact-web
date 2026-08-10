@@ -1,5 +1,5 @@
 ## Why
-1-2 sentences on user/business motivation — not the solution. If you can't fill this from the conversation, flag it. This is the most important field.
+1-2 sentences on user/business motivation - not the solution. If you can't fill this from the conversation, flag it. This is the most important field.
 
 ## What (Acceptance Criteria)
 - [ ] Observable user behaviour or system outcome

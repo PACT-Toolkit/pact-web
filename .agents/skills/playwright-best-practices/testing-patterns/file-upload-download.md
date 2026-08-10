@@ -241,7 +241,7 @@ test('removes one file from selection', async ({ page }) => {
 
 ## Drag-and-Drop Zones
 
-Drop zones always have an underlying `input[type="file"]`—target it directly instead of simulating OS-level drag events.
+Drop zones always have an underlying `input[type="file"]`-target it directly instead of simulating OS-level drag events.
 
 ```typescript
 test('uploads via drop zone', async ({ page }) => {
@@ -430,7 +430,7 @@ test('rejects disallowed file types', async ({ page }) => {
   await page.goto('/attachments');
 
   const fileInput = page.locator('input[type="file"]');
-  // setInputFiles bypasses the accept attribute—tests JavaScript validation
+  // setInputFiles bypasses the accept attribute-tests JavaScript validation
   await fileInput.setInputFiles({
     name: 'malware.exe',
     mimeType: 'application/x-msdownload',
@@ -555,7 +555,7 @@ test('downloads file requiring authentication', async ({ page, request }) => {
 
 2. **Prefer in-memory buffers**. Creating files with `Buffer.from()` keeps tests self-contained. Use fixture files only when you need real content (e.g., a valid PDF your app parses).
 
-3. **Set up download listener before clicking**. Call `page.waitForEvent('download')` before the click that triggers the download—otherwise you may miss the event.
+3. **Set up download listener before clicking**. Call `page.waitForEvent('download')` before the click that triggers the download-otherwise you may miss the event.
 
 4. **Use `createReadStream()` for content verification**. Reading directly from the stream avoids disk I/O and cleanup of temporary files.
 

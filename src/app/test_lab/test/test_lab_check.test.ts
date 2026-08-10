@@ -12,7 +12,7 @@ import {
   toTestRun,
 } from '@/src/app/test_lab/domain/test_lab_check';
 
-// Helper: pretend the user pressed "Run" — BLANK_LAYERS starts pending.
+// Helper: pretend the user pressed "Run" - BLANK_LAYERS starts pending.
 const startingLayers = () =>
   BLANK_LAYERS.map((l) => ({ ...l, decision: 'pending' as const }));
 

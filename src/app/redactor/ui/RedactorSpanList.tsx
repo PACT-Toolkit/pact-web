@@ -32,8 +32,8 @@ export const RedactorSpanList = ({ spans }: { spans: RedactorSpan[] }) => {
             </td>
             <td className="py-0.5 font-mono text-muted-foreground">
               {typeof span.start === 'number' && typeof span.end === 'number'
-                ? `${span.start}–${span.end}`
-                : '–'}
+                ? `${span.start}-${span.end}`
+                : '-'}
             </td>
           </tr>
         ))}

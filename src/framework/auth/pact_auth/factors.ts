@@ -93,7 +93,7 @@ export const listPasskeys = async (): Promise<PasskeyView[]> => {
 };
 
 // hasWebAuthnFactor powers the registration banner / dashboard nudge.
-// We treat "any non-revoked passkey" as the signal — if the user has at
+// We treat "any non-revoked passkey" as the signal - if the user has at
 // least one passkey, they have a phishing-resistant primary factor and
 // the banner shouldn't pester them.
 export const hasWebAuthnFactor = async (): Promise<boolean> => {

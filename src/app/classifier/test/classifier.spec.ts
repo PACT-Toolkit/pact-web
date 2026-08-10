@@ -57,19 +57,19 @@ test.describe('Classifier console', () => {
 
   test('pagination moves to a second page of records', async ({ page }) => {
     const pageInfo = page.getByTestId('classifier-page-info');
-    await expect(pageInfo).toContainText('1–25 of');
+    await expect(pageInfo).toContainText('1-25 of');
 
     const nextButton = page.getByTestId('classifier-page-next');
     await expect(nextButton).toBeEnabled();
     await nextButton.click();
 
-    await expect(pageInfo).toContainText('26–');
+    await expect(pageInfo).toContainText('26-');
 
     const prevButton = page.getByTestId('classifier-page-prev');
     await expect(prevButton).toBeEnabled();
     await prevButton.click();
 
-    await expect(pageInfo).toContainText('1–25 of');
+    await expect(pageInfo).toContainText('1-25 of');
   });
 
   test('ad-hoc test panel flags a hostile verdict and marks it false positive', async ({

@@ -7,7 +7,7 @@ tags: prefetch, ux
 
 ## Use preload() on Hover or Route Hint
 
-`preload(key, fetcher)` warms the cache from anywhere — event handlers, router hooks, even outside React. Calling it on hover for a likely-next page makes the navigation feel instant when the user actually clicks.
+`preload(key, fetcher)` warms the cache from anywhere - event handlers, router hooks, even outside React. Calling it on hover for a likely-next page makes the navigation feel instant when the user actually clicks.
 
 **Incorrect (cold load on click):**
 
@@ -29,4 +29,4 @@ import { preload } from 'swr';
 </Link>;
 ```
 
-Reference: [SWR — Prefetching with preload](https://swr.vercel.app/docs/prefetching#programmatically-prefetch)
+Reference: [SWR - Prefetching with preload](https://swr.vercel.app/docs/prefetching#programmatically-prefetch)

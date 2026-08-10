@@ -96,7 +96,7 @@ export const POST = async (req: NextRequest) => {
 //   Unauthenticated → "invalid credentials" (we deliberately don't
 //     leak which factor failed; pact-auth is constant-time on the
 //     not-found path).
-//   FailedPrecondition → "email not verified" — surfaced as a distinct
+//   FailedPrecondition → "email not verified" - surfaced as a distinct
 //     code so the form can render a "resend verification" affordance
 //     instead of the generic error treatment.
 // Everything else delegates to mapPactAuthError for the standard shape.

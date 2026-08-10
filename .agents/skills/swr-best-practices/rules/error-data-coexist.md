@@ -7,7 +7,7 @@ tags: error, ux
 
 ## data and error Can Coexist
 
-SWR keeps the last successful `data` even after a revalidation fails — `error` is set but `data` still holds the previous value. This is the right model for stale-while-revalidate: show the cached UI plus a subtle "couldn't refresh" indicator.
+SWR keeps the last successful `data` even after a revalidation fails - `error` is set but `data` still holds the previous value. This is the right model for stale-while-revalidate: show the cached UI plus a subtle "couldn't refresh" indicator.
 
 **Incorrect (treats error as a hard failure, hides good data):**
 
@@ -30,4 +30,4 @@ return (
 );
 ```
 
-Reference: [SWR — Error Handling](https://swr.vercel.app/docs/error-handling)
+Reference: [SWR - Error Handling](https://swr.vercel.app/docs/error-handling)

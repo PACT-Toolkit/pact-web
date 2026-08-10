@@ -12,7 +12,7 @@ export const runtime = 'nodejs';
 
 // POST /api/auth/mfa/recovery-codes
 // Generates a fresh batch of recovery codes; the previous batch is invalidated
-// server-side. Codes are returned only here — we never persist them client-side
+// server-side. Codes are returned only here - we never persist them client-side
 // or surface them again, so the caller MUST display them once and prompt the
 // user to copy/print/save them before navigating away.
 export const POST = async () => {

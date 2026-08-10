@@ -20,7 +20,7 @@ type Body = { label?: unknown };
 // Body: { label: string }
 // Returns: { ceremonyId, options }
 //
-// Reads the session token from the httpOnly pact_session cookie — never trust
+// Reads the session token from the httpOnly pact_session cookie - never trust
 // a session token in the request body for an enrollment endpoint.
 export const POST = async (req: NextRequest) => {
   const sessionToken = await getSessionToken();

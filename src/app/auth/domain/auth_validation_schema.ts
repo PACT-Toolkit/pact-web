@@ -8,7 +8,7 @@ export const loginSchema = yup.object({
 export type LoginFormData = yup.InferType<typeof loginSchema>;
 
 // pact-auth enforces 15..128 chars server-side (NFC-normalized). Mirror it
-// here so we fail fast — the server is still the source of truth.
+// here so we fail fast - the server is still the source of truth.
 const passwordRule = yup
   .string()
   .min(15, 'Password must be at least 15 characters')

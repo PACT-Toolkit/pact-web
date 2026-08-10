@@ -7,7 +7,7 @@ tags: key, cache
 
 ## Object Keys Are Stable Since 1.1.0
 
-SWR ≥ 1.1 serializes object keys with stable hashing — `{ a: 1, b: 2 }` and `{ b: 2, a: 1 }` produce the same cache slot. Pre-1.1 workarounds that stringified keys by hand are now obsolete and risk drifting from the auto-serializer.
+SWR ≥ 1.1 serializes object keys with stable hashing - `{ a: 1, b: 2 }` and `{ b: 2, a: 1 }` produce the same cache slot. Pre-1.1 workarounds that stringified keys by hand are now obsolete and risk drifting from the auto-serializer.
 
 **Incorrect (manual stringification):**
 
@@ -25,6 +25,6 @@ const { data } = useSWR(
 );
 ```
 
-This is also why it's safe for codegen-generated mutation hooks to accept inline POST bodies as the second tuple element — those object literals are stable across renders.
+This is also why it's safe for codegen-generated mutation hooks to accept inline POST bodies as the second tuple element - those object literals are stable across renders.
 
-Reference: [SWR — Multiple Arguments](https://swr.vercel.app/docs/arguments#passing-objects)
+Reference: [SWR - Multiple Arguments](https://swr.vercel.app/docs/arguments#passing-objects)

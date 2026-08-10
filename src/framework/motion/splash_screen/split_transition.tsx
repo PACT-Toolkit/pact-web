@@ -14,12 +14,12 @@ import {
 // Splash exit choreography: two horizontal strokes overlap at the
 // viewport's vertical centre, scaling in from 0 to full width to form
 // what the viewer reads as a single thin seam line. After a short beat
-// the splash visual (rendered twice as a frozen facade — once clipped
+// the splash visual (rendered twice as a frozen facade - once clipped
 // to the top half of the viewport, once to the bottom) starts sliding
 // off-screen on its own axis (top half `y: -100%`, bottom half
-// `y: 100%`). Each seam stroke is pinned inside its half wrapper —
+// `y: 100%`). Each seam stroke is pinned inside its half wrapper -
 // the top stroke at the wrapper's `bottom-1/2` (so it sits just above
-// the clip cutoff), the bottom stroke at `top-1/2` (just below) — so
+// the clip cutoff), the bottom stroke at `top-1/2` (just below) - so
 // they're carried offstage by the same translate that moves the
 // halves. From the viewer's perspective the single seam line visibly
 // splits into two and rides away with the splash.
@@ -30,7 +30,7 @@ import {
 // dark:bg-black`) matches the destination bg, the splash → destination
 // unmount/mount swap is invisible.
 //
-// Reduced-motion users never see this — the orchestrator short-circuits
+// Reduced-motion users never see this - the orchestrator short-circuits
 // `handleContinue` and calls `router.replace` immediately. This
 // component is only mounted on the animated path.
 //
@@ -44,7 +44,7 @@ import {
 // pinned inside it) offstage as one piece.
 export const SplitTransition = () => (
   <>
-    {/* Top half — clipped to viewport top 50%, slides up. The wrapper
+    {/* Top half - clipped to viewport top 50%, slides up. The wrapper
         is absolute/full-screen so its inner facade lays out at the
         same coordinates as the live splash content; clip-path then
         reveals only the top half, and `y` translates the whole
@@ -64,7 +64,7 @@ export const SplitTransition = () => (
     >
       <SplashFacade />
       {/* Top half's seam stroke. `bottom-1/2` pins the stroke's bottom
-          edge at the wrapper's 50% line — i.e. 1 px above the clip
+          edge at the wrapper's 50% line - i.e. 1 px above the clip
           cutoff, so it sits at the very bottom of the visible top
           half. `origin-center` makes scaleX expand the line outward
           from the screen's vertical centre line. */}
@@ -80,7 +80,7 @@ export const SplitTransition = () => (
       />
     </motion.div>
 
-    {/* Bottom half — clipped to viewport bottom 50%, slides down. */}
+    {/* Bottom half - clipped to viewport bottom 50%, slides down. */}
     <motion.div
       key="split-bottom"
       aria-hidden="true"
@@ -96,7 +96,7 @@ export const SplitTransition = () => (
     >
       <SplashFacade />
       {/* Bottom half's seam stroke. `top-1/2` pins the stroke's top
-          edge at the wrapper's 50% line — 1 px below the clip cutoff,
+          edge at the wrapper's 50% line - 1 px below the clip cutoff,
           at the very top of the visible bottom half. Sits flush
           against the top stroke during phase 1 so the two read as a
           single seam line; once the halves start sliding apart this

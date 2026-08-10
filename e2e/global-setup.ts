@@ -20,7 +20,7 @@ const globalSetup = async (): Promise<void> => {
         'This suite requires pact-auth + Postgres to be running. Bring them up:',
         '  cd ../pact-auth && make compose-up && make dev',
         '',
-        'And — if you want emails captured to disk instead of Brevo — also:',
+        'And - if you want emails captured to disk instead of Brevo - also:',
         '  cd ../pact-notify && make dev DOPPLER_CONFIG=dev_log',
         '',
         `Seed identity: ${TEST_USER.email}`,

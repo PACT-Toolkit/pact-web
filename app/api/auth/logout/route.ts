@@ -8,7 +8,7 @@ import {
 
 export const runtime = 'nodejs';
 
-// Idempotent. Safe to call without a session — we just clear the cookies.
+// Idempotent. Safe to call without a session - we just clear the cookies.
 // Best-effort RevokeSession: any failure here (network blip, expired token)
 // shouldn't block the user from logging out, so we swallow it. The cookie
 // clear below is what actually ends the user-visible session.

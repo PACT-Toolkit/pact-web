@@ -340,9 +340,9 @@ tests/e2e/inventory.spec.ts
 
 For this feature:
 
-- **11 API tests** — ~2 seconds total, no browser
-- **10 component tests** — ~5 seconds total, real browser but no server
-- **3 E2E tests** — ~15 seconds total, full stack
+- **11 API tests** - ~2 seconds total, no browser
+- **10 component tests** - ~5 seconds total, real browser but no server
+- **3 E2E tests** - ~15 seconds total, full stack
 
 Total: 24 tests, ~22 seconds. API tests catch most regressions. Component tests catch UI bugs. E2E tests prove wiring works. If E2E fails but API and component pass, the problem is in integration (routing, state management, API client).
 
@@ -361,9 +361,9 @@ Total: 24 tests, ~22 seconds. API tests catch most regressions. Component tests 
 
 ## Related
 
-- [test-suite-structure.md](../core/test-suite-structure.md) — file structure and naming
-- [api-testing.md](../testing-patterns/api-testing.md) — Playwright's `request` API for HTTP testing
-- [component-testing.md](../testing-patterns/component-testing.md) — setting up component tests
-- [authentication.md](../advanced/authentication.md) — auth flow patterns with `storageState`
-- [when-to-mock.md](when-to-mock.md) — when to mock vs hit real services
-- [pom-vs-fixtures.md](pom-vs-fixtures.md) — organizing shared test logic
+- [test-suite-structure.md](../core/test-suite-structure.md) - file structure and naming
+- [api-testing.md](../testing-patterns/api-testing.md) - Playwright's `request` API for HTTP testing
+- [component-testing.md](../testing-patterns/component-testing.md) - setting up component tests
+- [authentication.md](../advanced/authentication.md) - auth flow patterns with `storageState`
+- [when-to-mock.md](when-to-mock.md) - when to mock vs hit real services
+- [pom-vs-fixtures.md](pom-vs-fixtures.md) - organizing shared test logic

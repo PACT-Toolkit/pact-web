@@ -18,7 +18,7 @@ type Body = { passkeyId?: unknown };
 // POST /api/auth/passkey/delete
 // Body: { passkeyId }
 // Soft-deletes the passkey. We keep this as POST (not DELETE) for parity
-// with the rest of the auth API — every other proxy route is POST and
+// with the rest of the auth API - every other proxy route is POST and
 // the common fetch wrapper assumes JSON-in/JSON-out POST.
 export const POST = async (req: NextRequest) => {
   const sessionToken = await getSessionToken();

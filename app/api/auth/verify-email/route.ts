@@ -54,7 +54,7 @@ export const GET = async (req: NextRequest) => {
   // pact-auth echoes back the same return_to it stored at register time
   // and validated against the allowlist. Rebase the host onto the
   // inbound request's origin so "register on laptop, click email on
-  // phone" lands the phone on a URL the phone can actually reach — the
+  // phone" lands the phone on a URL the phone can actually reach - the
   // path part is what carries the user's intent ("go to /dashboard"),
   // not the host. We only forward the path + query to the success
   // page: the success page is same-origin and accepting absolute URLs

@@ -35,7 +35,7 @@ const visibleTestId = (page: Page, id: string): Locator =>
 
 // computeTotpCode prefers the otpauth URL when it's rendered (it carries
 // algorithm / digits / period as authoritative params), falling back to
-// the bare secret with library defaults if the URL is malformed — which
+// the bare secret with library defaults if the URL is malformed - which
 // would only happen on a regression in pact-auth's BeginTOTPEnrollment
 // response. Either way the TOTP we compute is what an authenticator app
 // would show right now.
@@ -131,7 +131,7 @@ const computeTotpCode = (
 
 test.describe('MFA TOTP enrollment', () => {
   // Wipe the user's MFA rows before every spec so each one starts on a
-  // clean slate — neither a leftover pending factor (which would make
+  // clean slate - neither a leftover pending factor (which would make
   // BeginTOTPEnrollment 409) nor a verified factor (which hides the
   // "Add authenticator" button).
   test.beforeEach(async () => {
@@ -149,7 +149,7 @@ test.describe('MFA TOTP enrollment', () => {
 
     await page.goto('/settings/security');
     // The settings cards use shadcn's CardTitle which renders a div,
-    // not a heading — so we wait on the data-testid'd trigger instead
+    // not a heading - so we wait on the data-testid'd trigger instead
     // of getByRole('heading', ...).
     await expect(visibleTestId(page, 'totp-add')).toBeVisible();
 
@@ -243,7 +243,7 @@ test.describe('MFA TOTP enrollment', () => {
 });
 
 // Step-up suite: drives the password+TOTP login flow end-to-end. Each
-// spec enrols a fresh factor from scratch so the secret stays in scope —
+// spec enrols a fresh factor from scratch so the secret stays in scope -
 // the secret isn't surfaced anywhere in the UI after enrolment, so the
 // test has to capture it at the source.
 test.describe('MFA TOTP login step-up', () => {
@@ -260,7 +260,7 @@ test.describe('MFA TOTP login step-up', () => {
 
     const { secret, otpauthUrl } = await enrollTotpFromSettings(page);
 
-    // Clear cookies to simulate sign-out — exercising the real /logout
+    // Clear cookies to simulate sign-out - exercising the real /logout
     // flow would add a second moving piece (it's a server action) that
     // this spec doesn't need to cover.
     await context.clearCookies();
@@ -283,7 +283,7 @@ test.describe('MFA TOTP login step-up', () => {
     await page.waitForURL('**/dashboard');
 
     // We enrol just to put the user into "has verified TOTP" state.
-    // The secret itself isn't used in this spec — we deliberately send
+    // The secret itself isn't used in this spec - we deliberately send
     // a wrong code to assert the failure UX.
     await enrollTotpFromSettings(page);
 

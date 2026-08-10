@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { defaultReturnTo, rebaseReturnTo, requestOrigin } from './return_to';
 
-// We don't need a real NextRequest — only the bits the helper touches.
+// We don't need a real NextRequest - only the bits the helper touches.
 type FakeReq = {
   headers: Headers;
   nextUrl: URL;
@@ -146,7 +146,7 @@ describe('rebaseReturnTo', () => {
     });
   });
 
-  it('IS A NO-OP IN PRODUCTION — refuses to honor attacker-controlled Host', () => {
+  it('IS A NO-OP IN PRODUCTION - refuses to honor attacker-controlled Host', () => {
     // Hostile upstream sends `Host: evil.example`. In prod we MUST land
     // on the URL pact-auth canonicalized through the allowlist, NOT the
     // attacker's host.

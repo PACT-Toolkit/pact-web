@@ -21,6 +21,6 @@ const { data } = useSWR(limitsKey, fetcher); // re-fetches every focus
 const { data } = useSWR(limitsKey, fetcher, { revalidateOnFocus: false });
 ```
 
-Don't disable globally — most reads benefit from focus revalidation. Disable per call site only when there's a specific reason.
+Don't disable globally - most reads benefit from focus revalidation. Disable per call site only when there's a specific reason.
 
-Reference: [SWR — Revalidate on Focus](https://swr.vercel.app/docs/revalidation#revalidate-on-focus)
+Reference: [SWR - Revalidate on Focus](https://swr.vercel.app/docs/revalidation#revalidate-on-focus)

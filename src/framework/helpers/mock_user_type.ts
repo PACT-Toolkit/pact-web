@@ -22,7 +22,7 @@ const isMockUserTypeValue = (v: unknown): v is MockUserType =>
   typeof v === 'string' && (MOCK_USER_TYPES as readonly string[]).includes(v);
 
 // Reads the active mock user type from document.cookie. Returns the
-// default when called server-side (no document) — server reads should
+// default when called server-side (no document) - server reads should
 // come from next/headers cookies() and validate via isMockUserTypeValue.
 export const getMockUserType = (
   defaultValue: MockUserType = DEFAULT_MOCK_USER_TYPE

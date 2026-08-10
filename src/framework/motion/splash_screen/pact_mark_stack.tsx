@@ -22,7 +22,7 @@ type PactMarkStackProps = {
 };
 
 // Two stacked copies of the mark:
-//   1. A low-opacity ghost that's always visible — keeps the silhouette
+//   1. A low-opacity ghost that's always visible - keeps the silhouette
 //      readable between breath sweeps, and gives reduced-motion users
 //      something to look at if the breath is suppressed.
 //   2. A full-opacity copy on top, masked by *two* unioned gradients
@@ -66,17 +66,17 @@ export const PactMarkStack = ({
 
   // Breath peak alpha. Holds at 1 below the transition threshold and fades
   // 1 → 0 across the fill window, so the diagonal stripe doesn't keep
-  // cycling through the unfilled portion while the fill is rising — by the
+  // cycling through the unfilled portion while the fill is rising - by the
   // time the count reaches 100 the breath is fully invisible and only the
   // fill remains.
   const breathAlpha = useTransform(fillT, (t) => Math.max(0, 1 - t));
 
   // Composite mask: diagonal breath band UNIONED with a diagonal fill that
   // grows along the same 45° axis. The default `mask-composite: add` stacks
-  // the two gradients additively — pixels masked by *either* layer stay
+  // the two gradients additively - pixels masked by *either* layer stay
   // visible. As the fill advances it permanently locks in more of the mark
   // (from the bottom-left corner outward) AND the breath fades to 0, so the
-  // stripe doesn't linger behind the fill — at progress=100 the fill covers
+  // stripe doesn't linger behind the fill - at progress=100 the fill covers
   // the artwork and the breath has vanished.
   const breathMask = useTransform(
     [breathCenter, fillCutoff, breathAlpha],

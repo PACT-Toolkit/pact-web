@@ -83,7 +83,7 @@ export const BenchmarkUploadForm = ({
             />
             {fileName && !validationError && (
               <p className="text-xs text-muted-foreground">
-                {fileName} — ready to submit
+                {fileName} - ready to submit
               </p>
             )}
             {validationError && (

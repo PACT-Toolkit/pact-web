@@ -95,9 +95,9 @@ const isRedacted = (dp: DecisionPayload): boolean =>
 
 /**
  * Severity bucket for the stream filter:
- * - `blocked` — the gateway returned a block decision.
- * - `flagged` — allowed, but at least one stage raised a signal.
- * - `clean`   — allowed with no signal.
+ * - `blocked` - the gateway returned a block decision.
+ * - `flagged` - allowed, but at least one stage raised a signal.
+ * - `clean`   - allowed with no signal.
  */
 export const decisionSeverity = (dp: DecisionPayload): DecisionSeverity => {
   if (dp.decision === 'block') return 'blocked';

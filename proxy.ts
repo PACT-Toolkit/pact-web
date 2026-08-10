@@ -22,7 +22,7 @@ const PUBLIC_PATHS = [
 ];
 
 // Next.js 16 renamed `middleware` to `proxy`. Behavior is unchanged.
-// This is the cheap edge-side gate — cookie-existence only, not the real
+// This is the cheap edge-side gate - cookie-existence only, not the real
 // auth barrier. requireSession() in app/(app)/layout.tsx is what actually
 // validates against pact-auth.
 //

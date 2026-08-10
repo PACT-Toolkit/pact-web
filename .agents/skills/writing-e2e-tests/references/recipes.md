@@ -1,4 +1,4 @@
-# Playwright Recipes — Codebase-Specific Patterns
+# Playwright Recipes - Codebase-Specific Patterns
 
 Only patterns you can't derive from standard Playwright docs.
 
@@ -29,7 +29,7 @@ await Promise.all(errorIds.map((id) => expect(page.locator(`#${id}`)).toBeVisibl
 
 ## Date Pickers (react-day-picker)
 
-The date picker renders days as `button.rdp-day_button` — use exact regex to avoid matching day 15 when clicking 1:
+The date picker renders days as `button.rdp-day_button` - use exact regex to avoid matching day 15 when clicking 1:
 
 ```ts
 await page.clock.setFixedTime(new Date(Date.UTC(2021, 10, 20)));

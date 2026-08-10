@@ -51,7 +51,7 @@ export const AccountSettingsExportCard = () => {
         <CardDescription>
           Download everything pact-account holds about you, as JSON. This covers
           your profile, preferences, and consent history. Other PACT services
-          own their own exports — request those separately as they come online.
+          own their own exports - request those separately as they come online.
         </CardDescription>
       </CardHeader>
       <CardContent>

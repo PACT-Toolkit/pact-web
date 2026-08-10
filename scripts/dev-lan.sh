@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# dev-lan.sh — Next.js dev server bound to all interfaces (0.0.0.0)
+# dev-lan.sh - Next.js dev server bound to all interfaces (0.0.0.0)
 # so a phone on the same Wi-Fi can reach the laptop. Plain HTTP by
 # default; pass `--https` for an mkcert-issued LAN cert (required for
 # WebAuthn / passkeys, optional for everything else).
@@ -8,7 +8,7 @@
 # Three things have to all be right for phone-on-Wi-Fi to work:
 #
 #   1. The dev server must LISTEN on 0.0.0.0, not localhost. (Next.js
-#      defaults to localhost-only — that's the #1 cause of "site can't
+#      defaults to localhost-only - that's the #1 cause of "site can't
 #      be reached" on the phone.) We pass `-H 0.0.0.0` below.
 #
 #   2. The macOS firewall must allow incoming connections to Node.
@@ -16,11 +16,11 @@
 #      can't undo it:
 #        System Settings → Network → Firewall → Options → remove `node`.
 #      If "Block all incoming connections" is on, this won't work at
-#      all — turn it off for the duration of dev.
+#      all - turn it off for the duration of dev.
 #
 #   3. The email-link host must be a LAN URL the phone can actually
 #      reach. We force that by exporting PACT_AUTH_DEFAULT_RETURN_TO
-#      below, so any register call — even from http://localhost — pins
+#      below, so any register call - even from http://localhost - pins
 #      the link to the LAN host. defaultReturnTo() prefers the env var
 #      over the inbound Host header.
 #
@@ -32,8 +32,8 @@
 #   Android: Settings → Security → Install from storage
 #
 # Usage:
-#   pnpm dev:lan          # plain HTTP — email verify / password reset
-#   pnpm dev:https:lan    # mkcert + HTTPS — also unlocks passkeys
+#   pnpm dev:lan          # plain HTTP - email verify / password reset
+#   pnpm dev:https:lan    # mkcert + HTTPS - also unlocks passkeys
 #
 # Overrides:
 #   LAN_IP=192.168.x.x    pnpm dev:lan      # force a specific IP
@@ -51,7 +51,7 @@ esac
 
 PORT="${LAN_PORT:-3000}"
 # Default to env/local-real.env: LAN dev with a phone only makes sense
-# against real pact-auth + pact-notify — mock-mode would never emit a
+# against real pact-auth + pact-notify - mock-mode would never emit a
 # verify-email Kafka event in the first place. Override via ENV_FILE.
 ENV_FILE="${ENV_FILE:-./env/local-real.env}"
 
@@ -136,7 +136,7 @@ if [[ "${USE_HTTPS}" -eq 1 ]]; then
   SCHEME="https"
 fi
 
-# Pin every auth flow's returnTo to the LAN URL — without this, opening
+# Pin every auth flow's returnTo to the LAN URL - without this, opening
 # http(s)://localhost:PORT/register on the laptop produces an email with a
 # localhost link that the phone resolves to itself ("site can't be reached").
 export PACT_AUTH_DEFAULT_RETURN_TO="${SCHEME}://${LAN_IP}:${PORT}/dashboard"
@@ -176,7 +176,7 @@ EOM
 else
   cat <<EOM
 
-  Passkeys WILL NOT work over plain HTTP on a LAN IP — use
+  Passkeys WILL NOT work over plain HTTP on a LAN IP - use
   pnpm run dev:https:lan for that.
 EOM
 fi

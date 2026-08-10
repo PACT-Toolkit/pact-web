@@ -7,7 +7,7 @@ const FilesPage = () => {
         <h1 className="text-2xl font-semibold">Files</h1>
         <p className="text-sm text-muted-foreground">
           Upload, monitor, and delete files. Bytes go directly from your browser
-          to object storage using short-lived presigned URLs — they never pass
+          to object storage using short-lived presigned URLs - they never pass
           through pact-gateway.
         </p>
       </header>

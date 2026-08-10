@@ -29,7 +29,7 @@ export const isWebAuthnSupported = (): boolean => {
   );
 };
 
-// Conditional UI / autofill — lets the browser surface passkeys in the
+// Conditional UI / autofill - lets the browser surface passkeys in the
 // email field's autofill list without the user clicking the passkey CTA.
 // Returns false if the platform doesn't advertise the capability.
 export const isConditionalMediationSupported = async (): Promise<boolean> => {
@@ -182,7 +182,7 @@ const mapDomError = (err: unknown): PasskeyError => {
   if (err instanceof PasskeyError) return err;
   if (err instanceof DOMException) {
     // NotAllowedError covers both "user dismissed prompt" and "no matching
-    // credential" — the spec is intentionally vague to avoid leaking which
+    // credential" - the spec is intentionally vague to avoid leaking which
     // accounts have passkeys, so we surface a single generic message.
     if (err.name === 'NotAllowedError') {
       return new PasskeyError(
@@ -346,7 +346,7 @@ export const completeMfaWithPasskey = async (): Promise<void> => {
 };
 
 // Enroll a new passkey for the currently signed-in user. The session token
-// stays server-side — only the passkey label is sent from the browser.
+// stays server-side - only the passkey label is sent from the browser.
 export const enrollPasskey = async ({
   label,
 }: {

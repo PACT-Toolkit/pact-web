@@ -30,4 +30,4 @@ return (
 );
 ```
 
-Reference: [SWR — Pagination](https://swr.vercel.app/docs/pagination)
+Reference: [SWR - Pagination](https://swr.vercel.app/docs/pagination)

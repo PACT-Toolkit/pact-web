@@ -29,4 +29,4 @@ useSWR(['/api/user', userId], fetchUser);
 
 Related: `SWRConfiguration<Data, Error, Fetcher>` for typed config objects, `SWRInfiniteKeyLoader<Data, Key>` for infinite `getKey` functions.
 
-Reference: [SWR — TypeScript](https://swr.vercel.app/docs/typescript)
+Reference: [SWR - TypeScript](https://swr.vercel.app/docs/typescript)

@@ -27,4 +27,4 @@ const { trigger, isMutating } = useSWRMutation('/api/user', (key, { arg }) =>
 const onSubmit = (values) => trigger(values);
 ```
 
-Reference: [SWR — useSWRMutation](https://swr.vercel.app/docs/mutation#useswrmutation)
+Reference: [SWR - useSWRMutation](https://swr.vercel.app/docs/mutation#useswrmutation)

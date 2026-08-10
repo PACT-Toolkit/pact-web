@@ -278,7 +278,7 @@ export const FilterTestRuleSandbox = () => {
                 data-testid="filter-test-rule-matched-span"
               >
                 Matched span [{result.matchedSpan.start}
-                {'–'}
+                {'-'}
                 {result.matchedSpan.end}]:{' '}
                 <code>{result.matchedSpan.text}</code>
               </div>

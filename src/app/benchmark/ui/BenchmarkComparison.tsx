@@ -167,7 +167,7 @@ const BenchmarkComparisonPanel = () => {
                           DELTA_CLASS[m.deltaDirection]
                         )}
                       >
-                        {m.delta === 0 ? '—' : formatDelta(m.delta, m.format)}
+                        {m.delta === 0 ? '-' : formatDelta(m.delta, m.format)}
                       </td>
                     </tr>
                   ))}

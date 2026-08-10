@@ -1,4 +1,4 @@
-# Mocks — MSW Conventions and Imports
+# Mocks - MSW Conventions and Imports
 
 Load this when wiring a spec against mock data or considering a per-test mock override.
 
@@ -10,7 +10,7 @@ Load this when wiring a spec against mock data or considering a per-test mock ov
 
 ## Do NOT create test-specific mock overrides
 
-Use the existing mock layer. If a spec needs a state the shared mocks don't cover, extend the shared mock so other specs benefit too — don't fork it inside the spec file.
+Use the existing mock layer. If a spec needs a state the shared mocks don't cover, extend the shared mock so other specs benefit too - don't fork it inside the spec file.
 
 ## Importing mock data and types
 

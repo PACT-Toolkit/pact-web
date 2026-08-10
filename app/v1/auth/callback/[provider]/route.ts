@@ -22,7 +22,7 @@ const ALLOWED_PROVIDERS = new Set(['github', 'google', 'meta']);
 
 // GET /v1/auth/callback/{provider}?code=…&state=…
 //
-// This path shape is fixed by pact-auth — internal/oauth/providers.go
+// This path shape is fixed by pact-auth - internal/oauth/providers.go
 // builds the OAuth app's RedirectURL as `${OAUTH_REDIRECT_BASE_URL}
 // /v1/auth/callback/{provider}`, and the URL must match what's registered
 // with the provider. If we ever move pact-gateway in front of pact-web
@@ -41,7 +41,7 @@ export const GET = async (
   const state = req.nextUrl.searchParams.get('state');
   const providerError = req.nextUrl.searchParams.get('error');
 
-  // Provider-side rejection ("user denied", "access_denied") — the user
+  // Provider-side rejection ("user denied", "access_denied") - the user
   // canceled the consent screen. Send them home with a friendly reason.
   if (providerError) {
     return failed(req, providerError);
@@ -57,8 +57,8 @@ export const GET = async (
 
   if (isMock()) {
     // Complete the dance without calling pact-auth. Set a synthetic
-    // session cookie — validateSessionFromCookies() short-circuits in
-    // mock mode so the value here is purely cosmetic — and redirect
+    // session cookie - validateSessionFromCookies() short-circuits in
+    // mock mode so the value here is purely cosmetic - and redirect
     // to the original return_to (the start handler put it on the URL).
     const returnTo =
       req.nextUrl.searchParams.get('return_to') || FALLBACK_RETURN_TO;
@@ -122,8 +122,8 @@ export const GET = async (
   const returnTo = resp.returnTo || FALLBACK_RETURN_TO;
   const target = rebaseReturnTo(req, returnTo);
 
-  // MFA branch: pact-auth has not minted a session — session_token and
-  // refresh_token are empty — and instead handed us a short-lived
+  // MFA branch: pact-auth has not minted a session - session_token and
+  // refresh_token are empty - and instead handed us a short-lived
   // mfa_token. Route through the same /login/mfa step-up the password
   // flow uses, stashing the token in the same httpOnly cookie so the
   // step-up form (and only that form) can present it back via
@@ -166,7 +166,7 @@ const failed = (req: NextRequest, reason: string) => {
   const url = new URL('/login', req.url);
   url.searchParams.set('oauth_error', reason);
   const res = NextResponse.redirect(url);
-  // Burn the state cookie too — it's one-shot and we shouldn't leave it
+  // Burn the state cookie too - it's one-shot and we shouldn't leave it
   // sitting on the box if the dance failed.
   burnStateCookie(res);
 

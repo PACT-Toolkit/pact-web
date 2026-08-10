@@ -21,7 +21,7 @@ import {
 //    of duplicating its own mounted-state + useState + onEnrolled wiring.
 //
 // SSR snapshot is pessimistic (hidden=true) so the server never paints
-// the prompt — the post-hydration commit reveals it only if the
+// the prompt - the post-hydration commit reveals it only if the
 // browser actually supports passkeys and the user hasn't already
 // dismissed/enrolled. Avoids both a flash-of-prompt on unsupported
 // browsers and a hydration mismatch.

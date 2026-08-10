@@ -7,7 +7,7 @@ tags: nextjs, rsc
 
 ## SWR Hooks Require 'use client'
 
-`useSWR`, `useSWRInfinite`, `useSWRMutation`, and `useSWRSubscription` are client hooks — they rely on browser APIs (focus events, `mutate` ref, deep-equal compare). Calling them from a Server Component crashes the build.
+`useSWR`, `useSWRInfinite`, `useSWRMutation`, and `useSWRSubscription` are client hooks - they rely on browser APIs (focus events, `mutate` ref, deep-equal compare). Calling them from a Server Component crashes the build.
 
 `SWRConfig` and the serialization helpers (`unstable_serialize`) are safe in RSC and exist precisely so server components can hand state down.
 
@@ -36,4 +36,4 @@ export default function UserCard() {
 }
 ```
 
-Reference: [SWR — Next.js App Router](https://swr.vercel.app/docs/with-nextjs)
+Reference: [SWR - Next.js App Router](https://swr.vercel.app/docs/with-nextjs)

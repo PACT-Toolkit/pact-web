@@ -4,7 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 
 import { checkBreach } from './check_breach';
 
-// Minimum password length before we bother running the HIBP probe —
+// Minimum password length before we bother running the HIBP probe -
 // anything shorter is already going to fail server-side validation,
 // and we don't want to leak hashes for "test" / "abc" while the user
 // is still typing.
@@ -13,7 +13,7 @@ const MIN_LEN_FOR_BREACH_CHECK = 15;
 // Encapsulates the on-blur HIBP k-anonymity probe used by both
 // `RegisterForm` and `ResetPasswordForm`. Returns the warning flag
 // and a stable `onPasswordBlur` handler that callers wire to the
-// password input. AbortController machinery is hidden — every blur
+// password input. AbortController machinery is hidden - every blur
 // cancels the previous in-flight probe so the warning never reflects
 // a stale password.
 //

@@ -38,7 +38,7 @@ TestLabLayerNode.tsx  →  export const TestLabLayerNode = ...
 AuditDecisionInsights.tsx  →  export const AuditDecisionInsights = ...
 ```
 
-Never use a generic name (`index.tsx` inside `ui/` is the only exception — it's the barrel).
+Never use a generic name (`index.tsx` inside `ui/` is the only exception - it's the barrel).
 
 ### Barrel file (`index.ts`)
 

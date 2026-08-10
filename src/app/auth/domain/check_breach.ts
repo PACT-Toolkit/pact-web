@@ -2,7 +2,7 @@
  * Client-side HIBP k-anonymity check.
  *
  * Only the first 5 hex characters of the SHA-1 hash are sent over the
- * network — the full password never leaves the browser. This is a
+ * network - the full password never leaves the browser. This is a
  * non-blocking UX hint; the server performs its own authoritative check.
  */
 

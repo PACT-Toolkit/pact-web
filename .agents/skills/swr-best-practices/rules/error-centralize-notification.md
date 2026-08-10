@@ -31,6 +31,6 @@ const onSubmit = async (values) => {
 };
 ```
 
-For query hooks (read failures), prefer rendering an inline error component rather than a toast — toasts are for transient feedback, not persistent failure states.
+For query hooks (read failures), prefer rendering an inline error component rather than a toast - toasts are for transient feedback, not persistent failure states.
 
-Reference: [SWR — Global Error Report](https://swr.vercel.app/docs/error-handling#global-error-report)
+Reference: [SWR - Global Error Report](https://swr.vercel.app/docs/error-handling#global-error-report)

@@ -20,7 +20,7 @@ type CountDisplayProps = {
   prefersReducedMotion: boolean;
 };
 
-// The percent block — animated split-text intro, live count, then a slide-
+// The percent block - animated split-text intro, live count, then a slide-
 // down exit. Designed to be wrapped by an `<AnimatePresence>` in the
 // orchestrator with `{!ready && <CountDisplay … />}` so the exit fires
 // when the count completes.

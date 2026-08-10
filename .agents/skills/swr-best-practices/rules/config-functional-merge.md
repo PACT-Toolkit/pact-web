@@ -7,7 +7,7 @@ tags: config
 
 ## Functional SWRConfig Values Don't Auto-Merge
 
-`<SWRConfig value={...}>` accepts either an object (which merges with the parent config) or a function (which receives the parent config and returns the new one). With the function form, only the keys you return are kept — keys you don't return are *dropped*, not inherited from the parent.
+`<SWRConfig value={...}>` accepts either an object (which merges with the parent config) or a function (which receives the parent config and returns the new one). With the function form, only the keys you return are kept - keys you don't return are *dropped*, not inherited from the parent.
 
 **Incorrect (parent's `onErrorRetry` is silently lost):**
 
@@ -31,4 +31,4 @@ Or just use the object form, which merges automatically:
 <SWRConfig value={{ refreshInterval: 5_000 }}>{children}</SWRConfig>
 ```
 
-Reference: [SWR — Global Configuration](https://swr.vercel.app/docs/global-configuration)
+Reference: [SWR - Global Configuration](https://swr.vercel.app/docs/global-configuration)

@@ -130,7 +130,7 @@ Avoid logging in for every test. Use setup projects with storage state to authen
 
 > **For authentication patterns** (storage state, multiple auth states, setup projects), see [fixtures-hooks.md](fixtures-hooks.md#authentication-patterns).
 
-### Reuse Page State (serial only — trade-off with isolation)
+### Reuse Page State (serial only - trade-off with isolation)
 
 Sharing a single page/context across tests with `beforeAll`/`afterAll` is **not recommended** for most suites: it breaks test isolation, causes state leak between tests, and makes failures harder to debug. Prefer a fresh `page` per test (Playwright default). Use shared page only when you explicitly need serial execution and accept no isolation.
 
@@ -305,7 +305,7 @@ Workers are restarted after a test failure so subsequent tests in that worker ge
 ### Browser Contexts
 
 ```typescript
-// Recommended: One context per test (default) — full isolation
+// Recommended: One context per test (default) - full isolation
 test("isolated test", async ({ page }) => {
   // Fresh context automatically
 });

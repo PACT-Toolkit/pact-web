@@ -23,4 +23,4 @@ const { data } = useSWR(key, fetcher);
 return <Table rows={data} />;
 ```
 
-Reference: [SWR — Performance](https://swr.vercel.app/docs/advanced/performance#dependency-collection)
+Reference: [SWR - Performance](https://swr.vercel.app/docs/advanced/performance#dependency-collection)

@@ -11,7 +11,7 @@ vi.mock('@/src/framework/auth/pact_auth/client', () => ({
 }));
 
 // The route only ever calls `.handleCallback(...)` on the client, so the
-// fake only needs to implement that one method — cast it to the full
+// fake only needs to implement that one method - cast it to the full
 // generated Client type rather than mocking the other 27 RPCs.
 type HandleCallbackResult = Awaited<
   ReturnType<ReturnType<typeof getPactAuthClient>['handleCallback']>

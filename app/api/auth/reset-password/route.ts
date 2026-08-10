@@ -71,7 +71,7 @@ export const POST = async (req: NextRequest) => {
     });
   } catch (err) {
     // Unauthenticated on reset means "the token doesn't match a live
-    // reset request" — surfaced with a domain-specific code so the form
+    // reset request" - surfaced with a domain-specific code so the form
     // can offer a "request a new link" CTA. Other codes go through the
     // shared mapper.
     if (err instanceof ConnectError && err.code === Code.Unauthenticated) {

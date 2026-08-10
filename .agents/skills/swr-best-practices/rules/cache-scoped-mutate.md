@@ -7,7 +7,7 @@ tags: cache, provider, test
 
 ## Use Scoped mutate Under Custom Providers
 
-When a subtree wraps itself with a custom `<SWRConfig provider={() => new Map()}>` (most common in Vitest tests, where each test gets a fresh cache), the imported singleton `mutate` is scoped to the *outer* default provider — it won't reach the test's hooks. Always reach for `useSWRConfig().mutate` in code that may run under a custom provider.
+When a subtree wraps itself with a custom `<SWRConfig provider={() => new Map()}>` (most common in Vitest tests, where each test gets a fresh cache), the imported singleton `mutate` is scoped to the *outer* default provider - it won't reach the test's hooks. Always reach for `useSWRConfig().mutate` in code that may run under a custom provider.
 
 **Incorrect (test using imported mutate):**
 
@@ -39,4 +39,4 @@ test('refresh', async () => {
 });
 ```
 
-Reference: [SWR — Mutate Multiple Items](https://swr.vercel.app/docs/mutation#mutate-multiple-items)
+Reference: [SWR - Mutate Multiple Items](https://swr.vercel.app/docs/mutation#mutate-multiple-items)

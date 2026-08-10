@@ -1,47 +1,63 @@
 ---
-description: Never use em-dashes (U+2014) in any text a user can see — UI copy, error messages, email bodies, validation strings.
+description: Never use em-dashes (U+2014) or en-dashes (U+2013) anywhere in this repo's authored content - UI copy, error messages, email bodies, validation strings, code comments, internal docs, config comments.
 alwaysApply: true
 ---
 
-# No em-dashes in user-facing text
+# No em-dashes or en-dashes anywhere
 
-Em-dashes (`—`, U+2014) read as AI-generated, render unpredictably in
-email clients and assistive tech, and break visually on small screens.
-Use period, comma, semicolon, or colon instead, depending on the
-sentence shape.
+Em-dashes (`—`, U+2014) and en-dashes (`–`, U+2013) read as AI-generated,
+render unpredictably in email clients and assistive tech, and break
+visually on small screens. Use a plain dash (`-`) instead everywhere in
+this repo: user-facing text, code comments, internal docs, and config
+comments alike. Use period, comma, semicolon, or colon instead of a dash
+where it reads more naturally, depending on the sentence shape.
 
 ## Where this rule applies
+
+This is a fleet-wide, repo-wide rule. It applies to every piece of
+content this repo's contributors author, not just user-facing text:
 
 - JSX / TSX text inside components and pages
 - Form validation messages and yup / zod schemas
 - Toast, banner, dialog, and inline error copy
-- API route response bodies — anything in `error`, `message`,
+- API route response bodies - anything in `error`, `message`,
   `description`, etc.
-- Email templates (subject, plain-text, HTML) — `pact-notify/internal/templates/files/*`
-- Backend error strings that bubble to the UI — e.g. `status.Error`,
+- Email templates (subject, plain-text, HTML) - `pact-notify/internal/templates/files/*`
+- Backend error strings that bubble to the UI - e.g. `status.Error`,
   `status.Errorf`, `errors.New` returned by gRPC handlers when the
   Connect code is `InvalidArgument` (pact-web surfaces these via
   `err.rawMessage`)
 - Any string an end user can read
+- Code comments
+- Test names, `t.Skip` / `t.Errorf` messages, `describe` / `it` labels
+- Makefile and shell-script echoes
+- CI annotation strings (`::error::...`)
+- Internal docs (`.cursor/rules/`, `.claude/`, `.agents/`, `AGENTS.md`)
+  and their own descriptions / prose (not their illustrative examples -
+  see below)
 
 ## Where it does NOT apply
 
-- Code comments
-- Test names, `t.Skip` / `t.Errorf` messages
-- Makefile and shell-script echoes
-- CI annotation strings (`::error::…`)
-- Generated code (`__codegen__`, `*.pb.go`)
-- Internal docs (`.cursor/rules/`, `.claude/`, `.agents/`, `AGENTS.md`,
-  this file's own description / examples)
+- Generated code (`__codegen__`, `*.pb.go`, and anything else produced
+  by a codegen script rather than typed by a contributor)
+- Vendored/mirrored files pulled from another repo (e.g.
+  `schema/**/swagger.yaml`, downloaded by `scripts/api-download.mjs`)
+- Quoted external content that must stay byte-exact (e.g. a string
+  copied verbatim from a third party, or fixture data a test asserts
+  byte-exactly)
+- This file's own illustrative before/after examples below, which
+  intentionally keep the original em-dash so the diff still
+  demonstrates the replacement
 
 ## Replacement guide
 
 | Pattern | Replace with | Why |
 |---|---|---|
-| Sentence break: `A — B.` | `A. B.` (capitalize B) | Two thoughts → two sentences |
+| Sentence break: `A — B.` | `A. B.` (capitalize B) | Two thoughts -> two sentences |
 | Tight aside: `X, Y — Z` | `X, Y, Z` (comma) | Aside is light enough |
 | Apposition: `name — definition` | `name: definition` | Colon introduces a definition |
 | Recovery instruction: `bad state — do X` | `bad state; do X` or `bad state. Do X.` | Semicolon for tight pairs |
+| Plain punctuation break: `A — B` | `A - B` | Default when none of the above fit |
 
 ## Examples (from this codebase)
 
@@ -62,6 +78,10 @@ sentence shape.
 ## Quick check before merging
 
 ```bash
-# Inside any user-text file, this should return nothing:
-rg '"[^"]*\u2014[^"]*"|>[^<]*\u2014[^<]*<' src/ app/
+# Repo-wide, excluding generated/vendored content, this should return nothing:
+rg -P '[\x{2013}\x{2014}]' . \
+  --glob '!src/__codegen__/**' \
+  --glob '!schema/**/swagger.yaml' \
+  --glob '!pnpm-lock.yaml' \
+  --glob '!CHANGELOG.md'
 ```

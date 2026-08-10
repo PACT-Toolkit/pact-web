@@ -27,4 +27,4 @@ const { data } = useSWR(key, fetcher, {
 
 Trade-off: subsequent focus / reconnect / interval revalidations still run. Use this when you want hydration to be the source of truth for the first render only.
 
-Reference: [SWR — Revalidate on Mount](https://swr.vercel.app/docs/revalidation#revalidate-on-mount)
+Reference: [SWR - Revalidate on Mount](https://swr.vercel.app/docs/revalidation#revalidate-on-mount)

@@ -5,16 +5,16 @@ description: "Write unit tests with Vitest. Use when asked to 'add unit tests', 
 
 # Writing Unit Tests (Vitest)
 
-Write fast, focused unit tests using Vitest with standard APIs only — no custom helpers.
+Write fast, focused unit tests using Vitest with standard APIs only - no custom helpers.
 
 ## The bar
 
-Tests are load-bearing safety infrastructure — they are how future AI agents know they didn't break user behavior when they refactor. Hold every test to this bar:
+Tests are load-bearing safety infrastructure - they are how future AI agents know they didn't break user behavior when they refactor. Hold every test to this bar:
 
 - **Behavior over implementation.** Assert on what the function returns / what state changes for callers. Never assert on internal calls, internal state shape, or "was this private helper invoked." A future agent must be able to refactor the internals freely as long as behavior holds.
 - **Future-agent test:** ask _"if a future agent rewrites this function and accidentally breaks real behavior, would this test fail loudly?"_ If "maybe" or "only on the obvious break," strengthen it.
 - **Coverage by category, not line.** For any non-trivial function, address (where applicable): happy path, empty / missing input, boundary values (min, max, off-by-one, zero, negative), error paths (thrown, rejected, invalid), and locale / type variants if the function accepts them.
-- **Bug fixes require a regression test.** Failing pre-fix, passing post-fix — both states confirmed. No regression test = the bug is deferred.
+- **Bug fixes require a regression test.** Failing pre-fix, passing post-fix - both states confirmed. No regression test = the bug is deferred.
 - **No flake.** Pin dates, never `new Date()`. No `Math.random`. No order-dependent state. Each test independent.
 - **Don't mock the thing you're testing.** Mock its dependencies, not itself. Mocking the validator and asserting it was called is not a test.
 - **No snapshot tests for component logic.** Snapshots lock markup, not behavior.
@@ -179,7 +179,7 @@ describe('with setup', () => {
 
 ### Date / Time Utilities
 
-- Pin a reference date (`const now = new Date(2021, 6, 20, 14, 10)`) — never use `new Date()`
+- Pin a reference date (`const now = new Date(2021, 6, 20, 14, 10)`) - never use `new Date()`
 - Use `date-fns` helpers (`addDays`, `subMonths`) to create relative dates for branch coverage
 - Test both string and function formatters, plus fallback behavior when formatters throw
 - Test null/undefined/invalid date inputs return empty string
@@ -195,7 +195,7 @@ describe('with setup', () => {
 
 - Create a shared locale/config object and reuse across tests
 - Test both string and number inputs to verify type coercion
-- Always use `\u00A0` (non-breaking space) in expected strings — see [Gotcha: Non-Breaking Spaces](#gotcha-non-breaking-spaces-in-intlnumberformat)
+- Always use `\u00A0` (non-breaking space) in expected strings - see [Gotcha: Non-Breaking Spaces](#gotcha-non-breaking-spaces-in-intlnumberformat)
 - Test locale-specific output (thousand separators, decimal commas, negative values, NaN)
 
 ### Functions with Complex Dependencies
@@ -234,9 +234,9 @@ const process = (input: string) => processString(input, context);
 
 | Scenario | Approach |
 |---|---|
-| Pure utility (no deps) | No mocks needed — call directly |
+| Pure utility (no deps) | No mocks needed - call directly |
 | Function with formatter deps | Mock the formatters, type them against the real interface |
-| Function using `Intl` APIs | Use real `Intl` — but beware of locale-specific output (use `toContain`) |
+| Function using `Intl` APIs | Use real `Intl` - but beware of locale-specific output (use `toContain`) |
 | Function with external API calls | Mock the API module with `vi.mock()` |
 
 ---
@@ -266,7 +266,7 @@ Date and number formatting varies by locale and Node.js version. When testing fo
 
 - Tests in `test/` directories should use path aliases for imports from other modules
 - Tests co-located next to source (same directory) can use relative imports (`'./my_module'`)
-- ESLint boundary rules apply — respect module hierarchy in imports
+- ESLint boundary rules apply - respect module hierarchy in imports
 
 ### Gotcha: Testing Both String and Number Inputs
 
@@ -280,17 +280,17 @@ expect(fromString).toBe(fromNumber);
 
 ### Gotcha: Pin Dates for Deterministic Tests
 
-Never use `new Date()` — tests will break at midnight or across timezones:
+Never use `new Date()` - tests will break at midnight or across timezones:
 
 ```ts
 // ✅ Pinned date
 const now = new Date(2021, 6, 20, 14, 10);
 
-// ❌ Flaky — changes every run
+// ❌ Flaky - changes every run
 const now = new Date();
 ```
 
-## Progressive disclosure — load on demand
+## Progressive disclosure - load on demand
 
 These references stay out of the agent's context until the relevant trigger appears. Open the file when its trigger fires, not preemptively.
 

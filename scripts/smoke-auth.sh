@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# smoke-auth.sh — end-to-end smoke test for pact-web ↔ pact-auth.
+# smoke-auth.sh - end-to-end smoke test for pact-web ↔ pact-auth.
 #
 # Exercises the /api/auth/* routes against a live pact-web (default :3000)
 # backed by a running pact-gateway + pact-auth stack (pact-web talks to
@@ -162,18 +162,18 @@ ok "Postgres reachable"
 # unless the operator explicitly opts in via SMOKE_ALLOW_NOTIFY=1.
 if curl -sS -o /dev/null -w '%{http_code}\n' http://localhost:9093/healthz 2>/dev/null | grep -q '^200$'; then
   if [[ "${SMOKE_ALLOW_NOTIFY:-0}" != "1" ]]; then
-    bad "pact-notify is up on :9093 — running this smoke would burn Brevo quota on test addresses."
+    bad "pact-notify is up on :9093 - running this smoke would burn Brevo quota on test addresses."
     printf '    Stop pact-notify first, or re-run with SMOKE_ALLOW_NOTIFY=1 if you really want emails to fly.\n' >&2
     exit 1
   fi
-  ok "pact-notify is up — SMOKE_ALLOW_NOTIFY=1 set, proceeding (Brevo will see real sends)"
+  ok "pact-notify is up - SMOKE_ALLOW_NOTIFY=1 set, proceeding (Brevo will see real sends)"
 else
-  ok "pact-notify is not running — safe to fire test events"
+  ok "pact-notify is not running - safe to fire test events"
 fi
 
 # ─── Register: validation ───────────────────────────────────────────────────
 
-step "Register — validation"
+step "Register - validation"
 
 expect_status POST /api/auth/register 400 '{}'
 expect_status POST /api/auth/register 400 '{"email":"not-an-email","password":"x"}'
@@ -246,11 +246,11 @@ run_psql -c "UPDATE users SET email_verified_at = now() WHERE email = '$VERIFIED
 run_psql -c "UPDATE password_credentials SET failed_attempts = 0, locked_until = NULL
              WHERE user_id = (SELECT id FROM users WHERE email = '$VERIFIED_EMAIL');" >/dev/null
 
-step "Login — wrong password → 401"
+step "Login - wrong password → 401"
 expect_status POST /api/auth/login 401 \
   "{\"email\":\"$VERIFIED_EMAIL\",\"password\":\"$WRONG_PASSWORD\"}"
 
-step "Login — correct password → 200 + Set-Cookie pact_session"
+step "Login - correct password → 200 + Set-Cookie pact_session"
 hdrs="$(mktemp)"
 body_file="$(mktemp)"
 status="$(curl -sS -o "$body_file" -D "$hdrs" -w '%{http_code}' \
@@ -288,7 +288,7 @@ rm -f "$hdrs" "$body_file"
 # delete/rename require a previously-registered passkey (impossible from curl
 # without a virtual authenticator), so we assert the 404/409 paths instead.
 
-step "Settings — unauthenticated requests are rejected with 401"
+step "Settings - unauthenticated requests are rejected with 401"
 
 expect_status POST /api/auth/passkey/register/begin 401 '{"label":"x"}'
 expect_status POST /api/auth/passkey/rename 401 \
@@ -300,7 +300,7 @@ expect_status POST /api/auth/mfa/revoke 401 \
   '{"factorId":"00000000-0000-0000-0000-000000000000"}'
 expect_status POST /api/auth/mfa/recovery-codes 401
 
-step "Passkey register begin — authenticated returns options envelope"
+step "Passkey register begin - authenticated returns options envelope"
 
 # This creates a passkey_ceremonies row that we never finish. They expire
 # server-side after challengeTTL, so it's a benign leak.
@@ -311,7 +311,7 @@ import json, sys
 b = json.loads(sys.stdin.read())
 assert "ceremonyId" in b, "missing ceremonyId"
 assert "options" in b, "missing options"
-assert "publicKey" not in b["options"], "options is still wrapped — route forgot to unwrap publicKey"
+assert "publicKey" not in b["options"], "options is still wrapped - route forgot to unwrap publicKey"
 for f in ("challenge", "user", "pubKeyCredParams"):
     assert f in b["options"], f"options.{f} missing"
 assert "id" in b["options"]["user"], "options.user.id missing"
@@ -319,7 +319,7 @@ assert "id" in b["options"]["user"], "options.user.id missing"
   && ok "register-begin envelope is unwrapped (top-level challenge/user/pubKeyCredParams)" \
   || bad "register-begin envelope is malformed: $LAST_BODY"
 
-step "Passkey rename — body validation (auth, missing fields)"
+step "Passkey rename - body validation (auth, missing fields)"
 
 expect_status_authed POST /api/auth/passkey/rename 400 "$session_cookie" '{}'
 expect_status_authed POST /api/auth/passkey/rename 400 "$session_cookie" \
@@ -327,54 +327,54 @@ expect_status_authed POST /api/auth/passkey/rename 400 "$session_cookie" \
 expect_status_authed POST /api/auth/passkey/rename 404 "$session_cookie" \
   '{"passkeyId":"00000000-0000-0000-0000-000000000000","label":"new"}'
 
-step "Passkey delete — 404 for unknown passkey id (auth)"
+step "Passkey delete - 404 for unknown passkey id (auth)"
 
 expect_status_authed POST /api/auth/passkey/delete 400 "$session_cookie" '{}'
 expect_status_authed POST /api/auth/passkey/delete 404 "$session_cookie" \
   '{"passkeyId":"00000000-0000-0000-0000-000000000000"}'
 
-step "OAuth unlink — 400 invalid provider, 404 not connected"
+step "OAuth unlink - 400 invalid provider, 404 not connected"
 
 expect_status_authed POST /api/auth/oauth/unlink 400 "$session_cookie" \
   '{"provider":"bogus"}'
 expect_status_authed POST /api/auth/oauth/unlink 404 "$session_cookie" \
   '{"provider":"github"}'
 
-step "MFA revoke — 404 for unknown factor id (auth)"
+step "MFA revoke - 404 for unknown factor id (auth)"
 
 expect_status_authed POST /api/auth/mfa/revoke 400 "$session_cookie" '{}'
 expect_status_authed POST /api/auth/mfa/revoke 404 "$session_cookie" \
   '{"factorId":"00000000-0000-0000-0000-000000000000"}'
 
-step "MFA recovery-codes — 409 when no TOTP factor enrolled (auth)"
+step "MFA recovery-codes - 409 when no TOTP factor enrolled (auth)"
 
 expect_status_authed POST /api/auth/mfa/recovery-codes 409 "$session_cookie"
 
 # ─── Token-based routes (verify-email, reset-password) ─────────────────────
 
-step "verify-email — missing token redirects to failure page"
+step "verify-email - missing token redirects to failure page"
 
 expect_redirect '/api/auth/verify-email' \
   'verify-email/failed.*reason=missing_token'
 
-step "verify-email — bogus token redirects with invalid_or_expired"
+step "verify-email - bogus token redirects with invalid_or_expired"
 
 expect_redirect '/api/auth/verify-email?token=not-a-real-token' \
   'verify-email/failed.*reason=invalid_or_expired'
 
-step "reset-password — body validation"
+step "reset-password - body validation"
 
 expect_status POST /api/auth/reset-password 400 '{}'
 expect_status POST /api/auth/reset-password 400 '{"token":"x"}'
 
-step "reset-password — bogus token → 401"
+step "reset-password - bogus token → 401"
 
 expect_status POST /api/auth/reset-password 401 \
   "{\"token\":\"bogus-token\",\"password\":\"$PASSWORD\"}"
 
 # ─── Logout ────────────────────────────────────────────────────────────────
 
-step "Logout — clears the session cookie"
+step "Logout - clears the session cookie"
 hdrs="$(mktemp)"
 status="$(curl -sS -o /dev/null -D "$hdrs" -w '%{http_code}' \
   -H 'Content-Type: application/json' \
@@ -391,7 +391,7 @@ rm -f "$hdrs"
 
 # ─── Passkey login: begin (anti-enum, no creds needed) ─────────────────────
 
-step "Passkey — beginPasskeyLogin returns options envelope"
+step "Passkey - beginPasskeyLogin returns options envelope"
 
 do_request POST /api/auth/passkey/login/begin 200 \
   "{\"email\":\"$VERIFIED_EMAIL\"}"
@@ -404,7 +404,7 @@ import json, sys
 b = json.loads(sys.stdin.read())
 assert "ceremonyId" in b, "missing ceremonyId"
 assert "options" in b, "missing options"
-assert "publicKey" not in b["options"], "options is still wrapped — route forgot to unwrap publicKey"
+assert "publicKey" not in b["options"], "options is still wrapped - route forgot to unwrap publicKey"
 assert "challenge" in b["options"], "options.challenge missing"
 ' \
   && ok "passkey-login envelope is unwrapped (top-level challenge)" \
@@ -415,7 +415,7 @@ expect_status POST /api/auth/passkey/login/begin 200 '{}'
 
 # ─── OAuth start: each provider redirects to its authorize URL ─────────────
 
-step "OAuth — /api/auth/oauth/start redirects per provider"
+step "OAuth - /api/auth/oauth/start redirects per provider"
 
 expect_redirect '/api/auth/oauth/start?provider=github' \
   '^https://github\.com/login/oauth/authorize\?'
@@ -424,12 +424,12 @@ expect_redirect '/api/auth/oauth/start?provider=google' \
 expect_redirect '/api/auth/oauth/start?provider=meta' \
   '^https://(www\.facebook\.com|facebook\.com)/'
 
-step "OAuth — unknown provider → 400"
+step "OAuth - unknown provider → 400"
 expect_status GET '/api/auth/oauth/start?provider=bogus' 400
 
 # ─── Forgot password (anti-enum) ────────────────────────────────────────────
 
-step "Forgot password — anti-enum 200 for any address"
+step "Forgot password - anti-enum 200 for any address"
 expect_status POST /api/auth/forgot-password 200 \
   "{\"email\":\"nobody-${STAMP}@example.com\"}"
 expect_status POST /api/auth/forgot-password 400 '{}'

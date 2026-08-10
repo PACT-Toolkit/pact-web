@@ -11,7 +11,7 @@ export const isMock = () => process.env.NEXT_PUBLIC_API_MOCKING === 'enabled';
 
 export const isDemo = () => process.env.NEXT_PUBLIC_IS_DEMO_ENV === 'true';
 
-// Stable mock user identity used across the dev:mock surface — MSW handlers
+// Stable mock user identity used across the dev:mock surface - MSW handlers
 // resolve to this id, and validateSessionFromCookies() returns a synthetic
 // session bound to it so the login flow is skipped. Production never sees
 // this value; pact-auth.ValidateSession is the real source of identity.

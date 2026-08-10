@@ -20,17 +20,17 @@ export type Session = {
 };
 
 // Server-side session validation. Calls pact-auth.ValidateSession on every
-// invocation — fail-closed by design. Cookie-existence checks in middleware
+// invocation - fail-closed by design. Cookie-existence checks in middleware
 // are an Edge-runtime optimization, not the security barrier; this is.
 //
 // On failure (no cookie, invalid token, or pact-auth unreachable) the user
 // is redirected to /login. We don't proactively clear the bad cookie here
-// because Server Components can't mutate cookies in Next.js 16 — the cookie
+// because Server Components can't mutate cookies in Next.js 16 - the cookie
 // is harmless (we never trust its value, only what ValidateSession says
 // about it) and will be overwritten on the next successful login.
 //
 // Use from any Server Component or layout under app/(app). Don't call from
-// route handlers that need to surface domain errors to the client — they
+// route handlers that need to surface domain errors to the client - they
 // should call validateSessionFromCookies() and decide their own response.
 export const requireSession = async (): Promise<Session> => {
   const session = await validateSessionFromCookies();
@@ -46,7 +46,7 @@ export const requireSession = async (): Promise<Session> => {
 // vs. a logged-in view in the same component tree.
 export const validateSessionFromCookies = async (): Promise<Session | null> => {
   if (isMock()) {
-    // Auto-login in `pnpm run dev:mock` — no cookie required, no pact-auth
+    // Auto-login in `pnpm run dev:mock` - no cookie required, no pact-auth
     // roundtrip.
     return { userId: MOCK_USER_ID, expiresAt: MOCK_SESSION_EXPIRES_AT };
   }
@@ -58,7 +58,7 @@ export const validateSessionFromCookies = async (): Promise<Session | null> => {
   try {
     resp = await getPactAuthClient().validateSession({ sessionToken: token });
   } catch {
-    // Network blip or pact-auth down. Fail closed — treat as no session.
+    // Network blip or pact-auth down. Fail closed - treat as no session.
     return null;
   }
   if (!resp.valid || !resp.userId) return null;

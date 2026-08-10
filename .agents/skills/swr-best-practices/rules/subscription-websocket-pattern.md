@@ -27,6 +27,6 @@ function useTickerStream(symbol: string) {
 }
 ```
 
-The same shape works for EventSource, Firebase listeners, or any push-based source — the only thing that changes is which API maps to `next` and which API the cleanup calls.
+The same shape works for EventSource, Firebase listeners, or any push-based source - the only thing that changes is which API maps to `next` and which API the cleanup calls.
 
-Reference: [SWR — Subscription](https://swr.vercel.app/docs/subscription)
+Reference: [SWR - Subscription](https://swr.vercel.app/docs/subscription)

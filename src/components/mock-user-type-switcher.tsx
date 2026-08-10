@@ -25,7 +25,7 @@ import {
   type MockUserType,
 } from '@/src/framework/helpers/mock_user_type';
 
-// No external subscription needed — we only re-read on full page reload.
+// No external subscription needed - we only re-read on full page reload.
 const noopSubscribe = () => () => {};
 const getServerSnapshot = (): MockUserType => 'admin';
 

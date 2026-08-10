@@ -22,6 +22,6 @@ useSWR(otherKey, fetcher, { onErrorRetry: customRetry });
 <SWRConfig value={{ onErrorRetry: customRetry }}>{children}</SWRConfig>
 ```
 
-Note that primitive options replace on nested `<SWRConfig>`, but mergeable objects like `fallback` merge — read the docs before nesting providers if you rely on inheritance.
+Note that primitive options replace on nested `<SWRConfig>`, but mergeable objects like `fallback` merge - read the docs before nesting providers if you rely on inheritance.
 
-Reference: [SWR — Global Configuration](https://swr.vercel.app/docs/global-configuration), `src/framework/network/swr/SWRProvider.tsx`
+Reference: [SWR - Global Configuration](https://swr.vercel.app/docs/global-configuration), `src/framework/network/swr/SWRProvider.tsx`

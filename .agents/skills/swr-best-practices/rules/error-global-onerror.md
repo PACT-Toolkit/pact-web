@@ -33,4 +33,4 @@ const { data } = useSWR(key, fetcher, {
 </SWRConfig>
 ```
 
-Reference: [SWR — Global Error Report](https://swr.vercel.app/docs/error-handling#global-error-report)
+Reference: [SWR - Global Error Report](https://swr.vercel.app/docs/error-handling#global-error-report)

@@ -38,7 +38,7 @@ import { WelcomeCopy } from './welcome_copy';
 type SplashScreenProps = {
   // Fires once the split-screen exit has fully cleared the viewport (or
   // immediately for reduced-motion users). The destination route is
-  // *already mounted underneath* the splash — this component lives in
+  // *already mounted underneath* the splash - this component lives in
   // an overlay above the routing layer (see `splash_overlay.tsx`), so
   // there's nothing for the splash itself to navigate to. The overlay's
   // `onClose` typically just strips the `?intro=1` flag from the URL
@@ -57,19 +57,19 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
   const breathCenter = useMotionValue(0);
 
   const [count, setCount] = useState(0);
-  // Gate the hand-off behind a manual Continue button — no auto-redirect.
+  // Gate the hand-off behind a manual Continue button - no auto-redirect.
   const [ready, setReady] = useState(false);
   const [splitTextDone, setSplitTextDone] = useState(false);
   // Flips after `ready` AND the number's slide-down exit have both finished
   // playing. The welcome copy + Continue button are gated on this flag (not
-  // on `ready`) so they don't even *mount* until the number is fully gone —
+  // on `ready`) so they don't even *mount* until the number is fully gone -
   // that way their `initial` state isn't visible on screen during the
   // number's exit, and their slide-in starts the instant they appear
   // rather than after a `transition.delay` they'd otherwise sit through
   // partially visible.
   const [numberGone, setNumberGone] = useState(false);
   // Flips when the user clicks Continue. Swaps the live splash content
-  // (mark + row) for the split-screen exit transition — see
+  // (mark + row) for the split-screen exit transition - see
   // `split_transition.tsx`. router.replace is scheduled for the end of
   // the transition by `handleContinue` below.
   const [closing, setClosing] = useState(false);
@@ -77,7 +77,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
   useMotionValueEvent(rounded, 'change', setCount);
 
   useEffect(() => {
-    // Reduced-motion users skip the staggered reveal — they swap to the
+    // Reduced-motion users skip the staggered reveal - they swap to the
     // live count on the next tick (0 ms timeout keeps the setState out
     // of the effect body so the cascading-render lint stays happy).
     const delay = prefersReducedMotion ? 0 : SPLIT_TEXT_TOTAL_MS;
@@ -89,7 +89,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
   useEffect(() => {
     // `ready` only ever flips false → true once during the splash's
     // lifetime, so there's no need to reset `numberGone` back to false
-    // in this effect — `numberGone` starts false via useState's initial
+    // in this effect - `numberGone` starts false via useState's initial
     // value and only flips true here. (Avoiding a synchronous setState
     // in the effect body also keeps the cascading-render lint happy.)
     if (!ready) return;
@@ -129,7 +129,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
     // Loading signals the count waits on before crediting itself as
     // ready. The destination route is already mounted *behind* the
     // splash by the time we get here (the overlay sits above the
-    // routing layer — see `splash_overlay.tsx`), so we no longer
+    // routing layer - see `splash_overlay.tsx`), so we no longer
     // prefetch anything; the count is purely waiting for the user's
     // browser to finish unboxing fonts and the initial document.
     const documentLoaded =
@@ -160,7 +160,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
     // feel; the jump back to 0 between cycles happens with the band off the
     // bottom-left corner, so it reads as a clean restart rather than a cut.
     // Same entry delay as the sweep so "the logo breathes because the count
-    // is climbing" stays true — no breath while the count is still parked
+    // is climbing" stays true - no breath while the count is still parked
     // at zero waiting for the entry to finish.
     const breath = animate(breathCenter, 100, {
       duration: BREATH_CYCLE_S,
@@ -185,7 +185,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
       if (cancelled) return;
       // The fill has already engulfed the artwork by the time we land here
       // (progress is 100, fillCutoff is at the top of the artwork), so the
-      // breath is fully eclipsed — we just stop the loop to free the frame
+      // breath is fully eclipsed - we just stop the loop to free the frame
       // budget and reveal Continue.
       breath.stop();
       setReady(true);
@@ -202,7 +202,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
   const handleContinue = () => {
     // Stamp the throttle on *acknowledged* exit (the user clicked
     // Continue or reduced-motion auto-dismissed). Mounting alone doesn't
-    // count — closing the tab during the intro should leave the next
+    // count - closing the tab during the intro should leave the next
     // entry fresh, see `splash_throttle.ts`.
     markShown();
 
@@ -237,7 +237,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
       className={`fixed inset-0 z-50 flex min-h-svh flex-col items-center justify-start gap-12 overflow-hidden pt-[5vh] pb-[5vh] text-black dark:text-white md:gap-30 md:pt-[8vh] md:pb-0 ${
         // During entry the root paints opaque so the destination page
         // underneath is hidden. The instant `closing` flips, the root
-        // goes transparent — the facade halves still paint their own
+        // goes transparent - the facade halves still paint their own
         // bg so the splash looks unchanged at t=0, but as the halves
         // slide apart the now-transparent root exposes the live
         // destination route mounted behind the overlay.
@@ -259,7 +259,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
       )}
 
       {closing ? (
-        // Exit choreography — frozen facade (backdrop + mark + welcome +
+        // Exit choreography - frozen facade (backdrop + mark + welcome +
         // Continue) rendered twice, clipped to top + bottom halves, seam
         // line draws across the centre and the halves slide off-screen.
         // `handleContinue` already scheduled `router.replace` for the
@@ -279,7 +279,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
               left/right anchored children not to collide, so the row
               flips to a column and the children stack vertically
               (count → welcome → Continue).
-              - At `md+`: `flex items-center min-h-[1em]` — single
+              - At `md+`: `flex items-center min-h-[1em]` - single
                 horizontal row. The centered number, left-anchored
                 welcome, and right-anchored Continue co-exist on the
                 same line; `min-h-[1em]` (resolved against the
@@ -287,7 +287,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
                 enough that the number's slide-down clip works and
                 the slot doesn't collapse after exit.
               - On mobile: `flex-col flex-1 justify-center gap-16`
-                — the row grows to fill the space below the mark
+                - the row grows to fill the space below the mark
                 and vertically centers its children, so the welcome
                 + Continue stack reads as anchored to the middle of
                 the lower viewport rather than crammed up against
@@ -304,7 +304,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
                 count itself is vertically centered the same way.
               - The number child uses `mx-auto` (inside its own clip
                 wrapper) to land in the row's center in either layout
-                — auto cross-axis margins center it horizontally in
+                - auto cross-axis margins center it horizontally in
                 the column too.
               - In the desktop row, welcome + Continue are `absolute`
                 with `top-1/2 -translate-y-1/2`, anchored to the
@@ -356,7 +356,7 @@ export const SplashScreen = ({ onClose }: SplashScreenProps) => {
       {/* The splash root is `role="dialog"`, so it does NOT advertise
           its children as a live region (otherwise the 0→100 count
           would emit ~100 polite announcements). This sr-only span is
-          the sole live region — screen readers get a single
+          the sole live region - screen readers get a single
           "Loading PACT" → "PACT is ready" transition. */}
       <span role="status" aria-live="polite" className="sr-only">
         {ready ? 'PACT is ready' : 'Loading PACT'}

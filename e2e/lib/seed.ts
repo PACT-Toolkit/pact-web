@@ -16,7 +16,7 @@ import { AuthService } from '@/src/__codegen__/proto/auth_pb';
 // Deterministic test identity. Lives under `example.test` so it can
 // never accidentally collide with a real address (TLD reserved by
 // RFC 6761), and never lands in a real outbound mail send because
-// pact-notify will fail Brevo verification on these — but the spec
+// pact-notify will fail Brevo verification on these - but the spec
 // flips pact-notify to `log` mode anyway via the seed step.
 export const TEST_USER = {
   email: 'playwright-mfa@example.test',
@@ -139,7 +139,7 @@ export const seedVerifiedUserWithCredentials = async (
     // Wipe any TOTP factors + leftover recovery codes / pending MFA
     // challenges so the spec sees a clean enrollment slate. recovery_codes
     // and mfa_challenges are user-scoped (not factor-scoped) and therefore
-    // don't CASCADE off mfa_factors — we have to delete them explicitly.
+    // don't CASCADE off mfa_factors - we have to delete them explicitly.
     await pg.query(`DELETE FROM mfa_challenges WHERE user_id = $1`, [userId]);
     await pg.query(`DELETE FROM recovery_codes WHERE user_id = $1`, [userId]);
     await pg.query(`DELETE FROM mfa_factors WHERE user_id = $1`, [userId]);
@@ -176,7 +176,7 @@ export const requestPasswordResetForEmail = async (
 //
 // pact-auth's BeginTOTPEnrollment rejects with FailedPrecondition if a
 // non-revoked factor (pending OR verified) exists. We have to delete the
-// rows outright — soft-revoking via UI would leave them present.
+// rows outright - soft-revoking via UI would leave them present.
 export const resetMfaState = async (): Promise<void> => {
   await withPg(async (pg) => {
     const { rows } = await pg.query<{ id: string }>(

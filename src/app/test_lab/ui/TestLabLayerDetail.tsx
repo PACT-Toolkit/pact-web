@@ -17,7 +17,7 @@ export const TestLabLayerDetail = ({
 }) => (
   <div className="mt-3 flex flex-col gap-3 border-t pt-3">
     <div className="flex items-center justify-between">
-      <span className="text-sm font-medium">{layer.label} — details</span>
+      <span className="text-sm font-medium">{layer.label} - details</span>
       <button
         type="button"
         onClick={onClose}
@@ -135,7 +135,7 @@ export const TestLabLayerDetail = ({
     </div>
     {layer.bypassed && (
       <p className="text-xs italic text-amber-500">
-        This layer was bypassed — result shows downstream behaviour only.
+        This layer was bypassed - result shows downstream behaviour only.
       </p>
     )}
   </div>

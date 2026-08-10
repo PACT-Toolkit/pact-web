@@ -9,7 +9,7 @@ import { isMock } from './src/framework/helpers/environment';
 // the same WiFi can hit the verify-email link in `make dev-lan` flows.
 // Next.js requires exact hosts here (no CIDR), so we enumerate every
 // non-loopback IPv4 the host currently has and feed them in. Production
-// never reads this — `allowedDevOrigins` is ignored when NODE_ENV !==
+// never reads this - `allowedDevOrigins` is ignored when NODE_ENV !==
 // 'development'.
 const detectLanHosts = (): string[] => {
   const ifaces = networkInterfaces();

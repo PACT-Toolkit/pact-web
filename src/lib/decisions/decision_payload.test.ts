@@ -6,7 +6,7 @@ import { parseDecisionPayload } from '@/src/lib/decisions/decision_payload';
 // audit feed receives via /v1/audit/events. Mirrors the JSON pact-gateway's
 // internal/kafka/producer.go emits when the redactor stage runs against
 // content containing PII. Used as the source of truth for the audit
-// row-expand contract — any change here must stay in lockstep with
+// row-expand contract - any change here must stay in lockstep with
 // pact-gateway's DecisionEvent JSON shape.
 const REDACTED_EMAIL_PAYLOAD = JSON.stringify({
   event_uuid: 'evt-abc',
@@ -25,7 +25,7 @@ const REDACTED_EMAIL_PAYLOAD = JSON.stringify({
   created_at: '2026-06-12T14:00:00Z',
 });
 
-describe('parseDecisionPayload — redactor.spans surface (PACT-231)', () => {
+describe('parseDecisionPayload - redactor.spans surface (PACT-231)', () => {
   it('exposes spans verbatim when verdict=redacted', () => {
     const dp = parseDecisionPayload(REDACTED_EMAIL_PAYLOAD);
     expect(dp?.redactor?.verdict).toBe('redacted');
@@ -72,7 +72,7 @@ describe('parseDecisionPayload — redactor.spans surface (PACT-231)', () => {
   });
 });
 
-describe('parseDecisionPayload — consensus surface (PACT-263)', () => {
+describe('parseDecisionPayload - consensus surface (PACT-263)', () => {
   // Production-shaped sample: classifier score below PACT_CONSENSUS_THRESHOLD,
   // gateway invoked pact-consensus as stage 2.5 (PACT-217), quorum reached.
   // Mirrors the JSONB observed during PACT-231 dev-stack verification.
@@ -140,7 +140,7 @@ describe('parseDecisionPayload — consensus surface (PACT-263)', () => {
   });
 });
 
-describe('parseDecisionPayload — consensus votes + classifier engine (PACT-328/PACT-323)', () => {
+describe('parseDecisionPayload - consensus votes + classifier engine (PACT-328/PACT-323)', () => {
   // Production-shaped sample: gateway PR #96 additively started emitting
   // per-model votes on consensus and a model/checkpoint tag on classifier.
   it('exposes votes and classifier engine when present', () => {
@@ -218,10 +218,10 @@ describe('parseDecisionPayload — consensus votes + classifier engine (PACT-328
   });
 });
 
-describe('parseDecisionPayload — forensic-trace surface (PACT-265)', () => {
+describe('parseDecisionPayload - forensic-trace surface (PACT-265)', () => {
   // Production-shaped sample: a full pipeline decision enriched with the
   // forensic-trace block the gateway stamps on every pact.decisions event.
-  // Mirrors pact-gateway DecisionEvent — field names are frozen there.
+  // Mirrors pact-gateway DecisionEvent - field names are frozen there.
   it('exposes the full forensic block when present', () => {
     const dp = parseDecisionPayload(
       JSON.stringify({

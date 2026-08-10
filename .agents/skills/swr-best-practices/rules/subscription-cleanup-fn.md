@@ -15,7 +15,7 @@ The subscriber callback passed to `useSWRSubscription` must return a cleanup fun
 useSWRSubscription(url, (key, { next }) => {
   const socket = new WebSocket(key);
   socket.addEventListener('message', (e) => next(null, e.data));
-  // no cleanup — socket lives forever
+  // no cleanup - socket lives forever
 });
 ```
 
@@ -30,4 +30,4 @@ useSWRSubscription(url, (key, { next }) => {
 });
 ```
 
-Reference: [SWR — Subscription](https://swr.vercel.app/docs/subscription)
+Reference: [SWR - Subscription](https://swr.vercel.app/docs/subscription)
