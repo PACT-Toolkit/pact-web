@@ -48,6 +48,14 @@ import {
   createGatewayConfigMockData,
   mockGatewayConfig,
 } from '@/src/app/gateway/mock/data/gateway';
+import { type PolicyEvent } from '@/src/app/policy/domain/policy_event';
+import { type PolicyRule } from '@/src/app/policy/domain/policy_rule';
+import {
+  createPolicyEventsMockData,
+  createPolicyRulesMockData,
+  mockPolicyEvent,
+  mockPolicyRule,
+} from '@/src/app/policy/mock/data/policy';
 import { createRedactorMockData } from '@/src/app/redactor/mock/data/redactor';
 import {
   type AttackExample,
@@ -86,6 +94,8 @@ export const db = {
   decisions: new MockRepository<AuditAuditEventResponse>(mockDecisionEvent),
   files: new MockRepository<FilesFileResponse>(mockFileRecord),
   gatewayConfig: new MockRepository<ConfigConfigResponse>(mockGatewayConfig),
+  policyEvents: new MockRepository<PolicyEvent>(mockPolicyEvent),
+  policyRules: new MockRepository<PolicyRule>(mockPolicyRule),
   testLabRuns: new MockRepository<TestLabRunRecord>(mockTestLabRun),
 };
 
@@ -116,5 +126,7 @@ createFilesMockData(db);
 // No ordering dependency -- gatewayConfig is its own singleton entity, not
 // part of the shared db.decisions repository the seeders above append to.
 createGatewayConfigMockData(db);
+createPolicyEventsMockData(db);
+createPolicyRulesMockData(db);
 createTestLabMockData(db);
 createTestLabRunsMockData(db);

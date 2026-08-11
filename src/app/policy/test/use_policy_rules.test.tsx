@@ -43,7 +43,7 @@ const findRule = (rules: PolicyRule[], id: string): PolicyRule | undefined =>
 
 // usePolicyRuleActions writes through the same SWR cache entry usePolicyRules
 // reads (both key off getListRulesKey()), so combining them in one harness
-// hook exercises the split exactly as RuleEditor.tsx does, without changing
+// hook exercises the split exactly as PolicyRuleEditor.tsx does, without changing
 // any assertion below.
 const usePolicyRulesWithActions = () => ({
   ...usePolicyRules(),

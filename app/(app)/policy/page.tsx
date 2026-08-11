@@ -1,7 +1,7 @@
 import {
   PolicyEventsFeed,
+  PolicyRuleEditor,
   PolicyTokenIssuePanel,
-  RuleEditor,
 } from '@/src/app/policy';
 
 const PolicyPage = () => {
@@ -15,7 +15,7 @@ const PolicyPage = () => {
             evaluated once published.
           </p>
         </header>
-        <RuleEditor />
+        <PolicyRuleEditor />
       </section>
 
       <section className="flex flex-col gap-6">

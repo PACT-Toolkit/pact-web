@@ -28,7 +28,7 @@ import { Label } from '@/src/components/ui/label';
 // Ad-hoc capability-token issuance panel (PACT-326): mints a token via the
 // real gateway endpoint POST /v1/policy/tokens so an operator can hand a
 // scoped, time-limited credential to an agent without writing a rule.
-// Distinct from RuleEditor (which authors the policy rules a token is
+// Distinct from PolicyRuleEditor (which authors the policy rules a token is
 // evaluated against) and PolicyEventsFeed (which shows how tokens were
 // subsequently used) -- this panel only mints.
 export const PolicyTokenIssuePanel = () => {
