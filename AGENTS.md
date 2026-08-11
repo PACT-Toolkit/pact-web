@@ -158,6 +158,8 @@ There is no per-feature `data/` or `__codegen__/` folder - generated REST hooks 
 
 `test/` is the canonical test-folder name for both Playwright specs and Vitest unit tests.
 
+`{feature_name}` is snake_case because it also names a TypeScript module and the eslint boundaries `feature` capture. The router segment for a feature (`app/{route}/`) uses kebab-case instead, per URL convention - `test_lab`'s route is `/test-lab`. These two names are expected to differ for any multi-word feature; see the comment in `src/app/test_lab/index.ts` for the one existing example.
+
 ---
 
 ## Data Layer
