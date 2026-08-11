@@ -12,9 +12,7 @@ import { BenchmarkJobProgress } from '@/src/app/benchmark/ui/BenchmarkJobProgres
 import { BenchmarkResultsTable } from '@/src/app/benchmark/ui/BenchmarkResultsTable';
 import { BenchmarkTrendChart } from '@/src/app/benchmark/ui/BenchmarkTrendChart';
 import { BenchmarkUploadForm } from '@/src/app/benchmark/ui/BenchmarkUploadForm';
-
-const GATEWAY_URL =
-  process.env.NEXT_PUBLIC_PACT_GATEWAY_URL ?? 'http://localhost:8110';
+import { getPublicGatewayBaseUrl } from '@/src/lib/proxy/gateway_url';
 
 export const BenchmarkWorkbench = () => {
   const [jobId, setJobId] = useState<string | null>(null);
@@ -49,7 +47,7 @@ export const BenchmarkWorkbench = () => {
     try {
       const response = await submitBenchmarkJob({
         corpus_jsonl: corpusText,
-        gateway_url: GATEWAY_URL,
+        gateway_url: getPublicGatewayBaseUrl(),
       });
       if (response.status !== 202) {
         throw new Error('unexpected status');
