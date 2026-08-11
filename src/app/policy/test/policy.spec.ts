@@ -4,9 +4,9 @@ import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
 // Covers PACT-326: rounds /policy out into a full policy console.
 //
-// - RuleEditor (PACT-234/312) already shipped rule authoring plus
+// - PolicyRuleEditor (PACT-234/312) already shipped rule authoring plus
 //   publish/revoke; this spec verifies it still works hosted alongside the
-//   new panels, it does not change RuleEditor itself.
+//   new panels, it does not change PolicyRuleEditor itself.
 // - PolicyTokenIssuePanel (new, PACT-319) mints a capability token via
 //   POST /v1/policy/tokens.
 // - PolicyEventsFeed (renamed from PolicyWorkbench, now backed by the

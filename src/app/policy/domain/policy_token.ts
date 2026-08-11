@@ -51,7 +51,7 @@ export const isIssueTokenInputValid = (
   params.ttlSeconds <= MAX_TTL_SECONDS;
 
 // formatExpiry renders a unix-seconds expiry as a locale timestamp, mirroring
-// the formatTimestamp helpers already used by RuleEditor/PolicyEventsFeed.
+// the formatTimestamp helpers already used by PolicyRuleEditor/PolicyEventsFeed.
 export const formatExpiry = (expiresAtUnix: number): string => {
   const d = new Date(expiresAtUnix * 1000);
   if (Number.isNaN(d.getTime())) return String(expiresAtUnix);

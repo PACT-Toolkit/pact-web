@@ -182,7 +182,7 @@ const PolicyRuleRow = ({
   );
 };
 
-export const RuleEditor = () => {
+export const PolicyRuleEditor = () => {
   const { rules, isLoading, isValidating, error, refresh } = usePolicyRules();
   const { createRule, publishRule, revokeRule } = usePolicyRuleActions();
 
