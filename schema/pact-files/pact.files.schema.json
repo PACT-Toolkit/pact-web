@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/PACT-Toolkit/pact-files/contracts/pact.files.schema.json",
+  "$id": "https://github.com/PACT-Toolkit/pact-contracts/files/pact.files.schema.json",
   "title": "pact.files",
   "description": "Canonical wire schema for the pact.files Kafka topic, mirroring pact-files' internal/events/producer.go FileEvent. Field names and required/optional status are frozen - pact-audit pins this shape. additionalProperties is false at every level so an accidental field rename or addition fails validation instead of silently passing through as unrecognised JSONB. NOTE: on this topic event_id is the per-event dedup UUID and event_type carries the semantic event name - the opposite of the pact.auth/pact.account topic conventions.",
   "type": "object",

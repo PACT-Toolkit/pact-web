@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/PACT-Toolkit/pact-auth/contracts/pact.auth.schema.json",
+  "$id": "https://github.com/PACT-Toolkit/pact-contracts/auth/pact.auth.schema.json",
   "title": "pact.auth",
   "description": "Canonical wire schema for the pact.auth Kafka topic, mirroring internal/kafka/producer.go AuthEvent. Field names and required/optional status are frozen - pact-notify and pact-account pin this shape. additionalProperties is false at the top level so an accidental field rename or addition fails validation instead of silently passing through unrecognised.",
   "$comment": "PACT-515 removed the raw wire auth token from this event. There is deliberately no top-level 'token' property, and one must never be reintroduced: a leaked or over-retained pact.auth topic would otherwise hand out live, usable credentials. token_id is the non-secret auth_tokens row id; the notification consumer exchanges it for the wire token at render time via AuthService.GetEmailToken, so the secret only ever exists in-memory on pact-auth and pact-notify, never at rest in Kafka or a consumer's audit log.",
