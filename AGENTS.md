@@ -101,16 +101,19 @@ else in `src/app/audit/**`, but not from `src/app/policy/**` - each feature is
 its own boundary.
 Cross-feature imports are disallowed by default.
 
-**Grandfathered cross-feature imports (tracked debt, PACT-573):** nine
+**Grandfathered cross-feature imports (tracked debt, PACT-573):** seven
 cross-feature import pairs pre-date this enforcement and are explicitly
 allow-listed rather than broken:
 
-- `classifier`, `consensus`, `dashboard`, `filter`, `redactor` → `audit` -
-  these five features consume the shared decision-vocabulary types
-  (`DecisionPayload` and friends) that currently live in the `audit` slice.
-  Promoting that vocabulary out of `audit` into a proper shared layer is
-  tracked separately; do not add new consumers to this list without doing
-  that extraction first.
+- `consensus`, `dashboard`, `filter` → `audit` - each of these three
+  features imports something from the `audit` slice unrelated to the shared
+  decision vocabulary (`ConsensusRawPayloadToggle`'s `prettyPayload`,
+  filter's `audit_decision_stats_access`, dashboard's `AuditRow` /
+  `AuditDecisionInsights` / `audit_decision_stats_access`). `classifier` and
+  `redactor` used to be in this list too, for the shared decision-vocabulary
+  types (`DecisionPayload` and friends) - that vocabulary has been promoted
+  to `src/lib/decisions` (PACT-581), which every feature may import
+  unconditionally, so those two pairs are gone from this closed list.
 - `dashboard` → `benchmark`, `dashboard` → `test_lab`
 - `test_lab` → `gateway`, `test_lab` → `redactor`
 
@@ -172,7 +175,7 @@ There is no per-feature `data/` or `__codegen__/` folder - generated REST hooks 
    {
      "repo": "{github-repo-name}",
      "path": "/api/swagger.yaml",
-     "branch": "main",
+     "branch": "master",
      "production": false
    }
    ```
@@ -200,17 +203,28 @@ There is no per-feature `data/` or `__codegen__/` folder - generated REST hooks 
 Some backend contracts are not REST/OpenAPI-shaped - e.g. the `pact.decisions`
 Kafka payload, whose canonical shape is a JSON Schema (draft 2020-12) file in
 pact-contracts (`decisions/pact.decisions.schema.json`). These use
-`schema/{name}/services.config.json` with a `schemaFile` key so `pnpm api:update`
-vendors the raw file (instead of `swagger.yaml`) without pulling it into the
-orval/swagger2openapi REST pipeline:
+`schema/{name}/services.config.json` with a `files` array (each entry a
+`path` + `schemaFile` pair) so `pnpm api:update` vendors the raw files
+(instead of `swagger.yaml`) without pulling them into the orval/swagger2openapi
+REST pipeline. One `services.config.json` may vendor more than one file from
+the same repo, as `pact-decisions` does for its schema and its companion
+benign-label vocabulary:
 
 ```json
 {
   "repo": "pact-contracts",
-  "path": "/decisions/pact.decisions.schema.json",
   "branch": "master",
   "production": false,
-  "schemaFile": "pact.decisions.schema.json"
+  "files": [
+    {
+      "path": "/decisions/pact.decisions.schema.json",
+      "schemaFile": "pact.decisions.schema.json"
+    },
+    {
+      "path": "/decisions/benign_labels.json",
+      "schemaFile": "benign_labels.json"
+    }
+  ]
 }
 ```
 
