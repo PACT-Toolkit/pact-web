@@ -28,7 +28,9 @@
   "include": [
     "app/",
     "next.config.ts",
-    "middleware.ts",
+    "instrumentation.ts",
+    "proxy.ts",
+    "proxy.test.ts",
     "src/",
     "mocks/",
     "e2e/",
