@@ -78,6 +78,13 @@ export const handlers: RequestHandler[] = [
       (r) => r.id === params.id,
       (r) => ({ ...r, status: nextStatus, updatedAt: new Date().toISOString() })
     );
+    // update() returns T | undefined; the findFirst check above guarantees a
+    // match here, but guard it explicitly rather than relying on that -
+    // mirrors files.ts's /confirm handler, the established pattern for
+    // MockRepository.update() call sites in this codebase.
+    if (!rule) {
+      return HttpResponse.json(GATEWAY_NOT_FOUND, { status: 404 });
+    }
 
     return HttpResponse.json(rule);
   }),
@@ -95,6 +102,9 @@ export const handlers: RequestHandler[] = [
       (r) => r.id === params.id,
       (r) => ({ ...r, status: nextStatus, updatedAt: new Date().toISOString() })
     );
+    if (!rule) {
+      return HttpResponse.json(GATEWAY_NOT_FOUND, { status: 404 });
+    }
 
     return HttpResponse.json(rule);
   }),
