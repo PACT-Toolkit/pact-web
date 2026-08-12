@@ -38,6 +38,11 @@ jobs:
           pnpm run rest:codegen
           git diff --exit-code -- src/__codegen__/rest orval.config.ts
 
+      - name: Check mirrored rule files are in sync
+        run: |
+          pnpm run rules:sync
+          git diff --exit-code -- .cursor/rules .claude/rules
+
       - name: Type check
         run: pnpm run lint:typescript
 
