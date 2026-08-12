@@ -38,6 +38,7 @@
     "prettier:check": "prettier --check .",
     "prettier:write": "prettier --write .",
     "rest:codegen": "node scripts/rest-codegen.mjs",
+    "rules:sync": "node scripts/sync-rule-files.mjs",
     "proto:gen": "node scripts/proto-codegen.mjs",
     "schema:codegen": "node scripts/schema-codegen.mjs",
     "api:update": "node scripts/api-download.mjs && pnpm run rest:codegen && pnpm run schema:codegen",

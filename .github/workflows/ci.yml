@@ -28,15 +28,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # `git add --intent-to-add` before each diff so newly generated files
+      # (untracked, invisible to `git diff`) also fail the drift checks.
       - name: Check vendored JSON-schema codegen is up to date
         run: |
           pnpm run schema:codegen
+          git add --intent-to-add -- schema/pact-decisions src/__codegen__/schema
           git diff --exit-code -- schema/pact-decisions src/__codegen__/schema
 
       - name: Check vendored REST-client codegen is up to date
         run: |
           pnpm run rest:codegen
+          git add --intent-to-add -- src/__codegen__/rest orval.config.ts
           git diff --exit-code -- src/__codegen__/rest orval.config.ts
+
+      - name: Check mirrored rule files are in sync
+        run: |
+          pnpm run rules:sync
+          git add --intent-to-add -- .cursor/rules .claude/rules
+          git diff --exit-code -- .cursor/rules .claude/rules
 
       - name: Type check
         run: pnpm run lint:typescript
