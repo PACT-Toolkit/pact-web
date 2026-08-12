@@ -55,6 +55,9 @@ jobs:
       - name: Diff against vendored specs
         id: diff
         run: |
+          # intent-to-add so a spec file that is new upstream (untracked after
+          # download, invisible to `git diff`) also counts as drift.
+          git add --intent-to-add -- schema/
           if git diff --quiet -- schema/; then
             echo "drifted=false" >> "$GITHUB_OUTPUT"
           else
