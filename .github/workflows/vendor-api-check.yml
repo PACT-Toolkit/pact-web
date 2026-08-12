@@ -1,0 +1,113 @@
+name: Vendored API spec staleness check
+
+# Weekly check that the vendored API specs under schema/*/ (pulled from
+# pact-gateway / pact-contracts by scripts/api-download.mjs) still match what
+# those repos currently publish. The per-PR CI checks in ci.yml only prove
+# src/__codegen__ matches whatever is already vendored - they cannot see a
+# spec that changed upstream after the last `pnpm api:update`. This workflow
+# closes that gap on a schedule instead of failing a red/unrelated PR build:
+# on drift it opens (or refreshes) a single tracked issue rather than
+# blocking anything.
+#
+# Requires a `VENDOR_CHECK_TOKEN` repository secret: a fine-grained GitHub
+# PAT, read-only, scoped to Contents on the private PACT-Toolkit/pact-gateway
+# and PACT-Toolkit/pact-contracts repos (whichever schema/*/services.config.json
+# entries reference - see schema/*/services.config.json for the current set).
+# The default GITHUB_TOKEN cannot read those repos, so this must be
+# provisioned and added under Settings > Secrets and variables > Actions
+# before this workflow can succeed; until then every scheduled run fails at
+# the download step, which is a visible signal that the token is missing.
+
+on:
+  schedule:
+    - cron: '0 7 * * 1' # every Monday at 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: vendor-api-check
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check vendored specs against upstream
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: jdx/mise-action@7e36c90d9ab29c415a2384db3006f3ec8a8cc654 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download current upstream specs
+        env:
+          GITHUB_TOKEN: ${{ secrets.VENDOR_CHECK_TOKEN }}
+        run: node scripts/api-download.mjs
+
+      - name: Diff against vendored specs
+        id: diff
+        run: |
+          # intent-to-add so a spec file that is new upstream (untracked after
+          # download, invisible to `git diff`) also counts as drift.
+          git add --intent-to-add -- schema/
+          if git diff --quiet -- schema/; then
+            echo "drifted=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "drifted=true" >> "$GITHUB_OUTPUT"
+            git diff --stat -- schema/ > /tmp/vendor-drift-summary.txt
+          fi
+
+      - name: Ensure tracking label exists
+        if: steps.diff.outputs.drifted == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create vendor-drift \
+            --color B60205 \
+            --description "Vendored API spec is stale vs upstream" \
+            --force
+
+      - name: Open or refresh the drift issue
+        if: steps.diff.outputs.drifted == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          summary=$(cat /tmp/vendor-drift-summary.txt)
+          checked_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          body=$(cat <<BODY
+          One or more vendored API specs under \`schema/\` no longer match what the upstream repo currently publishes.
+
+          Run \`pnpm run api:update\` locally, review the regenerated client, and commit the result to resolve this.
+
+          \`\`\`
+          $summary
+          \`\`\`
+
+          Last checked: $checked_at by the scheduled vendor-api-check workflow.
+          BODY
+          )
+          existing=$(gh issue list --label vendor-drift --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "Vendored API specs are stale" --label vendor-drift --body "$body"
+          fi
+
+      - name: Close the drift issue if specs are back in sync
+        if: steps.diff.outputs.drifted == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh issue list --label vendor-drift --state open --json number --jq '.[0].number')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Vendored API specs are back in sync as of $(date -u +%Y-%m-%dT%H:%M:%SZ)."
+            gh issue close "$existing"
+          fi
