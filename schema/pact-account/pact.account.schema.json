@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/PACT-Toolkit/pact-account/contracts/pact.account.schema.json",
+  "$id": "https://github.com/PACT-Toolkit/pact-contracts/account/pact.account.schema.json",
   "title": "pact.account",
   "description": "Canonical wire schema for the pact.account Kafka topic, mirroring internal/kafka/producer.go AccountEvent. Field names and required/optional status are frozen per ENGINEERING.md - every consumer of this topic pins this shape. additionalProperties is false so an accidental field rename or addition fails validation instead of silently passing through as unrecognised JSON.",
   "type": "object",
