@@ -66,7 +66,8 @@ Available skills:
 ## Rules
 
 Coding rules (`*.mdc` files read by Cursor and Claude Code) live in `.agents/rules/` - that is the only copy to edit.
-Cursor and Claude Code each require their own real directory (`.cursor/rules/`, `.claude/rules/`), so `pnpm run rules:sync` (`scripts/sync-rule-files.mjs`) mirrors `.agents/rules/` into both. CI runs the same script and fails the build if the mirrors drift from the canonical copy ("Check mirrored rule files are in sync" in `.github/workflows/ci.yml`).
+Cursor and Claude Code each require their own real directory (`.cursor/rules/`, `.claude/rules/`), so `pnpm run rules:sync` (`scripts/sync-rule-files.mjs`) mirrors `.agents/rules/` into both.
+CI runs the same script and fails the build if the mirrors drift from the canonical copy ("Check mirrored rule files are in sync" in `.github/workflows/ci.yml`).
 
 ---
 
