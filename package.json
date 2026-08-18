@@ -72,7 +72,7 @@
     "yup": "1.7.1"
   },
   "devDependencies": {
-    "@axe-core/playwright": "4.11.3",
+    "@axe-core/playwright": "4.13.0",
     "@bufbuild/buf": "1.70.0",
     "@bufbuild/protoc-gen-es": "2.12.1",
     "@faker-js/faker": "10.4.0",
