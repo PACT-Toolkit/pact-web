@@ -9,7 +9,7 @@
  */
 import useSwr from 'swr';
 import useSWRMutation from 'swr/mutation';
-import type { Key, SWRConfiguration } from 'swr';
+import type { Arguments, Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
 import type {
@@ -20,12 +20,24 @@ import type {
   AuditQueryAuditResponse,
   AuditQueryDecisionStatsResponse,
   AuditQueryPolicyEventsResponse,
+  AuditRemoveDecisionAnnotationResponse,
   GetAuditEventsParams,
   GetAuditPolicyEventsParams,
   GetAuditStatsParams,
+  RemoveDecisionAnnotationParams,
 } from './types';
 
 import {
+  removeDecisionAnnotationResponse200,
+  removeDecisionAnnotationResponse400,
+  removeDecisionAnnotationResponse401,
+  removeDecisionAnnotationResponseSuccess,
+  removeDecisionAnnotationResponseError,
+  getRemoveDecisionAnnotationUrl,
+  removeDecisionAnnotationResponse,
+  removeDecisionAnnotation,
+  getRemoveDecisionAnnotationMutationFetcher,
+  getRemoveDecisionAnnotationMutationKey,
   annotateDecisionResponse200,
   annotateDecisionResponse400,
   annotateDecisionResponse401,
@@ -79,6 +91,43 @@ import {
 import { customFetch } from '../custom_fetch';
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+export type RemoveDecisionAnnotationMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeDecisionAnnotation>>
+>;
+
+/**
+ * @summary Remove an operator annotation on a decision
+ */
+export const useRemoveDecisionAnnotation = <TError = string>(
+  params: RemoveDecisionAnnotationParams,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof removeDecisionAnnotation>>,
+      TError,
+      Key,
+      Arguments,
+      Awaited<ReturnType<typeof removeDecisionAnnotation>>
+    > & { swrKey?: string };
+    request?: SecondParameter<typeof customFetch>;
+  }
+) => {
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
+
+  const swrKey =
+    swrOptions?.swrKey ?? getRemoveDecisionAnnotationMutationKey(params);
+  const swrFn = getRemoveDecisionAnnotationMutationFetcher(
+    params,
+    requestOptions
+  );
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
 
 export type AnnotateDecisionMutationResult = NonNullable<
   Awaited<ReturnType<typeof annotateDecision>>

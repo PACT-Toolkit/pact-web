@@ -6,7 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-import type { Key } from 'swr';
+import type { Arguments, Key } from 'swr';
 
 import type {
   AuditAnnotateDecisionRequest,
@@ -16,14 +16,98 @@ import type {
   AuditQueryAuditResponse,
   AuditQueryDecisionStatsResponse,
   AuditQueryPolicyEventsResponse,
+  AuditRemoveDecisionAnnotationResponse,
   GetAuditEventsParams,
   GetAuditPolicyEventsParams,
   GetAuditStatsParams,
+  RemoveDecisionAnnotationParams,
 } from './types';
 
 import { customFetch } from '../custom_fetch';
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+export type removeDecisionAnnotationResponse200 = {
+  data: AuditRemoveDecisionAnnotationResponse;
+  status: 200;
+};
+
+export type removeDecisionAnnotationResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type removeDecisionAnnotationResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type removeDecisionAnnotationResponseSuccess =
+  removeDecisionAnnotationResponse200 & {
+    headers: Headers;
+  };
+
+export type removeDecisionAnnotationResponseError = (
+  | removeDecisionAnnotationResponse400
+  | removeDecisionAnnotationResponse401
+) & {
+  headers: Headers;
+};
+
+export type removeDecisionAnnotationResponse =
+  | removeDecisionAnnotationResponseSuccess
+  | removeDecisionAnnotationResponseError;
+
+export const getRemoveDecisionAnnotationUrl = (
+  params: RemoveDecisionAnnotationParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/pact/gateway/v1/audit/annotations?${stringifiedParams}`
+    : `/api/pact/gateway/v1/audit/annotations`;
+};
+
+/**
+ * @summary Remove an operator annotation on a decision
+ */
+export const removeDecisionAnnotation = async (
+  params: RemoveDecisionAnnotationParams,
+  options?: RequestInit
+): Promise<removeDecisionAnnotationResponse> => {
+  return customFetch<removeDecisionAnnotationResponse>(
+    getRemoveDecisionAnnotationUrl(params),
+    {
+      ...options,
+      method: 'DELETE',
+    }
+  );
+};
+
+export const getRemoveDecisionAnnotationMutationFetcher = (
+  params: RemoveDecisionAnnotationParams,
+  options?: SecondParameter<typeof customFetch>
+) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return removeDecisionAnnotation(params, options);
+  };
+};
+
+export const getRemoveDecisionAnnotationMutationKey = (
+  params: RemoveDecisionAnnotationParams
+) =>
+  [
+    `/api/pact/gateway/v1/audit/annotations`,
+    ...(params ? [params] : []),
+  ] as const;
 
 export type annotateDecisionResponse200 = {
   data: AuditAnnotateDecisionResponse;

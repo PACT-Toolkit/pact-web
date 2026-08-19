@@ -3,9 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import {
   applyOptimisticAnnotationFlag,
+  applyOptimisticAnnotationUnflag,
   buildAnnotateDecisionRequest,
   buildDecisionAnnotationsQueryKey,
   buildFilterFalsePositiveLabelRequest,
+  buildRemoveDecisionAnnotationParams,
   extractFlaggedFalsePositiveRequestIds,
   isFlaggedFalsePositive,
   resolveFlagRequestId,
@@ -91,6 +93,15 @@ describe('buildAnnotateDecisionRequest', () => {
   });
 });
 
+describe('buildRemoveDecisionAnnotationParams', () => {
+  it('builds a false_positive removal params object for the given requestId', () => {
+    expect(buildRemoveDecisionAnnotationParams('req-1')).toEqual({
+      requestId: 'req-1',
+      kind: 'false_positive',
+    });
+  });
+});
+
 describe('buildDecisionAnnotationsQueryKey', () => {
   it('returns null when there are no request ids to look up', () => {
     expect(buildDecisionAnnotationsQueryKey([])).toBeNull();
@@ -170,5 +181,55 @@ describe('applyOptimisticAnnotationFlag', () => {
 
     expect(updated.annotations).toHaveLength(1);
     expect(updated.annotations?.[0]?.requestId).toBe('req-1');
+  });
+});
+
+describe('applyOptimisticAnnotationUnflag', () => {
+  it('removes the matching false_positive annotation for the given requestId', () => {
+    const current = {
+      annotations: [
+        {
+          requestId: 'req-1',
+          kind: 'false_positive' as const,
+          actor: 'user-1',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          requestId: 'req-2',
+          kind: 'false_positive' as const,
+          actor: 'user-1',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    };
+
+    const updated = applyOptimisticAnnotationUnflag(current, 'req-1');
+
+    expect(updated.annotations).toHaveLength(1);
+    expect(updated.annotations?.[0]?.requestId).toBe('req-2');
+  });
+
+  it('is a no-op when the requestId is not currently flagged', () => {
+    const current = {
+      annotations: [
+        {
+          requestId: 'req-2',
+          kind: 'false_positive' as const,
+          actor: 'user-1',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+      ],
+    };
+
+    const updated = applyOptimisticAnnotationUnflag(current, 'req-1');
+
+    expect(updated.annotations).toHaveLength(1);
+    expect(updated.annotations?.[0]?.requestId).toBe('req-2');
+  });
+
+  it('returns an empty annotations list when there is no cached data yet', () => {
+    const updated = applyOptimisticAnnotationUnflag(undefined, 'req-1');
+
+    expect(updated.annotations).toEqual([]);
   });
 });

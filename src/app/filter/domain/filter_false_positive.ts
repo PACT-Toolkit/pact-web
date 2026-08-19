@@ -3,6 +3,7 @@ import {
   type AuditAnnotateDecisionRequest,
   type AuditAuditEventResponse,
   type AuditListDecisionAnnotationsResponse,
+  type RemoveDecisionAnnotationParams,
 } from '@/src/__codegen__/rest/audit';
 import { type ClassifierLabelVerdictRequest } from '@/src/__codegen__/rest/classifier';
 import { type DecisionPayload } from '@/src/app/filter/domain/filter_decision';
@@ -65,16 +66,23 @@ export const resolveFlagRequestId = (
 // page's request-id list (see buildDecisionAnnotationsQueryKey/
 // fetchDecisionAnnotations) since orval only emits a useSWRMutation hook for
 // this POST-for-query endpoint, not a query hook.
-//
-// UN-FLAGGING IS NOT SUPPORTED (PACT-464/PACT-466): AnnotateDecision is an
-// idempotent *create* -- there is no delete/un-flag RPC on pact-audit's
-// DecisionAnnotation surface. Once an operator flags a decision, it stays
-// flagged for good. FilterDecisionRow renders the flag as present-only (the
-// button disables once isFlagged is true) rather than offering a toggle that
-// would imply an un-flag path that does not exist.
 export const buildAnnotateDecisionRequest = (
   requestId: string
 ): AuditAnnotateDecisionRequest => ({
+  requestId,
+  kind: 'false_positive',
+});
+
+// PACT-835 wires FilterDecisionRow's flag button to a real toggle, now that
+// pact-gateway exposes DELETE /v1/audit/annotations (PACT-834, backed by
+// pact-audit's RemoveDecisionAnnotation RPC). Un-flagging was previously
+// impossible -- AnnotateDecision is an idempotent *create* with no delete
+// counterpart on pact-audit's surface, so the button used to disable
+// permanently once flagged. It now stays clickable and removes the
+// annotation instead.
+export const buildRemoveDecisionAnnotationParams = (
+  requestId: string
+): RemoveDecisionAnnotationParams => ({
   requestId,
   kind: 'false_positive',
 });
@@ -169,5 +177,28 @@ export const applyOptimisticAnnotationFlag = (
         createdAt: new Date().toISOString(),
       },
     ],
+  };
+};
+
+// Optimistic-update transform for the un-flag write (PACT-835). Mirrors
+// applyOptimisticAnnotationFlag's shape but drops the matching false_positive
+// row instead of inserting one, so the row renders as un-flagged immediately
+// -- rollbackOnError (wired at the call site) restores it if the DELETE
+// fails. Same "always returns a concrete response" contract as the flag
+// transform, for the same reason (useSWR<T>'s optimisticData must return T).
+export const applyOptimisticAnnotationUnflag = (
+  current: AuditListDecisionAnnotationsResponse | undefined,
+  requestId: string
+): AuditListDecisionAnnotationsResponse => {
+  const annotations = current?.annotations ?? [];
+
+  return {
+    annotations: annotations.filter(
+      (annotation) =>
+        !(
+          annotation.requestId === requestId &&
+          annotation.kind === 'false_positive'
+        )
+    ),
   };
 };

@@ -243,7 +243,7 @@ definitions:
             error:
                 type: string
         type: object
-host: localhost:8080
+host: localhost:8110
 info:
     contact: {}
     description: Public REST entrypoint for the PACT safety pipeline.
@@ -998,7 +998,13 @@ schemes:
     - https
 securityDefinitions:
     Bearer:
-        description: 'Opaque pact-auth session token. Format: <uuid>.<base64-hmac>.'
+        description: |-
+            pact-auth session token. Accepts either the legacy opaque
+            token (single segment, format <random>.<base64-hmac>),
+            validated via a ValidateSession RPC, or - when edge session
+            verification is enabled - a JWT-shaped token (three
+            dot-separated segments), verified locally against
+            pact-auth's Ed25519 public key.
         in: header
         name: Authorization
         type: apiKey

@@ -5,20 +5,21 @@ import { useMemo } from 'react';
 
 import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { parsePayload } from '@/src/app/filter/domain/filter_decision';
+import { type FlagToggleFailureAction } from '@/src/app/filter/ui/types';
 import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 export const FilterDecisionRow = ({
   event,
   isFlagged,
   isFlagging,
-  flagFailed,
-  onFlagFP,
+  flagFailure,
+  onToggleFlagFP,
 }: {
   event: AuditAuditEventResponse;
   isFlagged: boolean;
   isFlagging: boolean;
-  flagFailed: boolean;
-  onFlagFP: () => void;
+  flagFailure?: FlagToggleFailureAction;
+  onToggleFlagFP: () => void;
 }) => {
   const payload = useMemo(
     () => parsePayload(event.payloadJson ?? ''),
@@ -59,20 +60,25 @@ export const FilterDecisionRow = ({
 
       {isBlock && (
         <div className="flex shrink-0 items-center gap-2">
-          {flagFailed && !isFlagged && (
+          {flagFailure && (
             <span className="text-xs text-destructive">
-              Flag failed. Try again.
+              {flagFailure === 'unflag' ? 'Unflag failed.' : 'Flag failed.'} Try
+              again.
             </span>
           )}
           <button
             type="button"
-            onClick={onFlagFP}
-            disabled={isFlagged || isFlagging}
+            onClick={onToggleFlagFP}
+            disabled={isFlagging}
             title={
-              isFlagged ? 'Flagged as false positive' : 'Flag as false positive'
+              isFlagged
+                ? 'Remove false-positive flag'
+                : 'Flag as false positive'
             }
             aria-label={
-              isFlagged ? 'Flagged as false positive' : 'Flag as false positive'
+              isFlagged
+                ? 'Remove false-positive flag'
+                : 'Flag as false positive'
             }
             data-testid="filter-decision-flag-fp"
             className={`rounded p-1 transition-colors hover:bg-muted disabled:cursor-not-allowed ${

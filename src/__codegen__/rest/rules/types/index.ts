@@ -10,3 +10,4 @@ export * from './boundaryErrorResponse';
 export * from './rulesCreateRuleRequest';
 export * from './rulesListRulesResponse';
 export * from './rulesRuleResponse';
+export * from './rulesUpdateRuleRequest';

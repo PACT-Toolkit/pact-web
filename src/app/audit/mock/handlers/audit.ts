@@ -7,8 +7,12 @@ import {
   type AuditAuditEventResponse,
   type AuditListDecisionAnnotationsRequest,
   type AuditListDecisionAnnotationsResponse,
+  type AuditRemoveDecisionAnnotationResponse,
 } from '@/src/__codegen__/rest/audit';
-import { persistDecisionAnnotationRequestId } from '@/src/app/audit/mock/data/audit';
+import {
+  persistDecisionAnnotationRequestId,
+  removeDecisionAnnotationRequestId,
+} from '@/src/app/audit/mock/data/audit';
 import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
 
 // PACT-464's maxAnnotationRequestIDs cap, mirrored from pact-gateway's
@@ -95,6 +99,49 @@ export const handlers: RequestHandler[] = [
     }
 
     const response: AuditAnnotateDecisionResponse = { created: !existing };
+
+    return HttpResponse.json(response);
+  }),
+
+  // Answers DELETE /v1/audit/annotations (PACT-834/PACT-835). Idempotent
+  // like the real RemoveDecisionAnnotation RPC -- removing an annotation
+  // that was never flagged (or already un-flagged) is a 200 with
+  // `removed: false`, not a 404. Same plain-text error-body shape as the
+  // POST handler above (HttpResponse.json on a string) for the same
+  // orval/plain-text mismatch reason.
+  http.delete('*/v1/audit/annotations', ({ request }) => {
+    const url = new URL(request.url);
+    const requestId = url.searchParams.get('requestId');
+    const kind = url.searchParams.get('kind');
+
+    if (!requestId) {
+      return HttpResponse.json('requestId is required', { status: 400 });
+    }
+    if (kind !== 'false_positive') {
+      return HttpResponse.json('kind must be "false_positive"', {
+        status: 400,
+      });
+    }
+
+    const existing = db.auditAnnotations.findFirst(
+      (annotation) =>
+        annotation.requestId === requestId &&
+        annotation.kind === kind &&
+        annotation.actor === MOCK_USER_ID
+    );
+    if (existing) {
+      db.auditAnnotations.delete(
+        (annotation) =>
+          annotation.requestId === requestId &&
+          annotation.kind === kind &&
+          annotation.actor === MOCK_USER_ID
+      );
+      removeDecisionAnnotationRequestId(requestId);
+    }
+
+    const response: AuditRemoveDecisionAnnotationResponse = {
+      removed: Boolean(existing),
+    };
 
     return HttpResponse.json(response);
   }),
