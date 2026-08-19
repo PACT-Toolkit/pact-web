@@ -10,16 +10,16 @@ import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 // - FilterTestRuleSandbox runs POST /v1/filter/test-rule (pact-gateway
 //   PACT-451): paste a candidate rule + sample, see whether it matches,
 //   with no side effects (nothing persisted or audited).
-// - FilterDecisionRow's flag button persists a false-positive flag via
-//   gateway's decision-annotations proxy (PACT-464/PACT-474,
-//   POST /v1/audit/annotations) with an optimistic SWR update, and reads
-//   flags back via a single batched POST /v1/audit/annotations/query call
-//   per page of visible rows rather than one call per row. It also fires
+// - FilterDecisionRow's flag button toggles a false-positive flag via
+//   gateway's decision-annotations proxy: POST /v1/audit/annotations to
+//   flag (PACT-464/PACT-474) and DELETE /v1/audit/annotations to un-flag
+//   (PACT-834/PACT-835), both with an optimistic SWR update. Reads flags
+//   back via a single batched POST /v1/audit/annotations/query call per
+//   page of visible rows rather than one call per row. Flagging also fires
 //   the pre-existing classifier LabelVerdict write (PACT-318/PACT-325) as a
-//   distinct, parallel action feeding the fine-tune corpus. See
-//   filter_false_positive.ts's docblock for the full write-up, including
-//   why the flag has no un-flag control (PACT-464/PACT-466: idempotent
-//   create only, no delete RPC).
+//   distinct, parallel action feeding the fine-tune corpus -- un-flagging
+//   does not reverse it. See filter_false_positive.ts's docblock for the
+//   full write-up.
 test.describe('Filter console', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/filter');
@@ -102,7 +102,7 @@ test.describe('Filter console', () => {
     await expect(page.getByTestId('filter-test-rule-result')).not.toBeVisible();
   });
 
-  test('flagging a decision as a false positive persists across reload', async ({
+  test('flagging and un-flagging a decision as a false positive persists across reload', async ({
     page,
   }) => {
     const flagButton = page.getByTestId('filter-decision-flag-fp').first();
@@ -115,9 +115,9 @@ test.describe('Filter console', () => {
     await flagButton.click();
     await expect(flagButton).toHaveAttribute(
       'aria-label',
-      'Flagged as false positive'
+      'Remove false-positive flag'
     );
-    await expect(flagButton).toBeDisabled();
+    await expect(flagButton).toBeEnabled();
 
     await page.reload();
     await expect(page.getByTestId('filter-packs-panel')).toBeVisible();
@@ -127,9 +127,25 @@ test.describe('Filter console', () => {
       .first();
     await expect(flagButtonAfterReload).toHaveAttribute(
       'aria-label',
-      'Flagged as false positive'
+      'Remove false-positive flag'
     );
-    await expect(flagButtonAfterReload).toBeDisabled();
+
+    await flagButtonAfterReload.click();
+    await expect(flagButtonAfterReload).toHaveAttribute(
+      'aria-label',
+      'Flag as false positive'
+    );
+
+    await page.reload();
+    await expect(page.getByTestId('filter-packs-panel')).toBeVisible();
+
+    const flagButtonAfterSecondReload = page
+      .getByTestId('filter-decision-flag-fp')
+      .first();
+    await expect(flagButtonAfterSecondReload).toHaveAttribute(
+      'aria-label',
+      'Flag as false positive'
+    );
   });
 
   test('a single batched annotations read renders flags across multiple previously-flagged rows', async ({
@@ -142,9 +158,15 @@ test.describe('Filter console', () => {
     expect(flaggableCount).toBeGreaterThan(1);
 
     await flagButtons.nth(0).click();
-    await expect(flagButtons.nth(0)).toBeDisabled();
+    await expect(flagButtons.nth(0)).toHaveAttribute(
+      'aria-label',
+      'Remove false-positive flag'
+    );
     await flagButtons.nth(1).click();
-    await expect(flagButtons.nth(1)).toBeDisabled();
+    await expect(flagButtons.nth(1)).toHaveAttribute(
+      'aria-label',
+      'Remove false-positive flag'
+    );
 
     let annotationsQueryCalls = 0;
     page.on('request', (request) => {
@@ -157,8 +179,14 @@ test.describe('Filter console', () => {
     await expect(page.getByTestId('filter-packs-panel')).toBeVisible();
 
     const flagButtonsAfterReload = page.getByTestId('filter-decision-flag-fp');
-    await expect(flagButtonsAfterReload.nth(0)).toBeDisabled();
-    await expect(flagButtonsAfterReload.nth(1)).toBeDisabled();
+    await expect(flagButtonsAfterReload.nth(0)).toHaveAttribute(
+      'aria-label',
+      'Remove false-positive flag'
+    );
+    await expect(flagButtonsAfterReload.nth(1)).toHaveAttribute(
+      'aria-label',
+      'Remove false-positive flag'
+    );
 
     // PACT-474 requirement: one POST /v1/audit/annotations/query call per
     // page of visible rows, not one per row -- strictly fewer calls than

@@ -304,6 +304,25 @@ export const persistDecisionAnnotationRequestId = (requestId: string): void => {
   }
 };
 
+// PACT-835's counterpart to persistDecisionAnnotationRequestId, called by
+// mock/handlers/audit.ts's removeDecisionAnnotation handler right after it
+// deletes the matching db.auditAnnotations row, so the un-flag also
+// survives the next reseed rather than the annotation silently reappearing
+// on reload.
+export const removeDecisionAnnotationRequestId = (requestId: string): void => {
+  if (typeof window === 'undefined') return;
+  try {
+    const ids = new Set(readPersistedDecisionAnnotationRequestIds());
+    ids.delete(requestId);
+    window.localStorage.setItem(
+      DECISION_ANNOTATION_STORAGE_KEY,
+      JSON.stringify([...ids])
+    );
+  } catch {
+    // Same fail-open reasoning as the read side above.
+  }
+};
+
 // Called once from dbFactory.ts after createAuditMockData has run, so
 // db.auditAnnotations starts a fresh dev:mock session with every annotation
 // a previous session created still in place. Idempotent against

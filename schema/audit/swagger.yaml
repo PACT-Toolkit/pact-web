@@ -178,7 +178,12 @@ definitions:
             total:
                 type: integer
         type: object
-host: localhost:8080
+    audit.RemoveDecisionAnnotationResponse:
+        properties:
+            removed:
+                type: boolean
+        type: object
+host: localhost:8110
 info:
     contact: {}
     description: Public REST entrypoint for the PACT safety pipeline.
@@ -186,6 +191,41 @@ info:
     version: 0.1.0
 paths:
     /v1/audit/annotations:
+        delete:
+            operationId: removeDecisionAnnotation
+            parameters:
+                - description: Request id the annotation was recorded against
+                  in: query
+                  name: requestId
+                  required: true
+                  type: string
+                - description: Annotation kind
+                  enum:
+                    - false_positive
+                  in: query
+                  name: kind
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/audit.RemoveDecisionAnnotationResponse'
+                "400":
+                    description: missing requestId or unknown kind
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Remove an operator annotation on a decision
+            tags:
+                - audit
         post:
             consumes:
                 - application/json
@@ -371,7 +411,13 @@ schemes:
     - https
 securityDefinitions:
     Bearer:
-        description: 'Opaque pact-auth session token. Format: <uuid>.<base64-hmac>.'
+        description: |-
+            pact-auth session token. Accepts either the legacy opaque
+            token (single segment, format <random>.<base64-hmac>),
+            validated via a ValidateSession RPC, or - when edge session
+            verification is enabled - a JWT-shaped token (three
+            dot-separated segments), verified locally against
+            pact-auth's Ed25519 public key.
         in: header
         name: Authorization
         type: apiKey

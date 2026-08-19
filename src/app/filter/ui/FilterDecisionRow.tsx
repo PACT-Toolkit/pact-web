@@ -12,13 +12,13 @@ export const FilterDecisionRow = ({
   isFlagged,
   isFlagging,
   flagFailed,
-  onFlagFP,
+  onToggleFlagFP,
 }: {
   event: AuditAuditEventResponse;
   isFlagged: boolean;
   isFlagging: boolean;
   flagFailed: boolean;
-  onFlagFP: () => void;
+  onToggleFlagFP: () => void;
 }) => {
   const payload = useMemo(
     () => parsePayload(event.payloadJson ?? ''),
@@ -59,20 +59,24 @@ export const FilterDecisionRow = ({
 
       {isBlock && (
         <div className="flex shrink-0 items-center gap-2">
-          {flagFailed && !isFlagged && (
+          {flagFailed && (
             <span className="text-xs text-destructive">
-              Flag failed. Try again.
+              {isFlagged ? 'Unflag failed.' : 'Flag failed.'} Try again.
             </span>
           )}
           <button
             type="button"
-            onClick={onFlagFP}
-            disabled={isFlagged || isFlagging}
+            onClick={onToggleFlagFP}
+            disabled={isFlagging}
             title={
-              isFlagged ? 'Flagged as false positive' : 'Flag as false positive'
+              isFlagged
+                ? 'Remove false-positive flag'
+                : 'Flag as false positive'
             }
             aria-label={
-              isFlagged ? 'Flagged as false positive' : 'Flag as false positive'
+              isFlagged
+                ? 'Remove false-positive flag'
+                : 'Flag as false positive'
             }
             data-testid="filter-decision-flag-fp"
             className={`rounded p-1 transition-colors hover:bg-muted disabled:cursor-not-allowed ${

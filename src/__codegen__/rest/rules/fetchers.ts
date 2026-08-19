@@ -13,6 +13,7 @@ import type {
   RulesCreateRuleRequest,
   RulesListRulesResponse,
   RulesRuleResponse,
+  RulesUpdateRuleRequest,
 } from './types';
 
 import { customFetch } from '../custom_fetch';
@@ -29,11 +30,19 @@ export type listRulesResponse401 = {
   status: 401;
 };
 
+export type listRulesResponse403 = {
+  data: string;
+  status: 403;
+};
+
 export type listRulesResponseSuccess = listRulesResponse200 & {
   headers: Headers;
 };
 
-export type listRulesResponseError = listRulesResponse401 & {
+export type listRulesResponseError = (
+  | listRulesResponse401
+  | listRulesResponse403
+) & {
   headers: Headers;
 };
 
@@ -74,6 +83,11 @@ export type createRuleResponse401 = {
   status: 401;
 };
 
+export type createRuleResponse403 = {
+  data: string;
+  status: 403;
+};
+
 export type createRuleResponseSuccess = createRuleResponse201 & {
   headers: Headers;
 };
@@ -81,6 +95,7 @@ export type createRuleResponseSuccess = createRuleResponse201 & {
 export type createRuleResponseError = (
   | createRuleResponse400
   | createRuleResponse401
+  | createRuleResponse403
 ) & {
   headers: Headers;
 };
@@ -118,6 +133,80 @@ export const getCreateRuleMutationFetcher = (
 
 export const getCreateRuleMutationKey = () =>
   [`/api/pact/gateway/v1/rules`] as const;
+
+export type updateRuleResponse200 = {
+  data: RulesRuleResponse;
+  status: 200;
+};
+
+export type updateRuleResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type updateRuleResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type updateRuleResponse403 = {
+  data: string;
+  status: 403;
+};
+
+export type updateRuleResponse404 = {
+  data: BoundaryErrorResponse;
+  status: 404;
+};
+
+export type updateRuleResponseSuccess = updateRuleResponse200 & {
+  headers: Headers;
+};
+
+export type updateRuleResponseError = (
+  | updateRuleResponse400
+  | updateRuleResponse401
+  | updateRuleResponse403
+  | updateRuleResponse404
+) & {
+  headers: Headers;
+};
+
+export type updateRuleResponse =
+  | updateRuleResponseSuccess
+  | updateRuleResponseError;
+
+export const getUpdateRuleUrl = (id: string) => {
+  return `/api/pact/gateway/v1/rules/${id}`;
+};
+
+/**
+ * @summary Update a draft policy rule
+ */
+export const updateRule = async (
+  id: string,
+  rulesUpdateRuleRequest: RulesUpdateRuleRequest,
+  options?: RequestInit
+): Promise<updateRuleResponse> => {
+  return customFetch<updateRuleResponse>(getUpdateRuleUrl(id), {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(rulesUpdateRuleRequest),
+  });
+};
+
+export const getUpdateRuleMutationFetcher = (
+  id: string,
+  options?: SecondParameter<typeof customFetch>
+) => {
+  return (_: Key, { arg }: { arg: RulesUpdateRuleRequest }) => {
+    return updateRule(id, arg, options);
+  };
+};
+
+export const getUpdateRuleMutationKey = (id: string) =>
+  [`/api/pact/gateway/v1/rules/${id}`] as const;
 
 export type publishRuleResponse200 = {
   data: RulesRuleResponse;

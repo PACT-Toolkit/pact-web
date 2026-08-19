@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import useSWR from 'swr';
 
 import {
+  removeDecisionAnnotation,
   useAnnotateDecision,
   type AuditAuditEventResponse,
   type AuditListDecisionAnnotationsResponse,
@@ -18,9 +19,11 @@ import {
 import { useFilterDecisionStats } from '@/src/app/filter/domain/filter_decision_stats';
 import {
   applyOptimisticAnnotationFlag,
+  applyOptimisticAnnotationUnflag,
   buildAnnotateDecisionRequest,
   buildDecisionAnnotationsQueryKey,
   buildFilterFalsePositiveLabelRequest,
+  buildRemoveDecisionAnnotationParams,
   extractFlaggedFalsePositiveRequestIds,
   fetchDecisionAnnotations,
   isFlaggedFalsePositive,
@@ -98,28 +101,28 @@ export const FilterDecisionsWorkbench = () => {
     [annotationsData]
   );
 
-  // Persists a "false positive" flag two ways (PACT-474): a durable
-  // annotation via gateway's POST /v1/audit/annotations (PACT-464 proxy),
-  // which is what backs the row's flagged state, and the pre-existing
-  // POST /v1/classifier/label write (PACT-318/PACT-325) that feeds
-  // pact-classifier's fine-tune corpus -- a distinct purpose, kept as-is.
-  // Optimistically inserts into the annotations cache before either request
-  // settles; rolls back on failure. See filter_false_positive.ts's docblock
-  // for why this is a one-way action -- there is no un-flag endpoint.
-  const handleFlagFP = async (
+  // Toggles the "false positive" flag on a decision (PACT-835). Flagging
+  // persists two writes (PACT-474): a durable annotation via gateway's POST
+  // /v1/audit/annotations (PACT-464 proxy), which is what backs the row's
+  // flagged state, and the pre-existing POST /v1/classifier/label write
+  // (PACT-318/PACT-325) that feeds pact-classifier's fine-tune corpus -- a
+  // distinct purpose, kept as-is. Un-flagging only touches the annotation
+  // (via DELETE /v1/audit/annotations, PACT-834's RemoveDecisionAnnotation
+  // proxy) -- it must not reverse the classifier label write, which stays a
+  // durable, one-way training signal regardless of whether the operator
+  // later reconsiders the flag. Both directions optimistically update the
+  // annotations cache before the request settles and roll back on failure.
+  const handleToggleFlagFP = async (
     event: AuditAuditEventResponse,
     payload: DecisionPayload | null
   ) => {
     const eventId = event.id ?? '';
     const requestId = resolveFlagRequestId(event, payload);
-    if (
-      !requestId ||
-      isFlaggedFalsePositive(flaggedRequestIds, requestId) ||
-      flaggingEventId === eventId ||
-      !annotationsKey
-    ) {
+    if (!requestId || flaggingEventId === eventId || !annotationsKey) {
       return;
     }
+
+    const alreadyFlagged = isFlaggedFalsePositive(flaggedRequestIds, requestId);
 
     setFlaggingEventId(eventId);
     setFailedEventIds((prev) => {
@@ -133,6 +136,19 @@ export const FilterDecisionsWorkbench = () => {
     const submit = async (): Promise<
       AuditListDecisionAnnotationsResponse | undefined
     > => {
+      if (alreadyFlagged) {
+        const removeResponse = await removeDecisionAnnotation(
+          buildRemoveDecisionAnnotationParams(requestId)
+        );
+        if (removeResponse.status !== 200) {
+          throw new Error(
+            `remove annotation request failed (${removeResponse.status})`
+          );
+        }
+
+        return undefined;
+      }
+
       const [labelResponse, annotateResponse] = await Promise.all([
         submitFalsePositiveLabel(
           buildFilterFalsePositiveLabelRequest(requestId, payload)
@@ -156,7 +172,9 @@ export const FilterDecisionsWorkbench = () => {
     try {
       await mutateAnnotations(submit(), {
         optimisticData: (current) =>
-          applyOptimisticAnnotationFlag(current, requestId),
+          alreadyFlagged
+            ? applyOptimisticAnnotationUnflag(current, requestId)
+            : applyOptimisticAnnotationFlag(current, requestId),
         rollbackOnError: true,
         populateCache: false,
         revalidate: true,
@@ -262,7 +280,7 @@ export const FilterDecisionsWorkbench = () => {
               isFlagged={isFlaggedFalsePositive(flaggedRequestIds, requestId)}
               isFlagging={flaggingEventId === eventId}
               flagFailed={failedEventIds.has(eventId)}
-              onFlagFP={() => void handleFlagFP(evt, payload)}
+              onToggleFlagFP={() => void handleToggleFlagFP(evt, payload)}
             />
           );
         })}

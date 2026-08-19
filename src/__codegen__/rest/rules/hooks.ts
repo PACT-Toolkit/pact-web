@@ -17,11 +17,13 @@ import type {
   RulesCreateRuleRequest,
   RulesListRulesResponse,
   RulesRuleResponse,
+  RulesUpdateRuleRequest,
 } from './types';
 
 import {
   listRulesResponse200,
   listRulesResponse401,
+  listRulesResponse403,
   listRulesResponseSuccess,
   listRulesResponseError,
   getListRulesUrl,
@@ -31,6 +33,7 @@ import {
   createRuleResponse201,
   createRuleResponse400,
   createRuleResponse401,
+  createRuleResponse403,
   createRuleResponseSuccess,
   createRuleResponseError,
   getCreateRuleUrl,
@@ -38,6 +41,18 @@ import {
   createRule,
   getCreateRuleMutationFetcher,
   getCreateRuleMutationKey,
+  updateRuleResponse200,
+  updateRuleResponse400,
+  updateRuleResponse401,
+  updateRuleResponse403,
+  updateRuleResponse404,
+  updateRuleResponseSuccess,
+  updateRuleResponseError,
+  getUpdateRuleUrl,
+  updateRuleResponse,
+  updateRule,
+  getUpdateRuleMutationFetcher,
+  getUpdateRuleMutationKey,
   publishRuleResponse200,
   publishRuleResponse400,
   publishRuleResponse401,
@@ -122,6 +137,39 @@ export const useCreateRule = <TError = string>(options?: {
 
   const swrKey = swrOptions?.swrKey ?? getCreateRuleMutationKey();
   const swrFn = getCreateRuleMutationFetcher(requestOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type UpdateRuleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateRule>>
+>;
+
+/**
+ * @summary Update a draft policy rule
+ */
+export const useUpdateRule = <TError = string | BoundaryErrorResponse>(
+  id: string,
+  options?: {
+    swr?: SWRMutationConfiguration<
+      Awaited<ReturnType<typeof updateRule>>,
+      TError,
+      Key,
+      RulesUpdateRuleRequest,
+      Awaited<ReturnType<typeof updateRule>>
+    > & { swrKey?: string };
+    request?: SecondParameter<typeof customFetch>;
+  }
+) => {
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getUpdateRuleMutationKey(id);
+  const swrFn = getUpdateRuleMutationFetcher(id, requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
 

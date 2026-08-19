@@ -52,7 +52,21 @@ definitions:
             - updatedAt
             - version
         type: object
-host: localhost:8080
+    rules.UpdateRuleRequest:
+        properties:
+            name:
+                type: string
+            packYaml:
+                type: string
+            scopes:
+                items:
+                    type: string
+                type: array
+        required:
+            - name
+            - packYaml
+        type: object
+host: localhost:8110
 info:
     contact: {}
     description: Public REST entrypoint for the PACT safety pipeline.
@@ -71,6 +85,10 @@ paths:
                         $ref: '#/definitions/rules.ListRulesResponse'
                 "401":
                     description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "403":
+                    description: missing required permission
                     schema:
                         type: string
             security:
@@ -104,9 +122,58 @@ paths:
                     description: missing or invalid bearer token
                     schema:
                         type: string
+                "403":
+                    description: missing required permission
+                    schema:
+                        type: string
             security:
                 - Bearer: []
             summary: Create a policy rule (Draft)
+            tags:
+                - rules
+    /v1/rules/{id}:
+        put:
+            consumes:
+                - application/json
+            operationId: updateRule
+            parameters:
+                - description: Rule ID
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+                - description: Rule name, pack YAML, and scopes
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/rules.UpdateRuleRequest'
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/rules.RuleResponse'
+                "400":
+                    description: missing name/packYaml or invalid body
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "403":
+                    description: missing required permission
+                    schema:
+                        type: string
+                "404":
+                    description: rule not found
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+            security:
+                - Bearer: []
+            summary: Update a draft policy rule
             tags:
                 - rules
     /v1/rules/{id}/publish:
@@ -188,7 +255,13 @@ schemes:
     - https
 securityDefinitions:
     Bearer:
-        description: 'Opaque pact-auth session token. Format: <uuid>.<base64-hmac>.'
+        description: |-
+            pact-auth session token. Accepts either the legacy opaque
+            token (single segment, format <random>.<base64-hmac>),
+            validated via a ValidateSession RPC, or - when edge session
+            verification is enabled - a JWT-shaped token (three
+            dot-separated segments), verified locally against
+            pact-auth's Ed25519 public key.
         in: header
         name: Authorization
         type: apiKey
