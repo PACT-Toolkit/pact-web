@@ -72,11 +72,11 @@ paths:
                 "503":
                     description: service unavailable
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "504":
                     description: request timeout
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Mint a capability token

@@ -49,12 +49,12 @@ export type labelVerdictResponse502 = {
 };
 
 export type labelVerdictResponse503 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 503;
 };
 
 export type labelVerdictResponse504 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 504;
 };
 

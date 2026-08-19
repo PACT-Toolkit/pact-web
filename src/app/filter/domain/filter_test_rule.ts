@@ -1,7 +1,4 @@
-import {
-  type BoundaryErrorResponse,
-  type FilterTestRuleRequest,
-} from '@/src/__codegen__/rest/filter';
+import { type FilterTestRuleRequest } from '@/src/__codegen__/rest/filter';
 import { type TestRuleFormState } from '@/src/app/filter/ui/types';
 
 // Domain helpers for the TestRule sandbox (pact-gateway PACT-451, wired here
@@ -75,20 +72,6 @@ export const buildTestRuleRequest = (
 // sample matches the candidate rule whenever the engine reports anything
 // other than "safe".
 export const isRuleMatch = (verdict: string): boolean => verdict !== 'safe';
-
-// POST /v1/filter/test-rule's non-2xx body is a plain string for 400/401/
-// 503/504, but a structured boundary.ErrorResponse ({ code, error }) for
-// 502 -- pact-gateway's own upstream-failure envelope (see
-// internal/boundary's error middleware). The sandbox only ever needs a
-// display string regardless of which shape came back.
-export const extractServerErrorMessage = (
-  body: string | BoundaryErrorResponse | undefined
-): string | undefined => {
-  if (body === undefined) return undefined;
-  if (typeof body === 'string') return body;
-
-  return body.error ?? body.code;
-};
 
 export const verdictBadgeClass = (verdict: string): string => {
   if (verdict === 'hostile') return 'bg-destructive/10 text-destructive';

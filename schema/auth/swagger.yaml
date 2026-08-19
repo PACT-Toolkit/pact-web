@@ -320,7 +320,7 @@ paths:
                 "401":
                     description: invalid credentials
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             summary: Log in with email and password
             tags:
                 - auth
@@ -409,7 +409,7 @@ paths:
                 "401":
                     description: invalid or expired mfa token
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             summary: Begin a passkey-assertion MFA step-up
             tags:
                 - auth
@@ -439,7 +439,7 @@ paths:
                 "401":
                     description: invalid or expired mfa token, or invalid assertion
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             summary: Finish a passkey-assertion MFA step-up
             tags:
                 - auth
@@ -488,7 +488,7 @@ paths:
                 "401":
                     description: invalid or expired mfa token/code
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             summary: Complete a partial-auth login with an MFA code
             tags:
                 - auth
@@ -523,7 +523,7 @@ paths:
                 "401":
                     description: invalid code or state
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             summary: Complete a federated OAuth login
             tags:
                 - auth
@@ -686,7 +686,7 @@ paths:
                 "401":
                     description: invalid assertion
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             summary: Finish a passkey login
             tags:
                 - auth
@@ -780,7 +780,7 @@ paths:
                 "401":
                     description: invalid or expired reset token
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             summary: Confirm a password reset with the emailed token
             tags:
                 - auth
@@ -965,7 +965,7 @@ paths:
                 "401":
                     description: invalid or expired verification token
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             summary: Verify an account email with the emailed token
             tags:
                 - auth

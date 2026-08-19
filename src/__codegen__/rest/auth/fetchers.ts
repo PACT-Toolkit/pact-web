@@ -155,7 +155,7 @@ export type loginResponse400 = {
 };
 
 export type loginResponse401 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 401;
 };
 
@@ -357,7 +357,7 @@ export type beginMfaPasskeyAssertionResponse400 = {
 };
 
 export type beginMfaPasskeyAssertionResponse401 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 401;
 };
 
@@ -421,7 +421,7 @@ export type finishMfaPasskeyAssertionResponse400 = {
 };
 
 export type finishMfaPasskeyAssertionResponse401 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 401;
 };
 
@@ -539,7 +539,7 @@ export type verifyMfaResponse400 = {
 };
 
 export type verifyMfaResponse401 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 401;
 };
 
@@ -599,7 +599,7 @@ export type handleOAuthCallbackResponse400 = {
 };
 
 export type handleOAuthCallbackResponse401 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 401;
 };
 
@@ -942,7 +942,7 @@ export type finishPasskeyLoginResponse400 = {
 };
 
 export type finishPasskeyLoginResponse401 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 401;
 };
 
@@ -1131,7 +1131,7 @@ export type confirmPasswordResetResponse400 = {
 };
 
 export type confirmPasswordResetResponse401 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 401;
 };
 
@@ -1528,7 +1528,7 @@ export type verifyEmailResponse400 = {
 };
 
 export type verifyEmailResponse401 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 401;
 };
 
