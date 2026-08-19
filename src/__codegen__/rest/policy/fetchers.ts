@@ -44,12 +44,12 @@ export type issueTokenResponse502 = {
 };
 
 export type issueTokenResponse503 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 503;
 };
 
 export type issueTokenResponse504 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 504;
 };
 

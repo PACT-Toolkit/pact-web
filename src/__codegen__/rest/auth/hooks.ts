@@ -389,7 +389,7 @@ export type LoginMutationResult = NonNullable<
 /**
  * @summary Log in with email and password
  */
-export const useLogin = <TError = string>(options?: {
+export const useLogin = <TError = string | BoundaryErrorResponse>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof login>>,
     TError,
@@ -515,7 +515,9 @@ export type BeginMfaPasskeyAssertionMutationResult = NonNullable<
 /**
  * @summary Begin a passkey-assertion MFA step-up
  */
-export const useBeginMfaPasskeyAssertion = <TError = string>(options?: {
+export const useBeginMfaPasskeyAssertion = <
+  TError = string | BoundaryErrorResponse,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof beginMfaPasskeyAssertion>>,
     TError,
@@ -545,7 +547,9 @@ export type FinishMfaPasskeyAssertionMutationResult = NonNullable<
 /**
  * @summary Finish a passkey-assertion MFA step-up
  */
-export const useFinishMfaPasskeyAssertion = <TError = string>(options?: {
+export const useFinishMfaPasskeyAssertion = <
+  TError = string | BoundaryErrorResponse,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof finishMfaPasskeyAssertion>>,
     TError,
@@ -606,7 +610,9 @@ export type VerifyMfaMutationResult = NonNullable<
 /**
  * @summary Complete a partial-auth login with an MFA code
  */
-export const useVerifyMfa = <TError = string>(options?: {
+export const useVerifyMfa = <
+  TError = string | BoundaryErrorResponse,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof verifyMfa>>,
     TError,
@@ -636,7 +642,7 @@ export type HandleOAuthCallbackMutationResult = NonNullable<
 /**
  * @summary Complete a federated OAuth login
  */
-export const useHandleOAuthCallback = <TError = string>(
+export const useHandleOAuthCallback = <TError = string | BoundaryErrorResponse>(
   provider: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -836,7 +842,9 @@ export type FinishPasskeyLoginMutationResult = NonNullable<
 /**
  * @summary Finish a passkey login
  */
-export const useFinishPasskeyLogin = <TError = string>(options?: {
+export const useFinishPasskeyLogin = <
+  TError = string | BoundaryErrorResponse,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof finishPasskeyLogin>>,
     TError,
@@ -927,7 +935,9 @@ export type ConfirmPasswordResetMutationResult = NonNullable<
 /**
  * @summary Confirm a password reset with the emailed token
  */
-export const useConfirmPasswordReset = <TError = string>(options?: {
+export const useConfirmPasswordReset = <
+  TError = string | BoundaryErrorResponse,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof confirmPasswordReset>>,
     TError,
@@ -1142,7 +1152,9 @@ export type VerifyEmailMutationResult = NonNullable<
 /**
  * @summary Verify an account email with the emailed token
  */
-export const useVerifyEmail = <TError = string>(options?: {
+export const useVerifyEmail = <
+  TError = string | BoundaryErrorResponse,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof verifyEmail>>,
     TError,

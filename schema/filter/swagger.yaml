@@ -134,11 +134,11 @@ paths:
                 "503":
                     description: service unavailable
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "504":
                     description: request timeout
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: List loaded rule packs and engines
@@ -178,11 +178,11 @@ paths:
                 "503":
                     description: service unavailable
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "504":
                     description: request timeout
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Test a candidate rule against a sample

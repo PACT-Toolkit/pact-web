@@ -24,6 +24,7 @@ import {
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
+import { extractServerErrorMessage } from '@/src/framework/http';
 
 // Ad-hoc capability-token issuance panel (PACT-326): mints a token via the
 // real gateway endpoint POST /v1/policy/tokens so an operator can hand a
@@ -75,9 +76,8 @@ export const PolicyTokenIssuePanel = () => {
         setIssuedToken(res.data);
       } else {
         setSubmitError(
-          typeof res.data === 'string'
-            ? res.data
-            : 'Failed to issue token. Please try again.'
+          extractServerErrorMessage(res.data) ??
+            'Failed to issue token. Please try again.'
         );
       }
     } catch {

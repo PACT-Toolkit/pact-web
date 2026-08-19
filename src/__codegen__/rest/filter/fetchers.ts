@@ -35,12 +35,12 @@ export type listLoadedPacksResponse502 = {
 };
 
 export type listLoadedPacksResponse503 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 503;
 };
 
 export type listLoadedPacksResponse504 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 504;
 };
 
@@ -101,12 +101,12 @@ export type testRuleResponse502 = {
 };
 
 export type testRuleResponse503 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 503;
 };
 
 export type testRuleResponse504 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 504;
 };
 

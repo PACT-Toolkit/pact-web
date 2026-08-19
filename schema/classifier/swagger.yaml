@@ -84,11 +84,11 @@ paths:
                 "503":
                     description: classifier unavailable
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "504":
                     description: classifier timeout
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             security:
                 - Bearer: []
             summary: Label a classifier verdict

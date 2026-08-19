@@ -10,7 +10,6 @@ import {
   TEST_RULE_KIND_OPTIONS,
   TEST_RULE_VERDICT_OPTIONS,
   buildTestRuleRequest,
-  extractServerErrorMessage,
   isRuleMatch,
   validateTestRuleForm,
   verdictBadgeClass,
@@ -25,6 +24,7 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
+import { extractServerErrorMessage } from '@/src/framework/http';
 
 const selectClassName = 'h-9 rounded-md border bg-background px-3 text-sm';
 const textareaClassName =
