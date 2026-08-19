@@ -33,6 +33,7 @@ import { FilterDecisionRow } from '@/src/app/filter/ui/FilterDecisionRow';
 import { FilterPacksPanel } from '@/src/app/filter/ui/FilterPacksPanel';
 import { FilterStatCard } from '@/src/app/filter/ui/FilterStatCard';
 import { FilterTestRuleSandbox } from '@/src/app/filter/ui/FilterTestRuleSandbox';
+import { type FlagToggleFailureAction } from '@/src/app/filter/ui/types';
 import { DecisionsConsoleShell } from '@/src/components/decisions-console-shell';
 import {
   Card,
@@ -46,7 +47,9 @@ import { useLocalPagination } from '@/src/lib/use_local_pagination';
 
 export const FilterDecisionsWorkbench = () => {
   const [flaggingEventId, setFlaggingEventId] = useState<string | null>(null);
-  const [failedEventIds, setFailedEventIds] = useState<Set<string>>(new Set());
+  const [flagFailures, setFlagFailures] = useState<
+    Map<string, FlagToggleFailureAction>
+  >(new Map());
 
   const {
     events: allEvents,
@@ -123,11 +126,14 @@ export const FilterDecisionsWorkbench = () => {
     }
 
     const alreadyFlagged = isFlaggedFalsePositive(flaggedRequestIds, requestId);
+    const attemptedAction: FlagToggleFailureAction = alreadyFlagged
+      ? 'unflag'
+      : 'flag';
 
     setFlaggingEventId(eventId);
-    setFailedEventIds((prev) => {
+    setFlagFailures((prev) => {
       if (!prev.has(eventId)) return prev;
-      const next = new Set(prev);
+      const next = new Map(prev);
       next.delete(eventId);
 
       return next;
@@ -180,7 +186,7 @@ export const FilterDecisionsWorkbench = () => {
         revalidate: true,
       });
     } catch {
-      setFailedEventIds((prev) => new Set(prev).add(eventId));
+      setFlagFailures((prev) => new Map(prev).set(eventId, attemptedAction));
     } finally {
       setFlaggingEventId((prev) => (prev === eventId ? null : prev));
     }
@@ -279,7 +285,7 @@ export const FilterDecisionsWorkbench = () => {
               event={evt}
               isFlagged={isFlaggedFalsePositive(flaggedRequestIds, requestId)}
               isFlagging={flaggingEventId === eventId}
-              flagFailed={failedEventIds.has(eventId)}
+              flagFailure={flagFailures.get(eventId)}
               onToggleFlagFP={() => void handleToggleFlagFP(evt, payload)}
             />
           );

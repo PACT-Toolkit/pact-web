@@ -5,19 +5,20 @@ import { useMemo } from 'react';
 
 import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { parsePayload } from '@/src/app/filter/domain/filter_decision';
+import { type FlagToggleFailureAction } from '@/src/app/filter/ui/types';
 import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 export const FilterDecisionRow = ({
   event,
   isFlagged,
   isFlagging,
-  flagFailed,
+  flagFailure,
   onToggleFlagFP,
 }: {
   event: AuditAuditEventResponse;
   isFlagged: boolean;
   isFlagging: boolean;
-  flagFailed: boolean;
+  flagFailure?: FlagToggleFailureAction;
   onToggleFlagFP: () => void;
 }) => {
   const payload = useMemo(
@@ -59,9 +60,10 @@ export const FilterDecisionRow = ({
 
       {isBlock && (
         <div className="flex shrink-0 items-center gap-2">
-          {flagFailed && (
+          {flagFailure && (
             <span className="text-xs text-destructive">
-              {isFlagged ? 'Unflag failed.' : 'Flag failed.'} Try again.
+              {flagFailure === 'unflag' ? 'Unflag failed.' : 'Flag failed.'} Try
+              again.
             </span>
           )}
           <button
