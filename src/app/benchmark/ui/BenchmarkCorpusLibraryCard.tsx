@@ -1,10 +1,13 @@
 'use client';
 
 import {
+  benchmarkCorpusDatasetRole,
+  countEvaluationOnlyDatasets,
   formatCorpusRowCount,
   type BenchmarkCorpusDataset,
 } from '@/src/app/benchmark/domain/benchmark_corpus_library';
 import { useBenchmarkCorpusLibrary } from '@/src/app/benchmark/domain/use_benchmark_corpus_library';
+import { BenchmarkCorpusRoleBadge } from '@/src/app/benchmark/ui/BenchmarkCorpusRoleBadge';
 import {
   Card,
   CardContent,
@@ -14,11 +17,19 @@ import {
 
 export const BenchmarkCorpusLibraryCard = () => {
   const { datasets, totalRows, isLoading, error } = useBenchmarkCorpusLibrary();
+  const evaluationOnlyCount = countEvaluationOnlyDatasets(datasets);
 
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Corpus library</CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-sm font-medium">Corpus library</CardTitle>
+          {!isLoading && !error && evaluationOnlyCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {evaluationOnlyCount} evaluation-only
+            </span>
+          )}
+        </div>
       </CardHeader>
 
       <CardContent>
@@ -62,6 +73,9 @@ export const BenchmarkCorpusLibraryCard = () => {
                     <th scope="col" className="px-4 py-2 font-medium">
                       License
                     </th>
+                    <th scope="col" className="px-4 py-2 font-medium">
+                      Role
+                    </th>
                     <th
                       scope="col"
                       className="px-4 py-2 text-right font-medium tabular-nums"
@@ -102,6 +116,9 @@ const BenchmarkCorpusDatasetRow = ({
     <td className="px-4 py-2 font-mono text-xs">{dataset.source_dataset}</td>
     <td className="px-4 py-2 text-muted-foreground">{dataset.category}</td>
     <td className="px-4 py-2 text-muted-foreground">{dataset.license}</td>
+    <td className="px-4 py-2">
+      <BenchmarkCorpusRoleBadge role={benchmarkCorpusDatasetRole(dataset)} />
+    </td>
     <td className="px-4 py-2 text-right tabular-nums">
       {formatCorpusRowCount(dataset.total_rows)}
     </td>

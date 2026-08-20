@@ -135,6 +135,10 @@ export const MOCK_RUNS: BenchmarkRun[] = [
 // against the gateway's GET /v1/benchmark/corpus/library (PACT-483). Rows are
 // listed in the server's sort order (total_rows desc, source_dataset asc) --
 // the mock handler serves this array as-is, it does not re-sort.
+//
+// role covers all three wire states: most rows are 'training' or
+// 'evaluation', and one ('cgoosen/...') is '' -- the not-yet-backfilled state
+// -- so dev:mock exercises the muted "unknown" badge too.
 export const MOCK_CORPUS_DATASETS: BenchmarkCorpusDataset[] = [
   {
     source_dataset: 'hackaprompt/hackaprompt-dataset',
@@ -143,6 +147,7 @@ export const MOCK_CORPUS_DATASETS: BenchmarkCorpusDataset[] = [
     total_rows: 377850,
     block_rows: 377850,
     allow_rows: 0,
+    role: 'training',
   },
   {
     source_dataset: 'Lakera/mosscap_prompt_injection',
@@ -151,6 +156,7 @@ export const MOCK_CORPUS_DATASETS: BenchmarkCorpusDataset[] = [
     total_rows: 171247,
     block_rows: 171247,
     allow_rows: 0,
+    role: 'training',
   },
   {
     source_dataset: 'HuggingFaceH4/ultrachat_200k',
@@ -159,6 +165,7 @@ export const MOCK_CORPUS_DATASETS: BenchmarkCorpusDataset[] = [
     total_rows: 23109,
     block_rows: 0,
     allow_rows: 23109,
+    role: 'training',
   },
   {
     source_dataset: 'fka/awesome-chatgpt-prompts',
@@ -167,6 +174,7 @@ export const MOCK_CORPUS_DATASETS: BenchmarkCorpusDataset[] = [
     total_rows: 1993,
     block_rows: 0,
     allow_rows: 1993,
+    role: 'training',
   },
   {
     source_dataset: 'deepset/prompt-injections',
@@ -175,6 +183,7 @@ export const MOCK_CORPUS_DATASETS: BenchmarkCorpusDataset[] = [
     total_rows: 662,
     block_rows: 263,
     allow_rows: 399,
+    role: 'evaluation',
   },
   {
     source_dataset: 'beratcmn/turkish-prompt-injections',
@@ -183,6 +192,7 @@ export const MOCK_CORPUS_DATASETS: BenchmarkCorpusDataset[] = [
     total_rows: 604,
     block_rows: 257,
     allow_rows: 347,
+    role: 'evaluation',
   },
   {
     source_dataset: 'rubend18/ChatGPT-Jailbreak-Prompts',
@@ -191,6 +201,7 @@ export const MOCK_CORPUS_DATASETS: BenchmarkCorpusDataset[] = [
     total_rows: 69,
     block_rows: 69,
     allow_rows: 0,
+    role: 'evaluation',
   },
   {
     source_dataset: 'imoxto/prompt_injection_cleaned_dataset',
@@ -199,6 +210,7 @@ export const MOCK_CORPUS_DATASETS: BenchmarkCorpusDataset[] = [
     total_rows: 64,
     block_rows: 64,
     allow_rows: 0,
+    role: 'training',
   },
   {
     source_dataset: 'cgoosen/prompt_injection_password_or_secret',
@@ -207,6 +219,7 @@ export const MOCK_CORPUS_DATASETS: BenchmarkCorpusDataset[] = [
     total_rows: 45,
     block_rows: 36,
     allow_rows: 9,
+    role: '',
   },
 ];
 
