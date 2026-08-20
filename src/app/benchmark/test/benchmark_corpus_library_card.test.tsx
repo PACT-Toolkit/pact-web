@@ -46,6 +46,86 @@ describe('BenchmarkCorpusLibraryCard', () => {
     expect(screen.getByText('377,850 / 0')).toBeInTheDocument();
   });
 
+  it('shows a role badge per dataset, including the unknown state for an empty role', async () => {
+    server.use(
+      http.get('*/api/pact/gateway/v1/benchmark/corpus/library', () =>
+        HttpResponse.json({
+          total_rows: 300,
+          datasets: [
+            {
+              source_dataset: 'a/training-set',
+              license: 'MIT',
+              category: 'benign-chat',
+              total_rows: 100,
+              block_rows: 0,
+              allow_rows: 100,
+              role: 'training',
+            },
+            {
+              source_dataset: 'b/eval-set',
+              license: 'MIT',
+              category: 'prompt-hacking',
+              total_rows: 100,
+              block_rows: 100,
+              allow_rows: 0,
+              role: 'evaluation',
+            },
+            {
+              source_dataset: 'c/unbackfilled-set',
+              license: 'MIT',
+              category: 'prompt-hacking',
+              total_rows: 100,
+              block_rows: 100,
+              allow_rows: 0,
+              role: '',
+            },
+          ],
+        })
+      )
+    );
+
+    renderCard();
+
+    await waitFor(() =>
+      expect(screen.getByText('a/training-set')).toBeInTheDocument()
+    );
+
+    expect(screen.getByText('Training')).toBeInTheDocument();
+    expect(screen.getByText('Evaluation')).toBeInTheDocument();
+    expect(screen.getByText('Unknown')).toBeInTheDocument();
+
+    // Exactly one evaluation-role dataset in this fixture.
+    expect(screen.getByText('1 evaluation-only')).toBeInTheDocument();
+  });
+
+  it('omits the evaluation-only count when there are no evaluation datasets', async () => {
+    server.use(
+      http.get('*/api/pact/gateway/v1/benchmark/corpus/library', () =>
+        HttpResponse.json({
+          total_rows: 100,
+          datasets: [
+            {
+              source_dataset: 'a/training-only',
+              license: 'MIT',
+              category: 'benign-chat',
+              total_rows: 100,
+              block_rows: 0,
+              allow_rows: 100,
+              role: 'training',
+            },
+          ],
+        })
+      )
+    );
+
+    renderCard();
+
+    await waitFor(() =>
+      expect(screen.getByText('a/training-only')).toBeInTheDocument()
+    );
+    expect(screen.queryByText(/evaluation-only/)).not.toBeInTheDocument();
+  });
+
   it('shows an empty-library message pointing at the ingest CLI when total_rows is 0', async () => {
     server.use(
       http.get('*/api/pact/gateway/v1/benchmark/corpus/library', () =>
