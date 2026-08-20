@@ -8,6 +8,8 @@ import { useLabelVerdict } from '@/src/__codegen__/rest/classifier';
 import {
   availableLabelAction,
   buildLabelVerdictRequest,
+  CORRECTION_LABEL_OPTIONS,
+  type CorrectionLabel,
   type OperatorLabelAction,
 } from '@/src/app/classifier/domain/classifier_label';
 import { Button } from '@/src/components/ui/button';
@@ -49,6 +51,12 @@ export const ClassifierTestPanel = () => {
   const [labelErrorMessage, setLabelErrorMessage] = useState<string | null>(
     null
   );
+  // '' means "no label chosen yet" -- only meaningful for the false-negative
+  // action, where the operator must pick what the classifier should have
+  // caught instead of the request silently going out unlabeled.
+  const [correctionLabel, setCorrectionLabel] = useState<CorrectionLabel | ''>(
+    ''
+  );
 
   const result = data?.status === 200 ? data.data : undefined;
   const requestFailed =
@@ -59,11 +67,13 @@ export const ClassifierTestPanel = () => {
     if (!content.trim()) return;
     setLabeledAction(null);
     setLabelErrorMessage(null);
+    setCorrectionLabel('');
     void runCheck({ content, kind: 'input' });
   };
 
   const handleLabel = async (action: OperatorLabelAction) => {
     if (!result?.request_id || !classifier?.label) return;
+    if (action === 'false_negative' && !correctionLabel) return;
 
     setLabelErrorMessage(null);
     try {
@@ -74,6 +84,10 @@ export const ClassifierTestPanel = () => {
           predictedLabel: classifier.label,
           predictedConfidence: classifier.score,
           operatorLabel: action,
+          correctionLabel:
+            action === 'false_negative' && correctionLabel
+              ? correctionLabel
+              : undefined,
         })
       );
 
@@ -194,14 +208,39 @@ export const ClassifierTestPanel = () => {
                   <Flag className="h-3.5 w-3.5" aria-hidden />
                   Mark false positive
                 </Button>
+                {action === 'false_negative' && (
+                  <select
+                    value={correctionLabel}
+                    onChange={(e) =>
+                      setCorrectionLabel(e.target.value as CorrectionLabel | '')
+                    }
+                    disabled={labelButtonsDisabled}
+                    aria-label="Correction label"
+                    data-testid="classifier-test-correction-label"
+                    className="rounded-md border bg-background px-2 py-1 text-xs focus:ring-2 focus:ring-ring focus:outline-none"
+                  >
+                    <option value="">Should have been…</option>
+                    {CORRECTION_LABEL_OPTIONS.map((option) => (
+                      <option key={option} value={option}>
+                        {option.replace('_', ' ')}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
-                  disabled={labelButtonsDisabled || action !== 'false_negative'}
+                  disabled={
+                    labelButtonsDisabled ||
+                    action !== 'false_negative' ||
+                    !correctionLabel
+                  }
                   title={
                     action !== 'false_negative'
                       ? 'This verdict is already flagged -- mark false positive instead.'
-                      : undefined
+                      : !correctionLabel
+                        ? 'Choose what the classifier should have caught first.'
+                        : undefined
                   }
                   onClick={() => void handleLabel('false_negative')}
                   data-testid="classifier-test-mark-fn"
