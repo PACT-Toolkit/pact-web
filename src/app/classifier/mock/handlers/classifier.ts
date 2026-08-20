@@ -31,6 +31,13 @@ export const handlers: RequestHandler[] = [
         );
       }
 
+      // correctionLabel is optional on the wire and this mock doesn't
+      // persist verdicts anywhere to echo it back from, but accepting it
+      // without complaint is what matters here -- the ad-hoc test panel now
+      // always sends one on a false-negative flag (see
+      // classifier_label.ts's CorrectionLabel picker), and dev:mock must not
+      // 400 on a field the real handler already accepts.
+
       // PACT-474 note: this used to also stamp is_false_positive onto the
       // matching db.decisions row and persist the request id to
       // sessionStorage as a stand-in for a durable flag-read surface. That

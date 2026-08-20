@@ -7,6 +7,22 @@ import { type ClassifierLabelVerdictRequest } from '@/src/__codegen__/rest/class
 // redactor/consensus consoles never offer a "this was right" button.
 export type OperatorLabelAction = 'false_positive' | 'false_negative';
 
+// Offered on a false-negative flag only: the classifier said "benign" but
+// should have caught one of these. Without an explicit choice here,
+// buildLabelVerdictRequest used to omit correctionLabel entirely on every
+// false-negative flag, so the classifier's feedback corpus silently invented
+// prompt_injection for every FN row regardless of what was actually missed.
+// Kept to the three non-benign predictedLabel values (see
+// availableLabelAction's docblock for the full vocabulary) -- "unspecified"
+// and "unknown" aren't real corrections an operator would ever pick.
+export type CorrectionLabel = 'prompt_injection' | 'jailbreak' | 'sensitive';
+
+export const CORRECTION_LABEL_OPTIONS: readonly CorrectionLabel[] = [
+  'prompt_injection',
+  'jailbreak',
+  'sensitive',
+];
+
 // "benign" is the only classifier label where a false NEGATIVE makes sense
 // (the classifier said "safe" but the content should have been flagged);
 // every other label is something the classifier already flagged, so the
@@ -31,6 +47,10 @@ export interface BuildLabelVerdictRequestParams {
   predictedLabel: string;
   predictedConfidence?: number;
   operatorLabel: OperatorLabelAction;
+  // Required when operatorLabel is 'false_negative' (the UI only ever calls
+  // this with one chosen -- see ClassifierTestPanel's picker); meaningless
+  // for 'false_positive', so left undefined there.
+  correctionLabel?: CorrectionLabel;
 }
 
 // Builds the POST /v1/classifier/label body. `content` is required both by
@@ -40,9 +60,7 @@ export interface BuildLabelVerdictRequestParams {
 // predictedLabel, or operatorLabel -- none of which the spec declares
 // required yet (a remaining gateway doc gap tracked as PACT-448; see
 // pact-gateway internal/features/classifier/handler.go's labelVerdict).
-// correctionLabel and note are intentionally omitted: this panel only
-// records a binary FP/FN signal, not a specific corrected label or
-// free-text note.
+// note is intentionally omitted: this panel doesn't collect free text.
 export const buildLabelVerdictRequest = (
   params: BuildLabelVerdictRequestParams
 ): ClassifierLabelVerdictRequest => ({
@@ -51,5 +69,6 @@ export const buildLabelVerdictRequest = (
   predictedLabel: params.predictedLabel,
   predictedConfidence: params.predictedConfidence,
   operatorLabel: params.operatorLabel,
+  correctionLabel: params.correctionLabel,
   source: LABEL_SOURCE,
 });

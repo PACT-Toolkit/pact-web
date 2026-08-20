@@ -95,6 +95,12 @@ test.describe('Classifier console', () => {
     await expect(markFalsePositive).toBeEnabled();
     await expect(markFalseNegative).toBeDisabled();
 
+    // A false-positive flag needs no correction label -- the picker only
+    // renders for the false-negative action.
+    await expect(
+      page.getByTestId('classifier-test-correction-label')
+    ).not.toBeAttached();
+
     await markFalsePositive.click();
 
     const confirmation = page.getByTestId('classifier-test-label-confirm');
@@ -102,7 +108,7 @@ test.describe('Classifier console', () => {
     await expect(confirmation).toContainText('labeled false positive');
   });
 
-  test('ad-hoc test panel reports a benign verdict and marks it false negative', async ({
+  test('ad-hoc test panel reports a benign verdict and marks it false negative with a chosen correction label', async ({
     page,
   }) => {
     await page
@@ -116,8 +122,18 @@ test.describe('Classifier console', () => {
 
     const markFalsePositive = page.getByTestId('classifier-test-mark-fp');
     const markFalseNegative = page.getByTestId('classifier-test-mark-fn');
-    await expect(markFalseNegative).toBeEnabled();
+    const correctionLabel = page.getByTestId(
+      'classifier-test-correction-label'
+    );
     await expect(markFalsePositive).toBeDisabled();
+    await expect(correctionLabel).toBeVisible();
+
+    // No label chosen yet -- the false-negative action stays blocked rather
+    // than silently submitting without a correction.
+    await expect(markFalseNegative).toBeDisabled();
+
+    await correctionLabel.selectOption('jailbreak');
+    await expect(markFalseNegative).toBeEnabled();
 
     await markFalseNegative.click();
 
