@@ -63,8 +63,7 @@ export type listIdentitiesResponseError = listIdentitiesResponse401 & {
 };
 
 export type listIdentitiesResponse =
-  | listIdentitiesResponseSuccess
-  | listIdentitiesResponseError;
+  listIdentitiesResponseSuccess | listIdentitiesResponseError;
 
 export const getListIdentitiesUrl = () => {
   return `/api/pact/gateway/v1/auth/identities`;
@@ -105,15 +104,13 @@ export type unlinkIdentityResponseSuccess = unlinkIdentityResponse204 & {
 };
 
 export type unlinkIdentityResponseError = (
-  | unlinkIdentityResponse401
-  | unlinkIdentityResponse404
+  unlinkIdentityResponse401 | unlinkIdentityResponse404
 ) & {
   headers: Headers;
 };
 
 export type unlinkIdentityResponse =
-  | unlinkIdentityResponseSuccess
-  | unlinkIdentityResponseError;
+  unlinkIdentityResponseSuccess | unlinkIdentityResponseError;
 
 export const getUnlinkIdentityUrl = (provider: string) => {
   return `/api/pact/gateway/v1/auth/identities/${provider}`;
@@ -265,8 +262,7 @@ export type listMfaFactorsResponseError = listMfaFactorsResponse401 & {
 };
 
 export type listMfaFactorsResponse =
-  | listMfaFactorsResponseSuccess
-  | listMfaFactorsResponseError;
+  listMfaFactorsResponseSuccess | listMfaFactorsResponseError;
 
 export const getListMfaFactorsUrl = () => {
   return `/api/pact/gateway/v1/auth/mfa/factors`;
@@ -307,15 +303,13 @@ export type revokeMfaFactorResponseSuccess = revokeMfaFactorResponse204 & {
 };
 
 export type revokeMfaFactorResponseError = (
-  | revokeMfaFactorResponse401
-  | revokeMfaFactorResponse404
+  revokeMfaFactorResponse401 | revokeMfaFactorResponse404
 ) & {
   headers: Headers;
 };
 
 export type revokeMfaFactorResponse =
-  | revokeMfaFactorResponseSuccess
-  | revokeMfaFactorResponseError;
+  revokeMfaFactorResponseSuccess | revokeMfaFactorResponseError;
 
 export const getRevokeMfaFactorUrl = (factorId: string) => {
   return `/api/pact/gateway/v1/auth/mfa/factors/${factorId}`;
@@ -367,8 +361,7 @@ export type beginMfaPasskeyAssertionResponseSuccess =
   };
 
 export type beginMfaPasskeyAssertionResponseError = (
-  | beginMfaPasskeyAssertionResponse400
-  | beginMfaPasskeyAssertionResponse401
+  beginMfaPasskeyAssertionResponse400 | beginMfaPasskeyAssertionResponse401
 ) & {
   headers: Headers;
 };
@@ -431,8 +424,7 @@ export type finishMfaPasskeyAssertionResponseSuccess =
   };
 
 export type finishMfaPasskeyAssertionResponseError = (
-  | finishMfaPasskeyAssertionResponse400
-  | finishMfaPasskeyAssertionResponse401
+  finishMfaPasskeyAssertionResponse400 | finishMfaPasskeyAssertionResponse401
 ) & {
   headers: Headers;
 };
@@ -495,8 +487,7 @@ export type regenerateRecoveryCodesResponseError =
   };
 
 export type regenerateRecoveryCodesResponse =
-  | regenerateRecoveryCodesResponseSuccess
-  | regenerateRecoveryCodesResponseError;
+  regenerateRecoveryCodesResponseSuccess | regenerateRecoveryCodesResponseError;
 
 export const getRegenerateRecoveryCodesUrl = () => {
   return `/api/pact/gateway/v1/auth/mfa/recovery-codes`;
@@ -548,15 +539,13 @@ export type verifyMfaResponseSuccess = verifyMfaResponse200 & {
 };
 
 export type verifyMfaResponseError = (
-  | verifyMfaResponse400
-  | verifyMfaResponse401
+  verifyMfaResponse400 | verifyMfaResponse401
 ) & {
   headers: Headers;
 };
 
 export type verifyMfaResponse =
-  | verifyMfaResponseSuccess
-  | verifyMfaResponseError;
+  verifyMfaResponseSuccess | verifyMfaResponseError;
 
 export const getVerifyMfaUrl = () => {
   return `/api/pact/gateway/v1/auth/mfa/verify`;
@@ -609,15 +598,13 @@ export type handleOAuthCallbackResponseSuccess =
   };
 
 export type handleOAuthCallbackResponseError = (
-  | handleOAuthCallbackResponse400
-  | handleOAuthCallbackResponse401
+  handleOAuthCallbackResponse400 | handleOAuthCallbackResponse401
 ) & {
   headers: Headers;
 };
 
 export type handleOAuthCallbackResponse =
-  | handleOAuthCallbackResponseSuccess
-  | handleOAuthCallbackResponseError;
+  handleOAuthCallbackResponseSuccess | handleOAuthCallbackResponseError;
 
 export const getHandleOAuthCallbackUrl = (provider: string) => {
   return `/api/pact/gateway/v1/auth/oauth/callback/${provider}`;
@@ -673,8 +660,7 @@ export type startOAuthLoginResponseError = startOAuthLoginResponse400 & {
 };
 
 export type startOAuthLoginResponse =
-  | startOAuthLoginResponseSuccess
-  | startOAuthLoginResponseError;
+  startOAuthLoginResponseSuccess | startOAuthLoginResponseError;
 
 export const getStartOAuthLoginUrl = (params: StartOAuthLoginParams) => {
   const normalizedParams = new URLSearchParams();
@@ -730,8 +716,7 @@ export type listPasskeysResponseError = listPasskeysResponse401 & {
 };
 
 export type listPasskeysResponse =
-  | listPasskeysResponseSuccess
-  | listPasskeysResponseError;
+  listPasskeysResponseSuccess | listPasskeysResponseError;
 
 export const getListPasskeysUrl = () => {
   return `/api/pact/gateway/v1/auth/passkeys`;
@@ -772,15 +757,13 @@ export type deletePasskeyResponseSuccess = deletePasskeyResponse204 & {
 };
 
 export type deletePasskeyResponseError = (
-  | deletePasskeyResponse401
-  | deletePasskeyResponse404
+  deletePasskeyResponse401 | deletePasskeyResponse404
 ) & {
   headers: Headers;
 };
 
 export type deletePasskeyResponse =
-  | deletePasskeyResponseSuccess
-  | deletePasskeyResponseError;
+  deletePasskeyResponseSuccess | deletePasskeyResponseError;
 
 export const getDeletePasskeyUrl = (passkeyId: string) => {
   return `/api/pact/gateway/v1/auth/passkeys/${passkeyId}`;
@@ -836,16 +819,13 @@ export type renamePasskeyResponseSuccess = renamePasskeyResponse204 & {
 };
 
 export type renamePasskeyResponseError = (
-  | renamePasskeyResponse400
-  | renamePasskeyResponse401
-  | renamePasskeyResponse404
+  renamePasskeyResponse400 | renamePasskeyResponse401 | renamePasskeyResponse404
 ) & {
   headers: Headers;
 };
 
 export type renamePasskeyResponse =
-  | renamePasskeyResponseSuccess
-  | renamePasskeyResponseError;
+  renamePasskeyResponseSuccess | renamePasskeyResponseError;
 
 export const getRenamePasskeyUrl = (passkeyId: string) => {
   return `/api/pact/gateway/v1/auth/passkeys/${passkeyId}`;
@@ -898,8 +878,7 @@ export type beginPasskeyLoginResponseError = beginPasskeyLoginResponse400 & {
 };
 
 export type beginPasskeyLoginResponse =
-  | beginPasskeyLoginResponseSuccess
-  | beginPasskeyLoginResponseError;
+  beginPasskeyLoginResponseSuccess | beginPasskeyLoginResponseError;
 
 export const getBeginPasskeyLoginUrl = () => {
   return `/api/pact/gateway/v1/auth/passkeys/login/begin`;
@@ -952,15 +931,13 @@ export type finishPasskeyLoginResponseSuccess =
   };
 
 export type finishPasskeyLoginResponseError = (
-  | finishPasskeyLoginResponse400
-  | finishPasskeyLoginResponse401
+  finishPasskeyLoginResponse400 | finishPasskeyLoginResponse401
 ) & {
   headers: Headers;
 };
 
 export type finishPasskeyLoginResponse =
-  | finishPasskeyLoginResponseSuccess
-  | finishPasskeyLoginResponseError;
+  finishPasskeyLoginResponseSuccess | finishPasskeyLoginResponseError;
 
 export const getFinishPasskeyLoginUrl = () => {
   return `/api/pact/gateway/v1/auth/passkeys/login/finish`;
@@ -1013,8 +990,7 @@ export type beginPasskeyRegistrationResponseSuccess =
   };
 
 export type beginPasskeyRegistrationResponseError = (
-  | beginPasskeyRegistrationResponse400
-  | beginPasskeyRegistrationResponse401
+  beginPasskeyRegistrationResponse400 | beginPasskeyRegistrationResponse401
 ) & {
   headers: Headers;
 };
@@ -1077,8 +1053,7 @@ export type finishPasskeyRegistrationResponseSuccess =
   };
 
 export type finishPasskeyRegistrationResponseError = (
-  | finishPasskeyRegistrationResponse400
-  | finishPasskeyRegistrationResponse401
+  finishPasskeyRegistrationResponse400 | finishPasskeyRegistrationResponse401
 ) & {
   headers: Headers;
 };
@@ -1141,15 +1116,13 @@ export type confirmPasswordResetResponseSuccess =
   };
 
 export type confirmPasswordResetResponseError = (
-  | confirmPasswordResetResponse400
-  | confirmPasswordResetResponse401
+  confirmPasswordResetResponse400 | confirmPasswordResetResponse401
 ) & {
   headers: Headers;
 };
 
 export type confirmPasswordResetResponse =
-  | confirmPasswordResetResponseSuccess
-  | confirmPasswordResetResponseError;
+  confirmPasswordResetResponseSuccess | confirmPasswordResetResponseError;
 
 export const getConfirmPasswordResetUrl = () => {
   return `/api/pact/gateway/v1/auth/password-reset/confirm`;
@@ -1205,8 +1178,7 @@ export type requestPasswordResetResponseError =
   };
 
 export type requestPasswordResetResponse =
-  | requestPasswordResetResponseSuccess
-  | requestPasswordResetResponseError;
+  requestPasswordResetResponseSuccess | requestPasswordResetResponseError;
 
 export const getRequestPasswordResetUrl = () => {
   return `/api/pact/gateway/v1/auth/password-reset/request`;
@@ -1261,15 +1233,13 @@ export type registerAccountResponseSuccess = registerAccountResponse201 & {
 };
 
 export type registerAccountResponseError = (
-  | registerAccountResponse400
-  | registerAccountResponse409
+  registerAccountResponse400 | registerAccountResponse409
 ) & {
   headers: Headers;
 };
 
 export type registerAccountResponse =
-  | registerAccountResponseSuccess
-  | registerAccountResponseError;
+  registerAccountResponseSuccess | registerAccountResponseError;
 
 export const getRegisterAccountUrl = () => {
   return `/api/pact/gateway/v1/auth/register`;
@@ -1320,8 +1290,7 @@ export type getSessionResponseError = getSessionResponse401 & {
 };
 
 export type getSessionResponse =
-  | getSessionResponseSuccess
-  | getSessionResponseError;
+  getSessionResponseSuccess | getSessionResponseError;
 
 export const getGetSessionUrl = () => {
   return `/api/pact/gateway/v1/auth/session`;
@@ -1362,15 +1331,13 @@ export type refreshSessionResponseSuccess = refreshSessionResponse200 & {
 };
 
 export type refreshSessionResponseError = (
-  | refreshSessionResponse400
-  | refreshSessionResponse401
+  refreshSessionResponse400 | refreshSessionResponse401
 ) & {
   headers: Headers;
 };
 
 export type refreshSessionResponse =
-  | refreshSessionResponseSuccess
-  | refreshSessionResponseError;
+  refreshSessionResponseSuccess | refreshSessionResponseError;
 
 export const getRefreshSessionUrl = () => {
   return `/api/pact/gateway/v1/auth/session/refresh`;
@@ -1423,8 +1390,7 @@ export type beginTOTPEnrollmentResponseError =
   };
 
 export type beginTOTPEnrollmentResponse =
-  | beginTOTPEnrollmentResponseSuccess
-  | beginTOTPEnrollmentResponseError;
+  beginTOTPEnrollmentResponseSuccess | beginTOTPEnrollmentResponseError;
 
 export const getBeginTOTPEnrollmentUrl = () => {
   return `/api/pact/gateway/v1/auth/totp/enroll/begin`;
@@ -1474,15 +1440,13 @@ export type confirmTOTPEnrollmentResponseSuccess =
   };
 
 export type confirmTOTPEnrollmentResponseError = (
-  | confirmTOTPEnrollmentResponse400
-  | confirmTOTPEnrollmentResponse401
+  confirmTOTPEnrollmentResponse400 | confirmTOTPEnrollmentResponse401
 ) & {
   headers: Headers;
 };
 
 export type confirmTOTPEnrollmentResponse =
-  | confirmTOTPEnrollmentResponseSuccess
-  | confirmTOTPEnrollmentResponseError;
+  confirmTOTPEnrollmentResponseSuccess | confirmTOTPEnrollmentResponseError;
 
 export const getConfirmTOTPEnrollmentUrl = () => {
   return `/api/pact/gateway/v1/auth/totp/enroll/confirm`;
@@ -1537,15 +1501,13 @@ export type verifyEmailResponseSuccess = verifyEmailResponse200 & {
 };
 
 export type verifyEmailResponseError = (
-  | verifyEmailResponse400
-  | verifyEmailResponse401
+  verifyEmailResponse400 | verifyEmailResponse401
 ) & {
   headers: Headers;
 };
 
 export type verifyEmailResponse =
-  | verifyEmailResponseSuccess
-  | verifyEmailResponseError;
+  verifyEmailResponseSuccess | verifyEmailResponseError;
 
 export const getVerifyEmailUrl = () => {
   return `/api/pact/gateway/v1/auth/verify-email`;
@@ -1597,8 +1559,7 @@ export type resendVerificationResponseError = resendVerificationResponse400 & {
 };
 
 export type resendVerificationResponse =
-  | resendVerificationResponseSuccess
-  | resendVerificationResponseError;
+  resendVerificationResponseSuccess | resendVerificationResponseError;
 
 export const getResendVerificationUrl = () => {
   return `/api/pact/gateway/v1/auth/verify-email/resend`;

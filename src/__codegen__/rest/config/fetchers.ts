@@ -37,15 +37,13 @@ export type getConfigResponseSuccess = getConfigResponse200 & {
 };
 
 export type getConfigResponseError = (
-  | getConfigResponse401
-  | getConfigResponse429
+  getConfigResponse401 | getConfigResponse429
 ) & {
   headers: Headers;
 };
 
 export type getConfigResponse =
-  | getConfigResponseSuccess
-  | getConfigResponseError;
+  getConfigResponseSuccess | getConfigResponseError;
 
 export const getGetConfigUrl = () => {
   return `/api/pact/gateway/v1/config`;
@@ -104,8 +102,7 @@ export type patchEnforcementResponseError = (
 };
 
 export type patchEnforcementResponse =
-  | patchEnforcementResponseSuccess
-  | patchEnforcementResponseError;
+  patchEnforcementResponseSuccess | patchEnforcementResponseError;
 
 export const getPatchEnforcementUrl = () => {
   return `/api/pact/gateway/v1/config/enforcement`;

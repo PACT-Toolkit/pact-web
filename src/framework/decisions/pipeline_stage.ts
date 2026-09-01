@@ -15,11 +15,7 @@ import {
 // source of it -- sandbox sits between classifier and consensus because
 // that is its real execution position, not because it was added last.
 export type PipelineStageId =
-  | 'filter'
-  | 'classifier'
-  | 'sandbox'
-  | 'consensus'
-  | 'redactor';
+  'filter' | 'classifier' | 'sandbox' | 'consensus' | 'redactor';
 
 export const PIPELINE_STAGE_ORDER: PipelineStageId[] = [
   'filter',

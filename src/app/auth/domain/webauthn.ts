@@ -166,11 +166,7 @@ const encodeAssertion = (
 
 export class PasskeyError extends Error {
   readonly code:
-    | 'unsupported'
-    | 'cancelled'
-    | 'no_credentials'
-    | 'server'
-    | 'unknown';
+    'unsupported' | 'cancelled' | 'no_credentials' | 'server' | 'unknown';
   constructor(code: PasskeyError['code'], message: string) {
     super(message);
     this.code = code;

@@ -25,8 +25,7 @@ export const AUTH_EVENT_VERIFIED = 'verified';
 export const AUTH_EVENT_PASSWORD_RESET_COMPLETED = 'password_reset_completed';
 
 type AuthEventKind =
-  | typeof AUTH_EVENT_VERIFIED
-  | typeof AUTH_EVENT_PASSWORD_RESET_COMPLETED;
+  typeof AUTH_EVENT_VERIFIED | typeof AUTH_EVENT_PASSWORD_RESET_COMPLETED;
 
 type AuthEvent = { kind: AuthEventKind; ts: number };
 

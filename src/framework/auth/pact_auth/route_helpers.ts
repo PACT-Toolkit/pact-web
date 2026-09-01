@@ -109,8 +109,7 @@ export const parseCeremonyOptions = (
 ): { ok: true; options: unknown } | { ok: false } => {
   try {
     const parsed = JSON.parse(new TextDecoder().decode(bytes)) as
-      | { publicKey?: unknown }
-      | unknown;
+      { publicKey?: unknown } | unknown;
     const options =
       parsed && typeof parsed === 'object' && 'publicKey' in parsed
         ? (parsed as { publicKey: unknown }).publicKey

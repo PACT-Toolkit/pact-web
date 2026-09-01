@@ -75,8 +75,7 @@ export type labelVerdictResponseError = (
 };
 
 export type labelVerdictResponse =
-  | labelVerdictResponseSuccess
-  | labelVerdictResponseError;
+  labelVerdictResponseSuccess | labelVerdictResponseError;
 
 export const getLabelVerdictUrl = () => {
   return `/api/pact/gateway/v1/classifier/label`;

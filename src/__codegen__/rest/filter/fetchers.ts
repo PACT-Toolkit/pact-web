@@ -58,8 +58,7 @@ export type listLoadedPacksResponseError = (
 };
 
 export type listLoadedPacksResponse =
-  | listLoadedPacksResponseSuccess
-  | listLoadedPacksResponseError;
+  listLoadedPacksResponseSuccess | listLoadedPacksResponseError;
 
 export const getListLoadedPacksUrl = () => {
   return `/api/pact/gateway/v1/filter/packs`;

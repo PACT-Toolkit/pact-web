@@ -11,8 +11,7 @@ export interface UploadFileFailure {
 }
 
 export type UploadFileResult =
-  | { ok: true; fileId: string }
-  | { ok: false; failure: UploadFileFailure };
+  { ok: true; fileId: string } | { ok: false; failure: UploadFileFailure };
 
 // uploadFile runs the three-step upload protocol pact-files expects: request
 // a presigned PUT URL from the gateway, PUT the raw bytes directly to object

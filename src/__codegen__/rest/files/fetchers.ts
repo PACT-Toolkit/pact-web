@@ -42,8 +42,7 @@ export type getFilesResponseSuccess = getFilesResponse200 & {
 };
 
 export type getFilesResponseError = (
-  | getFilesResponse400
-  | getFilesResponse401
+  getFilesResponse400 | getFilesResponse401
 ) & {
   headers: Headers;
 };
@@ -107,16 +106,13 @@ export type postFilesResponseSuccess = postFilesResponse201 & {
 };
 
 export type postFilesResponseError = (
-  | postFilesResponse400
-  | postFilesResponse401
-  | postFilesResponse429
+  postFilesResponse400 | postFilesResponse401 | postFilesResponse429
 ) & {
   headers: Headers;
 };
 
 export type postFilesResponse =
-  | postFilesResponseSuccess
-  | postFilesResponseError;
+  postFilesResponseSuccess | postFilesResponseError;
 
 export const getPostFilesUrl = () => {
   return `/api/pact/gateway/v1/files/`;
@@ -168,15 +164,13 @@ export type deleteFilesIdResponseSuccess = deleteFilesIdResponse204 & {
 };
 
 export type deleteFilesIdResponseError = (
-  | deleteFilesIdResponse401
-  | deleteFilesIdResponse404
+  deleteFilesIdResponse401 | deleteFilesIdResponse404
 ) & {
   headers: Headers;
 };
 
 export type deleteFilesIdResponse =
-  | deleteFilesIdResponseSuccess
-  | deleteFilesIdResponseError;
+  deleteFilesIdResponseSuccess | deleteFilesIdResponseError;
 
 export const getDeleteFilesIdUrl = (id: string) => {
   return `/api/pact/gateway/v1/files/${id}`;
@@ -227,15 +221,13 @@ export type getFilesIdResponseSuccess = getFilesIdResponse200 & {
 };
 
 export type getFilesIdResponseError = (
-  | getFilesIdResponse401
-  | getFilesIdResponse404
+  getFilesIdResponse401 | getFilesIdResponse404
 ) & {
   headers: Headers;
 };
 
 export type getFilesIdResponse =
-  | getFilesIdResponseSuccess
-  | getFilesIdResponseError;
+  getFilesIdResponseSuccess | getFilesIdResponseError;
 
 export const getGetFilesIdUrl = (id: string) => {
   return `/api/pact/gateway/v1/files/${id}`;
@@ -278,15 +270,13 @@ export type postFilesIdConfirmResponseSuccess =
   };
 
 export type postFilesIdConfirmResponseError = (
-  | postFilesIdConfirmResponse401
-  | postFilesIdConfirmResponse404
+  postFilesIdConfirmResponse401 | postFilesIdConfirmResponse404
 ) & {
   headers: Headers;
 };
 
 export type postFilesIdConfirmResponse =
-  | postFilesIdConfirmResponseSuccess
-  | postFilesIdConfirmResponseError;
+  postFilesIdConfirmResponseSuccess | postFilesIdConfirmResponseError;
 
 export const getPostFilesIdConfirmUrl = (id: string) => {
   return `/api/pact/gateway/v1/files/${id}/confirm`;

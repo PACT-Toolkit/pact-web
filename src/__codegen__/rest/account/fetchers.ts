@@ -43,8 +43,7 @@ export type getAccountConsentsResponseError = getAccountConsentsResponse401 & {
 };
 
 export type getAccountConsentsResponse =
-  | getAccountConsentsResponseSuccess
-  | getAccountConsentsResponseError;
+  getAccountConsentsResponseSuccess | getAccountConsentsResponseError;
 
 export const getGetAccountConsentsUrl = () => {
   return `/api/pact/gateway/v1/account/consents`;
@@ -86,15 +85,13 @@ export type postAccountConsentsResponseSuccess =
   };
 
 export type postAccountConsentsResponseError = (
-  | postAccountConsentsResponse400
-  | postAccountConsentsResponse401
+  postAccountConsentsResponse400 | postAccountConsentsResponse401
 ) & {
   headers: Headers;
 };
 
 export type postAccountConsentsResponse =
-  | postAccountConsentsResponseSuccess
-  | postAccountConsentsResponseError;
+  postAccountConsentsResponseSuccess | postAccountConsentsResponseError;
 
 export const getPostAccountConsentsUrl = () => {
   return `/api/pact/gateway/v1/account/consents`;
@@ -146,8 +143,7 @@ export type postAccountErasureResponseError = postAccountErasureResponse401 & {
 };
 
 export type postAccountErasureResponse =
-  | postAccountErasureResponseSuccess
-  | postAccountErasureResponseError;
+  postAccountErasureResponseSuccess | postAccountErasureResponseError;
 
 export const getPostAccountErasureUrl = () => {
   return `/api/pact/gateway/v1/account/erasure`;
@@ -195,8 +191,7 @@ export type getAccountExportResponseError = getAccountExportResponse401 & {
 };
 
 export type getAccountExportResponse =
-  | getAccountExportResponseSuccess
-  | getAccountExportResponseError;
+  getAccountExportResponseSuccess | getAccountExportResponseError;
 
 export const getGetAccountExportUrl = () => {
   return `/api/pact/gateway/v1/account/export`;
@@ -238,8 +233,7 @@ export type getAccountPreferencesResponseError =
   };
 
 export type getAccountPreferencesResponse =
-  | getAccountPreferencesResponseSuccess
-  | getAccountPreferencesResponseError;
+  getAccountPreferencesResponseSuccess | getAccountPreferencesResponseError;
 
 export const getGetAccountPreferencesUrl = () => {
   return `/api/pact/gateway/v1/account/preferences`;
@@ -284,15 +278,13 @@ export type putAccountPreferencesResponseSuccess =
   };
 
 export type putAccountPreferencesResponseError = (
-  | putAccountPreferencesResponse400
-  | putAccountPreferencesResponse401
+  putAccountPreferencesResponse400 | putAccountPreferencesResponse401
 ) & {
   headers: Headers;
 };
 
 export type putAccountPreferencesResponse =
-  | putAccountPreferencesResponseSuccess
-  | putAccountPreferencesResponseError;
+  putAccountPreferencesResponseSuccess | putAccountPreferencesResponseError;
 
 export const getPutAccountPreferencesUrl = () => {
   return `/api/pact/gateway/v1/account/preferences`;
@@ -346,8 +338,7 @@ export type getAccountProfileResponseError = getAccountProfileResponse401 & {
 };
 
 export type getAccountProfileResponse =
-  | getAccountProfileResponseSuccess
-  | getAccountProfileResponseError;
+  getAccountProfileResponseSuccess | getAccountProfileResponseError;
 
 export const getGetAccountProfileUrl = () => {
   return `/api/pact/gateway/v1/account/profile`;
@@ -388,15 +379,13 @@ export type putAccountProfileResponseSuccess = putAccountProfileResponse200 & {
 };
 
 export type putAccountProfileResponseError = (
-  | putAccountProfileResponse400
-  | putAccountProfileResponse401
+  putAccountProfileResponse400 | putAccountProfileResponse401
 ) & {
   headers: Headers;
 };
 
 export type putAccountProfileResponse =
-  | putAccountProfileResponseSuccess
-  | putAccountProfileResponseError;
+  putAccountProfileResponseSuccess | putAccountProfileResponseError;
 
 export const getPutAccountProfileUrl = () => {
   return `/api/pact/gateway/v1/account/profile`;

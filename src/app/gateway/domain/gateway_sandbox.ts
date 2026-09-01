@@ -15,10 +15,7 @@ import {
 } from '@/src/__codegen__/rest/check';
 
 export type ExternalRefVerdict =
-  | 'clean'
-  | 'hostile'
-  | 'unfetchable'
-  | 'mitigated';
+  'clean' | 'hostile' | 'unfetchable' | 'mitigated';
 
 export type ExternalRefRecord = CheckExternalRefInfo;
 export type ExternalRefsSummary = CheckExternalRefsInfo;

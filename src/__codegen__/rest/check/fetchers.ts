@@ -59,8 +59,7 @@ export type checkContentResponseError = (
 };
 
 export type checkContentResponse =
-  | checkContentResponseSuccess
-  | checkContentResponseError;
+  checkContentResponseSuccess | checkContentResponseError;
 
 export const getCheckContentUrl = () => {
   return `/api/pact/gateway/v1/check`;

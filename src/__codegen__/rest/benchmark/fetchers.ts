@@ -189,8 +189,7 @@ export type submitBenchmarkJobResponseError = (
 };
 
 export type submitBenchmarkJobResponse =
-  | submitBenchmarkJobResponseSuccess
-  | submitBenchmarkJobResponseError;
+  submitBenchmarkJobResponseSuccess | submitBenchmarkJobResponseError;
 
 export const getSubmitBenchmarkJobUrl = () => {
   return `/api/pact/gateway/v1/benchmark/jobs`;
@@ -261,8 +260,7 @@ export type getBenchmarkJobResponseError = (
 };
 
 export type getBenchmarkJobResponse =
-  | getBenchmarkJobResponseSuccess
-  | getBenchmarkJobResponseError;
+  getBenchmarkJobResponseSuccess | getBenchmarkJobResponseError;
 
 export const getGetBenchmarkJobUrl = (
   id: string,
@@ -342,8 +340,7 @@ export type listBenchmarkRunsResponseError = (
 };
 
 export type listBenchmarkRunsResponse =
-  | listBenchmarkRunsResponseSuccess
-  | listBenchmarkRunsResponseError;
+  listBenchmarkRunsResponseSuccess | listBenchmarkRunsResponseError;
 
 export const getListBenchmarkRunsUrl = (params?: ListBenchmarkRunsParams) => {
   const normalizedParams = new URLSearchParams();
@@ -493,8 +490,7 @@ export type saveBenchmarkTestLabRunResponseError = (
 };
 
 export type saveBenchmarkTestLabRunResponse =
-  | saveBenchmarkTestLabRunResponseSuccess
-  | saveBenchmarkTestLabRunResponseError;
+  saveBenchmarkTestLabRunResponseSuccess | saveBenchmarkTestLabRunResponseError;
 
 export const getSaveBenchmarkTestLabRunUrl = () => {
   return `/api/pact/gateway/v1/benchmark/testlab/runs`;
