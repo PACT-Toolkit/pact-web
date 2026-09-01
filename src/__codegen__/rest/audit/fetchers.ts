@@ -48,8 +48,7 @@ export type removeDecisionAnnotationResponseSuccess =
   };
 
 export type removeDecisionAnnotationResponseError = (
-  | removeDecisionAnnotationResponse400
-  | removeDecisionAnnotationResponse401
+  removeDecisionAnnotationResponse400 | removeDecisionAnnotationResponse401
 ) & {
   headers: Headers;
 };
@@ -129,15 +128,13 @@ export type annotateDecisionResponseSuccess = annotateDecisionResponse200 & {
 };
 
 export type annotateDecisionResponseError = (
-  | annotateDecisionResponse400
-  | annotateDecisionResponse401
+  annotateDecisionResponse400 | annotateDecisionResponse401
 ) & {
   headers: Headers;
 };
 
 export type annotateDecisionResponse =
-  | annotateDecisionResponseSuccess
-  | annotateDecisionResponseError;
+  annotateDecisionResponseSuccess | annotateDecisionResponseError;
 
 export const getAnnotateDecisionUrl = () => {
   return `/api/pact/gateway/v1/audit/annotations`;
@@ -190,15 +187,13 @@ export type listDecisionAnnotationsResponseSuccess =
   };
 
 export type listDecisionAnnotationsResponseError = (
-  | listDecisionAnnotationsResponse400
-  | listDecisionAnnotationsResponse401
+  listDecisionAnnotationsResponse400 | listDecisionAnnotationsResponse401
 ) & {
   headers: Headers;
 };
 
 export type listDecisionAnnotationsResponse =
-  | listDecisionAnnotationsResponseSuccess
-  | listDecisionAnnotationsResponseError;
+  listDecisionAnnotationsResponseSuccess | listDecisionAnnotationsResponseError;
 
 export const getListDecisionAnnotationsUrl = () => {
   return `/api/pact/gateway/v1/audit/annotations/query`;
@@ -253,15 +248,13 @@ export type getAuditEventsResponseSuccess = getAuditEventsResponse200 & {
 };
 
 export type getAuditEventsResponseError = (
-  | getAuditEventsResponse400
-  | getAuditEventsResponse401
+  getAuditEventsResponse400 | getAuditEventsResponse401
 ) & {
   headers: Headers;
 };
 
 export type getAuditEventsResponse =
-  | getAuditEventsResponseSuccess
-  | getAuditEventsResponseError;
+  getAuditEventsResponseSuccess | getAuditEventsResponseError;
 
 export const getGetAuditEventsUrl = (params?: GetAuditEventsParams) => {
   const normalizedParams = new URLSearchParams();
@@ -316,15 +309,13 @@ export type getAuditPolicyEventsResponseSuccess =
   };
 
 export type getAuditPolicyEventsResponseError = (
-  | getAuditPolicyEventsResponse400
-  | getAuditPolicyEventsResponse401
+  getAuditPolicyEventsResponse400 | getAuditPolicyEventsResponse401
 ) & {
   headers: Headers;
 };
 
 export type getAuditPolicyEventsResponse =
-  | getAuditPolicyEventsResponseSuccess
-  | getAuditPolicyEventsResponseError;
+  getAuditPolicyEventsResponseSuccess | getAuditPolicyEventsResponseError;
 
 export const getGetAuditPolicyEventsUrl = (
   params?: GetAuditPolicyEventsParams
@@ -393,16 +384,13 @@ export type getAuditStatsResponseSuccess = getAuditStatsResponse200 & {
 };
 
 export type getAuditStatsResponseError = (
-  | getAuditStatsResponse400
-  | getAuditStatsResponse401
-  | getAuditStatsResponse403
+  getAuditStatsResponse400 | getAuditStatsResponse401 | getAuditStatsResponse403
 ) & {
   headers: Headers;
 };
 
 export type getAuditStatsResponse =
-  | getAuditStatsResponseSuccess
-  | getAuditStatsResponseError;
+  getAuditStatsResponseSuccess | getAuditStatsResponseError;
 
 export const getGetAuditStatsUrl = (params?: GetAuditStatsParams) => {
   const normalizedParams = new URLSearchParams();

@@ -18,20 +18,14 @@ export type CreateRuleInput = RulesCreateRuleRequest;
 // serialises it as a free-form string (RulesRuleResponse.status: string), so
 // this union is a client-side refinement used for display styling only.
 export type RuleStatus =
-  | 'draft'
-  | 'reviewed'
-  | 'published'
-  | 'revoked'
-  | 'unspecified';
+  'draft' | 'reviewed' | 'published' | 'revoked' | 'unspecified';
 
 // RuleActionErrorCode classifies a failed publish/revoke so the UI can map it
 // to an actionable message. `illegal_transition` is the gateway's 400 (the
 // rule's status changed under us), `not_found` is its 404 (the rule no longer
 // exists), and `unknown` covers auth/transport/5xx failures.
 export type RuleActionErrorCode =
-  | 'illegal_transition'
-  | 'not_found'
-  | 'unknown';
+  'illegal_transition' | 'not_found' | 'unknown';
 
 // RuleActionError is thrown by the publish/revoke flows so callers can branch
 // on `code` rather than parsing a message string.

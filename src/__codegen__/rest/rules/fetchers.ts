@@ -40,15 +40,13 @@ export type listRulesResponseSuccess = listRulesResponse200 & {
 };
 
 export type listRulesResponseError = (
-  | listRulesResponse401
-  | listRulesResponse403
+  listRulesResponse401 | listRulesResponse403
 ) & {
   headers: Headers;
 };
 
 export type listRulesResponse =
-  | listRulesResponseSuccess
-  | listRulesResponseError;
+  listRulesResponseSuccess | listRulesResponseError;
 
 export const getListRulesUrl = () => {
   return `/api/pact/gateway/v1/rules`;
@@ -93,16 +91,13 @@ export type createRuleResponseSuccess = createRuleResponse201 & {
 };
 
 export type createRuleResponseError = (
-  | createRuleResponse400
-  | createRuleResponse401
-  | createRuleResponse403
+  createRuleResponse400 | createRuleResponse401 | createRuleResponse403
 ) & {
   headers: Headers;
 };
 
 export type createRuleResponse =
-  | createRuleResponseSuccess
-  | createRuleResponseError;
+  createRuleResponseSuccess | createRuleResponseError;
 
 export const getCreateRuleUrl = () => {
   return `/api/pact/gateway/v1/rules`;
@@ -173,8 +168,7 @@ export type updateRuleResponseError = (
 };
 
 export type updateRuleResponse =
-  | updateRuleResponseSuccess
-  | updateRuleResponseError;
+  updateRuleResponseSuccess | updateRuleResponseError;
 
 export const getUpdateRuleUrl = (id: string) => {
   return `/api/pact/gateway/v1/rules/${id}`;
@@ -247,8 +241,7 @@ export type publishRuleResponseError = (
 };
 
 export type publishRuleResponse =
-  | publishRuleResponseSuccess
-  | publishRuleResponseError;
+  publishRuleResponseSuccess | publishRuleResponseError;
 
 export const getPublishRuleUrl = (id: string) => {
   return `/api/pact/gateway/v1/rules/${id}/publish`;
@@ -318,8 +311,7 @@ export type revokeRuleResponseError = (
 };
 
 export type revokeRuleResponse =
-  | revokeRuleResponseSuccess
-  | revokeRuleResponseError;
+  revokeRuleResponseSuccess | revokeRuleResponseError;
 
 export const getRevokeRuleUrl = (id: string) => {
   return `/api/pact/gateway/v1/rules/${id}/revoke`;

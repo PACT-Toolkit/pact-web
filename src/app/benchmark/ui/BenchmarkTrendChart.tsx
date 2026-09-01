@@ -119,8 +119,7 @@ export const BenchmarkTrendChart = () => {
                   <ChartTooltipContent
                     formatter={(value, name, item) => {
                       const p = item.payload as
-                        | Record<string, unknown>
-                        | undefined;
+                        Record<string, unknown> | undefined;
 
                       return (
                         <div className="flex w-full flex-col gap-0.5">

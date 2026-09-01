@@ -25,9 +25,7 @@ export type ConsensusMode = 'inline' | 'shadow';
 // classifierEnforceMode and vectorEnforceMode share the EnforceMode value
 // set; consensusMode has its own two-value set.
 export type EnforcementField =
-  | 'classifierEnforceMode'
-  | 'vectorEnforceMode'
-  | 'consensusMode';
+  'classifierEnforceMode' | 'vectorEnforceMode' | 'consensusMode';
 
 export interface ModeOption {
   value: string;

@@ -69,8 +69,7 @@ export type issueTokenResponseError = (
 };
 
 export type issueTokenResponse =
-  | issueTokenResponseSuccess
-  | issueTokenResponseError;
+  issueTokenResponseSuccess | issueTokenResponseError;
 
 export const getIssueTokenUrl = () => {
   return `/api/pact/gateway/v1/policy/tokens`;
