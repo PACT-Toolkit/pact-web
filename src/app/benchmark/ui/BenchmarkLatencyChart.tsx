@@ -102,7 +102,7 @@ export const BenchmarkLatencyChart = ({
                 tickCount={5}
                 allowDecimals={false}
                 padding={{ top: 12, bottom: 0 }}
-                width={56}
+                width={72}
               />
               <ChartTooltip
                 content={
