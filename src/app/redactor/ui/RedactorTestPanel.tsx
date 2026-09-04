@@ -32,14 +32,27 @@ import {
 // Lab beyond that shared contract.
 export const RedactorTestPanel = () => {
   const [content, setContent] = useState('');
+  // Snapshot of the text that produced the last result -- useCheckContent's
+  // `data` is the last resolved response, not keyed to any particular
+  // request, so without this the panel re-applies spans from an old
+  // response onto whatever the user has since typed (PACT-921). Every
+  // derived value below reads from this snapshot, never from the live
+  // `content` state, so a result can never be painted onto text it wasn't
+  // computed from.
+  const [submittedContent, setSubmittedContent] = useState<string | null>(null);
   const { trigger, data, error, isMutating } = useCheckContent();
 
   const result = data?.status === 200 ? data.data : undefined;
   const requestFailed =
     Boolean(error) || (data !== undefined && data.status !== 200);
+  // True once the textarea has been edited past the text that produced
+  // `result` -- the result is still shown (it's genuine output for real
+  // input), but labelled as stale rather than silently re-targeted.
+  const isStale = submittedContent !== null && content !== submittedContent;
 
   const runTest = () => {
     if (!content.trim()) return;
+    setSubmittedContent(content);
     void trigger({ content, kind: 'output' });
   };
 
@@ -47,7 +60,7 @@ export const RedactorTestPanel = () => {
   const spans = outcome?.kind === 'ran' ? (outcome.redactor.spans ?? []) : [];
   const masked =
     outcome?.kind === 'ran'
-      ? applyRedaction(content, outcome.redactor.spans)
+      ? applyRedaction(submittedContent ?? '', outcome.redactor.spans)
       : '';
 
   return (
@@ -96,6 +109,17 @@ export const RedactorTestPanel = () => {
             </span>
           )}
         </div>
+
+        {result && !requestFailed && isStale && (
+          <p
+            className="text-xs text-muted-foreground italic"
+            data-testid="redactor-test-stale"
+          >
+            The result below is for the text you last ran, not what&apos;s
+            currently in the box above. Edit further or re-run to check the
+            current text.
+          </p>
+        )}
 
         {result && !requestFailed && outcome?.kind === 'not_run' && (
           <div
