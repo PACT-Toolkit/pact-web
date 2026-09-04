@@ -3,8 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   compareRuns,
   defaultComparisonPair,
-  formatDelta,
-  formatMetric,
+  runOptionLabel,
 } from '@/src/app/benchmark/domain/benchmark_comparison';
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
 
@@ -104,24 +103,18 @@ describe('defaultComparisonPair', () => {
   });
 });
 
-describe('formatMetric', () => {
-  it('formats percent metrics', () => {
-    expect(formatMetric(0.834, 'percent')).toBe('83.4%');
-  });
+describe('runOptionLabel', () => {
+  it('abbreviates a long corpus hash so the picker option stays short', () => {
+    const run = makeRun({
+      corpus_version:
+        'a1b2c3d4e5f60718293a4b5c6d7e8f9091a2b3c4d5e6f7081920a1b2c3d4e5f',
+      engine: 'deberta',
+      gateway_version: 'v1.2.3',
+      ran_at: 1_700_000_000,
+    });
 
-  it('formats latency in ms', () => {
-    expect(formatMetric(12.34, 'ms')).toBe('12.3 ms');
-  });
-});
-
-describe('formatDelta', () => {
-  it('shows percentage points with a sign', () => {
-    expect(formatDelta(0.1, 'percent')).toBe('+10.0 pp');
-    expect(formatDelta(-0.02, 'percent')).toBe('-2.0 pp');
-  });
-
-  it('shows ms deltas with a sign', () => {
-    expect(formatDelta(2, 'ms')).toBe('+2.0 ms');
-    expect(formatDelta(-10, 'ms')).toBe('-10.0 ms');
+    expect(runOptionLabel(run)).toBe(
+      'deberta · a1b2c3d4 · v1.2.3 · 14 Nov 2023'
+    );
   });
 });

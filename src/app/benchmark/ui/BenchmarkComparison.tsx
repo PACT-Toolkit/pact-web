@@ -5,8 +5,6 @@ import { useMemo, useState } from 'react';
 import {
   compareRuns,
   defaultComparisonPair,
-  formatDelta,
-  formatMetric,
   runOptionLabel,
   type DeltaDirection,
 } from '@/src/app/benchmark/domain/benchmark_comparison';
@@ -17,6 +15,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import {
+  formatDelta,
+  formatMetric,
+} from '@/src/framework/format/metric_format';
 import { cn } from '@/src/lib/utils';
 
 const DELTA_CLASS: Record<DeltaDirection, string> = {

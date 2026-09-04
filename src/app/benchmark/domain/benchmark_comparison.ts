@@ -1,12 +1,12 @@
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
+import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
+import { type MetricFormat } from '@/src/framework/format/metric_format';
 
 /** Whether a larger value is better (detection) or worse (FP, latency). */
 export type MetricGoal = 'higher-better' | 'lower-better';
 
 /** Direction of a candidate-vs-baseline delta once the metric goal is applied. */
 export type DeltaDirection = 'improved' | 'regressed' | 'neutral';
-
-export type MetricFormat = 'percent' | 'ms';
 
 interface MetricDef {
   key: 'detection_rate' | 'fp_rate' | 'p50_latency' | 'p99_latency';
@@ -111,19 +111,5 @@ export function runOptionLabel(run: BenchmarkRun): string {
     year: 'numeric',
   });
 
-  return `${run.engine} · ${run.corpus_version} · ${run.gateway_version} · ${date}`;
-}
-
-export function formatMetric(value: number, format: MetricFormat): string {
-  if (format === 'percent') return `${(value * 100).toFixed(1)}%`;
-
-  return `${value.toFixed(1)} ms`;
-}
-
-/** Signed, human-readable delta. Percent metrics are shown in percentage points. */
-export function formatDelta(delta: number, format: MetricFormat): string {
-  const sign = delta > 0 ? '+' : '';
-  if (format === 'percent') return `${sign}${(delta * 100).toFixed(1)} pp`;
-
-  return `${sign}${delta.toFixed(1)} ms`;
+  return `${run.engine} · ${abbreviateHash(run.corpus_version)} · ${run.gateway_version} · ${date}`;
 }
