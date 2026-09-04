@@ -144,7 +144,7 @@ const buildNavSections = (pathname: string): NavSectionData[] => [
         isActive: isRouteActive(pathname, '/settings'),
         items: [
           { title: 'Profile', url: '/settings/account' },
-          { title: 'Preferences', url: '/settings/account/preferences' },
+          { title: 'Notifications', url: '/settings/account/preferences' },
           { title: 'Consents', url: '/settings/account/consents' },
           { title: 'Sign-in methods', url: '/settings/security' },
           { title: 'Danger zone', url: '/settings/account/danger' },

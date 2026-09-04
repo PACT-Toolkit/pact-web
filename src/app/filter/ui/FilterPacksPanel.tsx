@@ -69,9 +69,7 @@ export const FilterPacksPanel = () => {
         )}
 
         {isLoading && !requestFailed && (
-          <p className="text-sm text-muted-foreground">
-            Loading loaded rule packs…
-          </p>
+          <p className="text-sm text-muted-foreground">Loading rule packs…</p>
         )}
 
         {!isLoading && !requestFailed && packs.length === 0 && (
