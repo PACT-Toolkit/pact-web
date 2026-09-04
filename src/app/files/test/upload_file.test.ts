@@ -29,7 +29,7 @@ describe('uploadFile - PACT-580 presign -> PUT -> confirm protocol helper', () =
 
   it('fails at the presign step and reports its status', async () => {
     server.use(
-      http.post('*/v1/files/', () =>
+      http.post('*/v1/files', () =>
         HttpResponse.json({ error: 'unauthorized' }, { status: 401 })
       )
     );

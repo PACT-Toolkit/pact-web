@@ -34,7 +34,7 @@ const settle = (file: FilesFileResponse): FilesFileResponse => {
 };
 
 export const handlers: RequestHandler[] = [
-  http.get('*/v1/files/', ({ request }) => {
+  http.get('*/v1/files', ({ request }) => {
     const url = new URL(request.url);
     const limit = Number(url.searchParams.get('limit') ?? 100);
     const offset = Number(url.searchParams.get('offset') ?? 0);
@@ -50,7 +50,7 @@ export const handlers: RequestHandler[] = [
     });
   }),
 
-  http.post('*/v1/files/', async ({ request }) => {
+  http.post('*/v1/files', async ({ request }) => {
     const body = (await request.json()) as {
       filename: string;
       contentType: string;
