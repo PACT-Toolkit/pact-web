@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   compareRuns,
   defaultComparisonPair,
+  runOptionLabel,
 } from '@/src/app/benchmark/domain/benchmark_comparison';
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
 
@@ -99,5 +100,21 @@ describe('defaultComparisonPair', () => {
       candidateId: 'new',
       baselineId: 'mid',
     });
+  });
+});
+
+describe('runOptionLabel', () => {
+  it('abbreviates a long corpus hash so the picker option stays short', () => {
+    const run = makeRun({
+      corpus_version:
+        'a1b2c3d4e5f60718293a4b5c6d7e8f9091a2b3c4d5e6f7081920a1b2c3d4e5f',
+      engine: 'deberta',
+      gateway_version: 'v1.2.3',
+      ran_at: 1_700_000_000,
+    });
+
+    expect(runOptionLabel(run)).toBe(
+      'deberta · a1b2c3d4 · v1.2.3 · 14 Nov 2023'
+    );
   });
 });

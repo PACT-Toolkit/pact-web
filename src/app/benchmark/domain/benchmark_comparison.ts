@@ -1,4 +1,5 @@
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
+import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
 import { type MetricFormat } from '@/src/framework/format/metric_format';
 
 /** Whether a larger value is better (detection) or worse (FP, latency). */
@@ -110,5 +111,5 @@ export function runOptionLabel(run: BenchmarkRun): string {
     year: 'numeric',
   });
 
-  return `${run.engine} · ${run.corpus_version} · ${run.gateway_version} · ${date}`;
+  return `${run.engine} · ${abbreviateHash(run.corpus_version)} · ${run.gateway_version} · ${date}`;
 }

@@ -21,7 +21,6 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/src/components/ui/chart';
-import { buildTrendTickLabels } from '@/src/framework/format/trend_tick_label';
 
 const chartConfig = {
   detection_rate: {
@@ -50,11 +49,6 @@ export const BenchmarkTrendChart = () => {
         gateway_version: r.gateway_version,
         engine: r.engine,
       })),
-    [runs]
-  );
-
-  const tickLabels = useMemo(
-    () => buildTrendTickLabels(runs.map((r) => r.ran_at)),
     [runs]
   );
 
@@ -110,9 +104,6 @@ export const BenchmarkTrendChart = () => {
                 axisLine={false}
                 tickMargin={8}
                 tick={{ fontSize: 11 }}
-                tickFormatter={(_value: string, index: number) =>
-                  tickLabels[index] ?? ''
-                }
               />
               <YAxis
                 tickLine={false}

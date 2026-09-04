@@ -3,9 +3,10 @@
 import { Gauge } from 'lucide-react';
 
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
-import { abbreviateCorpusHash } from '@/src/app/dashboard/domain/dashboard_corpus_hash';
+import { buildLabel } from '@/src/app/dashboard/domain/dashboard_build_label';
 import { DashboardPipelineWidget } from '@/src/app/dashboard/ui/DashboardPipelineWidget';
 import { DashboardStatTile } from '@/src/app/dashboard/ui/DashboardStatTile';
+import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
 import { formatMetric } from '@/src/framework/format/metric_format';
 
 export const DashboardBenchmarkWidget = () => {
@@ -13,11 +14,6 @@ export const DashboardBenchmarkWidget = () => {
 
   // useBenchmarkRuns sorts ascending by ran_at, so the newest run is last.
   const latest = runs.at(-1);
-
-  const hasBuildInfo = Boolean(
-    latest?.gateway_version &&
-    latest.gateway_version.toLowerCase() !== 'unknown'
-  );
 
   return (
     <DashboardPipelineWidget
@@ -55,18 +51,16 @@ export const DashboardBenchmarkWidget = () => {
                 {formatMetric(latest.p99_latency, 'ms')}
               </span>
             </div>
-            {hasBuildInfo && (
-              <div className="flex items-center justify-between gap-2">
-                <span>Build</span>
-                <span className="truncate font-mono">
-                  {latest.engine} · {latest.gateway_version}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center justify-between gap-2">
+              <span>Build</span>
+              <span className="truncate font-mono">
+                {buildLabel(latest.engine, latest.gateway_version)}
+              </span>
+            </div>
             <div className="flex items-center justify-between gap-2">
               <span>Corpus</span>
               <span className="font-mono" title={latest.corpus_version}>
-                {abbreviateCorpusHash(latest.corpus_version)}
+                {abbreviateHash(latest.corpus_version)}
               </span>
             </div>
             <div className="flex items-center justify-between gap-2">
