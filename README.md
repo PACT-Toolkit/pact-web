@@ -163,6 +163,8 @@ The app always runs at [http://localhost:3000](http://localhost:3000) regardless
 `pnpm run dev` requires the Vercel CLI to be linked and authenticated (`pnpm run vercel:link`).
 Which backend it reaches depends on the pulled environment, not a value fixed in this repo - confirm with whoever manages the Vercel project if that matters for your task.
 
+The very first hit of a route in a freshly started `dev`/`dev:real` process can be slow - Turbopack compiles that route on demand, so the first fetch after landing on it (e.g. the first visit to `/settings/account/preferences` in a session) waits on that compile, sometimes several seconds, occasionally longer under CPU contention from other local processes (PACT-918). Every hit after that route's chunk is warm is fast. A production build (`pnpm build && pnpm start`) has no such delay, since there is nothing left to compile on demand.
+
 ---
 
 ## Scripts
