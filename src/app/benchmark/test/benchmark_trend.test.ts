@@ -3,7 +3,13 @@ import { describe, expect, it } from 'vitest';
 import {
   sinceUnixFromRange,
   TREND_DATE_RANGES,
+  type BenchmarkRun,
 } from '@/src/app/benchmark/domain/benchmark_run';
+import {
+  formatRunTimestamp,
+  trendChartData,
+  TREND_SERIES,
+} from '@/src/app/benchmark/domain/benchmark_trend';
 
 describe('sinceUnixFromRange', () => {
   const now = Math.floor(Date.now() / 1000);
@@ -39,5 +45,89 @@ describe('TREND_DATE_RANGES', () => {
       '90d',
       'all',
     ]);
+  });
+});
+
+function makeRun(overrides: Partial<BenchmarkRun>): BenchmarkRun {
+  return {
+    id: 'run-1',
+    gateway_version: 'v1.0.0',
+    engine: 'deberta',
+    corpus_version: 'seed-v1.jsonl',
+    detection_rate: 0.953,
+    fp_rate: 0.052,
+    p50_latency: 20,
+    p99_latency: 100,
+    row_count: 200,
+    ran_at: 1_700_000_000,
+    ...overrides,
+  };
+}
+
+describe('TREND_SERIES', () => {
+  it('uses a plain --chart-N custom property for every series color', () => {
+    for (const entry of Object.values(TREND_SERIES)) {
+      expect(entry.color).toMatch(/^var\(--chart-\d\)$/);
+    }
+  });
+
+  it('defines exactly the detection_rate and fp_rate series', () => {
+    expect(Object.keys(TREND_SERIES).sort()).toEqual([
+      'detection_rate',
+      'fp_rate',
+    ]);
+  });
+});
+
+describe('trendChartData', () => {
+  it('returns an empty array for no runs', () => {
+    expect(trendChartData([])).toEqual([]);
+  });
+
+  it('sorts ascending by ran_at regardless of input order', () => {
+    const older = makeRun({ id: 'run-a', ran_at: 100 });
+    const newer = makeRun({ id: 'run-b', ran_at: 200 });
+
+    const result = trendChartData([newer, older]);
+
+    expect(result.map((p) => p.ran_at)).toEqual([100, 200]);
+  });
+
+  it('rounds detection_rate and fp_rate to a percent with one decimal', () => {
+    const run = makeRun({ detection_rate: 0.9531, fp_rate: 0.0524 });
+
+    const [point] = trendChartData([run]);
+
+    expect(point.detection_rate).toBeCloseTo(95.3, 5);
+    expect(point.fp_rate).toBeCloseTo(5.2, 5);
+  });
+
+  it('carries row_count, corpus_version, engine, and gateway_version through', () => {
+    const run = makeRun({
+      row_count: 321,
+      corpus_version: 'seed-v9.jsonl',
+      engine: 'stub',
+      gateway_version: 'v2.1.0',
+    });
+
+    const [point] = trendChartData([run]);
+
+    expect(point.row_count).toBe(321);
+    expect(point.corpus_version).toBe('seed-v9.jsonl');
+    expect(point.engine).toBe('stub');
+    expect(point.gateway_version).toBe('v2.1.0');
+  });
+});
+
+describe('formatRunTimestamp', () => {
+  it('formats a Unix timestamp as a full date and time', () => {
+    // 5 Aug 2026, 14:32 CET (TZ pinned in vitest.config.ts).
+    const unixSeconds = Date.UTC(2026, 7, 5, 12, 32, 0) / 1000;
+
+    const label = formatRunTimestamp(unixSeconds);
+
+    expect(label).toContain('2026');
+    expect(label).toContain('Aug');
+    expect(label).toContain('14:32');
   });
 });

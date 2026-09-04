@@ -63,7 +63,7 @@ export const BenchmarkWorkbench = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" data-testid="benchmark-workbench">
       <BenchmarkTrendChart />
 
       <BenchmarkComparison />

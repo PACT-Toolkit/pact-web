@@ -3,10 +3,10 @@
 import { Gauge } from 'lucide-react';
 
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
-import { buildLabel } from '@/src/app/dashboard/domain/dashboard_build_label';
 import { DashboardPipelineWidget } from '@/src/app/dashboard/ui/DashboardPipelineWidget';
 import { DashboardStatTile } from '@/src/app/dashboard/ui/DashboardStatTile';
 import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
+import { buildLabel } from '@/src/framework/format/build_label';
 import { formatMetric } from '@/src/framework/format/metric_format';
 
 export const DashboardBenchmarkWidget = () => {
