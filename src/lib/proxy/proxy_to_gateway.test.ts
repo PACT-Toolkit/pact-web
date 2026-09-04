@@ -134,7 +134,7 @@ describe('proxyToGateway', () => {
       upstreamPath: '/v1/account/profile',
     });
     const p2 = proxyToGateway(makeRequest(cookieHeader), {
-      upstreamPath: '/v1/files/',
+      upstreamPath: '/v1/files',
     });
 
     // Both requests have already reached their fetch call synchronously

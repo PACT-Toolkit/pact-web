@@ -77,7 +77,7 @@ info:
     title: pact-gateway
     version: 0.1.0
 paths:
-    /v1/files/:
+    /v1/files:
         get:
             parameters:
                 - description: Page size 1..200 (default 50)

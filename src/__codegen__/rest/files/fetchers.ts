@@ -61,8 +61,8 @@ export const getGetFilesUrl = (params?: GetFilesParams) => {
   const stringifiedParams = normalizedParams.toString();
 
   return stringifiedParams.length > 0
-    ? `/api/pact/gateway/v1/files/?${stringifiedParams}`
-    : `/api/pact/gateway/v1/files/`;
+    ? `/api/pact/gateway/v1/files?${stringifiedParams}`
+    : `/api/pact/gateway/v1/files`;
 };
 
 /**
@@ -79,7 +79,7 @@ export const getFiles = async (
 };
 
 export const getGetFilesKey = (params?: GetFilesParams) =>
-  [`/api/pact/gateway/v1/files/`, ...(params ? [params] : [])] as const;
+  [`/api/pact/gateway/v1/files`, ...(params ? [params] : [])] as const;
 
 export type postFilesResponse201 = {
   data: FilesRequestUploadResponse;
@@ -115,7 +115,7 @@ export type postFilesResponse =
   postFilesResponseSuccess | postFilesResponseError;
 
 export const getPostFilesUrl = () => {
-  return `/api/pact/gateway/v1/files/`;
+  return `/api/pact/gateway/v1/files`;
 };
 
 /**
@@ -142,7 +142,7 @@ export const getPostFilesMutationFetcher = (
 };
 
 export const getPostFilesMutationKey = () =>
-  [`/api/pact/gateway/v1/files/`] as const;
+  [`/api/pact/gateway/v1/files`] as const;
 
 export type deleteFilesIdResponse204 = {
   data: void;
