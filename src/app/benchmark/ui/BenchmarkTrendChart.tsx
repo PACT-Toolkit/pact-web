@@ -19,10 +19,13 @@ import {
 } from '@/src/components/ui/card';
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/src/components/ui/chart';
 import { computeTimeAxisScale } from '@/src/framework/charts/time_axis';
+import { chartRunTimestampLabelFormatter } from '@/src/framework/charts/tooltip_run_timestamp_label';
 import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
 import { buildLabel } from '@/src/framework/format/build_label';
 import { formatDayTick } from '@/src/framework/format/day_tick_format';
@@ -99,9 +102,11 @@ export const BenchmarkTrendChart = ({
                 width={36}
               />
               <ChartTooltip
-                labelFormatter={(value) => formatRunTimestamp(Number(value))}
                 content={
                   <ChartTooltipContent
+                    labelFormatter={chartRunTimestampLabelFormatter<TrendChartPoint>(
+                      formatRunTimestamp
+                    )}
                     formatter={(value, name, item) => {
                       const p = item.payload as TrendChartPoint | undefined;
                       const seriesKey = name as keyof typeof TREND_SERIES;
@@ -151,22 +156,9 @@ export const BenchmarkTrendChart = ({
                 dot={{ r: 3, fill: 'var(--color-fp_rate)' }}
                 activeDot={{ r: 5 }}
               />
+              <ChartLegend content={<ChartLegendContent />} />
             </LineChart>
           </ChartContainer>
-        )}
-
-        {chartData.length > 0 && (
-          <div className="mt-3 flex items-center justify-center gap-6 text-xs text-muted-foreground">
-            {(['detection_rate', 'fp_rate'] as const).map((key) => (
-              <span key={key} className="flex items-center gap-1.5">
-                <span
-                  className="inline-block h-2 w-3 rounded-sm"
-                  style={{ backgroundColor: TREND_SERIES[key].color }}
-                />
-                {TREND_SERIES[key].label}
-              </span>
-            ))}
-          </div>
         )}
       </CardContent>
     </Card>

@@ -27,6 +27,27 @@ function roundToOneDecimalPercent(fraction: number): number {
   return Math.round(fraction * 1000) / 10;
 }
 
+/** A single series' display label and CSS color for a recharts `ChartConfig`. */
+interface CorpusCompositionSeriesEntry {
+  label: string;
+  color: string;
+}
+
+/**
+ * Series config for the corpus composition chart's block/allow segments.
+ * Colors reference the app's categorical `--chart-*` custom properties
+ * directly, the same convention `TREND_SERIES` and `LATENCY_SERIES` in
+ * `benchmark_trend.ts` follow - see that file's comment for why the raw
+ * property must never be wrapped in `hsl(...)`.
+ */
+export const CORPUS_COMPOSITION_SERIES: Record<
+  'block' | 'allow',
+  CorpusCompositionSeriesEntry
+> = {
+  block: { label: 'Block', color: 'var(--chart-2)' },
+  allow: { label: 'Allow', color: 'var(--chart-1)' },
+};
+
 /**
  * Map corpus library dataset summaries into 100%-stacked composition rows.
  * Datasets are returned in the order given - the gateway already sorts them

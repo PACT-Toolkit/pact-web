@@ -1,7 +1,10 @@
 'use client';
 
 import { formatCorpusRowCount } from '@/src/app/benchmark/domain/benchmark_corpus_library';
-import { type CorpusCompositionRow } from '@/src/app/benchmark/domain/corpus_composition';
+import {
+  CORPUS_COMPOSITION_SERIES,
+  type CorpusCompositionRow,
+} from '@/src/app/benchmark/domain/corpus_composition';
 import { BenchmarkCorpusRoleBadge } from '@/src/app/benchmark/ui/BenchmarkCorpusRoleBadge';
 
 interface BenchmarkCorpusCompositionChartProps {
@@ -22,20 +25,15 @@ export const BenchmarkCorpusCompositionChart = ({
 }: BenchmarkCorpusCompositionChartProps) => (
   <div data-testid="benchmark-corpus-composition-chart">
     <div className="mb-2 flex items-center gap-4 text-xs text-muted-foreground">
-      <span className="flex items-center gap-1.5">
-        <span
-          className="inline-block h-2 w-3 rounded-sm"
-          style={{ backgroundColor: 'var(--chart-2)' }}
-        />
-        Block
-      </span>
-      <span className="flex items-center gap-1.5">
-        <span
-          className="inline-block h-2 w-3 rounded-sm"
-          style={{ backgroundColor: 'var(--chart-1)' }}
-        />
-        Allow
-      </span>
+      {(['block', 'allow'] as const).map((key) => (
+        <span key={key} className="flex items-center gap-1.5">
+          <span
+            className="inline-block h-2 w-3 rounded-sm"
+            style={{ backgroundColor: CORPUS_COMPOSITION_SERIES[key].color }}
+          />
+          {CORPUS_COMPOSITION_SERIES[key].label}
+        </span>
+      ))}
     </div>
 
     <div className="flex flex-col">
@@ -62,13 +60,13 @@ export const BenchmarkCorpusCompositionChart = ({
               <div
                 style={{
                   width: `${row.blockPercent}%`,
-                  backgroundColor: 'var(--chart-2)',
+                  backgroundColor: CORPUS_COMPOSITION_SERIES.block.color,
                 }}
               />
               <div
                 style={{
                   width: `${row.allowPercent}%`,
-                  backgroundColor: 'var(--chart-1)',
+                  backgroundColor: CORPUS_COMPOSITION_SERIES.allow.color,
                 }}
               />
             </div>
