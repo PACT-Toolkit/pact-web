@@ -32,6 +32,24 @@ export const isDecisionStatsForbidden = (value: unknown): boolean => {
   return response?.status === 403;
 };
 
+// Classifies a resolved GET /v1/audit/stats response as a failure that is
+// neither the success path (200) nor the already-handled permission gate
+// (403) -- e.g. a stale bearer racing a session rotation coming back 401
+// (PACT-914), or a 5xx. Before this, only the 403 case was special-cased:
+// any other non-200 status silently normalized to EMPTY_DECISION_STATS with
+// no `error` flag set, so the stat cards rendered a convincing "0 / 0 / 0 /
+// 0.0%" with no indication anything had gone wrong. `value` is the same
+// resolved fetcher shape isDecisionStatsForbidden reads (`{ data, status,
+// headers }`), not SWR's thrown `error` -- callers OR this with
+// `Boolean(error)` to also catch a genuinely thrown/rejected fetch.
+export const isDecisionStatsFailure = (value: unknown): boolean => {
+  if (!value || typeof value !== 'object') return false;
+
+  const status = (value as { status?: unknown }).status;
+
+  return typeof status === 'number' && status !== 200 && status !== 403;
+};
+
 /**
  * SWR polling config for GET /v1/audit/stats, shared by both consumers so
  * neither keeps hammering a permanently forbidden endpoint:

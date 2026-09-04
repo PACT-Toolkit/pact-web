@@ -101,6 +101,26 @@ describe('useDashboardPipelineStats - PACT-363 audit:stats 403 gate (PACT-377)',
   });
 });
 
+describe('useDashboardPipelineStats - PACT-914 non-403 failure surfacing', () => {
+  it('exposes statsError=true and empty stats on a 401, without touching the live decisions query', async () => {
+    server.use(
+      http.get('*/v1/audit/stats', () =>
+        HttpResponse.json({ error: 'unauthorized' }, { status: 401 })
+      )
+    );
+
+    const { result } = renderHook(() => useDashboardPipelineStats(false), {
+      wrapper: SWRTestProvider,
+    });
+
+    await waitFor(() => expect(result.current.statsError).toBe(true));
+
+    expect(result.current.statsForbidden).toBe(false);
+    expect(result.current.streamError).toBe(false);
+    expect(result.current.stats.total).toBe(0);
+  });
+});
+
 describe('BENIGN_CLASSIFIER_LABELS (PACT-574)', () => {
   it('matches the vendored pact-contracts benign-label contract exactly', () => {
     // Drift guard: BENIGN_CLASSIFIER_LABELS must derive 1:1 from BENIGN_LABELS
