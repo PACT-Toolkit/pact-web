@@ -42,6 +42,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { formatPercentValue } from '@/src/framework/format/format_percent';
 import { useDecisionsWindow } from '@/src/lib/decisions/use_decisions_window';
 import { useLocalPagination } from '@/src/lib/use_local_pagination';
 
@@ -220,7 +221,9 @@ export const FilterDecisionsWorkbench = () => {
             <FilterStatCard label="Allowed" value={allowed} />
             <FilterStatCard
               label="Block rate"
-              value={`${filterStats.block_rate.toFixed(1)}%`}
+              value={formatPercentValue(filterStats.block_rate, {
+                digits: 1,
+              })}
               valueClass={
                 filterStats.block_rate > 10 ? 'text-destructive' : undefined
               }

@@ -20,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { formatPercent } from '@/src/framework/format/format_percent';
 
 // Ad-hoc classifier test-and-label panel (PACT-322 part 2): paste text, run
 // it through the real pipeline via /v1/check with kind "input" (prompt
@@ -174,7 +175,7 @@ export const ClassifierTestPanel = () => {
                 </span>
                 {typeof classifier.score === 'number' && (
                   <span className="text-xs font-medium">
-                    {(classifier.score * 100).toFixed(0)}% score
+                    {formatPercent(classifier.score)} score
                   </span>
                 )}
                 <span className="text-xs text-muted-foreground">

@@ -1,4 +1,5 @@
 import { type ConsensusVote } from '@/src/app/consensus/domain/consensus_record';
+import { formatPercent } from '@/src/framework/format/format_percent';
 
 // One backend model's contribution to a consensus verdict -- backend_id,
 // its label, and its confidence score. Rendered as a compact chip so a
@@ -13,9 +14,7 @@ export const ConsensusVoteChip = ({ vote }: { vote: ConsensusVote }) => (
     </span>
     {vote.label && <span className="font-semibold">{vote.label}</span>}
     {typeof vote.score === 'number' && (
-      <span className="text-muted-foreground">
-        {(vote.score * 100).toFixed(0)}%
-      </span>
+      <span className="text-muted-foreground">{formatPercent(vote.score)}</span>
     )}
   </span>
 );

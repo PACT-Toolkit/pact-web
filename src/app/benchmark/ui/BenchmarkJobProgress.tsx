@@ -9,6 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { formatPercent } from '@/src/framework/format/format_percent';
 
 interface BenchmarkJobProgressProps {
   jobId: string;
@@ -99,11 +100,13 @@ export const BenchmarkJobProgress = ({
           <div className="grid grid-cols-2 gap-3 rounded-md border p-4 sm:grid-cols-4">
             <Stat
               label="Detection rate"
-              value={`${(state.result.detection_rate * 100).toFixed(1)}%`}
+              value={formatPercent(state.result.detection_rate, {
+                digits: 1,
+              })}
             />
             <Stat
               label="False-positive rate"
-              value={`${(state.result.fp_rate * 100).toFixed(1)}%`}
+              value={formatPercent(state.result.fp_rate, { digits: 1 })}
             />
             <Stat
               label="p50 latency"

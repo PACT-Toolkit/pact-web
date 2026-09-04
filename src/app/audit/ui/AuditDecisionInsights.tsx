@@ -4,6 +4,7 @@ import {
   complianceVerdictLabel,
 } from '@/src/app/audit/domain/audit_decision_compliance';
 import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
+import { formatPercent } from '@/src/framework/format/format_percent';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import { isStageAttributed } from '@/src/lib/decisions/decision_stage_attribution';
 
@@ -53,7 +54,7 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         </code>
         {dp.classifier.score !== undefined && dp.classifier.score > 0 && (
           <span className="font-medium">
-            {(dp.classifier.score * 100).toFixed(0)}%
+            {formatPercent(dp.classifier.score)}
           </span>
         )}
       </div>
@@ -164,7 +165,7 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         )}
         {typeof dp.compliance.score === 'number' && (
           <span className="font-medium">
-            {(dp.compliance.score * 100).toFixed(0)}%
+            {formatPercent(dp.compliance.score)}
           </span>
         )}
         {dp.compliance.model_version && (

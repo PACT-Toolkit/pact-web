@@ -4,6 +4,7 @@ import { type PipelineStats } from '@/src/app/dashboard/domain/dashboard_pipelin
 import { DashboardBreakdownList } from '@/src/app/dashboard/ui/DashboardBreakdownList';
 import { DashboardPipelineWidget } from '@/src/app/dashboard/ui/DashboardPipelineWidget';
 import { DashboardStatTile } from '@/src/app/dashboard/ui/DashboardStatTile';
+import { formatPercentValue } from '@/src/framework/format/format_percent';
 
 export const DashboardClassifierWidget = ({
   stats,
@@ -42,7 +43,7 @@ export const DashboardClassifierWidget = ({
             label="Avg score"
             value={
               classifier.tagged > 0
-                ? `${classifier.avg_tagged_score.toFixed(0)}%`
+                ? formatPercentValue(classifier.avg_tagged_score)
                 : '\u2014'
             }
           />
