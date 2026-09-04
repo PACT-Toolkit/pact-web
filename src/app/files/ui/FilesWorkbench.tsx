@@ -110,7 +110,7 @@ export const FilesWorkbench = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" data-testid="files-workbench">
       <Card>
         <CardHeader>
           <CardTitle>Upload a file</CardTitle>
@@ -127,6 +127,8 @@ export const FilesWorkbench = () => {
               ref={fileInputRef}
               type="file"
               disabled={uploading}
+              aria-label="Choose a file to upload"
+              data-testid="files-upload-input"
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) void handleUpload(f);
@@ -140,7 +142,11 @@ export const FilesWorkbench = () => {
             )}
           </div>
           {uploadError && (
-            <p role="alert" className="mt-2 text-sm text-destructive">
+            <p
+              role="alert"
+              className="mt-2 text-sm text-destructive"
+              data-testid="files-upload-error"
+            >
               {uploadError}
             </p>
           )}
@@ -181,7 +187,7 @@ export const FilesWorkbench = () => {
               Pick a file above to get started.
             </p>
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-2" data-testid="files-row-list">
               {serverFiles.map((r: FilesFileResponse) => (
                 <FilesRow key={r.id} file={r} onListChange={refreshList} />
               ))}
