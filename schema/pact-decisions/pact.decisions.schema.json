@@ -56,6 +56,9 @@
     "consensus": {
       "$ref": "#/$defs/consensusDecision"
     },
+    "compliance": {
+      "$ref": "#/$defs/complianceDecision"
+    },
     "redactor": {
       "$ref": "#/$defs/redactorDecision"
     },
@@ -293,6 +296,34 @@
             "$ref": "#/$defs/controlRef"
           },
           "description": "Compliance controls this stage verdict enforces (PACT-611), stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
+        }
+      }
+    },
+    "complianceDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The gateway's deferred shadow stage: the (system prompt, user message) pair scored via pact-classifier's CheckCompliance RPC, recorded advisory-only, never enforced. Present only when the compliance stage was invoked for this request. Additive - absent on every event produced before the compliance stage existed.",
+      "properties": {
+        "shadow": {
+          "type": "boolean",
+          "description": "Always true today - the compliance stage is advisory-only, never enforced."
+        },
+        "verdict": {
+          "type": "string",
+          "enum": ["compliant", "deviating"],
+          "description": "The engine's thresholded call: \"compliant\" when the message stays within the system prompt's instructions, \"deviating\" when it attempts to deviate from or override them. Absent when skipped is true - the RPC never returned a verdict to threshold."
+        },
+        "score": {
+          "type": "number",
+          "description": "The engine's probability in [0.0, 1.0] that the user message DEVIATES from the system prompt. Higher = riskier. Copied from CheckComplianceResponse.score."
+        },
+        "model_version": {
+          "type": "string",
+          "description": "Engine + checkpoint identity (e.g. deberta-compliance-v1@abcd1234), copied from CheckComplianceResponse.model_version. Open set - pact-classifier owns the checkpoint vocabulary."
+        },
+        "skipped": {
+          "type": "boolean",
+          "description": "True on a transport-error or timeout fail-open: the CheckCompliance RPC failed or did not return in time, so the request proceeded with no compliance verdict recorded."
         }
       }
     },

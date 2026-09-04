@@ -37,6 +37,7 @@ export interface PactDecisions {
   filter?: FilterDecision;
   classifier?: ClassifierDecision;
   consensus?: ConsensusDecision;
+  compliance?: ComplianceDecision;
   redactor?: RedactorDecision;
   policy?: PolicyDecision;
   spotlight?: SpotlightDecision;
@@ -164,6 +165,31 @@ export interface ModelVote {
    */
   label: string;
   score: number;
+}
+/**
+ * The gateway's deferred shadow stage: the (system prompt, user message) pair scored via pact-classifier's CheckCompliance RPC, recorded advisory-only, never enforced. Present only when the compliance stage was invoked for this request. Additive - absent on every event produced before the compliance stage existed.
+ */
+export interface ComplianceDecision {
+  /**
+   * Always true today - the compliance stage is advisory-only, never enforced.
+   */
+  shadow?: boolean;
+  /**
+   * The engine's thresholded call: "compliant" when the message stays within the system prompt's instructions, "deviating" when it attempts to deviate from or override them. Absent when skipped is true - the RPC never returned a verdict to threshold.
+   */
+  verdict?: "compliant" | "deviating";
+  /**
+   * The engine's probability in [0.0, 1.0] that the user message DEVIATES from the system prompt. Higher = riskier. Copied from CheckComplianceResponse.score.
+   */
+  score?: number;
+  /**
+   * Engine + checkpoint identity (e.g. deberta-compliance-v1@abcd1234), copied from CheckComplianceResponse.model_version. Open set - pact-classifier owns the checkpoint vocabulary.
+   */
+  model_version?: string;
+  /**
+   * True on a transport-error or timeout fail-open: the CheckCompliance RPC failed or did not return in time, so the request proceeded with no compliance verdict recorded.
+   */
+  skipped?: boolean;
 }
 export interface RedactorDecision {
   /**
