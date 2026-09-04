@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { useCheckContent } from '@/src/__codegen__/rest/check';
 import { applyRedaction } from '@/src/app/redactor/domain/redactor_redaction';
+import { classifyRedactorTestOutcome } from '@/src/app/redactor/domain/redactor_test_outcome';
 import { RedactorSpanList } from '@/src/app/redactor/ui/RedactorSpanList';
 import { Button } from '@/src/components/ui/button';
 import {
@@ -42,8 +43,12 @@ export const RedactorTestPanel = () => {
     void trigger({ content, kind: 'output' });
   };
 
-  const spans = result?.redactor?.spans ?? [];
-  const masked = result ? applyRedaction(content, result.redactor?.spans) : '';
+  const outcome = result ? classifyRedactorTestOutcome(result) : undefined;
+  const spans = outcome?.kind === 'ran' ? (outcome.redactor.spans ?? []) : [];
+  const masked =
+    outcome?.kind === 'ran'
+      ? applyRedaction(content, outcome.redactor.spans)
+      : '';
 
   return (
     <Card>
@@ -92,42 +97,93 @@ export const RedactorTestPanel = () => {
           )}
         </div>
 
-        {result && !requestFailed && (
+        {result && !requestFailed && outcome?.kind === 'not_run' && (
           <div
-            className="flex flex-col gap-3 border-t pt-3"
-            data-testid="redactor-test-result"
+            className="flex flex-col gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 p-3"
+            data-testid="redactor-test-not-run"
           >
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${
-                  result.redactor?.verdict === 'redacted'
-                    ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                    : 'bg-green-500/10 text-green-600 dark:text-green-400'
-                }`}
-              >
-                {result.redactor?.verdict ?? 'unknown'}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {spans.length} span{spans.length === 1 ? '' : 's'}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {result.latency_ms} ms
-              </span>
-            </div>
+            <span className="text-xs font-semibold text-destructive">
+              {outcome.decision === 'block'
+                ? 'Blocked before the redactor stage ran'
+                : 'The redactor stage did not run'}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              The pipeline halted at an earlier stage, so no redactor verdict or
+              masked output is available for this request.
+              {outcome.reason && (
+                <>
+                  {' '}
+                  Reason:{' '}
+                  <code className="rounded bg-muted px-1 py-0.5">
+                    {outcome.reason}
+                  </code>
+                  .
+                </>
+              )}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {result.latency_ms} ms
+            </span>
+          </div>
+        )}
 
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-medium text-muted-foreground">
-                Masked output
-              </p>
-              <pre
-                className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-3 font-mono text-xs"
-                data-testid="redactor-test-masked-output"
+        {result && !requestFailed && outcome?.kind === 'ran' && (
+          <div className="flex flex-col gap-3 border-t pt-3">
+            {outcome.blocked && (
+              <div
+                className="flex flex-wrap items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2"
+                data-testid="redactor-test-blocked"
               >
-                {masked || '(empty)'}
-              </pre>
-            </div>
+                <span className="text-xs font-semibold text-destructive">
+                  Request blocked
+                </span>
+                {outcome.reason && (
+                  <span className="text-xs text-muted-foreground">
+                    Reason:{' '}
+                    <code className="rounded bg-muted px-1 py-0.5">
+                      {outcome.reason}
+                    </code>
+                  </span>
+                )}
+              </div>
+            )}
 
-            {spans.length > 0 && <RedactorSpanList spans={spans} />}
+            <div
+              className="flex flex-col gap-3"
+              data-testid="redactor-test-result"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${
+                    outcome.redactor.verdict === 'redacted'
+                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                      : 'bg-green-500/10 text-green-600 dark:text-green-400'
+                  }`}
+                >
+                  {outcome.redactor.verdict ?? 'unknown'}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {spans.length} span{spans.length === 1 ? '' : 's'}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {result.latency_ms} ms
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Masked output
+                </p>
+                <pre
+                  className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-3 font-mono text-xs"
+                  data-testid="redactor-test-masked-output"
+                >
+                  {masked || '(empty)'}
+                </pre>
+              </div>
+
+              {spans.length > 0 && <RedactorSpanList spans={spans} />}
+            </div>
           </div>
         )}
       </CardContent>
