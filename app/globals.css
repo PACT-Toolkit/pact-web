@@ -217,6 +217,13 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    /* Reserves the vertical scrollbar's width whether or not the page is
+       tall enough to need one, so content (e.g. the Activity log filling
+       in after its initial fetch) never shifts horizontally when the
+       native scrollbar appears. */
+    scrollbar-gutter: stable;
+  }
   body {
     letter-spacing: var(--tracking-normal);
     @apply bg-background text-foreground;

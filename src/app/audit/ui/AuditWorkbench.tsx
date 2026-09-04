@@ -243,7 +243,7 @@ export const AuditWorkbench = () => {
           pagination={pagination}
           busy={isValidating}
           testIdPrefix="audit"
-          emptyText="No matching rows"
+          emptyText={isLoading ? undefined : 'No matching rows'}
         />
       </CardContent>
     </Card>

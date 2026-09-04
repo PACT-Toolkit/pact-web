@@ -25,7 +25,7 @@ import {
 // gate exists for this section (spotlightFormat is a marker-style choice,
 // not an enabled/disabled toggle); the current format is shown for context.
 export const GatewaySpotlightPanel = () => {
-  const { config } = useGatewayConfig();
+  const { config, isLoading: configLoading } = useGatewayConfig();
   const { trigger: runCheck, data, error, isMutating } = useCheckContent();
 
   const result = data?.status === 200 ? data.data : undefined;
@@ -47,7 +47,9 @@ export const GatewaySpotlightPanel = () => {
         <CardDescription>
           Current format:{' '}
           <span className="font-medium">
-            {spotlightFormatLabel(config?.spotlightFormat)}
+            {configLoading
+              ? 'Loading…'
+              : spotlightFormatLabel(config?.spotlightFormat)}
           </span>
           . Third-party content is marker-wrapped before LLM injection so the
           host model can distinguish trusted instructions from fetched data.
