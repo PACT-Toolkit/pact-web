@@ -1,8 +1,37 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 
 import { MOCK_CORPUS_DATASETS } from '@/src/app/benchmark/mock/data/benchmark';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
+
+// Covers PACT-939: the trend and latency charts render their legend through
+// the canonical shadcn `<ChartLegend content={<ChartLegendContent />} />`
+// composition rather than a hand-rolled legend row, so recharts mounts a
+// `.recharts-legend-wrapper` containing one item per series with a swatch
+// coloured from the series' ChartConfig entry. This asserts both the item
+// count and that each swatch actually resolves to a painted colour (not
+// `transparent` - the PACT-927 failure mode of an unresolved CSS variable).
+async function expectPaintedLegendSwatches(
+  chart: Locator,
+  expectedCount: number
+) {
+  const legend = chart.locator('.recharts-legend-wrapper');
+  await expect(legend).toBeVisible();
+
+  const items = legend.locator('> div > div');
+  await expect(items).toHaveCount(expectedCount);
+
+  for (const item of await items.all()) {
+    const swatch = item.locator('> div').first();
+    const background = await swatch.evaluate(
+      (el) => getComputedStyle(el).backgroundColor
+    );
+
+    expect(background).not.toBe('');
+    expect(background).not.toBe('rgba(0, 0, 0, 0)');
+    expect(background).not.toBe('transparent');
+  }
+}
 
 // Covers PACT-927: the trend chart's two lines never painted (chart.tsx
 // wrapped the --chart-1/--chart-2 custom properties in hsl(), but they held
@@ -31,6 +60,15 @@ test.describe('Benchmark trend chart', () => {
     }
   });
 
+  test('renders a shadcn legend with one painted swatch per series', async ({
+    page,
+  }) => {
+    await expectPaintedLegendSwatches(
+      page.getByTestId('benchmark-trend-chart'),
+      2
+    );
+  });
+
   test('passes an accessibility check', async ({ page }) => {
     const results = await makeAxeBuilder(page).analyze();
     expect(results.violations).toEqual([]);
@@ -57,6 +95,15 @@ test.describe('Benchmark latency, corpus composition, and comparison charts', ()
       expect(d).not.toBeNull();
       expect(d?.length).toBeGreaterThan(0);
     }
+  });
+
+  test('renders a shadcn legend with one painted swatch per series', async ({
+    page,
+  }) => {
+    await expectPaintedLegendSwatches(
+      page.getByTestId('benchmark-latency-chart'),
+      2
+    );
   });
 
   test('renders one composition bar row per mock corpus dataset', async ({

@@ -19,10 +19,13 @@ import {
 } from '@/src/components/ui/card';
 import {
   ChartContainer,
+  ChartLegend,
+  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/src/components/ui/chart';
 import { computeTimeAxisScale } from '@/src/framework/charts/time_axis';
+import { chartRunTimestampLabelFormatter } from '@/src/framework/charts/tooltip_run_timestamp_label';
 import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
 import { buildLabel } from '@/src/framework/format/build_label';
 import { formatDayTick } from '@/src/framework/format/day_tick_format';
@@ -102,9 +105,11 @@ export const BenchmarkLatencyChart = ({
                 width={56}
               />
               <ChartTooltip
-                labelFormatter={(value) => formatRunTimestamp(Number(value))}
                 content={
                   <ChartTooltipContent
+                    labelFormatter={chartRunTimestampLabelFormatter<LatencyChartPoint>(
+                      formatRunTimestamp
+                    )}
                     formatter={(value, name, item) => {
                       const p = item.payload as LatencyChartPoint | undefined;
                       const seriesKey = name as keyof typeof LATENCY_SERIES;
@@ -154,22 +159,9 @@ export const BenchmarkLatencyChart = ({
                 dot={{ r: 3, fill: 'var(--color-p99_latency)' }}
                 activeDot={{ r: 5 }}
               />
+              <ChartLegend content={<ChartLegendContent />} />
             </LineChart>
           </ChartContainer>
-        )}
-
-        {chartData.length > 0 && (
-          <div className="mt-3 flex items-center justify-center gap-6 text-xs text-muted-foreground">
-            {(['p50_latency', 'p99_latency'] as const).map((key) => (
-              <span key={key} className="flex items-center gap-1.5">
-                <span
-                  className="inline-block h-2 w-3 rounded-sm"
-                  style={{ backgroundColor: LATENCY_SERIES[key].color }}
-                />
-                {LATENCY_SERIES[key].label}
-              </span>
-            ))}
-          </div>
         )}
       </CardContent>
     </Card>
