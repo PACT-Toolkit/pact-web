@@ -82,7 +82,10 @@ export const FilesRow = ({
   };
 
   return (
-    <li className="flex items-start justify-between gap-4 rounded-md border px-3 py-2">
+    <li
+      className="flex items-start justify-between gap-4 rounded-md border px-3 py-2"
+      data-testid="files-row"
+    >
       <div className="min-w-0">
         <div className="text-sm font-medium truncate">{file.filename}</div>
         <div className="text-xs text-muted-foreground">

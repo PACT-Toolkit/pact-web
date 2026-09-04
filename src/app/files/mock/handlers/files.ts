@@ -77,6 +77,19 @@ export const handlers: RequestHandler[] = [
     );
   }),
 
+  // PACT-924: pact-web's presign step hands the browser a
+  // mock-object-storage.local URL to PUT the raw bytes to directly, bypassing
+  // the Next.js proxy entirely (same as a real S3 presigned URL would). That
+  // origin was never registered as an MSW handler, so the PUT fell through
+  // to the real network and hung/failed, leaving uploadFile() stuck before
+  // it ever reached the confirm step. This answers the PUT the same way a
+  // real presigned object-storage endpoint would: 200 with an ETag header.
+  http.put(
+    'https://mock-object-storage.local/upload/*',
+    () =>
+      new HttpResponse(null, { status: 200, headers: { ETag: '"mock-etag"' } })
+  ),
+
   http.post('*/v1/files/:id/confirm', ({ params }) => {
     const { id } = params as { id: string };
     const updated = db.files.update(

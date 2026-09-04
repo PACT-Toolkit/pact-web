@@ -23,6 +23,7 @@ export const FilesStatusBadge = ({ status }: { status: string }) => {
   return (
     <span
       className={`inline-block rounded-sm px-1.5 py-0.5 text-[10px] font-medium uppercase ${cls}`}
+      data-testid="files-row-status"
     >
       {status}
     </span>
