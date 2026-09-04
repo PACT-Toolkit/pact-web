@@ -4,9 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { proxyToGateway } from './proxy_to_gateway';
 
 // proxyToGateway had no dedicated test file before PACT-687 - every route
-// that uses it (app/v1/account/[...path]/route.ts and friends) mocks it
+// that uses it (app/api/pact/[...path]/route.ts and friends) mocks it
 // at the module boundary instead. These tests cover the shared core
 // directly against a stubbed fetch.
+//
+// The upstreamPath examples below (e.g. '/v1/account/profile') are
+// pact-gateway's own wire paths, unrelated to pact-web's now-removed
+// app/v1/{account,audit,files} mirror routes (PACT-923) - proxyToGateway
+// just forwards whatever upstreamPath its caller passes.
 const makeRequest = (headers: Record<string, string> = {}) =>
   new NextRequest('http://localhost:3000/v1/account/profile', {
     method: 'GET',
