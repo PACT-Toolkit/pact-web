@@ -229,6 +229,45 @@ describe('proxyToGateway', () => {
       );
     });
 
+    // PACT-914: the superseded first response's body was never read before
+    // being discarded, which pins the upstream keep-alive connection open
+    // under undici until GC runs. The retry path must cancel it explicitly.
+    it('cancels the superseded first response body before retrying a follower 401', async () => {
+      const upstreamCalls: { resolve: (res: Response) => void }[] = [];
+      fetchMock.mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            upstreamCalls.push({ resolve });
+          })
+      );
+
+      const leader = proxyToGateway(makeRequest(cookieHeader), {
+        upstreamPath: '/v1/account/profile',
+      });
+      const follower = proxyToGateway(makeRequest(cookieHeader), {
+        upstreamPath: '/v1/files/',
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      // Give the follower's first (superseded) response a real, unconsumed
+      // body so cancelling it is observable.
+      const supersededResponse = new Response('{"error":"unauthorized"}', {
+        status: 401,
+      });
+      const cancelSpy = vi.spyOn(supersededResponse.body!, 'cancel');
+      upstreamCalls[1].resolve(supersededResponse);
+      upstreamCalls[0].resolve(
+        new Response(null, { status: 204, headers: rotationHeaders })
+      );
+
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+      expect(cancelSpy).toHaveBeenCalledTimes(1);
+
+      upstreamCalls[2].resolve(new Response(null, { status: 200 }));
+      await Promise.all([leader, follower]);
+    });
+
     it('leaves a follower 401 as-is when the leader does not rotate the session', async () => {
       const upstreamCalls: { resolve: (res: Response) => void }[] = [];
       fetchMock.mockImplementation(

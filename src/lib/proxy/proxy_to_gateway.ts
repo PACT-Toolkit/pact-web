@@ -214,7 +214,32 @@ export async function proxyToGateway(
   // whole leader/follower split exists to avoid). If the leader itself came
   // back 401, or never rotated at all, there is nothing to retry with - the
   // 401 stands, same as today.
+  //
+  // PACT-914 residual gap: a request that reaches this proxy after the
+  // leader has already resolved (its inFlightRefresh entry deleted, see the
+  // finally block above) but before the browser has stored the rotated
+  // session cookie is not a follower at all - leaderPromise is undefined by
+  // the time it looks it up, so it attaches the old bearer as a plain
+  // (non-follower) request and its 401, if any, is never retried here.
+  // Closing that window needs a short-lived old-to-new session-token map
+  // survivable past the leader's resolution, which is deliberately not what
+  // inFlightRefresh is ("this dedups one concurrent burst, it is not a
+  // cache" above) - out of scope for this fix.
   if (isFollower && upstreamStatus === 401 && leaderRotated) {
+    // The superseded first response is about to be discarded in favor of
+    // the retry's response. Its body was never read (toProxyResponse only
+    // wraps upstream.body in a NextResponse, it doesn't consume it), and an
+    // unconsumed body keeps the underlying upstream connection pinned open
+    // under undici until GC runs - cancel it explicitly so the connection
+    // is freed immediately. Cancelling an already-closed/errored stream
+    // must not fail this request, hence the swallowed catch.
+    try {
+      await res.body?.cancel();
+    } catch {
+      // Ignore - the stream may already be closed or errored; either way
+      // there's nothing left to discard.
+    }
+
     const retryHeaders = new Headers(headers);
     retryHeaders.set('authorization', `Bearer ${leaderRotated.sessionToken}`);
     retryHeaders.delete(REFRESH_HEADER);
