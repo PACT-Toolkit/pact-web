@@ -4,6 +4,7 @@ import { type PipelineStats } from '@/src/app/dashboard/domain/dashboard_pipelin
 import { DashboardBreakdownList } from '@/src/app/dashboard/ui/DashboardBreakdownList';
 import { DashboardPipelineWidget } from '@/src/app/dashboard/ui/DashboardPipelineWidget';
 import { DashboardStatTile } from '@/src/app/dashboard/ui/DashboardStatTile';
+import { formatPercentValue } from '@/src/framework/format/format_percent';
 
 export const DashboardFilterWidget = ({
   stats,
@@ -37,7 +38,7 @@ export const DashboardFilterWidget = ({
         <DashboardStatTile label="Flagged" value={stats.filter.flagged} />
         <DashboardStatTile
           label="Block rate"
-          value={`${stats.filter.block_rate.toFixed(1)}%`}
+          value={formatPercentValue(stats.filter.block_rate, { digits: 1 })}
           valueClass={
             stats.filter.block_rate > 10 ? 'text-destructive' : undefined
           }

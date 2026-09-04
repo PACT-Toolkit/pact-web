@@ -24,6 +24,7 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
+import { formatPercent } from '@/src/framework/format/format_percent';
 import { extractServerErrorMessage } from '@/src/framework/http';
 
 const selectClassName = 'h-9 rounded-md border bg-background px-3 text-sm';
@@ -258,7 +259,7 @@ export const FilterTestRuleSandbox = () => {
               </span>
               {typeof result.confidence === 'number' && (
                 <span className="text-xs font-medium">
-                  {(result.confidence * 100).toFixed(0)}% confidence
+                  {formatPercent(result.confidence)} confidence
                 </span>
               )}
               {typeof result.latencyMs === 'number' && (

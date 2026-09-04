@@ -13,6 +13,7 @@
 // never marshalled... No secrets are present"), so treat a missing field as
 // "the gateway build running today predates it," not an error.
 import { type ConfigConfigResponse } from '@/src/__codegen__/rest/config';
+import { formatPercent } from '@/src/framework/format/format_percent';
 
 export type GatewayConfig = ConfigConfigResponse;
 
@@ -35,9 +36,12 @@ export const enforceModeLabel = (mode?: string): string => {
 };
 
 // consensusThresholdLabel renders the 0-1 score threshold as a percentage,
-// matching the classifier console's score formatting convention.
+// matching the classifier console's score formatting convention. Delegates
+// to the shared formatPercent, so an undefined threshold now reads "n/a"
+// (formatPercent's own missing-value placeholder) rather than this file's
+// former locally hand-rolled "--".
 export const consensusThresholdLabel = (threshold?: number): string =>
-  typeof threshold === 'number' ? `${(threshold * 100).toFixed(0)}%` : '--';
+  formatPercent(threshold);
 
 // sandboxIsolationLabel expands the two documented isolation levels
 // (pact-gateway internal/app/config.go's SANDBOX_ISOLATION validation) into

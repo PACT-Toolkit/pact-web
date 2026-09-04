@@ -1,6 +1,7 @@
 import { type LayerState } from '@/src/app/test_lab/ui/types';
 import { Button } from '@/src/components/ui/button';
 import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
+import { formatPercent } from '@/src/framework/format/format_percent';
 
 export const TestLabLayerDetail = ({
   layer,
@@ -94,13 +95,13 @@ export const TestLabLayerDetail = ({
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">Confidence</span>
           <span className="text-xs font-medium">
-            {(layer.confidence * 100).toFixed(0)}%
+            {formatPercent(layer.confidence)}
           </span>
         </div>
         <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
           <div
             className="h-full rounded-full bg-blue-500 transition-all duration-500"
-            style={{ width: `${(layer.confidence * 100).toFixed(0)}%` }}
+            style={{ width: formatPercent(layer.confidence) }}
           />
         </div>
       </div>

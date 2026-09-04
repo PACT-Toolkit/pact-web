@@ -1,6 +1,7 @@
 import { BrainCircuit, SplitSquareHorizontal } from 'lucide-react';
 
 import { type ClassifierRecord } from '@/src/app/classifier/domain/classifier_record';
+import { formatPercent } from '@/src/framework/format/format_percent';
 import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 // Any label other than "benign" is treated as flagged for badge coloring --
@@ -44,7 +45,7 @@ export const ClassifierRecordCard = ({
           </span>
           {typeof classifier.score === 'number' && (
             <span className="text-xs font-medium">
-              {(classifier.score * 100).toFixed(0)}% score
+              {formatPercent(classifier.score)} score
             </span>
           )}
           {classifier.engine && (

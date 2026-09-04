@@ -40,7 +40,7 @@ describe('consensusThresholdLabel', () => {
   });
 
   it('renders a placeholder when absent', () => {
-    expect(consensusThresholdLabel(undefined)).toBe('--');
+    expect(consensusThresholdLabel(undefined)).toBe('n/a');
   });
 });
 

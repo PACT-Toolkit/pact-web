@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { formatPercentValue } from '@/src/framework/format/format_percent';
 import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 // Live view over the caller's pact.policy decisions (GET
@@ -59,7 +60,7 @@ export const PolicyEventsFeed = () => {
         />
         <PolicyStatCard
           label="Deny rate"
-          value={`${stats.denyRate.toFixed(1)}%`}
+          value={formatPercentValue(stats.denyRate, { digits: 1 })}
           valueClass={stats.denyRate > 20 ? 'text-destructive' : undefined}
         />
         <PolicyStatCard label="Unique agents" value={stats.agents} />

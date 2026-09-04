@@ -4,6 +4,7 @@ import { type PipelineStats } from '@/src/app/dashboard/domain/dashboard_pipelin
 import { DashboardBreakdownList } from '@/src/app/dashboard/ui/DashboardBreakdownList';
 import { DashboardPipelineWidget } from '@/src/app/dashboard/ui/DashboardPipelineWidget';
 import { DashboardStatTile } from '@/src/app/dashboard/ui/DashboardStatTile';
+import { formatPercentValue } from '@/src/framework/format/format_percent';
 
 export const DashboardRedactorWidget = ({
   stats,
@@ -39,7 +40,9 @@ export const DashboardRedactorWidget = ({
         <DashboardStatTile label="Spans" value={stats.redactor.spans} />
         <DashboardStatTile
           label="Redaction rate"
-          value={`${stats.redactor.redaction_rate.toFixed(1)}%`}
+          value={formatPercentValue(stats.redactor.redaction_rate, {
+            digits: 1,
+          })}
         />
       </div>
       <div className="flex flex-col gap-2 border-t pt-3">
