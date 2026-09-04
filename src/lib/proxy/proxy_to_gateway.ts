@@ -77,6 +77,48 @@ type RotatedPair = {
 // it is not a cache.
 const inFlightRefresh = new Map<string, Promise<RotatedPair | null>>();
 
+// Strips the rotation headers and other transport-level headers off an
+// upstream response and wraps the rest in a NextResponse. Stripping the raw
+// rotation headers here (rather than leaving them for the caller to read
+// once) matters because this now runs twice on a follower's retry path -
+// forgetting it on either call would leak the refresh token to client JS,
+// exactly what PACT-705 moved off of.
+const toProxyResponse = (upstream: Response): NextResponse => {
+  const out = new Headers();
+  upstream.headers.forEach((value, key) => {
+    const k = key.toLowerCase();
+    if (
+      k === 'content-encoding' ||
+      k === 'transfer-encoding' ||
+      k === 'connection' ||
+      k === NEW_SESSION_HEADER ||
+      k === NEW_REFRESH_HEADER ||
+      k === NEW_EXPIRES_HEADER
+    ) {
+      return;
+    }
+    out.set(key, value);
+  });
+
+  return new NextResponse(upstream.body, {
+    status: upstream.status,
+    headers: out,
+  });
+};
+
+// Reads the gateway's rotated-session response headers, if present.
+const readRotatedPair = (upstream: Response): RotatedPair | null => {
+  const newSession = upstream.headers.get(NEW_SESSION_HEADER);
+  const newExpires = upstream.headers.get(NEW_EXPIRES_HEADER);
+  if (!newSession || !newExpires) return null;
+
+  return {
+    sessionToken: newSession,
+    refreshToken: upstream.headers.get(NEW_REFRESH_HEADER) ?? '',
+    expiresAtUnix: newExpires,
+  };
+};
+
 export async function proxyToGateway(
   req: NextRequest,
   { upstreamPath }: ProxyToGatewayOptions
@@ -93,6 +135,7 @@ export async function proxyToGateway(
   if (session) headers.set('authorization', `Bearer ${session}`);
 
   const leaderPromise = session ? inFlightRefresh.get(session) : undefined;
+  const isFollower = Boolean(leaderPromise);
   let resolveLeader: ((pair: RotatedPair | null) => void) | undefined;
   if (refresh && session && !leaderPromise) {
     headers.set(REFRESH_HEADER, refresh);
@@ -116,56 +159,34 @@ export async function proxyToGateway(
   if (forwardedFor) headers.set('x-forwarded-for', forwardedFor);
 
   const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
+
+  // PACT-914: a follower attaches the pre-rotation bearer (the session
+  // cookie value is still the old one on the way in) and can come back 401
+  // from pact-gateway while the leader is still redeeming the refresh
+  // token - the session genuinely was near/past expiry, that's why a
+  // refresh was needed in the first place. A follower with a body can only
+  // retry with the rotated bearer if its request body is still readable, so
+  // buffer it up front: a streaming body can only be consumed once, and by
+  // the time a 401 comes back the original req.body stream is already
+  // spent. Only followers ever retry, so only followers pay for buffering.
+  const bufferedBody =
+    isFollower && hasBody ? await req.arrayBuffer() : undefined;
+
+  const fetchUpstream = (fetchHeaders: Headers) =>
+    fetch(`${getGatewayBaseUrl()}${upstreamPath}${req.nextUrl.search}`, {
+      method: req.method,
+      headers: fetchHeaders,
+      ...(hasBody && { body: bufferedBody ?? req.body, duplex: 'half' }),
+    } as RequestInit);
+
   let rotated: RotatedPair | null = null;
   let res: NextResponse;
+  let upstreamStatus: number;
   try {
-    const upstream = await fetch(
-      `${getGatewayBaseUrl()}${upstreamPath}${req.nextUrl.search}`,
-      {
-        method: req.method,
-        headers,
-        ...(hasBody && { body: req.body, duplex: 'half' }),
-      } as RequestInit
-    );
-
-    // Surface the gateway's response. Strip transport-level headers that
-    // don't survive a re-stream (Node sets these itself on the outbound
-    // response), and strip the raw rotation headers - they're consumed
-    // below and turned into httpOnly cookies; leaving the raw values on
-    // the response would hand the refresh token to any script running on
-    // the page via `fetch(...).then(r => r.headers.get(...))`, which is
-    // exactly what PACT-705 moved off of (never expose the refresh token
-    // to client JS).
-    const out = new Headers();
-    upstream.headers.forEach((value, key) => {
-      const k = key.toLowerCase();
-      if (
-        k === 'content-encoding' ||
-        k === 'transfer-encoding' ||
-        k === 'connection' ||
-        k === NEW_SESSION_HEADER ||
-        k === NEW_REFRESH_HEADER ||
-        k === NEW_EXPIRES_HEADER
-      ) {
-        return;
-      }
-      out.set(key, value);
-    });
-
-    res = new NextResponse(upstream.body, {
-      status: upstream.status,
-      headers: out,
-    });
-
-    const newSession = upstream.headers.get(NEW_SESSION_HEADER);
-    const newExpires = upstream.headers.get(NEW_EXPIRES_HEADER);
-    if (newSession && newExpires) {
-      rotated = {
-        sessionToken: newSession,
-        refreshToken: upstream.headers.get(NEW_REFRESH_HEADER) ?? '',
-        expiresAtUnix: newExpires,
-      };
-    }
+    const upstream = await fetchUpstream(headers);
+    upstreamStatus = upstream.status;
+    res = toProxyResponse(upstream);
+    rotated = readRotatedPair(upstream);
   } finally {
     // Whatever happened (rotation, no rotation, or the fetch above threw),
     // this session is no longer "in flight" - release any follower waiting
@@ -180,9 +201,50 @@ export async function proxyToGateway(
   // even though our own upstream response carried none - it's the only one
   // that actually asked pact-gateway to rotate, so its outcome is
   // authoritative for this session.
+  let leaderRotated: RotatedPair | null = null;
   if (leaderPromise) {
-    const leaderRotated = await leaderPromise;
+    leaderRotated = await leaderPromise;
     if (leaderRotated) rotated = leaderRotated;
+  }
+
+  // A follower's own 401 was against the now-rotated-away bearer, not a
+  // real auth failure - retry exactly once with the rotated bearer the
+  // leader minted, no refresh header (that would attempt a second redemption
+  // of a token the leader already spent - the CONCURRENT-REFRESH HAZARD this
+  // whole leader/follower split exists to avoid). If the leader itself came
+  // back 401, or never rotated at all, there is nothing to retry with - the
+  // 401 stands, same as today.
+  //
+  // PACT-914 residual gap: a request that reaches this proxy after the
+  // leader has already resolved (its inFlightRefresh entry deleted, see the
+  // finally block above) but before the browser has stored the rotated
+  // session cookie is not a follower at all - leaderPromise is undefined by
+  // the time it looks it up, so it attaches the old bearer as a plain
+  // (non-follower) request and its 401, if any, is never retried here.
+  // Closing that window needs a short-lived old-to-new session-token map
+  // survivable past the leader's resolution, which is deliberately not what
+  // inFlightRefresh is ("this dedups one concurrent burst, it is not a
+  // cache" above) - out of scope for this fix.
+  if (isFollower && upstreamStatus === 401 && leaderRotated) {
+    // The superseded first response is about to be discarded in favor of
+    // the retry's response. Its body was never read (toProxyResponse only
+    // wraps upstream.body in a NextResponse, it doesn't consume it), and an
+    // unconsumed body keeps the underlying upstream connection pinned open
+    // under undici until GC runs - cancel it explicitly so the connection
+    // is freed immediately. Cancelling an already-closed/errored stream
+    // must not fail this request, hence the swallowed catch.
+    try {
+      await res.body?.cancel();
+    } catch {
+      // Ignore - the stream may already be closed or errored; either way
+      // there's nothing left to discard.
+    }
+
+    const retryHeaders = new Headers(headers);
+    retryHeaders.set('authorization', `Bearer ${leaderRotated.sessionToken}`);
+    retryHeaders.delete(REFRESH_HEADER);
+    const retryUpstream = await fetchUpstream(retryHeaders);
+    res = toProxyResponse(retryUpstream);
   }
 
   // If the gateway minted (or a leader we rode along with minted) a new

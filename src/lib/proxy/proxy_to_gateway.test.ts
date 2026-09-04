@@ -168,4 +168,193 @@ describe('proxyToGateway', () => {
     expect(res2.cookies.get('pact_session')?.value).toBe('sess-2');
     expect(res2.cookies.get('pact_refresh_token')?.value).toBe('ref-2');
   });
+
+  // PACT-914: a follower attaches the pre-rotation bearer (its own cookie
+  // read happened before the leader's rotation landed), so its own upstream
+  // call can legitimately come back 401 even though the session itself is
+  // fine - the leader just finished proving that by rotating it. These
+  // cover the retry-once-with-the-rotated-bearer fix.
+  describe('follower 401 retry', () => {
+    const cookieHeader = {
+      cookie: 'pact_session=sess-1; pact_refresh_token=ref-1',
+    };
+    const futureUnix = Math.floor(Date.now() / 1000) + 3600;
+    const rotationHeaders = {
+      'x-pact-new-session-token': 'sess-2',
+      'x-pact-new-refresh-token': 'ref-2',
+      'x-pact-new-expires-at-unix': String(futureUnix),
+    };
+
+    it('retries a follower 401 with the rotated bearer once the leader rotates the session', async () => {
+      const upstreamCalls: { resolve: (res: Response) => void }[] = [];
+      fetchMock.mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            upstreamCalls.push({ resolve });
+          })
+      );
+
+      const leader = proxyToGateway(makeRequest(cookieHeader), {
+        upstreamPath: '/v1/account/profile',
+      });
+      const follower = proxyToGateway(makeRequest(cookieHeader), {
+        upstreamPath: '/v1/files/',
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      // The follower's own call comes back 401 first - its bearer is the
+      // pre-rotation value.
+      upstreamCalls[1].resolve(new Response(null, { status: 401 }));
+      // The leader's redemption then lands and rotates the session.
+      upstreamCalls[0].resolve(
+        new Response(null, { status: 204, headers: rotationHeaders })
+      );
+
+      // The follower retries once it has the rotated bearer.
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+      const [, retryInit] = fetchMock.mock.calls[2];
+      const retryHeaders = new Headers(retryInit?.headers);
+      expect(retryHeaders.get('authorization')).toBe('Bearer sess-2');
+      expect(retryHeaders.has('x-pact-refresh-token')).toBe(false);
+
+      upstreamCalls[2].resolve(new Response(null, { status: 200 }));
+
+      const [leaderRes, followerRes] = await Promise.all([leader, follower]);
+      expect(leaderRes.status).toBe(204);
+      expect(followerRes.status).toBe(200);
+      expect(followerRes.cookies.get('pact_session')?.value).toBe('sess-2');
+      expect(followerRes.cookies.get('pact_refresh_token')?.value).toBe(
+        'ref-2'
+      );
+    });
+
+    // PACT-914: the superseded first response's body was never read before
+    // being discarded, which pins the upstream keep-alive connection open
+    // under undici until GC runs. The retry path must cancel it explicitly.
+    it('cancels the superseded first response body before retrying a follower 401', async () => {
+      const upstreamCalls: { resolve: (res: Response) => void }[] = [];
+      fetchMock.mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            upstreamCalls.push({ resolve });
+          })
+      );
+
+      const leader = proxyToGateway(makeRequest(cookieHeader), {
+        upstreamPath: '/v1/account/profile',
+      });
+      const follower = proxyToGateway(makeRequest(cookieHeader), {
+        upstreamPath: '/v1/files/',
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      // Give the follower's first (superseded) response a real, unconsumed
+      // body so cancelling it is observable.
+      const supersededResponse = new Response('{"error":"unauthorized"}', {
+        status: 401,
+      });
+      const cancelSpy = vi.spyOn(supersededResponse.body!, 'cancel');
+      upstreamCalls[1].resolve(supersededResponse);
+      upstreamCalls[0].resolve(
+        new Response(null, { status: 204, headers: rotationHeaders })
+      );
+
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+      expect(cancelSpy).toHaveBeenCalledTimes(1);
+
+      upstreamCalls[2].resolve(new Response(null, { status: 200 }));
+      await Promise.all([leader, follower]);
+    });
+
+    it('leaves a follower 401 as-is when the leader does not rotate the session', async () => {
+      const upstreamCalls: { resolve: (res: Response) => void }[] = [];
+      fetchMock.mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            upstreamCalls.push({ resolve });
+          })
+      );
+
+      const leader = proxyToGateway(makeRequest(cookieHeader), {
+        upstreamPath: '/v1/account/profile',
+      });
+      const follower = proxyToGateway(makeRequest(cookieHeader), {
+        upstreamPath: '/v1/files/',
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+
+      upstreamCalls[1].resolve(new Response(null, { status: 401 }));
+      // The leader's own redemption fails too (e.g. the refresh token was
+      // already used/expired) - no rotation headers, nothing to retry with.
+      upstreamCalls[0].resolve(new Response(null, { status: 401 }));
+
+      const [leaderRes, followerRes] = await Promise.all([leader, follower]);
+      expect(leaderRes.status).toBe(401);
+      expect(followerRes.status).toBe(401);
+      // No third (retry) call was ever made.
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not retry when the request itself is the leader and gets a 401', async () => {
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 401 }));
+
+      const res = await proxyToGateway(makeRequest(cookieHeader), {
+        upstreamPath: '/v1/account/profile',
+      });
+
+      expect(res.status).toBe(401);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('replays the request body on a follower retry (POST)', async () => {
+      const upstreamCalls: { resolve: (res: Response) => void }[] = [];
+      fetchMock.mockImplementation(
+        () =>
+          new Promise<Response>((resolve) => {
+            upstreamCalls.push({ resolve });
+          })
+      );
+
+      const bodyPayload = JSON.stringify({ name: 'test-rule' });
+      const makePostRequest = () =>
+        new NextRequest('http://localhost:3000/v1/rules', {
+          method: 'POST',
+          headers: { ...cookieHeader, 'content-type': 'application/json' },
+          body: bodyPayload,
+        });
+
+      const leader = proxyToGateway(makePostRequest(), {
+        upstreamPath: '/v1/rules',
+      });
+      const follower = proxyToGateway(makePostRequest(), {
+        upstreamPath: '/v1/rules',
+      });
+
+      // The follower buffers its body (an async read) before its own first
+      // fetch call, so - unlike the GET-only tests above - its call does not
+      // necessarily land synchronously; wait for both calls to register.
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+      upstreamCalls[1].resolve(new Response(null, { status: 401 }));
+      upstreamCalls[0].resolve(
+        new Response(null, { status: 201, headers: rotationHeaders })
+      );
+
+      await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+      const [, ownInit] = fetchMock.mock.calls[1];
+      const [, retryInit] = fetchMock.mock.calls[2];
+      const decode = (body: BodyInit | null | undefined) =>
+        new TextDecoder().decode(body as ArrayBuffer);
+      expect(decode(ownInit?.body)).toBe(bodyPayload);
+      expect(decode(retryInit?.body)).toBe(bodyPayload);
+
+      upstreamCalls[2].resolve(new Response(null, { status: 201 }));
+
+      const [, followerRes] = await Promise.all([leader, follower]);
+      expect(followerRes.status).toBe(201);
+    });
+  });
 });

@@ -13,6 +13,7 @@ import {
   type DecisionStatsRedactor,
   type DecisionStatsSummary,
   decisionStatsPollingConfig,
+  isDecisionStatsFailure,
   isDecisionStatsForbidden,
   normalizeDecisionStats,
 } from '@/src/app/audit/domain/audit_decision_stats_access';
@@ -178,6 +179,14 @@ export const useDashboardPipelineStats = (live: boolean) => {
   // empty state for this instead of the generic error banner.
   const statsForbidden = isDecisionStatsForbidden(statsQuery.data);
 
+  // PACT-914: same non-403 resolved-failure gap as useFilterDecisionStats
+  // (see filter_decision_stats.ts) -- a stale bearer racing a session
+  // rotation can come back 401 on /v1/audit/stats without ever throwing,
+  // silently normalizing to an all-zero PipelineStats with no error flag
+  // set. isDecisionStatsFailure catches that so the Filter/Classifier/
+  // Redactor widgets' existing error state renders instead.
+  const statsFailed = isDecisionStatsFailure(statsQuery.data);
+
   const mutate = () => {
     void eventsQuery.mutate();
     void statsQuery.mutate();
@@ -192,7 +201,7 @@ export const useDashboardPipelineStats = (live: boolean) => {
     stats,
     records,
     streamError: Boolean(eventsQuery.error),
-    statsError: Boolean(statsQuery.error),
+    statsError: Boolean(statsQuery.error) || statsFailed,
     statsForbidden,
     isLoading: eventsQuery.isLoading || statsQuery.isLoading,
     isValidating: eventsQuery.isValidating || statsQuery.isValidating,

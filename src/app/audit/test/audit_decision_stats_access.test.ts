@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
   decisionStatsPollingConfig,
+  isDecisionStatsFailure,
   isDecisionStatsForbidden,
 } from '@/src/app/audit/domain/audit_decision_stats_access';
 
@@ -28,6 +29,39 @@ describe('isDecisionStatsForbidden', () => {
     expect(isDecisionStatsForbidden(null)).toBe(false);
     expect(isDecisionStatsForbidden('403')).toBe(false);
     expect(isDecisionStatsForbidden(403)).toBe(false);
+  });
+});
+
+// PACT-914: isDecisionStatsFailure originally treated any non-200,
+// non-403 status as a failure, which mislabeled a non-200 success status
+// (e.g. 204) as a failure. It now accepts any 2xx as success.
+describe('isDecisionStatsFailure', () => {
+  it('is false for 200', () => {
+    expect(isDecisionStatsFailure({ status: 200, data: {} })).toBe(false);
+  });
+
+  it('is false for other 2xx statuses', () => {
+    expect(isDecisionStatsFailure({ status: 204, data: {} })).toBe(false);
+    expect(isDecisionStatsFailure({ status: 201, data: {} })).toBe(false);
+  });
+
+  it('is false for 403 (the already-handled permission gate)', () => {
+    expect(isDecisionStatsFailure({ status: 403, data: {} })).toBe(false);
+  });
+
+  it('is true for a stale-bearer 401 racing a session rotation', () => {
+    expect(isDecisionStatsFailure({ status: 401, data: {} })).toBe(true);
+  });
+
+  it('is true for a 5xx', () => {
+    expect(isDecisionStatsFailure({ status: 500, data: {} })).toBe(true);
+  });
+
+  it('is false for undefined, null, non-object, and non-numeric status', () => {
+    expect(isDecisionStatsFailure(undefined)).toBe(false);
+    expect(isDecisionStatsFailure(null)).toBe(false);
+    expect(isDecisionStatsFailure('401')).toBe(false);
+    expect(isDecisionStatsFailure({ status: '401', data: {} })).toBe(false);
   });
 });
 

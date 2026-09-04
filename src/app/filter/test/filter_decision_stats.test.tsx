@@ -68,3 +68,23 @@ describe('useFilterDecisionStats - PACT-363 audit:stats 403 gate (PACT-377)', ()
     expect(result.current.error).toBe(false);
   });
 });
+
+describe('useFilterDecisionStats - PACT-914 non-403 failure surfacing', () => {
+  it('exposes error=true and empty stats on a 401, not silent zeros', async () => {
+    server.use(
+      http.get('*/v1/audit/stats', () =>
+        HttpResponse.json({ error: 'unauthorized' }, { status: 401 })
+      )
+    );
+
+    const { result } = renderHook(() => useFilterDecisionStats(), {
+      wrapper: SWRTestProvider,
+    });
+
+    await waitFor(() => expect(result.current.error).toBe(true));
+
+    expect(result.current.forbidden).toBe(false);
+    expect(result.current.total).toBe(0);
+    expect(result.current.filter.blocked).toBe(0);
+  });
+});
