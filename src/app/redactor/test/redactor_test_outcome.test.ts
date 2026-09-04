@@ -10,28 +10,50 @@ const baseResponse: CheckCheckResponse = {
 };
 
 describe('classifyRedactorTestOutcome', () => {
-  it('classifies a genuine redactor result as masked', () => {
+  it('classifies allow with a redactor object as ran/not-blocked', () => {
     const outcome = classifyRedactorTestOutcome({
       ...baseResponse,
+      decision: 'allow',
       redactor: { verdict: 'redacted', spans: [{ start: 0, end: 5 }] },
     });
 
     expect(outcome).toEqual({
-      kind: 'masked',
+      kind: 'ran',
       redactor: { verdict: 'redacted', spans: [{ start: 0, end: 5 }] },
+      blocked: false,
+      reason: undefined,
     });
   });
 
-  it('classifies a benign pass-through with an empty span list as masked', () => {
+  it('classifies a benign pass-through with an empty span list as ran/not-blocked', () => {
     const outcome = classifyRedactorTestOutcome({
       ...baseResponse,
       redactor: { verdict: 'pass_through', spans: [] },
     });
 
-    expect(outcome.kind).toBe('masked');
+    expect(outcome.kind).toBe('ran');
+    if (outcome.kind === 'ran') expect(outcome.blocked).toBe(false);
   });
 
-  it('classifies a block decision with no redactor object as blocked upstream', () => {
+  it('classifies allow with no redactor object as not_run (classifier_unreachable shape)', () => {
+    // A classifier transport failure halts the pipeline *before* the
+    // redactor stage with an allow verdict and reason
+    // "classifier_unreachable" (pact-gateway stages.go:326-334) -- a real,
+    // common shape, not a defensive edge case.
+    const outcome = classifyRedactorTestOutcome({
+      ...baseResponse,
+      decision: 'allow',
+      reason: 'classifier_unreachable',
+    });
+
+    expect(outcome).toEqual({
+      kind: 'not_run',
+      decision: 'allow',
+      reason: 'classifier_unreachable',
+    });
+  });
+
+  it('classifies block with no redactor object as not_run', () => {
     const outcome = classifyRedactorTestOutcome({
       ...baseResponse,
       decision: 'block',
@@ -39,29 +61,18 @@ describe('classifyRedactorTestOutcome', () => {
     });
 
     expect(outcome).toEqual({
-      kind: 'blocked_upstream',
+      kind: 'not_run',
+      decision: 'block',
       reason: 'consensus_enforced',
     });
   });
 
-  it('classifies an allow decision with no redactor object as blocked upstream too', () => {
-    // Defensive: an "allow" with no redactor sub-object still has no
-    // verdict/spans to render, so it must not fall through to the masked
-    // branch and read undefined fields off a missing object.
-    const outcome = classifyRedactorTestOutcome({
-      ...baseResponse,
-      decision: 'allow',
-    });
-
-    expect(outcome).toEqual({ kind: 'blocked_upstream', reason: undefined });
-  });
-
-  it('classifies a block decision that still carries a redactor object as blocked upstream', () => {
-    // The redactor stage can run and still be overridden by a later block
-    // (e.g. filter_hostile alongside a redacted API_KEY span, see
-    // redactor.ts's fourth mock scenario) -- decision === 'block' always wins
-    // over a present redactor object, since the panel's blocked-state
-    // messaging (not the masked preview) is what a blocked request needs.
+  it('classifies block with a redactor object as ran/blocked', () => {
+    // The redactor stage runs before CEL, which can escalate an earlier
+    // allow to a block (e.g. filter_hostile alongside a redacted API_KEY
+    // span, see redactor.ts's fourth mock scenario). The redactor's
+    // spans/masked output are genuine and must still be rendered, alongside
+    // a blocked indicator -- not hidden behind a "did not run" message.
     const outcome = classifyRedactorTestOutcome({
       ...baseResponse,
       decision: 'block',
@@ -70,7 +81,9 @@ describe('classifyRedactorTestOutcome', () => {
     });
 
     expect(outcome).toEqual({
-      kind: 'blocked_upstream',
+      kind: 'ran',
+      redactor: { verdict: 'redacted', spans: [{ start: 0, end: 3 }] },
+      blocked: true,
       reason: 'filter_hostile',
     });
   });

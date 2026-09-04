@@ -3,30 +3,54 @@ import {
   type CheckRedactorInfo,
 } from '@/src/__codegen__/rest/check';
 
-// A /v1/check response only ever carries redactor.spans/verdict when the
-// pipeline actually reached stage 4 -- an earlier stage (filter, classifier,
-// consensus, sandbox) can halt the pipeline first, in which case the
-// response comes back 200 with a decision (usually "block") and reason, but
-// no `redactor` sub-object at all (PACT-913: consensus_enforced observed in
-// dev:real). RedactorTestPanel used to treat that shape as an empty result
-// (verdict "unknown", 0 spans, masked output == raw input) instead of the
-// distinct "never ran" state it actually is.
+// pact-gateway's pipeline runs its stages in a fixed order (pact-gateway
+// internal/pipeline/service.go + stages.go, verified at master fa13a28):
+// policy, filter, classifier, compliance, sandbox, consensus, redactor,
+// toolMitigation, cel. The check handler only emits `resp.redactor` when the
+// redactor stage actually ran (its verdict is non-empty -- including
+// "unknown" on a transport fail-open) -- so `redactor` present/absent is the
+// only reliable "did this stage run" signal, not `decision`:
+//
+// - decision alone does not imply the redactor ran or didn't. A classifier
+//   transport failure halts the pipeline *before* the redactor stage with an
+//   *allow* verdict and reason "classifier_unreachable" (stages.go:326-334)
+//   -- allow with no redactor object is a real, common shape.
+// - the CEL stage runs *after* the redactor and can escalate an allow to a
+//   block. So "block" with a redactor object present is also real: the
+//   redactor ran, produced genuine spans/masked output, and CEL blocked the
+//   request afterward. That output is still useful to an operator and must
+//   not be hidden.
+//
+// RedactorTestPanel used to classify purely on `decision === 'block'`,
+// which mislabeled both of the shapes above.
 export type RedactorTestOutcome =
-  | { kind: 'masked'; redactor: CheckRedactorInfo }
-  | { kind: 'blocked_upstream'; reason?: string };
+  | {
+      kind: 'ran';
+      redactor: CheckRedactorInfo;
+      blocked: boolean;
+      reason?: string;
+    }
+  | {
+      kind: 'not_run';
+      decision: CheckCheckResponse['decision'];
+      reason?: string;
+    };
 
 // classifyRedactorTestOutcome distinguishes a genuine redactor-stage result
-// from an upstream block that short-circuited the pipeline before the
-// redactor stage ran. Blocked whenever the decision is "block" OR the
-// `redactor` sub-object is absent -- either signal alone means there is no
-// redactor verdict/spans to render, so treating only one of them as blocked
-// would still mis-render the other combination.
+// from a pipeline that halted (or never reached the redactor) before that
+// stage ran. The `redactor` sub-object's presence is the sole signal: it
+// exists iff the redactor stage ran, regardless of the final decision.
 export const classifyRedactorTestOutcome = (
   data: CheckCheckResponse
 ): RedactorTestOutcome => {
-  if (data.decision === 'block' || !data.redactor) {
-    return { kind: 'blocked_upstream', reason: data.reason };
+  if (data.redactor) {
+    return {
+      kind: 'ran',
+      redactor: data.redactor,
+      blocked: data.decision === 'block',
+      reason: data.reason,
+    };
   }
 
-  return { kind: 'masked', redactor: data.redactor };
+  return { kind: 'not_run', decision: data.decision, reason: data.reason };
 };

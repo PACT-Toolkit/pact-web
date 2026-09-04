@@ -44,10 +44,9 @@ export const RedactorTestPanel = () => {
   };
 
   const outcome = result ? classifyRedactorTestOutcome(result) : undefined;
-  const spans =
-    outcome?.kind === 'masked' ? (outcome.redactor.spans ?? []) : [];
+  const spans = outcome?.kind === 'ran' ? (outcome.redactor.spans ?? []) : [];
   const masked =
-    outcome?.kind === 'masked'
+    outcome?.kind === 'ran'
       ? applyRedaction(content, outcome.redactor.spans)
       : '';
 
@@ -98,13 +97,15 @@ export const RedactorTestPanel = () => {
           )}
         </div>
 
-        {result && !requestFailed && outcome?.kind === 'blocked_upstream' && (
+        {result && !requestFailed && outcome?.kind === 'not_run' && (
           <div
             className="flex flex-col gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 p-3"
-            data-testid="redactor-test-blocked"
+            data-testid="redactor-test-not-run"
           >
             <span className="text-xs font-semibold text-destructive">
-              Blocked before the redactor stage ran
+              {outcome.decision === 'block'
+                ? 'Blocked before the redactor stage ran'
+                : 'The redactor stage did not run'}
             </span>
             <span className="text-xs text-muted-foreground">
               The pipeline halted at an earlier stage, so no redactor verdict or
@@ -126,42 +127,63 @@ export const RedactorTestPanel = () => {
           </div>
         )}
 
-        {result && !requestFailed && outcome?.kind === 'masked' && (
-          <div
-            className="flex flex-col gap-3 border-t pt-3"
-            data-testid="redactor-test-result"
-          >
-            <div className="flex flex-wrap items-center gap-2">
-              <span
-                className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${
-                  outcome.redactor.verdict === 'redacted'
-                    ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                    : 'bg-green-500/10 text-green-600 dark:text-green-400'
-                }`}
+        {result && !requestFailed && outcome?.kind === 'ran' && (
+          <div className="flex flex-col gap-3 border-t pt-3">
+            {outcome.blocked && (
+              <div
+                className="flex flex-wrap items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2"
+                data-testid="redactor-test-blocked"
               >
-                {outcome.redactor.verdict ?? 'unknown'}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {spans.length} span{spans.length === 1 ? '' : 's'}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {result.latency_ms} ms
-              </span>
-            </div>
+                <span className="text-xs font-semibold text-destructive">
+                  Request blocked
+                </span>
+                {outcome.reason && (
+                  <span className="text-xs text-muted-foreground">
+                    Reason:{' '}
+                    <code className="rounded bg-muted px-1 py-0.5">
+                      {outcome.reason}
+                    </code>
+                  </span>
+                )}
+              </div>
+            )}
 
-            <div className="flex flex-col gap-1">
-              <p className="text-xs font-medium text-muted-foreground">
-                Masked output
-              </p>
-              <pre
-                className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-3 font-mono text-xs"
-                data-testid="redactor-test-masked-output"
-              >
-                {masked || '(empty)'}
-              </pre>
-            </div>
+            <div
+              className="flex flex-col gap-3"
+              data-testid="redactor-test-result"
+            >
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${
+                    outcome.redactor.verdict === 'redacted'
+                      ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                      : 'bg-green-500/10 text-green-600 dark:text-green-400'
+                  }`}
+                >
+                  {outcome.redactor.verdict ?? 'unknown'}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {spans.length} span{spans.length === 1 ? '' : 's'}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {result.latency_ms} ms
+                </span>
+              </div>
 
-            {spans.length > 0 && <RedactorSpanList spans={spans} />}
+              <div className="flex flex-col gap-1">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Masked output
+                </p>
+                <pre
+                  className="max-h-72 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-3 font-mono text-xs"
+                  data-testid="redactor-test-masked-output"
+                >
+                  {masked || '(empty)'}
+                </pre>
+              </div>
+
+              {spans.length > 0 && <RedactorSpanList spans={spans} />}
+            </div>
           </div>
         )}
       </CardContent>
