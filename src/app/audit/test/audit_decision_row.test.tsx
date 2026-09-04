@@ -343,3 +343,93 @@ describe('AuditDecisionInsights - CEL section (PACT-758)', () => {
     expect(screen.queryByTestId('audit-decision-cel')).not.toBeInTheDocument();
   });
 });
+
+// PACT-915: renders the ComplianceDecision sub-object (the gateway's
+// deferred shadow stage) -- verdict badge, score, model_version, the
+// "shadow" pill, and the fail-open "skipped" state. Always allow decisions:
+// the stage is advisory-only and never changes the outcome.
+describe('AuditDecisionInsights - compliance section (PACT-915)', () => {
+  it('renders a compliant verdict, score and model_version', () => {
+    renderRow({
+      decision: 'allow',
+      compliance: {
+        shadow: true,
+        verdict: 'compliant',
+        score: 0.06,
+        model_version: 'deberta-compliance-v1@abcd1234',
+      },
+      latency_ms: 6,
+    });
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    const compliance = screen.getByTestId('audit-decision-compliance');
+    expect(compliance).toHaveTextContent('Compliant');
+    expect(compliance).toHaveTextContent('6%');
+    expect(compliance).toHaveTextContent('deberta-compliance-v1@abcd1234');
+  });
+
+  it('renders a deviating verdict', () => {
+    renderRow({
+      decision: 'allow',
+      compliance: {
+        shadow: true,
+        verdict: 'deviating',
+        score: 0.87,
+        model_version: 'deberta-compliance-v1@abcd1234',
+      },
+      latency_ms: 7,
+    });
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    const compliance = screen.getByTestId('audit-decision-compliance');
+    expect(compliance).toHaveTextContent('Deviating');
+    expect(compliance).toHaveTextContent('87%');
+  });
+
+  it('renders the shadow pill when shadow is true', () => {
+    renderRow({
+      decision: 'allow',
+      compliance: { shadow: true, verdict: 'compliant', score: 0.1 },
+      latency_ms: 4,
+    });
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(screen.getByTestId('audit-decision-compliance')).toHaveTextContent(
+      'shadow'
+    );
+  });
+
+  it('renders the skipped state with no verdict, score or model_version, and never as the cause of a block', () => {
+    renderRow({
+      decision: 'block',
+      reason: 'filter_hostile',
+      engine: 'filter',
+      filter: { verdict: 'hostile', rule_id: 'inject-003' },
+      compliance: { shadow: true, skipped: true },
+      latency_ms: 8,
+    });
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    const compliance = screen.getByTestId('audit-decision-compliance');
+    expect(compliance).toHaveTextContent('skipped');
+    expect(compliance).not.toHaveTextContent('Compliant');
+    expect(compliance).not.toHaveTextContent('Deviating');
+    // The block is attributed to filter, never to compliance -- engine's
+    // closed set excludes "compliance" entirely (decision_stage_attribution.ts).
+    expect(screen.getByText('blocked by filter')).toBeInTheDocument();
+  });
+
+  it('renders no compliance section when the payload carries no compliance object (older rows)', () => {
+    renderRow(SPAN_PAYLOAD);
+
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(
+      screen.queryByTestId('audit-decision-compliance')
+    ).not.toBeInTheDocument();
+  });
+});

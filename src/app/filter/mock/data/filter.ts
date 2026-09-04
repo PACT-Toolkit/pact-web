@@ -489,4 +489,49 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 11,
     created_at: '',
   });
+  // Compliance (PACT-915): the gateway's deferred shadow stage -- always
+  // `shadow: true` today, never enforced, never the engine of a block (see
+  // AuditDecisionInsights.tsx's compliance block comment). All three rows
+  // below allow, same as any shadow-only stage: the verdict is advisory and
+  // cannot change the decision. Seeded here (not a new file) for the same
+  // reason CEL is seeded above -- compliance has no dedicated feature
+  // console of its own, so its rows live alongside the other shared-schema
+  // stages that piggyback on filter's decision events.
+  seed(4 * min, {
+    request_id: 'req-o7p8q9',
+    decision: 'allow',
+    compliance: {
+      shadow: true,
+      verdict: 'compliant',
+      score: 0.06,
+      model_version: 'deberta-compliance-v1@abcd1234',
+    },
+    latency_ms: 6,
+    created_at: '',
+  });
+  seed(6 * min, {
+    request_id: 'req-r1s2t3',
+    decision: 'allow',
+    compliance: {
+      shadow: true,
+      verdict: 'deviating',
+      score: 0.87,
+      model_version: 'deberta-compliance-v1@abcd1234',
+    },
+    latency_ms: 7,
+    created_at: '',
+  });
+  // Skipped: CheckCompliance RPC failed or timed out (fail-open) -- no
+  // verdict/score/model_version, same shape as consensus.ts's fail-open
+  // scenario above.
+  seed(10 * min, {
+    request_id: 'req-u4v5w6',
+    decision: 'allow',
+    compliance: {
+      shadow: true,
+      skipped: true,
+    },
+    latency_ms: 8,
+    created_at: '',
+  });
 };

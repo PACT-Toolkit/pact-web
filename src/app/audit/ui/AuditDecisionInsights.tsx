@@ -1,4 +1,8 @@
 import { celSkippedReasonLabel } from '@/src/app/audit/domain/audit_decision_cel';
+import {
+  complianceBadgeTone,
+  complianceVerdictLabel,
+} from '@/src/app/audit/domain/audit_decision_compliance';
 import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import { isStageAttributed } from '@/src/lib/decisions/decision_stage_attribution';
@@ -121,6 +125,59 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
             </code>
           );
         })}
+      </div>
+    )}
+    {/* Compliance (shadow stage): the gateway's deferred, advisory-only
+        check of whether the user message deviates from the system prompt --
+        see decisions.ts's ComplianceDecision doc comment. shadow is always
+        true today, so the pill below is effectively unconditional, but it's
+        rendered from the field (not hardcoded) so a future enforced mode
+        drops it automatically. Never wired into the block-attribution
+        strip/badge above: `engine`'s closed set excludes "compliance" by
+        design (decision_stage_attribution.ts), so a shadow verdict can never
+        read as the cause of a block. */}
+    {dp.compliance && (dp.compliance.verdict || dp.compliance.skipped) && (
+      <div
+        className="flex flex-wrap items-center gap-1.5"
+        data-testid="audit-decision-compliance"
+      >
+        <span className="text-muted-foreground">Compliance</span>
+        {dp.compliance.skipped ? (
+          <span
+            className="italic text-muted-foreground"
+            title="CheckCompliance RPC failed or timed out - fail-open, no verdict recorded"
+          >
+            skipped
+          </span>
+        ) : (
+          dp.compliance.verdict && (
+            <code
+              className={`rounded px-1.5 py-0.5 ${
+                complianceBadgeTone(dp.compliance.verdict) === 'amber'
+                  ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                  : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+              }`}
+            >
+              {complianceVerdictLabel(dp.compliance.verdict)}
+            </code>
+          )
+        )}
+        {typeof dp.compliance.score === 'number' && (
+          <span className="font-medium">
+            {(dp.compliance.score * 100).toFixed(0)}%
+          </span>
+        )}
+        {dp.compliance.model_version && (
+          <code
+            className="max-w-[12rem] truncate rounded bg-muted px-1.5 py-0.5 text-muted-foreground"
+            title={dp.compliance.model_version}
+          >
+            {dp.compliance.model_version}
+          </code>
+        )}
+        {dp.compliance.shadow && (
+          <span className="italic text-amber-500">shadow</span>
+        )}
       </div>
     )}
     {dp.consensus && (dp.consensus.label || dp.consensus.skipped) && (
