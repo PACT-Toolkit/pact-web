@@ -7,6 +7,12 @@ import {
   TREND_DATE_RANGES,
   type TrendDateRange,
 } from '@/src/app/benchmark/domain/benchmark_run';
+import {
+  formatRunTimestamp,
+  trendChartData,
+  TREND_SERIES,
+  type TrendChartPoint,
+} from '@/src/app/benchmark/domain/benchmark_trend';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
 import { Button } from '@/src/components/ui/button';
 import {
@@ -19,41 +25,25 @@ import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  type ChartConfig,
 } from '@/src/components/ui/chart';
-
-const chartConfig = {
-  detection_rate: {
-    label: 'Detection rate',
-    color: 'hsl(var(--chart-1, 217 91% 60%))',
-  },
-  fp_rate: {
-    label: 'FP rate',
-    color: 'hsl(var(--chart-2, 0 84% 60%))',
-  },
-} satisfies ChartConfig;
+import { computeTimeAxisScale } from '@/src/framework/charts/time_axis';
+import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
+import { buildLabel } from '@/src/framework/format/build_label';
+import { formatDayTick } from '@/src/framework/format/day_tick_format';
+import { formatMetric } from '@/src/framework/format/metric_format';
 
 export const BenchmarkTrendChart = () => {
   const [dateRange, setDateRange] = useState<TrendDateRange>('90d');
   const { runs, isLoading, error } = useBenchmarkRuns(dateRange);
 
-  const chartData = useMemo(
-    () =>
-      runs.map((r) => ({
-        date: new Date(r.ran_at * 1000).toLocaleDateString('en-GB', {
-          month: 'short',
-          day: 'numeric',
-        }),
-        detection_rate: Math.round(r.detection_rate * 1000) / 10,
-        fp_rate: Math.round(r.fp_rate * 1000) / 10,
-        gateway_version: r.gateway_version,
-        engine: r.engine,
-      })),
-    [runs]
+  const chartData = useMemo(() => trendChartData(runs), [runs]);
+  const timeAxis = useMemo(
+    () => computeTimeAxisScale(chartData.map((d) => d.ran_at)),
+    [chartData]
   );
 
   return (
-    <Card>
+    <Card data-testid="benchmark-trend-chart">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium">
           Detection &amp; FP rate over time
@@ -92,14 +82,19 @@ export const BenchmarkTrendChart = () => {
             </p>
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-64 w-full">
+          <ChartContainer config={TREND_SERIES} className="h-64 w-full">
             <LineChart
               data={chartData}
               margin={{ left: 0, right: 8, top: 4, bottom: 0 }}
             >
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
-                dataKey="date"
+                dataKey="ran_at"
+                type="number"
+                scale="time"
+                domain={timeAxis.domain}
+                ticks={timeAxis.ticks}
+                tickFormatter={formatDayTick}
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
@@ -112,30 +107,39 @@ export const BenchmarkTrendChart = () => {
                 tick={{ fontSize: 11 }}
                 tickFormatter={(v: number) => `${v}%`}
                 domain={[0, 100]}
+                ticks={[0, 25, 50, 75, 100]}
+                padding={{ top: 12, bottom: 12 }}
                 width={36}
               />
               <ChartTooltip
+                labelFormatter={(value) => formatRunTimestamp(Number(value))}
                 content={
                   <ChartTooltipContent
                     formatter={(value, name, item) => {
-                      const p = item.payload as
-                        Record<string, unknown> | undefined;
+                      const p = item.payload as TrendChartPoint | undefined;
+                      const seriesKey = name as keyof typeof TREND_SERIES;
+                      const percent =
+                        typeof value === 'number' ? value : Number(value);
 
                       return (
                         <div className="flex w-full flex-col gap-0.5">
                           <div className="flex items-center justify-between gap-4">
                             <span className="text-muted-foreground">
-                              {chartConfig[name as keyof typeof chartConfig]
-                                ?.label ?? name}
+                              {TREND_SERIES[seriesKey]?.label ?? name}
                             </span>
                             <span className="font-mono font-medium">
-                              {value}%
+                              {formatMetric(percent / 100, 'percent')}
                             </span>
                           </div>
-                          {p && (
-                            <div className="text-muted-foreground text-[10px]">
-                              {String(p.gateway_version ?? '')} ·{' '}
-                              {String(p.engine ?? '')}
+                          {p && seriesKey === 'fp_rate' && (
+                            <div className="flex flex-col gap-0.5 text-[10px] text-muted-foreground">
+                              <span>Rows: {p.row_count}</span>
+                              <span>
+                                Corpus: {abbreviateHash(p.corpus_version)}
+                              </span>
+                              <span>
+                                Build: {buildLabel(p.engine, p.gateway_version)}
+                              </span>
                             </div>
                           )}
                         </div>
@@ -170,9 +174,9 @@ export const BenchmarkTrendChart = () => {
               <span key={key} className="flex items-center gap-1.5">
                 <span
                   className="inline-block h-2 w-3 rounded-sm"
-                  style={{ backgroundColor: chartConfig[key].color }}
+                  style={{ backgroundColor: TREND_SERIES[key].color }}
                 />
-                {chartConfig[key].label}
+                {TREND_SERIES[key].label}
               </span>
             ))}
           </div>
