@@ -13,7 +13,7 @@ flowchart TB
         authroutes["<b>(auth) route group</b><br/><i>app/(auth)</i><br/>login, register, forgot/reset password,<br/>verify email - rendered logged-out"]:::comp
         approutes["<b>(app) route group</b><br/><i>app/(app)</i><br/>sidebar sections: Overview (dashboard, activity), Pipeline<br/>(gateway, filter, classifier, consensus, redactor), Governance<br/>(policy, files), Evaluation (test lab, benchmark), General<br/>(settings) - every layout validates the session server-side"]:::comp
         authapi["<b>Auth route handlers</b><br/><i>app/api/auth/*</i><br/>login / logout / mfa / password flows; call pact-gateway's<br/>/v1/auth/* REST proxy and set the pact_session + pact_refresh_token cookies"]:::comp
-        proxy["<b>Gateway edge proxies</b><br/><i>app/api/pact/* + app/v1/* via src/lib/proxy/proxy_to_gateway.ts</i><br/>one shared core: translates the pact_session cookie into<br/>Authorization: Bearer, forwards to pact-gateway, propagates<br/>both rotated cookies (session + refresh) back"]:::comp
+        proxy["<b>Gateway edge proxies</b><br/><i>app/api/pact/* via src/lib/proxy/proxy_to_gateway.ts</i><br/>translates the pact_session cookie into<br/>Authorization: Bearer, forwards to pact-gateway, propagates<br/>both rotated cookies (session + refresh) back"]:::comp
         session["<b>Session validation</b><br/><i>src/framework/auth/pact_auth/session.ts</i><br/>requireSession / validateSessionFromCookies - calls pact-gateway's<br/>/v1/auth/session on every invocation, fail-closed; the edge<br/>middleware also redeems refresh tokens, but is never the barrier"]:::comp
         features["<b>Feature slices</b><br/><i>src/app/{feature}/{domain, ui, mock, test}</i><br/>one slice per console; domain/ is headless (types, helpers,<br/>hooks), ui/ renders, mock/ seeds MSW, test/ is canonical for tests"]:::comp
         codegen["<b>Generated clients</b><br/><i>src/__codegen__/{proto, rest, schema}</i><br/>proto stubs are used only by e2e test seeding, not the app;<br/>per-tag REST fetchers generated from the gateway OpenAPI<br/>spec; vendored decision-schema artifacts - never hand-edited"]:::comp
@@ -165,7 +165,7 @@ classDiagram
     }
     class proxyToGateway {
         <<src/lib/proxy>>
-        shared /v1 and /api/pact edge
+        shared /api/pact edge
         see the core diagram above
     }
     class MockData {
@@ -201,7 +201,7 @@ classDiagram
     DomainHooks ..> DomainModules : parse + build
     DomainHooks ..> GeneratedRestClient : wrap
     DomainHooks ..> httpClient : raw useSWR paths
-    GeneratedRestClient ..> proxyToGateway : fetch /v1 or<br/>/api/pact
+    GeneratedRestClient ..> proxyToGateway : fetch /api/pact
     GeneratedRestClient ..> MockHandlers : dev mock intercept
     MockHandlers ..> db : read/write
     db --> MockRepository~T~ : one per entity
@@ -209,7 +209,7 @@ classDiagram
     MockData ..> MockRepository~T~ : create(overrides)
 ```
 
-The generated clients fetch `/v1/{account,audit,files}` or `/api/pact/gateway/v1` depending on the tag - both are routes on the shared proxy core, so every feature gets cookie-to-Bearer translation and session rotation for free.
+Every generated client fetches `/api/pact/gateway/v1` (PACT-923: the `app/v1/{account,audit,files}` mirror routes this diagram used to show as an alternative were removed - no Orval group and no other consumer ever called them). The proxy core still gives every feature cookie-to-Bearer translation and session rotation for free.
 
 ## Class diagram (C4 L4) - decision vocabulary and its consoles
 
