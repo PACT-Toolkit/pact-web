@@ -115,9 +115,8 @@ export const RedactorTestPanel = () => {
             className="text-xs text-muted-foreground italic"
             data-testid="redactor-test-stale"
           >
-            The result below is for the text you last ran, not what&apos;s
-            currently in the box above. Edit further or re-run to check the
-            current text.
+            This result is for the text you last ran, not the text in the box
+            now. Run the check again to see the current text.
           </p>
         )}
 
