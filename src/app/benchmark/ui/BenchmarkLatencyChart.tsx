@@ -6,9 +6,9 @@ import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
 import {
   formatRunTimestamp,
-  trendChartData,
-  TREND_SERIES,
-  type TrendChartPoint,
+  latencyChartData,
+  LATENCY_SERIES,
+  type LatencyChartPoint,
 } from '@/src/app/benchmark/domain/benchmark_trend';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
 import {
@@ -28,27 +28,29 @@ import { buildLabel } from '@/src/framework/format/build_label';
 import { formatDayTick } from '@/src/framework/format/day_tick_format';
 import { formatMetric } from '@/src/framework/format/metric_format';
 
-interface BenchmarkTrendChartProps {
+interface BenchmarkLatencyChartProps {
   dateRange: TrendDateRange;
 }
 
-export const BenchmarkTrendChart = ({
+export const BenchmarkLatencyChart = ({
   dateRange,
-}: BenchmarkTrendChartProps) => {
+}: BenchmarkLatencyChartProps) => {
   const { runs, isLoading, error } = useBenchmarkRuns(dateRange);
 
-  const chartData = useMemo(() => trendChartData(runs), [runs]);
+  const chartData = useMemo(() => latencyChartData(runs), [runs]);
   const timeAxis = useMemo(
     () => computeTimeAxisScale(chartData.map((d) => d.ran_at)),
     [chartData]
   );
+  const maxLatency = useMemo(
+    () => Math.max(0, ...chartData.map((d) => d.p99_latency)),
+    [chartData]
+  );
 
   return (
-    <Card data-testid="benchmark-trend-chart">
+    <Card data-testid="benchmark-latency-chart">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">
-          Detection &amp; FP rate over time
-        </CardTitle>
+        <CardTitle className="text-sm font-medium">Latency over time</CardTitle>
       </CardHeader>
 
       <CardContent>
@@ -65,11 +67,11 @@ export const BenchmarkTrendChart = ({
           <div className="flex h-48 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
             <p>No benchmark runs recorded yet.</p>
             <p className="text-xs">
-              Upload a corpus and run a benchmark to start tracking trends.
+              Upload a corpus and run a benchmark to start tracking latency.
             </p>
           </div>
         ) : (
-          <ChartContainer config={TREND_SERIES} className="h-64 w-full">
+          <ChartContainer config={LATENCY_SERIES} className="h-64 w-full">
             <LineChart
               data={chartData}
               margin={{ left: 0, right: 8, top: 4, bottom: 0 }}
@@ -92,33 +94,34 @@ export const BenchmarkTrendChart = ({
                 axisLine={false}
                 tickMargin={4}
                 tick={{ fontSize: 11 }}
-                tickFormatter={(v: number) => `${v}%`}
-                domain={[0, 100]}
-                ticks={[0, 25, 50, 75, 100]}
-                padding={{ top: 12, bottom: 12 }}
-                width={36}
+                tickFormatter={(v: number) => `${Math.round(v)} ms`}
+                domain={[0, maxLatency]}
+                tickCount={5}
+                allowDecimals={false}
+                padding={{ top: 12, bottom: 0 }}
+                width={56}
               />
               <ChartTooltip
                 labelFormatter={(value) => formatRunTimestamp(Number(value))}
                 content={
                   <ChartTooltipContent
                     formatter={(value, name, item) => {
-                      const p = item.payload as TrendChartPoint | undefined;
-                      const seriesKey = name as keyof typeof TREND_SERIES;
-                      const percent =
+                      const p = item.payload as LatencyChartPoint | undefined;
+                      const seriesKey = name as keyof typeof LATENCY_SERIES;
+                      const ms =
                         typeof value === 'number' ? value : Number(value);
 
                       return (
                         <div className="flex w-full flex-col gap-0.5">
                           <div className="flex items-center justify-between gap-4">
                             <span className="text-muted-foreground">
-                              {TREND_SERIES[seriesKey]?.label ?? name}
+                              {LATENCY_SERIES[seriesKey]?.label ?? name}
                             </span>
                             <span className="font-mono font-medium">
-                              {formatMetric(percent / 100, 'percent')}
+                              {formatMetric(ms, 'ms')}
                             </span>
                           </div>
-                          {p && seriesKey === 'fp_rate' && (
+                          {p && seriesKey === 'p99_latency' && (
                             <div className="flex flex-col gap-0.5 text-[10px] text-muted-foreground">
                               <span>Rows: {p.row_count}</span>
                               <span>
@@ -136,19 +139,19 @@ export const BenchmarkTrendChart = ({
                 }
               />
               <Line
-                dataKey="detection_rate"
+                dataKey="p50_latency"
                 type="monotone"
-                stroke="var(--color-detection_rate)"
+                stroke="var(--color-p50_latency)"
                 strokeWidth={2}
-                dot={{ r: 3, fill: 'var(--color-detection_rate)' }}
+                dot={{ r: 3, fill: 'var(--color-p50_latency)' }}
                 activeDot={{ r: 5 }}
               />
               <Line
-                dataKey="fp_rate"
+                dataKey="p99_latency"
                 type="monotone"
-                stroke="var(--color-fp_rate)"
+                stroke="var(--color-p99_latency)"
                 strokeWidth={2}
-                dot={{ r: 3, fill: 'var(--color-fp_rate)' }}
+                dot={{ r: 3, fill: 'var(--color-p99_latency)' }}
                 activeDot={{ r: 5 }}
               />
             </LineChart>
@@ -157,13 +160,13 @@ export const BenchmarkTrendChart = ({
 
         {chartData.length > 0 && (
           <div className="mt-3 flex items-center justify-center gap-6 text-xs text-muted-foreground">
-            {(['detection_rate', 'fp_rate'] as const).map((key) => (
+            {(['p50_latency', 'p99_latency'] as const).map((key) => (
               <span key={key} className="flex items-center gap-1.5">
                 <span
                   className="inline-block h-2 w-3 rounded-sm"
-                  style={{ backgroundColor: TREND_SERIES[key].color }}
+                  style={{ backgroundColor: LATENCY_SERIES[key].color }}
                 />
-                {TREND_SERIES[key].label}
+                {LATENCY_SERIES[key].label}
               </span>
             ))}
           </div>

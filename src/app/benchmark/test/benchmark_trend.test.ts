@@ -7,6 +7,8 @@ import {
 } from '@/src/app/benchmark/domain/benchmark_run';
 import {
   formatRunTimestamp,
+  latencyChartData,
+  LATENCY_SERIES,
   trendChartData,
   TREND_SERIES,
 } from '@/src/app/benchmark/domain/benchmark_trend';
@@ -111,6 +113,70 @@ describe('trendChartData', () => {
     });
 
     const [point] = trendChartData([run]);
+
+    expect(point.row_count).toBe(321);
+    expect(point.corpus_version).toBe('seed-v9.jsonl');
+    expect(point.engine).toBe('stub');
+    expect(point.gateway_version).toBe('v2.1.0');
+  });
+});
+
+describe('LATENCY_SERIES', () => {
+  it('uses a plain --chart-N custom property for every series color', () => {
+    for (const entry of Object.values(LATENCY_SERIES)) {
+      expect(entry.color).toMatch(/^var\(--chart-\d\)$/);
+    }
+  });
+
+  it('defines exactly the p50_latency and p99_latency series', () => {
+    expect(Object.keys(LATENCY_SERIES).sort()).toEqual([
+      'p50_latency',
+      'p99_latency',
+    ]);
+  });
+
+  it('uses different colors than TREND_SERIES', () => {
+    const trendColors = new Set(
+      Object.values(TREND_SERIES).map((s) => s.color)
+    );
+    for (const entry of Object.values(LATENCY_SERIES)) {
+      expect(trendColors.has(entry.color)).toBe(false);
+    }
+  });
+});
+
+describe('latencyChartData', () => {
+  it('returns an empty array for no runs', () => {
+    expect(latencyChartData([])).toEqual([]);
+  });
+
+  it('sorts ascending by ran_at regardless of input order', () => {
+    const older = makeRun({ id: 'run-a', ran_at: 100 });
+    const newer = makeRun({ id: 'run-b', ran_at: 200 });
+
+    const result = latencyChartData([newer, older]);
+
+    expect(result.map((p) => p.ran_at)).toEqual([100, 200]);
+  });
+
+  it('carries p50_latency and p99_latency through unrounded', () => {
+    const run = makeRun({ p50_latency: 258.4, p99_latency: 541.9 });
+
+    const [point] = latencyChartData([run]);
+
+    expect(point.p50_latency).toBe(258.4);
+    expect(point.p99_latency).toBe(541.9);
+  });
+
+  it('carries row_count, corpus_version, engine, and gateway_version through', () => {
+    const run = makeRun({
+      row_count: 321,
+      corpus_version: 'seed-v9.jsonl',
+      engine: 'stub',
+      gateway_version: 'v2.1.0',
+    });
+
+    const [point] = latencyChartData([run]);
 
     expect(point.row_count).toBe(321);
     expect(point.corpus_version).toBe('seed-v9.jsonl');

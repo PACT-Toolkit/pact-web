@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import {
   compareRuns,
+  comparisonDeltaBars,
   defaultComparisonPair,
   runOptionLabel,
   type DeltaDirection,
@@ -25,6 +26,12 @@ const DELTA_CLASS: Record<DeltaDirection, string> = {
   improved: 'text-green-600 dark:text-green-400',
   regressed: 'text-destructive',
   neutral: 'text-muted-foreground',
+};
+
+const DELTA_BAR_CLASS: Record<DeltaDirection, string> = {
+  improved: 'bg-green-600 dark:bg-green-400',
+  regressed: 'bg-destructive',
+  neutral: 'bg-muted-foreground',
 };
 
 export const BenchmarkComparison = () => <BenchmarkComparisonPanel />;
@@ -85,6 +92,7 @@ const BenchmarkComparisonPanel = () => {
     () => (baseline && candidate ? compareRuns(baseline, candidate) : []),
     [baseline, candidate]
   );
+  const deltaBars = useMemo(() => comparisonDeltaBars(metrics), [metrics]);
 
   return (
     <Card>
@@ -148,31 +156,71 @@ const BenchmarkComparisonPanel = () => {
                     >
                       Δ
                     </th>
+                    <th scope="col" className="px-3 py-2 font-medium">
+                      <span className="sr-only">Delta bar</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {metrics.map((m) => (
-                    <tr
-                      key={m.key}
-                      className="border-b last:border-0 hover:bg-muted/40"
-                    >
-                      <td className="px-3 py-2">{m.label}</td>
-                      <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                        {formatMetric(m.baseline, m.format)}
-                      </td>
-                      <td className="px-3 py-2 text-right tabular-nums">
-                        {formatMetric(m.candidate, m.format)}
-                      </td>
-                      <td
-                        className={cn(
-                          'px-3 py-2 text-right tabular-nums font-medium',
-                          DELTA_CLASS[m.deltaDirection]
-                        )}
+                  {metrics.map((m, i) => {
+                    const bar = deltaBars[i];
+
+                    return (
+                      <tr
+                        key={m.key}
+                        className="border-b last:border-0 hover:bg-muted/40"
                       >
-                        {m.delta === 0 ? '-' : formatDelta(m.delta, m.format)}
-                      </td>
-                    </tr>
-                  ))}
+                        <td className="px-3 py-2">{m.label}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                          {formatMetric(m.baseline, m.format)}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {formatMetric(m.candidate, m.format)}
+                        </td>
+                        <td
+                          className={cn(
+                            'px-3 py-2 text-right tabular-nums font-medium',
+                            DELTA_CLASS[m.deltaDirection]
+                          )}
+                        >
+                          {m.delta === 0 ? '-' : formatDelta(m.delta, m.format)}
+                        </td>
+                        <td className="px-3 py-2">
+                          <div
+                            data-testid="benchmark-comparison-delta-bar"
+                            role="img"
+                            aria-label={`${m.label} delta: ${
+                              bar.direction === 'neutral'
+                                ? 'no change'
+                                : formatDelta(m.delta, m.format)
+                            }`}
+                            className="relative h-2 w-16"
+                          >
+                            <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border" />
+                            {bar.direction !== 'neutral' && (
+                              <div
+                                className={cn(
+                                  'absolute inset-y-0 rounded-sm',
+                                  DELTA_BAR_CLASS[m.deltaDirection]
+                                )}
+                                style={
+                                  bar.direction === 'positive'
+                                    ? {
+                                        left: '50%',
+                                        width: `${bar.fraction * 50}%`,
+                                      }
+                                    : {
+                                        right: '50%',
+                                        width: `${bar.fraction * 50}%`,
+                                      }
+                                }
+                              />
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

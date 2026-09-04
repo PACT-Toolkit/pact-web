@@ -73,3 +73,52 @@ export function formatRunTimestamp(unixSeconds: number): string {
     minute: '2-digit',
   });
 }
+
+/** One plotted point on the p50/p99 latency chart. */
+export interface LatencyChartPoint {
+  ran_at: number;
+  p50_latency: number;
+  p99_latency: number;
+  row_count: number;
+  corpus_version: string;
+  engine: string;
+  gateway_version: string;
+}
+
+/**
+ * Series config for the p50/p99 latency chart's two lines. Colors follow
+ * the same direct `--chart-*` reference as `TREND_SERIES` (see its comment)
+ * but pick the next two hues in the categorical palette so the latency
+ * panel reads as a distinct pair from the detection/FP panel above it.
+ */
+export const LATENCY_SERIES: Record<
+  'p50_latency' | 'p99_latency',
+  TrendSeriesEntry
+> = {
+  p50_latency: { label: 'p50 latency', color: 'var(--chart-3)' },
+  p99_latency: { label: 'p99 latency', color: 'var(--chart-4)' },
+};
+
+/**
+ * Map benchmark runs into p50/p99 latency chart points, sorted ascending by
+ * `ran_at` so the chart plots left-to-right chronologically regardless of
+ * the order runs arrive in. Latency values are carried through unrounded -
+ * unlike the percent rates on the trend chart, a millisecond figure doesn't
+ * need rounding for display and `formatMetric` already fixes it to one
+ * decimal at render time.
+ */
+export function latencyChartData(
+  runs: readonly BenchmarkRun[]
+): LatencyChartPoint[] {
+  return [...runs]
+    .sort((a, b) => a.ran_at - b.ran_at)
+    .map((r) => ({
+      ran_at: r.ran_at,
+      p50_latency: r.p50_latency,
+      p99_latency: r.p99_latency,
+      row_count: r.row_count,
+      corpus_version: r.corpus_version,
+      engine: r.engine,
+      gateway_version: r.gateway_version,
+    }));
+}
