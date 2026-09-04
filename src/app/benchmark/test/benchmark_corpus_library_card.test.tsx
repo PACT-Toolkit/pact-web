@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { type ReactNode } from 'react';
 import { describe, expect, it } from 'vitest';
@@ -17,17 +17,15 @@ const renderCard = () =>
   );
 
 describe('BenchmarkCorpusLibraryCard', () => {
-  it('renders the datasets in the server-given order with formatted totals', async () => {
+  it('renders the datasets as composition rows in the server-given order with formatted totals', async () => {
     renderCard();
 
     await waitFor(() =>
       expect(screen.getByText('575,643')).toBeInTheDocument()
     );
 
-    const rows = screen.getAllByRole('row').slice(1); // drop header row
-    const datasetNames = rows.map(
-      (row) => row.querySelector('td')?.textContent
-    );
+    const rows = screen.getAllByTestId('benchmark-corpus-composition-row');
+    const datasetNames = rows.map((row) => row.querySelector('p')?.textContent);
 
     expect(datasetNames).toEqual([
       'hackaprompt/hackaprompt-dataset',
@@ -42,8 +40,16 @@ describe('BenchmarkCorpusLibraryCard', () => {
     ]);
 
     // First row's total rows and block/allow split are formatted with
-    // thousands separators.
-    expect(screen.getByText('377,850 / 0')).toBeInTheDocument();
+    // thousands separators, and its bar is entirely block share (0 allow).
+    expect(within(rows[0]).getByText('377,850')).toBeInTheDocument();
+    expect(
+      within(rows[0]).getByText('377,850 block / 0 allow')
+    ).toBeInTheDocument();
+    expect(
+      within(rows[0]).getByRole('img', {
+        name: 'hackaprompt/hackaprompt-dataset: 100% block, 0% allow',
+      })
+    ).toBeInTheDocument();
   });
 
   it('shows a role badge per dataset, including the unknown state for an empty role', async () => {

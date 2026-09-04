@@ -103,6 +103,46 @@ export function defaultComparisonPair(
   return { baselineId: baseline.id, candidateId: candidate.id };
 }
 
+/** A signed horizontal bar rendering of one metric's delta in the comparison table. */
+export interface ComparisonDeltaBar {
+  key: MetricDef['key'];
+  /** |delta| relative to the largest |delta| among the given metrics, 0-1. */
+  fraction: number;
+  /** Which side of center the bar fills. 'neutral' renders no fill (delta is 0). */
+  direction: 'positive' | 'negative' | 'neutral';
+}
+
+/**
+ * Scale each metric's delta into a bar fraction relative to the largest
+ * |delta| among metrics that share its unit (percent vs ms), so the biggest
+ * mover within each unit family fills the full bar width and the rest sit
+ * proportionally below it. Normalizing across the whole set instead of per
+ * format would make a detection-rate delta (a few percentage points, raw
+ * value ~0.01-0.1) permanently invisible next to a latency delta (hundreds
+ * to thousands of raw ms) - the two are not on a comparable numeric scale
+ * even when both are equally significant to their own metric's range.
+ */
+export function comparisonDeltaBars(
+  metrics: readonly ComparisonMetric[]
+): ComparisonDeltaBar[] {
+  const maxAbsDeltaByFormat = new Map<MetricFormat, number>();
+  for (const m of metrics) {
+    const current = maxAbsDeltaByFormat.get(m.format) ?? 0;
+    maxAbsDeltaByFormat.set(m.format, Math.max(current, Math.abs(m.delta)));
+  }
+
+  return metrics.map((m): ComparisonDeltaBar => {
+    const maxAbsDelta = maxAbsDeltaByFormat.get(m.format) ?? 0;
+
+    return {
+      key: m.key,
+      fraction: maxAbsDelta === 0 ? 0 : Math.abs(m.delta) / maxAbsDelta,
+      direction:
+        m.delta === 0 ? 'neutral' : m.delta > 0 ? 'positive' : 'negative',
+    };
+  });
+}
+
 /** Human label for a run in a selector: engine · corpus · gateway · date. */
 export function runOptionLabel(run: BenchmarkRun): string {
   const date = new Date(run.ran_at * 1000).toLocaleDateString('en-GB', {

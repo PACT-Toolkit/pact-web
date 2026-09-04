@@ -1,13 +1,14 @@
 'use client';
 
+import { useMemo } from 'react';
+
 import {
-  benchmarkCorpusDatasetRole,
   countEvaluationOnlyDatasets,
   formatCorpusRowCount,
-  type BenchmarkCorpusDataset,
 } from '@/src/app/benchmark/domain/benchmark_corpus_library';
+import { corpusComposition } from '@/src/app/benchmark/domain/corpus_composition';
 import { useBenchmarkCorpusLibrary } from '@/src/app/benchmark/domain/use_benchmark_corpus_library';
-import { BenchmarkCorpusRoleBadge } from '@/src/app/benchmark/ui/BenchmarkCorpusRoleBadge';
+import { BenchmarkCorpusCompositionChart } from '@/src/app/benchmark/ui/BenchmarkCorpusCompositionChart';
 import {
   Card,
   CardContent,
@@ -18,6 +19,10 @@ import {
 export const BenchmarkCorpusLibraryCard = () => {
   const { datasets, totalRows, isLoading, error } = useBenchmarkCorpusLibrary();
   const evaluationOnlyCount = countEvaluationOnlyDatasets(datasets);
+  const compositionRows = useMemo(
+    () => corpusComposition(datasets),
+    [datasets]
+  );
 
   return (
     <Card>
@@ -60,71 +65,10 @@ export const BenchmarkCorpusLibraryCard = () => {
               </span>
             </p>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-xs text-muted-foreground">
-                    <th scope="col" className="px-4 py-2 font-medium">
-                      Dataset
-                    </th>
-                    <th scope="col" className="px-4 py-2 font-medium">
-                      Category
-                    </th>
-                    <th scope="col" className="px-4 py-2 font-medium">
-                      License
-                    </th>
-                    <th scope="col" className="px-4 py-2 font-medium">
-                      Role
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-2 text-right font-medium tabular-nums"
-                    >
-                      Total rows
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-4 py-2 text-right font-medium tabular-nums"
-                    >
-                      Block / Allow
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {datasets.map((dataset) => (
-                    <BenchmarkCorpusDatasetRow
-                      key={dataset.source_dataset}
-                      dataset={dataset}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <BenchmarkCorpusCompositionChart rows={compositionRows} />
           </div>
         )}
       </CardContent>
     </Card>
   );
 };
-
-const BenchmarkCorpusDatasetRow = ({
-  dataset,
-}: {
-  dataset: BenchmarkCorpusDataset;
-}) => (
-  <tr className="border-b last:border-0 hover:bg-muted/40">
-    <td className="px-4 py-2 font-mono text-xs">{dataset.source_dataset}</td>
-    <td className="px-4 py-2 text-muted-foreground">{dataset.category}</td>
-    <td className="px-4 py-2 text-muted-foreground">{dataset.license}</td>
-    <td className="px-4 py-2">
-      <BenchmarkCorpusRoleBadge role={benchmarkCorpusDatasetRole(dataset)} />
-    </td>
-    <td className="px-4 py-2 text-right tabular-nums">
-      {formatCorpusRowCount(dataset.total_rows)}
-    </td>
-    <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
-      {formatCorpusRowCount(dataset.block_rows)} /{' '}
-      {formatCorpusRowCount(dataset.allow_rows)}
-    </td>
-  </tr>
-);

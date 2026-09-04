@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 
+import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
 import { BenchmarkTrendChart } from '@/src/app/benchmark/ui/BenchmarkTrendChart';
+import { BenchmarkTrendRangeToggle } from '@/src/app/benchmark/ui/BenchmarkTrendRangeToggle';
 import { useDashboardPipelineStats } from '@/src/app/dashboard/domain/dashboard_pipeline_stats';
 import { DashboardBenchmarkWidget } from '@/src/app/dashboard/ui/DashboardBenchmarkWidget';
 import { DashboardClassifierWidget } from '@/src/app/dashboard/ui/DashboardClassifierWidget';
@@ -13,6 +15,7 @@ import { DashboardRedactorWidget } from '@/src/app/dashboard/ui/DashboardRedacto
 
 export const DashboardConsole = () => {
   const [live, setLive] = useState(true);
+  const [trendDateRange, setTrendDateRange] = useState<TrendDateRange>('90d');
   const {
     stats,
     records,
@@ -61,7 +64,11 @@ export const DashboardConsole = () => {
         <DashboardBenchmarkWidget />
       </div>
 
-      <BenchmarkTrendChart />
+      <BenchmarkTrendRangeToggle
+        value={trendDateRange}
+        onChange={setTrendDateRange}
+      />
+      <BenchmarkTrendChart dateRange={trendDateRange} />
     </div>
   );
 };
