@@ -240,8 +240,14 @@ const BenchmarkComparisonPanel = () => {
       </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <BenchmarkCategoryChart run={runUnderInspection} />
-        <BenchmarkStageLatencyChart run={runUnderInspection} />
+        <BenchmarkCategoryChart
+          run={runUnderInspection}
+          isLoading={isLoading}
+        />
+        <BenchmarkStageLatencyChart
+          run={runUnderInspection}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );

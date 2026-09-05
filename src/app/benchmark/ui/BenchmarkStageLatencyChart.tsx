@@ -27,6 +27,7 @@ import { formatMetric } from '@/src/framework/format/metric_format';
 
 interface BenchmarkStageLatencyChartProps {
   run: BenchmarkRun | undefined;
+  isLoading: boolean;
 }
 
 // Matches the latency trend chart's y-axis width (PACT-939 follow-up):
@@ -39,9 +40,17 @@ const Y_AXIS_WIDTH = 72;
  * reuses its picker instead of adding a third one). Bars are grouped, not
  * stacked - p50 and p99 aren't additive quantities. Hidden behind an empty
  * state when the run predates the per_layer breakdown.
+ *
+ * `isLoading` distinguishes "runs are still being fetched" from "the fetch
+ * settled and there are zero runs" -- both look like `run === undefined` to
+ * this component, but only the second one is a real "no data" state. No
+ * picker is ever on screen here (BenchmarkComparison.tsx owns the only
+ * picker, and this chart falls back to the newest run rather than exposing
+ * a second one), so there is no copy that tells the user to "select a run."
  */
 export const BenchmarkStageLatencyChart = ({
   run,
+  isLoading,
 }: BenchmarkStageLatencyChartProps) => {
   const chartData = useMemo(() => stageLatencyChartData(run), [run]);
   const maxLatency = useMemo(
@@ -58,9 +67,13 @@ export const BenchmarkStageLatencyChart = ({
       </CardHeader>
 
       <CardContent>
-        {!run ? (
+        {isLoading ? (
           <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-            Select a run to inspect.
+            Loading…
+          </div>
+        ) : !run ? (
+          <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+            No runs recorded yet.
           </div>
         ) : chartData.length === 0 ? (
           <div className="flex h-48 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
