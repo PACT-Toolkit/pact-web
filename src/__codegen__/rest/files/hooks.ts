@@ -121,7 +121,9 @@ export type PostFilesMutationResult = NonNullable<
 /**
  * @summary Request a presigned upload URL
  */
-export const usePostFiles = <TError = string>(options?: {
+export const usePostFiles = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof postFiles>>,
     TError,

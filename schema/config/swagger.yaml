@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+    boundary.ErrorResponse:
+        properties:
+            code:
+                type: string
+            error:
+                type: string
+        type: object
     config.ConfigResponse:
         properties:
             classifierEnforceMode:
@@ -129,7 +136,7 @@ paths:
                 "400":
                     description: unknown enforcement mode value
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token
                     schema:

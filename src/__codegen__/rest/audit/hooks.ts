@@ -21,6 +21,7 @@ import type {
   AuditQueryDecisionStatsResponse,
   AuditQueryPolicyEventsResponse,
   AuditRemoveDecisionAnnotationResponse,
+  BoundaryErrorResponse,
   GetAuditEventsParams,
   GetAuditPolicyEventsParams,
   GetAuditStatsParams,
@@ -136,7 +137,9 @@ export type AnnotateDecisionMutationResult = NonNullable<
 /**
  * @summary Record an operator annotation on a decision
  */
-export const useAnnotateDecision = <TError = string>(options?: {
+export const useAnnotateDecision = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof annotateDecision>>,
     TError,
@@ -166,7 +169,9 @@ export type ListDecisionAnnotationsMutationResult = NonNullable<
 /**
  * @summary Batch-read operator annotations for a set of decisions
  */
-export const useListDecisionAnnotations = <TError = string>(options?: {
+export const useListDecisionAnnotations = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof listDecisionAnnotations>>,
     TError,

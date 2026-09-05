@@ -46,7 +46,7 @@ export type IssueTokenMutationResult = NonNullable<
  * @summary Mint a capability token
  */
 export const useIssueToken = <
-  TError = string | BoundaryErrorResponse,
+  TError = BoundaryErrorResponse | string,
 >(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof issueToken>>,

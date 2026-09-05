@@ -17,6 +17,7 @@ import type {
   AuditQueryDecisionStatsResponse,
   AuditQueryPolicyEventsResponse,
   AuditRemoveDecisionAnnotationResponse,
+  BoundaryErrorResponse,
   GetAuditEventsParams,
   GetAuditPolicyEventsParams,
   GetAuditStatsParams,
@@ -114,7 +115,7 @@ export type annotateDecisionResponse200 = {
 };
 
 export type annotateDecisionResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -183,7 +184,7 @@ export type listDecisionAnnotationsResponse200 = {
 };
 
 export type listDecisionAnnotationsResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 

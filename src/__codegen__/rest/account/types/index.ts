@@ -14,3 +14,4 @@ export * from './accountProfileResponse';
 export * from './accountRecordConsentRequest';
 export * from './accountUpdatePreferencesRequest';
 export * from './accountUpdateProfileRequest';
+export * from './boundaryErrorResponse';

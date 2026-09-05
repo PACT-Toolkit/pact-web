@@ -9,6 +9,7 @@
 import type { Key } from 'swr';
 
 import type {
+  BoundaryErrorResponse,
   ConfigConfigResponse,
   ConfigEnforcementPatchRequest,
 } from './types';
@@ -69,7 +70,7 @@ export type patchEnforcementResponse200 = {
 };
 
 export type patchEnforcementResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 

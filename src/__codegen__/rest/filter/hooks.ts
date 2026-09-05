@@ -92,7 +92,7 @@ export type TestRuleMutationResult = NonNullable<
 /**
  * @summary Test a candidate rule against a sample
  */
-export const useTestRule = <TError = string | BoundaryErrorResponse>(options?: {
+export const useTestRule = <TError = BoundaryErrorResponse | string>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof testRule>>,
     TError,

@@ -11,5 +11,12 @@ export interface BenchmarkRunCountsBody {
   benign: number;
   errors: number;
   false_positives: number;
+  /**
+   * Throttled is the number of rows that exhausted the runner's retry
+   * budget against HTTP 429 (rate limited). Excluded from
+   * attacks/benign and from errors: a shed request is the gateway's
+   * rate limiter working, not a pipeline failure (PACT-933).
+   */
+  throttled: number;
   true_positives: number;
 }

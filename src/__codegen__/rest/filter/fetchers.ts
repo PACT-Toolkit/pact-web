@@ -85,7 +85,7 @@ export type testRuleResponse200 = {
 };
 
 export type testRuleResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 

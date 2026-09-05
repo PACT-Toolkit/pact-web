@@ -47,7 +47,7 @@ export type LabelVerdictMutationResult = NonNullable<
  * @summary Label a classifier verdict
  */
 export const useLabelVerdict = <
-  TError = string | BoundaryErrorResponse,
+  TError = BoundaryErrorResponse | string,
 >(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof labelVerdict>>,

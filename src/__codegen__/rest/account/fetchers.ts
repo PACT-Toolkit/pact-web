@@ -17,6 +17,7 @@ import type {
   AccountRecordConsentRequest,
   AccountUpdatePreferencesRequest,
   AccountUpdateProfileRequest,
+  BoundaryErrorResponse,
 } from './types';
 
 import { customFetch } from '../custom_fetch';
@@ -70,7 +71,7 @@ export type postAccountConsentsResponse201 = {
 };
 
 export type postAccountConsentsResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -274,7 +275,7 @@ export type putAccountPreferencesResponse200 = {
 };
 
 export type putAccountPreferencesResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -387,7 +388,7 @@ export type putAccountProfileResponse200 = {
 };
 
 export type putAccountProfileResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 

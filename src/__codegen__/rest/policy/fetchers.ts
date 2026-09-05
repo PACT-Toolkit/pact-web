@@ -24,7 +24,7 @@ export type issueTokenResponse201 = {
 };
 
 export type issueTokenResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 

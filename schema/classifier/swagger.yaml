@@ -64,7 +64,7 @@ paths:
                 "400":
                     description: missing or invalid required field
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token
                     schema:
