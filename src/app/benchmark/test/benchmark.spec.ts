@@ -195,8 +195,11 @@ test.describe('Benchmark per-category, per-stage, and confidence-interval charts
       await expect(chart.getByText(category, { exact: true })).toBeVisible();
     }
 
-    // The non-zero rates are actually painted.
+    // The non-zero rates are actually painted. recharts animates bars in
+    // after mount, so `.count()` alone can race the paint - wait for the
+    // first bar to actually be visible before snapshotting the count.
     const paintedBars = chart.locator('.recharts-rectangle');
+    await expect(paintedBars.first()).toBeVisible();
     expect(await paintedBars.count()).toBeGreaterThan(0);
     for (const bar of await paintedBars.all()) {
       const d = await bar.getAttribute('d');
