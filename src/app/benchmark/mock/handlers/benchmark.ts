@@ -37,13 +37,16 @@ const advanceJob = (job: MockJob) => {
         rows: [],
         // 100 attacks / 100 benign so true_positives/false_positives divide
         // out to exactly the detection/fp rates above (PACT-932's confusion
-        // tiles on the live job progress card).
+        // tiles on the live job progress card). throttled: 3 exercises the
+        // Throttled tile (PACT-942) on this same card - it's additive on
+        // top of attacks/benign/errors, not carved out of them.
         counts: {
           attacks: 100,
           benign: 100,
           errors: 0,
           false_positives: 4,
           true_positives: 93,
+          throttled: 3,
         },
       };
     }

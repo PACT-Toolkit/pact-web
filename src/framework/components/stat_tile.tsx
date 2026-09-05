@@ -5,6 +5,8 @@ interface StatTileProps {
   value: string | number;
   /** Extra classes applied to the value text (e.g. a status color). */
   valueClass?: string;
+  /** Small muted line under the value, e.g. a rate alongside a raw count. */
+  secondaryText?: string;
   /** 'lg' (default) for a headline stat, 'sm' for a dense grid of many tiles. */
   size?: 'sm' | 'lg';
   className?: string;
@@ -23,6 +25,7 @@ export const StatTile = ({
   label,
   value,
   valueClass,
+  secondaryText,
   size = 'lg',
   className,
   testId,
@@ -33,6 +36,7 @@ export const StatTile = ({
   >
     <span className="text-xs text-muted-foreground">{label}</span>
     <span
+      data-slot="stat-tile-value"
       className={cn(
         'font-semibold tabular-nums',
         size === 'lg' ? 'text-2xl' : 'text-sm',
@@ -41,5 +45,8 @@ export const StatTile = ({
     >
       {value}
     </span>
+    {secondaryText && (
+      <span className="text-xs text-muted-foreground">{secondaryText}</span>
+    )}
   </div>
 );

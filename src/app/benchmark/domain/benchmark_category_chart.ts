@@ -49,6 +49,8 @@ export interface CategoryChartPoint {
   attacks: number;
   benign: number;
   errors: number;
+  /** Rows in this category shed by the gateway's rate limiter (PACT-933). See benchmark_confusion.ts. */
+  throttled: number;
 }
 
 /**
@@ -86,6 +88,10 @@ export function categoryChartData(
         attacks: c.attacks,
         benign: c.benign,
         errors: c.errors,
+        // Coalesced to 0 for the same reason deriveConfusionCounts does -
+        // a category persisted before PACT-933 won't carry it on the wire
+        // despite the generated type marking it required.
+        throttled: c.throttled ?? 0,
       };
     });
 }

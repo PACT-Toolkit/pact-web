@@ -208,6 +208,10 @@ test.describe('Benchmark per-category, per-stage, and confidence-interval charts
     const errorBars = chart.locator('.recharts-errorBar');
     await expect(errorBars.first()).toBeVisible();
     expect(await errorBars.count()).toBeGreaterThan(0);
+
+    // run-8's prompt-hacking category has throttled: 2 (PACT-942/PACT-933) -
+    // its bar label reads "2 thr", matching the existing "N err" label style.
+    await expect(chart.getByText('2 thr', { exact: true })).toBeVisible();
   });
 
   test('renders a shadcn legend with one painted swatch per series on the category chart', async ({
@@ -299,5 +303,9 @@ test.describe('Benchmark confusion tiles on a completed job', () => {
     await expect(page.getByTestId('benchmark-confusion-errors')).toContainText(
       '0'
     );
+    // throttled: 3, excluded from attacks/benign/errors above (PACT-942).
+    await expect(
+      page.getByTestId('benchmark-confusion-throttled')
+    ).toContainText('3');
   });
 });

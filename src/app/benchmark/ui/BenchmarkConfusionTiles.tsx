@@ -1,6 +1,7 @@
 import { type RunCounts } from '@/src/app/benchmark/domain/benchmark_breakdown';
 import { deriveConfusionCounts } from '@/src/app/benchmark/domain/benchmark_confusion';
 import { StatTile } from '@/src/framework/components/stat_tile';
+import { formatMetric } from '@/src/framework/format/metric_format';
 
 interface BenchmarkConfusionTilesProps {
   counts: RunCounts | undefined;
@@ -22,7 +23,7 @@ export const BenchmarkConfusionTiles = ({
 
   return (
     <div
-      className="grid grid-cols-2 gap-4 sm:grid-cols-5"
+      className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6"
       data-testid="benchmark-confusion-tiles"
     >
       <StatTile
@@ -56,6 +57,13 @@ export const BenchmarkConfusionTiles = ({
         value={confusion.errors}
         valueClass={confusion.errors > 0 ? 'text-destructive' : undefined}
         testId="benchmark-confusion-errors"
+      />
+      <StatTile
+        label="Throttled"
+        value={confusion.throttled}
+        valueClass={confusion.throttled > 0 ? 'text-warning' : undefined}
+        secondaryText={formatMetric(confusion.throttledRate, 'percent')}
+        testId="benchmark-confusion-throttled"
       />
     </div>
   );
