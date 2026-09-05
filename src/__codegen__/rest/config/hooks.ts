@@ -13,6 +13,7 @@ import type { Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
 import type {
+  BoundaryErrorResponse,
   ConfigConfigResponse,
   ConfigEnforcementPatchRequest,
 } from './types';
@@ -85,7 +86,9 @@ export type PatchEnforcementMutationResult = NonNullable<
 /**
  * @summary Flip runtime enforcement mode
  */
-export const usePatchEnforcement = <TError = string>(options?: {
+export const usePatchEnforcement = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof patchEnforcement>>,
     TError,

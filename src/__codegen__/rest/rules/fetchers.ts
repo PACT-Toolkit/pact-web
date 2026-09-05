@@ -72,7 +72,7 @@ export type createRuleResponse201 = {
 };
 
 export type createRuleResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -146,7 +146,7 @@ export type updateRuleResponse200 = {
 };
 
 export type updateRuleResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 

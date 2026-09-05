@@ -123,7 +123,9 @@ export type CreateRuleMutationResult = NonNullable<
 /**
  * @summary Create a policy rule (Draft)
  */
-export const useCreateRule = <TError = string>(options?: {
+export const useCreateRule = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof createRule>>,
     TError,
@@ -153,7 +155,7 @@ export type UpdateRuleMutationResult = NonNullable<
 /**
  * @summary Update a draft policy rule
  */
-export const useUpdateRule = <TError = string | BoundaryErrorResponse>(
+export const useUpdateRule = <TError = BoundaryErrorResponse | string>(
   id: string,
   options?: {
     swr?: SWRMutationConfiguration<

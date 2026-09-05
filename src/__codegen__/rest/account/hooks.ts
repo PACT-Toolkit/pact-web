@@ -21,6 +21,7 @@ import type {
   AccountRecordConsentRequest,
   AccountUpdatePreferencesRequest,
   AccountUpdateProfileRequest,
+  BoundaryErrorResponse,
 } from './types';
 
 import {
@@ -142,7 +143,9 @@ export type PostAccountConsentsMutationResult = NonNullable<
 /**
  * @summary Record a consent decision (Art. 7 evidence)
  */
-export const usePostAccountConsents = <TError = string>(options?: {
+export const usePostAccountConsents = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof postAccountConsents>>,
     TError,
@@ -269,7 +272,9 @@ export type PutAccountPreferencesMutationResult = NonNullable<
 /**
  * @summary Patch notification preferences (mask semantics)
  */
-export const usePutAccountPreferences = <TError = string>(options?: {
+export const usePutAccountPreferences = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof putAccountPreferences>>,
     TError,
@@ -333,7 +338,9 @@ export type PutAccountProfileMutationResult = NonNullable<
 /**
  * @summary Patch the signed-in user's profile (mask semantics)
  */
-export const usePutAccountProfile = <TError = string>(options?: {
+export const usePutAccountProfile = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof putAccountProfile>>,
     TError,

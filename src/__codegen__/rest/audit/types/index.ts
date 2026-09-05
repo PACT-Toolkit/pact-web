@@ -24,6 +24,7 @@ export * from './auditQueryAuditResponse';
 export * from './auditQueryDecisionStatsResponse';
 export * from './auditQueryPolicyEventsResponse';
 export * from './auditRemoveDecisionAnnotationResponse';
+export * from './boundaryErrorResponse';
 export * from './getAuditEventsParams';
 export * from './getAuditPolicyEventsParams';
 export * from './getAuditStatsParams';

@@ -56,7 +56,7 @@ paths:
                 "400":
                     description: agentId, toolId required; scopes must be non-empty; ttlSeconds must be 1..86400
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token
                     schema:

@@ -14,4 +14,10 @@ export interface BenchmarkCategoryBreakdownBody {
   entries: number;
   errors: number;
   fp: number;
+  /**
+   * Throttled is the number of rows in this category that exhausted the
+   * runner's retry budget against HTTP 429 (rate limited). Excluded
+   * from attacks/benign and from errors (PACT-933).
+   */
+  throttled: number;
 }

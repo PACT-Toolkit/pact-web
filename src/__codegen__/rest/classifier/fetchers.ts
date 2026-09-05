@@ -24,7 +24,7 @@ export type labelVerdictResponse200 = {
 };
 
 export type labelVerdictResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 

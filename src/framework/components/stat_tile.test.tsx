@@ -22,7 +22,7 @@ describe('StatTile', () => {
 
     const value = screen
       .getByTestId('rows-tile')
-      .querySelector('span:last-child');
+      .querySelector('[data-slot="stat-tile-value"]');
     expect(value).toHaveClass('text-2xl');
   });
 
@@ -38,7 +38,7 @@ describe('StatTile', () => {
 
     const value = screen
       .getByTestId('sandbox-tile')
-      .querySelector('span:last-child');
+      .querySelector('[data-slot="stat-tile-value"]');
     expect(value).toHaveClass('text-sm');
     expect(value).not.toHaveClass('text-2xl');
   });
@@ -55,7 +55,30 @@ describe('StatTile', () => {
 
     const value = screen
       .getByTestId('errors-tile')
-      .querySelector('span:last-child');
+      .querySelector('[data-slot="stat-tile-value"]');
     expect(value).toHaveClass('text-destructive');
+  });
+
+  it('renders secondary text under the value when given', () => {
+    render(
+      <StatTile
+        label="Throttled"
+        value={12}
+        secondaryText="6.0% of rows"
+        testId="throttled-tile"
+      />
+    );
+
+    expect(screen.getByTestId('throttled-tile')).toHaveTextContent(
+      '6.0% of rows'
+    );
+  });
+
+  it('omits secondary text when not given', () => {
+    render(<StatTile label="Rows" value={100} testId="rows-tile" />);
+
+    expect(
+      screen.getByTestId('rows-tile').querySelectorAll('span')
+    ).toHaveLength(2);
   });
 });

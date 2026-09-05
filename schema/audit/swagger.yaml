@@ -183,6 +183,13 @@ definitions:
             removed:
                 type: boolean
         type: object
+    boundary.ErrorResponse:
+        properties:
+            code:
+                type: string
+            error:
+                type: string
+        type: object
 host: localhost:8110
 info:
     contact: {}
@@ -247,7 +254,7 @@ paths:
                 "400":
                     description: missing requestId, unknown kind, or invalid body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token
                     schema:
@@ -279,7 +286,7 @@ paths:
                 "400":
                     description: requestIds empty, over 200 entries, or invalid body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token
                     schema:

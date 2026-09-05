@@ -87,7 +87,7 @@ export type postFilesResponse201 = {
 };
 
 export type postFilesResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 

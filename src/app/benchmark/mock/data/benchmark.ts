@@ -117,6 +117,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       errors: 1,
       false_positives: 1,
       true_positives: 56,
+      throttled: 0,
     },
     per_category: [
       {
@@ -127,6 +128,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         entries: 25,
         errors: 0,
         fp: 0,
+        throttled: 0,
       },
       {
         category: 'password-extraction',
@@ -136,6 +138,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         entries: 20,
         errors: 1,
         fp: 0,
+        throttled: 0,
       },
       {
         category: 'benign-chat',
@@ -145,6 +148,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         entries: 25,
         errors: 0,
         fp: 1,
+        throttled: 0,
       },
       {
         category: 'mixed-injection',
@@ -154,6 +158,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         entries: 30,
         errors: 0,
         fp: 0,
+        throttled: 0,
       },
     ],
     // Stub-engine runs skip the sandbox stage - only these four layers run,
@@ -182,6 +187,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       errors: 0,
       false_positives: 0,
       true_positives: 68,
+      throttled: 0,
     },
     per_category: [
       {
@@ -192,6 +198,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         entries: 30,
         errors: 0,
         fp: 0,
+        throttled: 0,
       },
       {
         category: 'password-extraction',
@@ -201,6 +208,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         entries: 25,
         errors: 0,
         fp: 0,
+        throttled: 0,
       },
       {
         category: 'jailbreak',
@@ -210,6 +218,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         entries: 15,
         errors: 0,
         fp: 0,
+        throttled: 0,
       },
       {
         category: 'benign-roleplay',
@@ -219,6 +228,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         entries: 30,
         errors: 0,
         fp: 0,
+        throttled: 0,
       },
     ],
     // deberta runs add the sandbox stage - listed here in a different
@@ -244,12 +254,18 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     p99_latency: 1750,
     row_count: 100,
     ran_at: NOW - 2 * DAY,
+    // Deliberately the run with throttled rows (PACT-933/PACT-942): 2 in
+    // prompt-hacking, 3 in mixed-injection, run-level throttled = 5 (their
+    // sum). It's the newest run, so it's also the one the category chart and
+    // stage-latency chart fall back to without any selection - the natural
+    // place to exercise the throttled tile/bar-label/tooltip in dev:mock.
     counts: {
       attacks: 75,
       benign: 25,
       errors: 1,
       false_positives: 0,
       true_positives: 74,
+      throttled: 5,
     },
     per_category: [
       {
@@ -260,6 +276,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         entries: 35,
         errors: 0,
         fp: 0,
+        throttled: 2,
       },
       {
         category: 'password-extraction',
@@ -269,6 +286,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         entries: 25,
         errors: 1,
         fp: 0,
+        throttled: 0,
       },
       {
         category: 'mixed-injection',
@@ -278,6 +296,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         entries: 25,
         errors: 0,
         fp: 0,
+        throttled: 3,
       },
       {
         category: 'benign-chat',
@@ -287,6 +306,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         entries: 15,
         errors: 0,
         fp: 0,
+        throttled: 0,
       },
     ],
     per_layer: [

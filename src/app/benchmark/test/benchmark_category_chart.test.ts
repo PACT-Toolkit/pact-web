@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { type CategoryBreakdown } from '@/src/app/benchmark/domain/benchmark_breakdown';
 import { categoryChartData } from '@/src/app/benchmark/domain/benchmark_category_chart';
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
 
@@ -39,6 +40,7 @@ describe('categoryChartData', () => {
           detected: 9,
           fp: 0,
           errors: 0,
+          throttled: 0,
         },
         {
           category: 'large',
@@ -48,6 +50,7 @@ describe('categoryChartData', () => {
           detected: 45,
           fp: 0,
           errors: 0,
+          throttled: 0,
         },
       ],
     });
@@ -68,6 +71,7 @@ describe('categoryChartData', () => {
           detected: 45,
           fp: 2,
           errors: 0,
+          throttled: 0,
         },
       ],
     });
@@ -93,6 +97,7 @@ describe('categoryChartData', () => {
           detected: 0,
           fp: 1,
           errors: 0,
+          throttled: 0,
         },
       ],
     });
@@ -114,6 +119,7 @@ describe('categoryChartData', () => {
           detected: 18,
           fp: 0,
           errors: 0,
+          throttled: 0,
         },
       ],
     });
@@ -124,7 +130,7 @@ describe('categoryChartData', () => {
     expect(point.fpErrorOffset).toEqual([0, 0]);
   });
 
-  it('carries attacks, benign, and errors through', () => {
+  it('carries attacks, benign, errors, and throttled through', () => {
     const run = makeRun({
       per_category: [
         {
@@ -135,6 +141,7 @@ describe('categoryChartData', () => {
           detected: 18,
           fp: 1,
           errors: 3,
+          throttled: 4,
         },
       ],
     });
@@ -144,5 +151,26 @@ describe('categoryChartData', () => {
     expect(point.attacks).toBe(20);
     expect(point.benign).toBe(10);
     expect(point.errors).toBe(3);
+    expect(point.throttled).toBe(4);
+  });
+
+  it('coalesces a category missing throttled entirely (pre-PACT-933 run) to zero', () => {
+    const legacyCategory = {
+      category: 'mixed-injection',
+      entries: 30,
+      attacks: 20,
+      benign: 10,
+      detected: 18,
+      fp: 1,
+      errors: 0,
+      // throttled intentionally omitted - simulates a category persisted
+      // before the field existed, despite the generated type marking it
+      // required.
+    } as unknown as CategoryBreakdown;
+    const run = makeRun({ per_category: [legacyCategory] });
+
+    const [point] = categoryChartData(run);
+
+    expect(point.throttled).toBe(0);
   });
 });

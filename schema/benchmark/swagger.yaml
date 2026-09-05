@@ -70,6 +70,12 @@ definitions:
                 type: integer
             fp:
                 type: integer
+            throttled:
+                description: |-
+                    Throttled is the number of rows in this category that exhausted the
+                    runner's retry budget against HTTP 429 (rate limited). Excluded
+                    from attacks/benign and from errors (PACT-933).
+                type: integer
         required:
             - attacks
             - benign
@@ -78,6 +84,7 @@ definitions:
             - entries
             - errors
             - fp
+            - throttled
         type: object
     benchmark.CorpusDatasetSummaryBody:
         properties:
@@ -250,6 +257,13 @@ definitions:
                 type: integer
             false_positives:
                 type: integer
+            throttled:
+                description: |-
+                    Throttled is the number of rows that exhausted the runner's retry
+                    budget against HTTP 429 (rate limited). Excluded from
+                    attacks/benign and from errors: a shed request is the gateway's
+                    rate limiter working, not a pipeline failure (PACT-933).
+                type: integer
             true_positives:
                 type: integer
         required:
@@ -257,6 +271,7 @@ definitions:
             - benign
             - errors
             - false_positives
+            - throttled
             - true_positives
         type: object
     benchmark.SaveCorpusRequest:

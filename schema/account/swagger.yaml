@@ -90,6 +90,13 @@ definitions:
                     type: string
                 type: array
         type: object
+    boundary.ErrorResponse:
+        properties:
+            code:
+                type: string
+            error:
+                type: string
+        type: object
 host: localhost:8110
 info:
     contact: {}
@@ -135,7 +142,7 @@ paths:
                 "400":
                     description: missing document or version
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token
                     schema:
@@ -217,7 +224,7 @@ paths:
                 "400":
                     description: invalid body or unknown updateMask entry
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token
                     schema:
@@ -265,7 +272,7 @@ paths:
                 "400":
                     description: invalid body or unknown updateMask entry
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token
                     schema:
