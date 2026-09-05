@@ -58,13 +58,22 @@ export const splitHooksFile = async (serviceName, outputDir) => {
 
   for (let i = headerEndLine + 1; i < lines.length; i++) {
     const line = lines[i];
+    const trimmedLine = line.trim();
 
-    if (line.startsWith('export ')) {
+    // Orval's raw (pre-prettier) output occasionally indents a top-level
+    // `export` statement by a stray leading space (seen from orval v8.28.1
+    // onward). Matching on the trimmed line keeps this scan working
+    // regardless of that cosmetic indentation - prettier normalizes it away
+    // in the formatting pass that runs after this split.
+    if (trimmedLine.startsWith('export ')) {
       firstExportLine = i;
       break;
     }
 
-    if (line.startsWith('import ') || line.startsWith('import type ')) {
+    if (
+      trimmedLine.startsWith('import ') ||
+      trimmedLine.startsWith('import type ')
+    ) {
       if (currentImport) {
         currentImport = null;
         currentImportLines = [];
@@ -74,7 +83,7 @@ export const splitHooksFile = async (serviceName, outputDir) => {
         if (line.includes("from 'axios'") || line.includes('from "axios"')) {
           axiosImports.push(line);
         } else if (line.includes("from 'swr") || line.includes('from "swr')) {
-          if (line.startsWith('import type')) {
+          if (trimmedLine.startsWith('import type')) {
             swrTypeImports.push(line);
           } else {
             swrImports.push(line);
@@ -85,7 +94,9 @@ export const splitHooksFile = async (serviceName, outputDir) => {
           typeImports.push(line);
         }
       } else {
-        currentImport = line.startsWith('import type') ? 'type' : 'regular';
+        currentImport = trimmedLine.startsWith('import type')
+          ? 'type'
+          : 'regular';
         currentImportLines = [line];
       }
     } else if (currentImportLines.length > 0) {
