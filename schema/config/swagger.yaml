@@ -7,6 +7,13 @@ definitions:
                     ClassifierEnforceMode is "shadow" or "enforce". In shadow mode the
                     classifier tag is recorded but never promotes to a block verdict.
                 type: string
+            complianceShadowEnabled:
+                description: |-
+                    ComplianceShadowEnabled indicates whether the deferred compliance-check
+                    stage (PACT-814, PACT_COMPLIANCE_SHADOW_ENABLED) is active. The stage
+                    only ever triggers on a request that carries a system prompt (today,
+                    the proxy feature's KindInput scan) - it never triggers on /v1/check.
+                type: boolean
             consensusMode:
                 description: |-
                     ConsensusMode is "inline" or "shadow" (PACT-432). Inline blocks the

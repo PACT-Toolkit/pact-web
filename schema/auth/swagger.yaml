@@ -316,7 +316,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: invalid credentials
                     schema:
@@ -405,7 +405,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: invalid or expired mfa token
                     schema:
@@ -435,7 +435,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: invalid or expired mfa token, or invalid assertion
                     schema:
@@ -484,7 +484,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: invalid or expired mfa token/code
                     schema:
@@ -519,7 +519,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: invalid code or state
                     schema:
@@ -620,7 +620,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token
                     schema:
@@ -656,7 +656,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             summary: Begin a passkey login
             tags:
                 - auth
@@ -682,7 +682,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: invalid assertion
                     schema:
@@ -712,7 +712,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token
                     schema:
@@ -744,7 +744,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token, or invalid attestation
                     schema:
@@ -776,7 +776,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: invalid or expired reset token
                     schema:
@@ -804,7 +804,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             summary: Request a password-reset email
             tags:
                 - auth
@@ -828,7 +828,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "409":
                     description: already exists
                     schema:
@@ -880,7 +880,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing, invalid, or reused refresh token
                     schema:
@@ -929,7 +929,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: missing or invalid bearer token, or invalid code
                     schema:
@@ -961,7 +961,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
                     description: invalid or expired verification token
                     schema:
@@ -989,7 +989,7 @@ paths:
                 "400":
                     description: invalid request body
                     schema:
-                        type: string
+                        $ref: '#/definitions/boundary.ErrorResponse'
             summary: Resend the account verification email
             tags:
                 - auth

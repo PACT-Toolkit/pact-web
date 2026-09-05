@@ -5,13 +5,25 @@
  * Public REST entrypoint for the PACT safety pipeline.
  * OpenAPI spec version: 0.1.0
  */
+import type { BenchmarkCategoryBreakdownBody } from './benchmarkCategoryBreakdownBody';
 import type { BenchmarkJobRowBody } from './benchmarkJobRowBody';
+import type { BenchmarkLayerBreakdownBody } from './benchmarkLayerBreakdownBody';
+import type { BenchmarkRunCountsBody } from './benchmarkRunCountsBody';
 
 export interface BenchmarkJobResultBody {
+  /** Counts is absent when the producer did not record it (runs persisted
+   * before the breakdown existed); never zero-filled. */
+  counts?: BenchmarkRunCountsBody;
   detection_rate: number;
   fp_rate: number;
   p50_latency_ms: number;
   p99_latency_ms: number;
+  /** PerCategory is absent when the producer did not record it (runs
+   * persisted before the breakdown existed); never zero-filled. */
+  per_category?: BenchmarkCategoryBreakdownBody[];
+  /** PerLayer is absent when the producer did not record it (runs
+   * persisted before the breakdown existed); never zero-filled. */
+  per_layer?: BenchmarkLayerBreakdownBody[];
   rows: BenchmarkJobRowBody[];
   total_rows: number;
 }
