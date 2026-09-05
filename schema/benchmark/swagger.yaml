@@ -4,6 +4,12 @@ definitions:
         properties:
             corpus_version:
                 type: string
+            counts:
+                allOf:
+                    - $ref: '#/definitions/benchmark.RunCountsBody'
+                description: |-
+                    Counts is absent when the producer did not record it (runs persisted
+                    before the breakdown existed); never zero-filled.
             detection_rate:
                 type: number
             engine:
@@ -18,6 +24,20 @@ definitions:
                 type: number
             p99_latency:
                 type: number
+            per_category:
+                description: |-
+                    PerCategory is absent when the producer did not record it (runs
+                    persisted before the breakdown existed); never zero-filled.
+                items:
+                    $ref: '#/definitions/benchmark.CategoryBreakdownBody'
+                type: array
+            per_layer:
+                description: |-
+                    PerLayer is absent when the producer did not record it (runs
+                    persisted before the breakdown existed); never zero-filled.
+                items:
+                    $ref: '#/definitions/benchmark.LayerBreakdownBody'
+                type: array
             ran_at:
                 type: integer
             row_count:
@@ -33,6 +53,31 @@ definitions:
             - p99_latency
             - ran_at
             - row_count
+        type: object
+    benchmark.CategoryBreakdownBody:
+        properties:
+            attacks:
+                type: integer
+            benign:
+                type: integer
+            category:
+                type: string
+            detected:
+                type: integer
+            entries:
+                type: integer
+            errors:
+                type: integer
+            fp:
+                type: integer
+        required:
+            - attacks
+            - benign
+            - category
+            - detected
+            - entries
+            - errors
+            - fp
         type: object
     benchmark.CorpusDatasetSummaryBody:
         properties:
@@ -95,6 +140,12 @@ definitions:
         type: object
     benchmark.JobResultBody:
         properties:
+            counts:
+                allOf:
+                    - $ref: '#/definitions/benchmark.RunCountsBody'
+                description: |-
+                    Counts is absent when the producer did not record it (runs persisted
+                    before the breakdown existed); never zero-filled.
             detection_rate:
                 type: number
             fp_rate:
@@ -103,6 +154,20 @@ definitions:
                 type: number
             p99_latency_ms:
                 type: number
+            per_category:
+                description: |-
+                    PerCategory is absent when the producer did not record it (runs
+                    persisted before the breakdown existed); never zero-filled.
+                items:
+                    $ref: '#/definitions/benchmark.CategoryBreakdownBody'
+                type: array
+            per_layer:
+                description: |-
+                    PerLayer is absent when the producer did not record it (runs
+                    persisted before the breakdown existed); never zero-filled.
+                items:
+                    $ref: '#/definitions/benchmark.LayerBreakdownBody'
+                type: array
             rows:
                 items:
                     $ref: '#/definitions/benchmark.JobRowBody'
@@ -135,6 +200,22 @@ definitions:
             - latency_ms
             - row_id
         type: object
+    benchmark.LayerBreakdownBody:
+        properties:
+            layer:
+                type: string
+            p50_ms:
+                type: number
+            p99_ms:
+                type: number
+            samples:
+                type: integer
+        required:
+            - layer
+            - p50_ms
+            - p99_ms
+            - samples
+        type: object
     benchmark.ListRunsResponse:
         properties:
             runs:
@@ -158,6 +239,25 @@ definitions:
         required:
             - runs
             - total
+        type: object
+    benchmark.RunCountsBody:
+        properties:
+            attacks:
+                type: integer
+            benign:
+                type: integer
+            errors:
+                type: integer
+            false_positives:
+                type: integer
+            true_positives:
+                type: integer
+        required:
+            - attacks
+            - benign
+            - errors
+            - false_positives
+            - true_positives
         type: object
     benchmark.SaveCorpusRequest:
         properties:

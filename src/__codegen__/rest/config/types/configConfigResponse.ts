@@ -10,6 +10,11 @@ export interface ConfigConfigResponse {
   /** ClassifierEnforceMode is "shadow" or "enforce". In shadow mode the
    * classifier tag is recorded but never promotes to a block verdict. */
   classifierEnforceMode?: string;
+  /** ComplianceShadowEnabled indicates whether the deferred compliance-check
+   * stage (PACT-814, PACT_COMPLIANCE_SHADOW_ENABLED) is active. The stage
+   * only ever triggers on a request that carries a system prompt (today,
+   * the proxy feature's KindInput scan) - it never triggers on /v1/check. */
+  complianceShadowEnabled?: boolean;
   /** ConsensusMode is "inline" or "shadow" (PACT-432). Inline blocks the
    * /v1/check response until pact-consensus votes; shadow defers the vote
    * to a background completion. Added alongside the runtime enforcement

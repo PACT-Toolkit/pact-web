@@ -147,7 +147,7 @@ export type loginResponse200 = {
 };
 
 export type loginResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -346,7 +346,7 @@ export type beginMfaPasskeyAssertionResponse200 = {
 };
 
 export type beginMfaPasskeyAssertionResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -409,7 +409,7 @@ export type finishMfaPasskeyAssertionResponse200 = {
 };
 
 export type finishMfaPasskeyAssertionResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -525,7 +525,7 @@ export type verifyMfaResponse200 = {
 };
 
 export type verifyMfaResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -583,7 +583,7 @@ export type handleOAuthCallbackResponse200 = {
 };
 
 export type handleOAuthCallbackResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -800,7 +800,7 @@ export type renamePasskeyResponse204 = {
 };
 
 export type renamePasskeyResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -865,7 +865,7 @@ export type beginPasskeyLoginResponse200 = {
 };
 
 export type beginPasskeyLoginResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -916,7 +916,7 @@ export type finishPasskeyLoginResponse200 = {
 };
 
 export type finishPasskeyLoginResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -975,7 +975,7 @@ export type beginPasskeyRegistrationResponse200 = {
 };
 
 export type beginPasskeyRegistrationResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -1038,7 +1038,7 @@ export type finishPasskeyRegistrationResponse200 = {
 };
 
 export type finishPasskeyRegistrationResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -1101,7 +1101,7 @@ export type confirmPasswordResetResponse200 = {
 };
 
 export type confirmPasswordResetResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -1163,7 +1163,7 @@ export type requestPasswordResetResponse202 = {
 };
 
 export type requestPasswordResetResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -1219,7 +1219,7 @@ export type registerAccountResponse201 = {
 };
 
 export type registerAccountResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -1317,7 +1317,7 @@ export type refreshSessionResponse200 = {
 };
 
 export type refreshSessionResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -1425,7 +1425,7 @@ export type confirmTOTPEnrollmentResponse200 = {
 };
 
 export type confirmTOTPEnrollmentResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -1487,7 +1487,7 @@ export type verifyEmailResponse200 = {
 };
 
 export type verifyEmailResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 
@@ -1545,7 +1545,7 @@ export type resendVerificationResponse202 = {
 };
 
 export type resendVerificationResponse400 = {
-  data: string;
+  data: BoundaryErrorResponse;
   status: 400;
 };
 

@@ -8,6 +8,7 @@ import {
 } from '@/src/__codegen__/rest/benchmark';
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
 import { BenchmarkComparison } from '@/src/app/benchmark/ui/BenchmarkComparison';
+import { BenchmarkConfusionTiles } from '@/src/app/benchmark/ui/BenchmarkConfusionTiles';
 import { BenchmarkCorpusLibraryCard } from '@/src/app/benchmark/ui/BenchmarkCorpusLibraryCard';
 import { BenchmarkJobProgress } from '@/src/app/benchmark/ui/BenchmarkJobProgress';
 import { BenchmarkLatencyChart } from '@/src/app/benchmark/ui/BenchmarkLatencyChart';
@@ -99,11 +100,14 @@ export const BenchmarkWorkbench = () => {
       )}
 
       {jobId && jobState?.status === 'done' && jobState.result && (
-        <BenchmarkResultsTable
-          key={jobId}
-          jobId={jobId}
-          totalRows={jobState.result.total_rows}
-        />
+        <>
+          <BenchmarkConfusionTiles counts={jobState.result.counts} />
+          <BenchmarkResultsTable
+            key={jobId}
+            jobId={jobId}
+            totalRows={jobState.result.total_rows}
+          />
+        </>
       )}
     </div>
   );

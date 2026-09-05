@@ -29,6 +29,7 @@ import { chartRunTimestampLabelFormatter } from '@/src/framework/charts/tooltip_
 import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
 import { buildLabel } from '@/src/framework/format/build_label';
 import { formatDayTick } from '@/src/framework/format/day_tick_format';
+import { formatLatencyTick } from '@/src/framework/format/latency_tick_format';
 import { formatMetric } from '@/src/framework/format/metric_format';
 
 interface BenchmarkLatencyChartProps {
@@ -97,7 +98,7 @@ export const BenchmarkLatencyChart = ({
                 axisLine={false}
                 tickMargin={4}
                 tick={{ fontSize: 11 }}
-                tickFormatter={(v: number) => `${Math.round(v)} ms`}
+                tickFormatter={formatLatencyTick}
                 domain={[0, maxLatency]}
                 tickCount={5}
                 allowDecimals={false}

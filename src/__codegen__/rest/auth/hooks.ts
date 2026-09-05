@@ -389,7 +389,7 @@ export type LoginMutationResult = NonNullable<
 /**
  * @summary Log in with email and password
  */
-export const useLogin = <TError = string | BoundaryErrorResponse>(options?: {
+export const useLogin = <TError = BoundaryErrorResponse>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof login>>,
     TError,
@@ -516,7 +516,7 @@ export type BeginMfaPasskeyAssertionMutationResult = NonNullable<
  * @summary Begin a passkey-assertion MFA step-up
  */
 export const useBeginMfaPasskeyAssertion = <
-  TError = string | BoundaryErrorResponse,
+  TError = BoundaryErrorResponse,
 >(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof beginMfaPasskeyAssertion>>,
@@ -548,7 +548,7 @@ export type FinishMfaPasskeyAssertionMutationResult = NonNullable<
  * @summary Finish a passkey-assertion MFA step-up
  */
 export const useFinishMfaPasskeyAssertion = <
-  TError = string | BoundaryErrorResponse,
+  TError = BoundaryErrorResponse,
 >(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof finishMfaPasskeyAssertion>>,
@@ -610,9 +610,7 @@ export type VerifyMfaMutationResult = NonNullable<
 /**
  * @summary Complete a partial-auth login with an MFA code
  */
-export const useVerifyMfa = <
-  TError = string | BoundaryErrorResponse,
->(options?: {
+export const useVerifyMfa = <TError = BoundaryErrorResponse>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof verifyMfa>>,
     TError,
@@ -642,7 +640,7 @@ export type HandleOAuthCallbackMutationResult = NonNullable<
 /**
  * @summary Complete a federated OAuth login
  */
-export const useHandleOAuthCallback = <TError = string | BoundaryErrorResponse>(
+export const useHandleOAuthCallback = <TError = BoundaryErrorResponse>(
   provider: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -779,7 +777,7 @@ export type RenamePasskeyMutationResult = NonNullable<
 /**
  * @summary Rename a passkey
  */
-export const useRenamePasskey = <TError = string | BoundaryErrorResponse>(
+export const useRenamePasskey = <TError = BoundaryErrorResponse | string>(
   passkeyId: string,
   options?: {
     swr?: SWRMutationConfiguration<
@@ -812,7 +810,7 @@ export type BeginPasskeyLoginMutationResult = NonNullable<
 /**
  * @summary Begin a passkey login
  */
-export const useBeginPasskeyLogin = <TError = string>(options?: {
+export const useBeginPasskeyLogin = <TError = BoundaryErrorResponse>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof beginPasskeyLogin>>,
     TError,
@@ -843,7 +841,7 @@ export type FinishPasskeyLoginMutationResult = NonNullable<
  * @summary Finish a passkey login
  */
 export const useFinishPasskeyLogin = <
-  TError = string | BoundaryErrorResponse,
+  TError = BoundaryErrorResponse,
 >(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof finishPasskeyLogin>>,
@@ -874,7 +872,9 @@ export type BeginPasskeyRegistrationMutationResult = NonNullable<
 /**
  * @summary Begin passkey registration
  */
-export const useBeginPasskeyRegistration = <TError = string>(options?: {
+export const useBeginPasskeyRegistration = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof beginPasskeyRegistration>>,
     TError,
@@ -904,7 +904,9 @@ export type FinishPasskeyRegistrationMutationResult = NonNullable<
 /**
  * @summary Finish passkey registration
  */
-export const useFinishPasskeyRegistration = <TError = string>(options?: {
+export const useFinishPasskeyRegistration = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof finishPasskeyRegistration>>,
     TError,
@@ -936,7 +938,7 @@ export type ConfirmPasswordResetMutationResult = NonNullable<
  * @summary Confirm a password reset with the emailed token
  */
 export const useConfirmPasswordReset = <
-  TError = string | BoundaryErrorResponse,
+  TError = BoundaryErrorResponse,
 >(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof confirmPasswordReset>>,
@@ -967,7 +969,9 @@ export type RequestPasswordResetMutationResult = NonNullable<
 /**
  * @summary Request a password-reset email
  */
-export const useRequestPasswordReset = <TError = string>(options?: {
+export const useRequestPasswordReset = <
+  TError = BoundaryErrorResponse,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof requestPasswordReset>>,
     TError,
@@ -997,9 +1001,7 @@ export type RegisterAccountMutationResult = NonNullable<
 /**
  * @summary Register a new account
  */
-export const useRegisterAccount = <
-  TError = string | BoundaryErrorResponse,
->(options?: {
+export const useRegisterAccount = <TError = BoundaryErrorResponse>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof registerAccount>>,
     TError,
@@ -1062,7 +1064,9 @@ export type RefreshSessionMutationResult = NonNullable<
 /**
  * @summary Redeem a refresh token for a new session
  */
-export const useRefreshSession = <TError = string>(options?: {
+export const useRefreshSession = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof refreshSession>>,
     TError,
@@ -1122,7 +1126,9 @@ export type ConfirmTOTPEnrollmentMutationResult = NonNullable<
 /**
  * @summary Confirm TOTP enrollment with a generated code
  */
-export const useConfirmTOTPEnrollment = <TError = string>(options?: {
+export const useConfirmTOTPEnrollment = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof confirmTOTPEnrollment>>,
     TError,
@@ -1152,9 +1158,7 @@ export type VerifyEmailMutationResult = NonNullable<
 /**
  * @summary Verify an account email with the emailed token
  */
-export const useVerifyEmail = <
-  TError = string | BoundaryErrorResponse,
->(options?: {
+export const useVerifyEmail = <TError = BoundaryErrorResponse>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof verifyEmail>>,
     TError,
@@ -1184,7 +1188,9 @@ export type ResendVerificationMutationResult = NonNullable<
 /**
  * @summary Resend the account verification email
  */
-export const useResendVerification = <TError = string>(options?: {
+export const useResendVerification = <
+  TError = BoundaryErrorResponse,
+>(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof resendVerification>>,
     TError,

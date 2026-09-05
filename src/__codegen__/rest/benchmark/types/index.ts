@@ -7,13 +7,16 @@
  */
 
 export * from './benchmarkBenchmarkRunBody';
+export * from './benchmarkCategoryBreakdownBody';
 export * from './benchmarkCorpusDatasetSummaryBody';
 export * from './benchmarkCorpusLibrarySummaryResponse';
 export * from './benchmarkGetJobResponse';
 export * from './benchmarkJobResultBody';
 export * from './benchmarkJobRowBody';
+export * from './benchmarkLayerBreakdownBody';
 export * from './benchmarkListRunsResponse';
 export * from './benchmarkListTestLabRunsResponse';
+export * from './benchmarkRunCountsBody';
 export * from './benchmarkSaveCorpusRequest';
 export * from './benchmarkSaveCorpusResponse';
 export * from './benchmarkSaveTestLabRunRequest';

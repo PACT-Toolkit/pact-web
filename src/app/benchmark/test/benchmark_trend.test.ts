@@ -6,6 +6,7 @@ import {
   type BenchmarkRun,
 } from '@/src/app/benchmark/domain/benchmark_run';
 import {
+  formatConfidenceBand,
   formatRunTimestamp,
   latencyChartData,
   LATENCY_SERIES,
@@ -118,6 +119,42 @@ describe('trendChartData', () => {
     expect(point.corpus_version).toBe('seed-v9.jsonl');
     expect(point.engine).toBe('stub');
     expect(point.gateway_version).toBe('v2.1.0');
+  });
+
+  it('leaves detection_band and fp_band undefined when the run has no counts', () => {
+    const run = makeRun({ counts: undefined });
+
+    const [point] = trendChartData([run]);
+
+    expect(point.detection_band).toBeUndefined();
+    expect(point.fp_band).toBeUndefined();
+  });
+
+  it('computes a Wilson confidence band from counts when present', () => {
+    const run = makeRun({
+      counts: {
+        attacks: 100,
+        benign: 100,
+        true_positives: 95,
+        false_positives: 5,
+        errors: 0,
+      },
+    });
+
+    const [point] = trendChartData([run]);
+
+    expect(point.detection_band).toEqual([88.8, 97.8]);
+    expect(point.fp_band).toEqual([2.2, 11.2]);
+  });
+});
+
+describe('formatConfidenceBand', () => {
+  it('returns null when the band is absent', () => {
+    expect(formatConfidenceBand(undefined)).toBeNull();
+  });
+
+  it('renders a "low%-high%" string', () => {
+    expect(formatConfidenceBand([88.8, 97.8])).toBe('88.8%-97.8%');
   });
 });
 
