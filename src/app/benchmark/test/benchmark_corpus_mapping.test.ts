@@ -220,6 +220,90 @@ describe('normalizeCorpus', () => {
     });
   });
 
+  it('passes source through when present', () => {
+    const parsed = {
+      columns: ['text', 'label', 'source'],
+      rows: [{ text: 'hello', label: 'block', source: 'xtram1' }],
+    };
+
+    const result = normalizeCorpus(parsed, mapping({ block: 'block' }));
+
+    expect(result.rows[0]).toEqual({
+      id: 'row-00001',
+      content: 'hello',
+      kind: 'input',
+      expected_label: 'block',
+      source: 'xtram1',
+    });
+  });
+
+  it('passes a "output" kind column through', () => {
+    const parsed = {
+      columns: ['text', 'label', 'kind'],
+      rows: [{ text: 'hello', label: 'block', kind: 'output' }],
+    };
+
+    const result = normalizeCorpus(parsed, mapping({ block: 'block' }));
+
+    expect(result.rows[0].kind).toBe('output');
+  });
+
+  it('matches the kind column case-insensitively and trims it', () => {
+    const parsed = {
+      columns: ['text', 'label', 'kind'],
+      rows: [{ text: 'hello', label: 'block', kind: '  OUTPUT  ' }],
+    };
+
+    const result = normalizeCorpus(parsed, mapping({ block: 'block' }));
+
+    expect(result.rows[0].kind).toBe('output');
+  });
+
+  it('defaults kind to "input" for an unrecognised, blank, or absent kind value', () => {
+    const parsed = {
+      columns: ['text', 'label', 'kind'],
+      rows: [
+        { text: 'a', label: 'block', kind: 'other' },
+        { text: 'b', label: 'block', kind: '' },
+        { text: 'c', label: 'block' },
+      ],
+    };
+
+    const result = normalizeCorpus(parsed, mapping({ block: 'block' }));
+
+    expect(result.rows.map((row) => row.kind)).toEqual([
+      'input',
+      'input',
+      'input',
+    ]);
+  });
+
+  it('drops rows whose text cell is blank, absent, or whitespace-only, counting them as skipped', () => {
+    const parsed = {
+      columns: ['text', 'label'],
+      rows: [
+        { text: 'hello', label: 'allow' },
+        { text: '', label: 'allow' },
+        { text: '   ', label: 'block' },
+        { label: 'block' },
+      ],
+    };
+
+    const result = normalizeCorpus(
+      parsed,
+      mapping({ allow: 'allow', block: 'block' })
+    );
+
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].content).toBe('hello');
+    expect(result.totals).toEqual({
+      total: 4,
+      attacks: 0,
+      benign: 1,
+      skipped: 3,
+    });
+  });
+
   it('drops rows whose value maps to skip, but still counts them', () => {
     const parsed = {
       columns: ['text', 'label'],

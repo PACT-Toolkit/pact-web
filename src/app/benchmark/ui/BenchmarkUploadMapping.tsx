@@ -127,6 +127,7 @@ export const BenchmarkUploadMapping = ({
               >
                 <SelectTrigger
                   size="sm"
+                  aria-label={`Decision for label value ${value || 'blank'}`}
                   data-testid={`benchmark-upload-mapping-value-${testIdForValue(value)}`}
                 >
                   <SelectValue />

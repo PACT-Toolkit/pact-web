@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
   computeDistinctLabelValues,
@@ -31,7 +31,6 @@ export const BenchmarkUploadForm = ({
   onSubmit,
   isSubmitting,
 }: BenchmarkUploadFormProps) => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [columns, setColumns] = useState<string[] | null>(null);
@@ -174,7 +173,6 @@ export const BenchmarkUploadForm = ({
             </Label>
             <input
               id="corpus-file"
-              ref={fileInputRef}
               type="file"
               accept=".jsonl,.ndjson,.json,.csv"
               onChange={handleFileChange}

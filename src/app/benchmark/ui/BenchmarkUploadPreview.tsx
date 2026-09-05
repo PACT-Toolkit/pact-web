@@ -62,8 +62,8 @@ export const BenchmarkUploadPreview = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.slice(0, PREVIEW_ROW_COUNT).map((row) => (
-            <TableRow key={row.id} data-testid="benchmark-upload-preview-row">
+          {rows.slice(0, PREVIEW_ROW_COUNT).map((row, index) => (
+            <TableRow key={index} data-testid="benchmark-upload-preview-row">
               <TableCell className="font-mono text-xs">{row.id}</TableCell>
               <TableCell className="max-w-md truncate" title={row.content}>
                 {truncateForPreview(row.content)}

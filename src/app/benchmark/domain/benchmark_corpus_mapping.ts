@@ -1,10 +1,10 @@
 import { type ParsedCorpus } from '@/src/app/benchmark/domain/benchmark_corpus_parse';
 
 // Column and value alias tables for mapping an arbitrary uploaded corpus onto
-// the canonical `{id, content, kind, expected_label, category}` shape the
-// gateway benchmark job expects. The gateway/pact-benchmark side keeps the
-// same tables (see pact-benchmark's corpus alias normalisation) - keep both
-// in sync if either changes.
+// the canonical `{id, content, kind, expected_label, category, source}` shape
+// the gateway benchmark job expects. The gateway/pact-benchmark side keeps
+// the same tables (see pact-benchmark's corpus alias normalisation) - keep
+// both in sync if either changes.
 export const TEXT_COLUMN_ALIASES = [
   'content',
   'text',
@@ -53,6 +53,8 @@ export const ALLOW_VALUE_ALIASES = [
 
 const ID_COLUMN_NAME = 'id';
 const CATEGORY_COLUMN_NAME = 'category';
+const KIND_COLUMN_NAME = 'kind';
+const SOURCE_COLUMN_NAME = 'source';
 
 const MAX_DISTINCT_LABEL_VALUES = 20;
 const ID_PAD_WIDTH = 5;
@@ -76,9 +78,10 @@ export type DistinctLabelValuesOutcome =
 export interface NormalizedCorpusRow {
   id: string;
   content: string;
-  kind: 'input';
+  kind: 'input' | 'output';
   expected_label: 'allow' | 'block';
   category?: string;
+  source?: string;
 }
 
 export interface CorpusTotals {
@@ -206,12 +209,44 @@ function generatedRowId(index: number): string {
 }
 
 /**
+ * Resolves a raw `kind` cell to the gateway's check-direction value. Only
+ * "input" and "output" are recognised (case-insensitively, trimmed) - any
+ * other value, a blank cell, or no `kind` column at all defaults to "input"
+ * so a canonical input-only corpus needs no `kind` column at all.
+ */
+function resolveKind(rawKind: string): 'input' | 'output' {
+  return rawKind.trim().toLowerCase() === 'output' ? 'output' : 'input';
+}
+
+/**
+ * Reads an optional passthrough column (e.g. `category`, `source`) for a
+ * row, returning `undefined` when the column doesn't exist or the cell is
+ * absent/null/blank, so callers can spread it in only when present.
+ */
+function optionalColumnValue(
+  sourceRow: Record<string, unknown>,
+  column: string | null
+): string | undefined {
+  if (!column) return undefined;
+
+  const raw = sourceRow[column];
+  if (raw === undefined || raw === null) return undefined;
+
+  const value = String(raw).trim();
+
+  return value.length > 0 ? value : undefined;
+}
+
+/**
  * Normalises the parsed rows against the chosen text/label columns and
  * per-value decisions into the canonical shape the gateway benchmark job
- * expects: a generated id when the source has none, `kind: "input"`,
- * `category` passed through when present, and every other column dropped.
- * Rows whose label value maps to "skip" are excluded from the output but
- * still counted in totals.
+ * expects: a generated id when the source has none, `kind` passed through
+ * from a `kind` column (defaulting to "input"), `category` and `source`
+ * passed through when present, and every other column dropped. Rows whose
+ * label value maps to "skip", and rows whose text cell is blank (absent,
+ * null, empty, or whitespace-only), are excluded from the output - a blank
+ * row cannot be scored and the gateway rejects the whole job if one is
+ * submitted - but both are still counted under `skipped` in totals.
  */
 export function normalizeCorpus(
   parsed: ParsedCorpus,
@@ -223,6 +258,8 @@ export function normalizeCorpus(
 ): NormalizedCorpus {
   const idColumn = findColumn(parsed.columns, ID_COLUMN_NAME);
   const categoryColumn = findColumn(parsed.columns, CATEGORY_COLUMN_NAME);
+  const kindColumn = findColumn(parsed.columns, KIND_COLUMN_NAME);
+  const sourceColumn = findColumn(parsed.columns, SOURCE_COLUMN_NAME);
 
   const rows: NormalizedCorpusRow[] = [];
   let attacks = 0;
@@ -230,10 +267,15 @@ export function normalizeCorpus(
   let skipped = 0;
 
   parsed.rows.forEach((sourceRow, index) => {
+    const rawContent = sourceRow[mapping.textColumn];
+    const content =
+      rawContent === undefined || rawContent === null ? '' : String(rawContent);
+    const isBlankContent = content.trim().length === 0;
+
     const rawLabel = stringifyLabelValue(sourceRow[mapping.labelColumn]);
     const decision = mapping.valueDecisions[rawLabel] ?? 'skip';
 
-    if (decision === 'skip') {
+    if (isBlankContent || decision === 'skip') {
       skipped += 1;
 
       return;
@@ -245,20 +287,19 @@ export function normalizeCorpus(
     const rawId = idColumn ? stringifyLabelValue(sourceRow[idColumn]) : '';
     const id = rawId.length > 0 ? rawId : generatedRowId(index);
 
-    const category = categoryColumn ? sourceRow[categoryColumn] : undefined;
-    const categoryValue =
-      category !== undefined &&
-      category !== null &&
-      String(category).trim().length > 0
-        ? String(category)
-        : undefined;
+    const kind = kindColumn
+      ? resolveKind(stringifyLabelValue(sourceRow[kindColumn]))
+      : 'input';
+    const categoryValue = optionalColumnValue(sourceRow, categoryColumn);
+    const sourceValue = optionalColumnValue(sourceRow, sourceColumn);
 
     rows.push({
       id,
-      content: String(sourceRow[mapping.textColumn] ?? ''),
-      kind: 'input',
+      content,
+      kind,
       expected_label: decision,
       ...(categoryValue !== undefined ? { category: categoryValue } : {}),
+      ...(sourceValue !== undefined ? { source: sourceValue } : {}),
     });
   });
 
