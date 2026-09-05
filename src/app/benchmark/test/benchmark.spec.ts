@@ -309,3 +309,97 @@ test.describe('Benchmark confusion tiles on a completed job', () => {
     ).toContainText('3');
   });
 });
+
+// Covers the corpus upload column-mapping step: an arbitrary CSV (here using
+// aliased "text"/"label" columns and numeric 0/1 labels, rather than the
+// canonical content/expected_label) is parsed client-side, the text/label
+// columns and per-value block/allow decisions pre-fill from the alias
+// tables, the user can override a value's decision, and the resulting
+// preview/submission reflect that override.
+test.describe('Benchmark upload column mapping', () => {
+  test('pre-fills the mapping for an aliased CSV, lets the user override a value, and submits it', async ({
+    page,
+  }) => {
+    await page.goto('/benchmark');
+    await expect(page.getByTestId('benchmark-workbench')).toBeVisible();
+
+    const csv = ['text,label', 'hello,0', 'world,1', 'foo,0', 'bar,1'].join(
+      '\n'
+    );
+
+    await page.setInputFiles('#corpus-file', {
+      name: 'mapping-corpus.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csv),
+    });
+
+    // "text" and "label" both appear directly in the alias tables, so the
+    // column selects pre-fill without any manual pick.
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-text-column')
+    ).toContainText('text');
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-label-column')
+    ).toContainText('label');
+
+    // Numeric label values 1/0 pre-fill from the block/allow vocabulary.
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-value-1')
+    ).toContainText('Block');
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-value-0')
+    ).toContainText('Allow');
+
+    await expect(
+      page.getByTestId('benchmark-upload-preview-total')
+    ).toContainText('4');
+    await expect(
+      page.getByTestId('benchmark-upload-preview-attacks')
+    ).toContainText('2');
+    await expect(
+      page.getByTestId('benchmark-upload-preview-benign')
+    ).toContainText('2');
+    await expect(
+      page.getByTestId('benchmark-upload-preview-skipped')
+    ).toContainText('0');
+
+    // Override the "0" (allow) value to skip instead - the preview totals
+    // must re-derive from that change with no page reload.
+    await page.getByTestId('benchmark-upload-mapping-value-0').click();
+    await page.getByRole('option', { name: 'Skip', exact: true }).click();
+
+    await expect(
+      page.getByTestId('benchmark-upload-preview-benign')
+    ).toContainText('0');
+    await expect(
+      page.getByTestId('benchmark-upload-preview-skipped')
+    ).toContainText('2');
+
+    await page.getByRole('button', { name: 'Run benchmark' }).click();
+
+    // The mock handler advances queued -> running -> done over ~8s,
+    // regardless of the submitted corpus content.
+    await expect(page.getByTestId('benchmark-confusion-tiles')).toBeVisible({
+      timeout: 15000,
+    });
+  });
+
+  test('passes an accessibility check with the mapping and preview rendered', async ({
+    page,
+  }) => {
+    await page.goto('/benchmark');
+    await expect(page.getByTestId('benchmark-workbench')).toBeVisible();
+
+    const csv = ['text,label', 'hello,0', 'world,1'].join('\n');
+    await page.setInputFiles('#corpus-file', {
+      name: 'mapping-corpus.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(csv),
+    });
+
+    await expect(page.getByTestId('benchmark-upload-preview')).toBeVisible();
+
+    const results = await makeAxeBuilder(page).analyze();
+    expect(results.violations).toEqual([]);
+  });
+});
