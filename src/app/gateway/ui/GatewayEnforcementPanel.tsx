@@ -16,13 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
-
-const InfoTile = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex flex-col gap-1 rounded-lg border p-4">
-    <span className="text-xs text-muted-foreground">{label}</span>
-    <span className="text-sm font-semibold tabular-nums">{value}</span>
-  </div>
-);
+import { StatTile } from '@/src/framework/components/stat_tile';
 
 // Live view over GET /v1/config (pact-gateway PACT-320, PR #88): the
 // enforcement posture that determines how the pipeline classifies and blocks
@@ -82,27 +76,38 @@ export const GatewayEnforcementPanel = () => {
               data-testid="gateway-config-grid"
             >
               <GatewayEnforcementControls config={config} mutate={mutate} />
-              <InfoTile
+              <StatTile
+                size="sm"
                 label="Consensus threshold"
                 value={consensusThresholdLabel(config.consensusThreshold)}
               />
-              <InfoTile
+              <StatTile
+                size="sm"
                 label="Request timeout"
                 value={requestTimeoutLabel(config.requestTimeoutSeconds)}
               />
-              <InfoTile
+              <StatTile
+                size="sm"
                 label="Sandbox"
                 value={config.sandboxEnabled ? 'Enabled' : 'Disabled'}
               />
-              <InfoTile
+              <StatTile
+                size="sm"
                 label="Sandbox isolation"
                 value={sandboxIsolationLabel(config.sandboxIsolation)}
               />
-              <InfoTile
+              <StatTile
+                size="sm"
                 label="Diagnostics"
                 value={config.diagnosticsEnabled ? 'Enabled' : 'Disabled'}
               />
-              <InfoTile
+              <StatTile
+                size="sm"
+                label="Compliance shadow"
+                value={config.complianceShadowEnabled ? 'Enabled' : 'Disabled'}
+              />
+              <StatTile
+                size="sm"
                 label="Spotlight format"
                 value={spotlightFormatLabel(config.spotlightFormat)}
               />

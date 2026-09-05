@@ -16,8 +16,8 @@ interface StatTileProps {
  * promoted to framework because the same `{label, value}` tile was
  * independently re-implemented per feature (dashboard, filter, policy,
  * gateway) before this extraction; new call sites should use this instead of
- * adding another copy. See the benchmark confusion-matrix tiles for a current
- * consumer.
+ * adding another copy. See the benchmark confusion-matrix tiles and the
+ * gateway enforcement panel's config grid for current consumers.
  */
 export const StatTile = ({
   label,

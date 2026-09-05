@@ -26,6 +26,10 @@
 // render. use_gateway_config.test.tsx exercises that branch via an MSW
 // override (Playwright has no per-test handler override mechanism in this
 // repo -- see that test file's docblock).
+//
+// complianceShadowEnabled: true (PACT-936) similarly seeds the "on" state
+// for the demo -- real dev deployments default PACT_COMPLIANCE_SHADOW_ENABLED
+// to false, same as sandbox/diagnostics above.
 import { type DB } from '@/mocks/data/dbFactory';
 import {
   type CheckCausalSpanInfo,
@@ -49,6 +53,7 @@ export const mockGatewayConfig = (
   sandboxIsolation: 'namespace',
   sandboxRuntimeWrapped: true,
   diagnosticsEnabled: true,
+  complianceShadowEnabled: true,
   spotlightFormat: 'xml',
   requestTimeoutSeconds: 30,
   ...overrides,
