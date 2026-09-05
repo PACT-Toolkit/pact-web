@@ -10,6 +10,8 @@ import {
   type DeltaDirection,
 } from '@/src/app/benchmark/domain/benchmark_comparison';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
+import { BenchmarkCategoryChart } from '@/src/app/benchmark/ui/BenchmarkCategoryChart';
+import { BenchmarkStageLatencyChart } from '@/src/app/benchmark/ui/BenchmarkStageLatencyChart';
 import {
   Card,
   CardContent,
@@ -94,139 +96,153 @@ const BenchmarkComparisonPanel = () => {
   );
   const deltaBars = useMemo(() => comparisonDeltaBars(metrics), [metrics]);
 
+  // The category/stage charts below only need one run, not a baseline+candidate
+  // pair, so they fall back to the newest run even when there aren't enough
+  // runs to populate the comparison table above.
+  const runUnderInspection = candidate ?? byNewest[0];
+
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Run comparison</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-            Loading…
-          </div>
-        ) : runs.length < 2 ? (
-          <div className="flex h-40 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
-            <p>Not enough runs to compare.</p>
-            <p className="text-xs">
-              Run at least two benchmarks to compare detection rate, FP rate,
-              and latency.
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-4">
-            <div className="flex min-w-0 flex-col gap-3 sm:flex-row">
-              <RunSelect
-                id="benchmark-compare-baseline"
-                label="Baseline"
-                value={baselineId ?? ''}
-                options={options}
-                onChange={setSelBaseline}
-              />
-              <RunSelect
-                id="benchmark-compare-candidate"
-                label="Candidate"
-                value={candidateId ?? ''}
-                options={options}
-                onChange={setSelCandidate}
-              />
+    <div className="flex flex-col gap-6">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium">Run comparison</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
+              Loading…
             </div>
+          ) : runs.length < 2 ? (
+            <div className="flex h-40 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
+              <p>Not enough runs to compare.</p>
+              <p className="text-xs">
+                Run at least two benchmarks to compare detection rate, FP rate,
+                and latency.
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div className="flex min-w-0 flex-col gap-3 sm:flex-row">
+                <RunSelect
+                  id="benchmark-compare-baseline"
+                  label="Baseline"
+                  value={baselineId ?? ''}
+                  options={options}
+                  onChange={setSelBaseline}
+                />
+                <RunSelect
+                  id="benchmark-compare-candidate"
+                  label="Candidate"
+                  value={candidateId ?? ''}
+                  options={options}
+                  onChange={setSelCandidate}
+                />
+              </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-xs text-muted-foreground">
-                    <th scope="col" className="px-3 py-2 font-medium">
-                      Metric
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-2 text-right font-medium tabular-nums"
-                    >
-                      Baseline
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-2 text-right font-medium tabular-nums"
-                    >
-                      Candidate
-                    </th>
-                    <th
-                      scope="col"
-                      className="px-3 py-2 text-right font-medium tabular-nums"
-                    >
-                      Δ
-                    </th>
-                    <th scope="col" className="px-3 py-2 font-medium">
-                      <span className="sr-only">Delta bar</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metrics.map((m, i) => {
-                    const bar = deltaBars[i];
-
-                    return (
-                      <tr
-                        key={m.key}
-                        className="border-b last:border-0 hover:bg-muted/40"
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs text-muted-foreground">
+                      <th scope="col" className="px-3 py-2 font-medium">
+                        Metric
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 py-2 text-right font-medium tabular-nums"
                       >
-                        <td className="px-3 py-2">{m.label}</td>
-                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                          {formatMetric(m.baseline, m.format)}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums">
-                          {formatMetric(m.candidate, m.format)}
-                        </td>
-                        <td
-                          className={cn(
-                            'px-3 py-2 text-right tabular-nums font-medium',
-                            DELTA_CLASS[m.deltaDirection]
-                          )}
+                        Baseline
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 py-2 text-right font-medium tabular-nums"
+                      >
+                        Candidate
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 py-2 text-right font-medium tabular-nums"
+                      >
+                        Δ
+                      </th>
+                      <th scope="col" className="px-3 py-2 font-medium">
+                        <span className="sr-only">Delta bar</span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metrics.map((m, i) => {
+                      const bar = deltaBars[i];
+
+                      return (
+                        <tr
+                          key={m.key}
+                          className="border-b last:border-0 hover:bg-muted/40"
                         >
-                          {m.delta === 0 ? '-' : formatDelta(m.delta, m.format)}
-                        </td>
-                        <td className="px-3 py-2">
-                          <div
-                            data-testid="benchmark-comparison-delta-bar"
-                            role="img"
-                            aria-label={`${m.label} delta: ${
-                              bar.direction === 'neutral'
-                                ? 'no change'
-                                : formatDelta(m.delta, m.format)
-                            }`}
-                            className="relative h-2 w-16"
-                          >
-                            <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border" />
-                            {bar.direction !== 'neutral' && (
-                              <div
-                                className={cn(
-                                  'absolute inset-y-0 rounded-sm',
-                                  DELTA_BAR_CLASS[m.deltaDirection]
-                                )}
-                                style={
-                                  bar.direction === 'positive'
-                                    ? {
-                                        left: '50%',
-                                        width: `${bar.fraction * 50}%`,
-                                      }
-                                    : {
-                                        right: '50%',
-                                        width: `${bar.fraction * 50}%`,
-                                      }
-                                }
-                              />
+                          <td className="px-3 py-2">{m.label}</td>
+                          <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                            {formatMetric(m.baseline, m.format)}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums">
+                            {formatMetric(m.candidate, m.format)}
+                          </td>
+                          <td
+                            className={cn(
+                              'px-3 py-2 text-right tabular-nums font-medium',
+                              DELTA_CLASS[m.deltaDirection]
                             )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          >
+                            {m.delta === 0
+                              ? '-'
+                              : formatDelta(m.delta, m.format)}
+                          </td>
+                          <td className="px-3 py-2">
+                            <div
+                              data-testid="benchmark-comparison-delta-bar"
+                              role="img"
+                              aria-label={`${m.label} delta: ${
+                                bar.direction === 'neutral'
+                                  ? 'no change'
+                                  : formatDelta(m.delta, m.format)
+                              }`}
+                              className="relative h-2 w-16"
+                            >
+                              <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-border" />
+                              {bar.direction !== 'neutral' && (
+                                <div
+                                  className={cn(
+                                    'absolute inset-y-0 rounded-sm',
+                                    DELTA_BAR_CLASS[m.deltaDirection]
+                                  )}
+                                  style={
+                                    bar.direction === 'positive'
+                                      ? {
+                                          left: '50%',
+                                          width: `${bar.fraction * 50}%`,
+                                        }
+                                      : {
+                                          right: '50%',
+                                          width: `${bar.fraction * 50}%`,
+                                        }
+                                  }
+                                />
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <BenchmarkCategoryChart run={runUnderInspection} />
+        <BenchmarkStageLatencyChart run={runUnderInspection} />
+      </div>
+    </div>
   );
 };

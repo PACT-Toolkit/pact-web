@@ -1,4 +1,6 @@
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
+import { roundToOneDecimalPercent } from '@/src/framework/format/round_percent';
+import { wilsonIntervalForCounts } from '@/src/framework/stats/wilson_interval';
 
 /** One plotted point on the detection/FP trend chart. */
 export interface TrendChartPoint {
@@ -11,6 +13,15 @@ export interface TrendChartPoint {
   corpus_version: string;
   engine: string;
   gateway_version: string;
+  /**
+   * 95% Wilson confidence band for detection_rate, [low, high] in percent
+   * (0-100). `undefined` when the run has no `counts` breakdown - recharts
+   * renders a gap for that point rather than a misleading band pinned to
+   * zero (see `wilsonIntervalForCounts`).
+   */
+  detection_band?: [number, number];
+  /** Same shape as detection_band, for fp_rate. */
+  fp_band?: [number, number];
 }
 
 /** A single series' display label and CSS color for a recharts `ChartConfig`. */
@@ -34,15 +45,24 @@ export const TREND_SERIES: Record<
   fp_rate: { label: 'FP rate', color: 'var(--chart-2)' },
 };
 
-/** Round a 0-1 fraction to a percent with one decimal place, e.g. 0.0523 -> 5.2. */
-function roundToOneDecimalPercent(fraction: number): number {
-  return Math.round(fraction * 1000) / 10;
+/** Convert a `{low, high}` fraction interval to a `[low, high]` percent tuple, rounded to one decimal. */
+function bandToPercentTuple(
+  interval: { low: number; high: number } | undefined
+): [number, number] | undefined {
+  if (!interval) return undefined;
+
+  return [
+    roundToOneDecimalPercent(interval.low),
+    roundToOneDecimalPercent(interval.high),
+  ];
 }
 
 /**
  * Map benchmark runs into detection/FP trend chart points, sorted ascending
  * by `ran_at` so the chart plots left-to-right chronologically regardless
- * of the order runs arrive in.
+ * of the order runs arrive in. Confidence bands come from the run's
+ * `counts` breakdown (absent on pre-migration runs, which is why the band
+ * fields are optional - see `wilsonIntervalForCounts`).
  */
 export function trendChartData(
   runs: readonly BenchmarkRun[]
@@ -57,7 +77,22 @@ export function trendChartData(
       corpus_version: r.corpus_version,
       engine: r.engine,
       gateway_version: r.gateway_version,
+      detection_band: bandToPercentTuple(
+        wilsonIntervalForCounts(r.counts?.true_positives, r.counts?.attacks)
+      ),
+      fp_band: bandToPercentTuple(
+        wilsonIntervalForCounts(r.counts?.false_positives, r.counts?.benign)
+      ),
     }));
+}
+
+/** Render a `[low, high]` percent band as "low%-high%" for a tooltip line, or null when absent. */
+export function formatConfidenceBand(
+  band: [number, number] | undefined
+): string | null {
+  if (!band) return null;
+
+  return `${band[0]}%-${band[1]}%`;
 }
 
 /**

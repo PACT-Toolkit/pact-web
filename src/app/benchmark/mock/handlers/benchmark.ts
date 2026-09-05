@@ -35,6 +35,16 @@ const advanceJob = (job: MockJob) => {
         p99_latency_ms: 112.7,
         total_rows: TOTAL_ROWS,
         rows: [],
+        // 100 attacks / 100 benign so true_positives/false_positives divide
+        // out to exactly the detection/fp rates above (PACT-932's confusion
+        // tiles on the live job progress card).
+        counts: {
+          attacks: 100,
+          benign: 100,
+          errors: 0,
+          false_positives: 4,
+          true_positives: 93,
+        },
       };
     }
   }

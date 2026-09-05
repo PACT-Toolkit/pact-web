@@ -1,10 +1,18 @@
 'use client';
 
 import { useMemo } from 'react';
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import {
+  Area,
+  CartesianGrid,
+  ComposedChart,
+  Line,
+  XAxis,
+  YAxis,
+} from 'recharts';
 
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
 import {
+  formatConfidenceBand,
   formatRunTimestamp,
   trendChartData,
   TREND_SERIES,
@@ -73,7 +81,7 @@ export const BenchmarkTrendChart = ({
           </div>
         ) : (
           <ChartContainer config={TREND_SERIES} className="h-64 w-full">
-            <LineChart
+            <ComposedChart
               data={chartData}
               margin={{ left: 0, right: 8, top: 4, bottom: 0 }}
             >
@@ -112,6 +120,13 @@ export const BenchmarkTrendChart = ({
                       const seriesKey = name as keyof typeof TREND_SERIES;
                       const percent =
                         typeof value === 'number' ? value : Number(value);
+                      const confidenceBand = p
+                        ? formatConfidenceBand(
+                            seriesKey === 'detection_rate'
+                              ? p.detection_band
+                              : p.fp_band
+                          )
+                        : null;
 
                       return (
                         <div className="flex w-full flex-col gap-0.5">
@@ -123,6 +138,11 @@ export const BenchmarkTrendChart = ({
                               {formatMetric(percent / 100, 'percent')}
                             </span>
                           </div>
+                          {confidenceBand && (
+                            <span className="text-[10px] text-muted-foreground">
+                              95% CI: {confidenceBand}
+                            </span>
+                          )}
                           {p && seriesKey === 'fp_rate' && (
                             <div className="flex flex-col gap-0.5 text-[10px] text-muted-foreground">
                               <span>Rows: {p.row_count}</span>
@@ -139,6 +159,26 @@ export const BenchmarkTrendChart = ({
                     }}
                   />
                 }
+              />
+              <Area
+                dataKey="detection_band"
+                type="monotone"
+                stroke="none"
+                fill="var(--color-detection_rate)"
+                fillOpacity={0.15}
+                isAnimationActive={false}
+                tooltipType="none"
+                legendType="none"
+              />
+              <Area
+                dataKey="fp_band"
+                type="monotone"
+                stroke="none"
+                fill="var(--color-fp_rate)"
+                fillOpacity={0.15}
+                isAnimationActive={false}
+                tooltipType="none"
+                legendType="none"
               />
               <Line
                 dataKey="detection_rate"
@@ -157,7 +197,7 @@ export const BenchmarkTrendChart = ({
                 activeDot={{ r: 5 }}
               />
               <ChartLegend content={<ChartLegendContent />} />
-            </LineChart>
+            </ComposedChart>
           </ChartContainer>
         )}
       </CardContent>
