@@ -175,6 +175,12 @@ describe('describeHubImportError', () => {
     );
   });
 
+  it('gives a fixed message for a timed-out inspect', () => {
+    expect(describeHubImportError(504, { code: 'timeout' })).toBe(
+      'The dataset took too long to inspect. Try again - the first read of a dataset can be slow.'
+    );
+  });
+
   it('falls back to the server error body for other statuses', () => {
     expect(describeHubImportError(502, { error: 'upstream timeout' })).toBe(
       'upstream timeout'

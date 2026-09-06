@@ -43,13 +43,15 @@ export interface HubDatasetIdentity {
 
 /**
  * Renders a non-2xx response from either import endpoint into a display
- * string. 403 and 404 get a fixed, friendlier message than the gateway's own
- * `boundary.ErrorResponse` text (both endpoints share these two meanings:
- * gated dataset, and dataset/config/split not found); every other status
- * falls back to `extractServerErrorMessage`. Shared between
- * `BenchmarkImportCard` (preview errors) and `BenchmarkWorkbench` (import
- * submission errors) - same contract, same two special cases, one place to
- * keep them in sync if the gateway ever changes what a 403/404 means here.
+ * string. 403, 404, and 504 get a fixed, friendlier message than the
+ * gateway's own `boundary.ErrorResponse` text (the three meanings shared by
+ * both endpoints: gated dataset, dataset/config/split not found, and the
+ * gateway's global request-timeout middleware aborting a cold Hub read);
+ * every other status falls back to `extractServerErrorMessage`. Shared
+ * between `BenchmarkImportCard` (preview errors) and `BenchmarkWorkbench`
+ * (import submission errors) - same contract, same special cases, one place
+ * to keep them in sync if the gateway ever changes what these statuses mean
+ * here.
  */
 export function describeHubImportError(
   status: number,
@@ -60,6 +62,9 @@ export function describeHubImportError(
   }
   if (status === 404) {
     return 'Dataset, config, or split not found.';
+  }
+  if (status === 504) {
+    return 'The dataset took too long to inspect. Try again - the first read of a dataset can be slow.';
   }
 
   return extractServerErrorMessage(data) ?? 'The gateway returned an error.';
