@@ -13,6 +13,8 @@ import type { Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
 import type {
+  BenchmarkBenchmarkImportPreviewResponse,
+  BenchmarkBenchmarkImportRequest,
   BenchmarkCorpusLibrarySummaryResponse,
   BenchmarkGetJobResponse,
   BenchmarkListRunsResponse,
@@ -25,6 +27,7 @@ import type {
   BenchmarkSubmitJobResponse,
   BoundaryErrorResponse,
   GetBenchmarkJobParams,
+  InspectBenchmarkImportParams,
   ListBenchmarkRunsParams,
   ListBenchmarkTestLabRunsParams,
 } from './types';
@@ -50,6 +53,33 @@ import {
   getBenchmarkCorpusLibrarySummaryResponse,
   getBenchmarkCorpusLibrarySummary,
   getGetBenchmarkCorpusLibrarySummaryKey,
+  importBenchmarkDatasetResponse202,
+  importBenchmarkDatasetResponse400,
+  importBenchmarkDatasetResponse401,
+  importBenchmarkDatasetResponse403,
+  importBenchmarkDatasetResponse404,
+  importBenchmarkDatasetResponse502,
+  importBenchmarkDatasetResponse503,
+  importBenchmarkDatasetResponseSuccess,
+  importBenchmarkDatasetResponseError,
+  getImportBenchmarkDatasetUrl,
+  importBenchmarkDatasetResponse,
+  importBenchmarkDataset,
+  getImportBenchmarkDatasetMutationFetcher,
+  getImportBenchmarkDatasetMutationKey,
+  inspectBenchmarkImportResponse200,
+  inspectBenchmarkImportResponse400,
+  inspectBenchmarkImportResponse401,
+  inspectBenchmarkImportResponse403,
+  inspectBenchmarkImportResponse404,
+  inspectBenchmarkImportResponse502,
+  inspectBenchmarkImportResponse503,
+  inspectBenchmarkImportResponseSuccess,
+  inspectBenchmarkImportResponseError,
+  getInspectBenchmarkImportUrl,
+  inspectBenchmarkImportResponse,
+  inspectBenchmarkImport,
+  getInspectBenchmarkImportKey,
   submitBenchmarkJobResponse202,
   submitBenchmarkJobResponse400,
   submitBenchmarkJobResponse401,
@@ -164,6 +194,77 @@ export const useGetBenchmarkCorpusLibrarySummary = <
     swrOptions?.swrKey ??
     (() => (isEnabled ? getGetBenchmarkCorpusLibrarySummaryKey() : null));
   const swrFn = () => getBenchmarkCorpusLibrarySummary(requestOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type ImportBenchmarkDatasetMutationResult = NonNullable<
+  Awaited<ReturnType<typeof importBenchmarkDataset>>
+>;
+
+/**
+ * @summary Queue a benchmark import job from a Hugging Face dataset
+ */
+export const useImportBenchmarkDataset = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof importBenchmarkDataset>>,
+    TError,
+    Key,
+    BenchmarkBenchmarkImportRequest,
+    Awaited<ReturnType<typeof importBenchmarkDataset>>
+  > & { swrKey?: string };
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getImportBenchmarkDatasetMutationKey();
+  const swrFn = getImportBenchmarkDatasetMutationFetcher(requestOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type InspectBenchmarkImportQueryResult = NonNullable<
+  Awaited<ReturnType<typeof inspectBenchmarkImport>>
+>;
+
+/**
+ * @summary Preview a Hugging Face dataset before importing it
+ */
+export const useInspectBenchmarkImport = <
+  TError = BoundaryErrorResponse | string,
+>(
+  params: InspectBenchmarkImportParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof inspectBenchmarkImport>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+    request?: SecondParameter<typeof customFetch>;
+  }
+) => {
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getInspectBenchmarkImportKey(params) : null));
+  const swrFn = () => inspectBenchmarkImport(params, requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
