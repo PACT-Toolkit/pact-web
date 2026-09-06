@@ -415,3 +415,68 @@ export const MOCK_CORPUS_LIBRARY_TOTAL_ROWS = MOCK_CORPUS_DATASETS.reduce(
   (sum, dataset) => sum + dataset.total_rows,
   0
 );
+
+/** A single Hugging Face dataset the mock hub-import handlers know about,
+ * keyed by slug in `MOCK_HUB_DATASETS`. `labelColumns` maps every column the
+ * mock preview can report as the label column to its distinct values -
+ * `deepset/prompt-injections` has two, so switching the label column in the
+ * import card's mapping UI (which re-fetches the preview with a new
+ * `label_column` param) has a visibly different value set to switch to.
+ * `defaultLabelColumn` is `''` for `fka/awesome-chatgpt-prompts`, exercising
+ * the "no label column detected" assume-label fallback. */
+interface MockHubDataset {
+  columns: string[];
+  rowCount: number;
+  sampledRows: number;
+  textColumn: string;
+  labelColumns: Record<string, string[]>;
+  defaultLabelColumn: string;
+  rowsSkipped: number;
+  attackRows: number;
+  benignRows: number;
+  rowsExcludedTrainedOn: number;
+  screened: boolean;
+}
+
+/** A slug the mock import endpoints always reject with 403, exercising the
+ * gated-dataset error path both for preview and for the import submission. */
+export const MOCK_HUB_GATED_SLUG = 'internal-org/gated-dataset';
+
+export const MOCK_HUB_DATASETS: Record<string, MockHubDataset> = {
+  // Has a detected label column already: exercises the plain inspect -> run
+  // path, plus (via `label_alt`) the "changing the label column re-fetches
+  // the preview" path.
+  'deepset/prompt-injections': {
+    columns: ['text', 'label', 'label_alt'],
+    rowCount: 662,
+    sampledRows: 200,
+    textColumn: 'text',
+    labelColumns: {
+      label: ['block', 'allow'],
+      label_alt: ['positive', 'negative'],
+    },
+    defaultLabelColumn: 'label',
+    rowsSkipped: 12,
+    attackRows: 263,
+    benignRows: 387,
+    rowsExcludedTrainedOn: 0,
+    screened: true,
+  },
+  // No label column at all, and every row is already in MOCK_CORPUS_DATASETS
+  // as a training source: exercises both the "assume every row is..."
+  // fallback control and a fully-screened-out import (rows_excluded_trained_on
+  // equals rows_read).
+  'fka/awesome-chatgpt-prompts': {
+    columns: ['act', 'prompt'],
+    rowCount: 1993,
+    sampledRows: 200,
+    textColumn: 'prompt',
+    labelColumns: {},
+    defaultLabelColumn: '',
+    rowsSkipped: 0,
+    attackRows: 0,
+    benignRows: 0,
+    rowsExcludedTrainedOn: 1993,
+    screened: true,
+  },
+};
