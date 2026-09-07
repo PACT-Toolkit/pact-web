@@ -27,6 +27,27 @@ describe('BenchmarkJobProgress', () => {
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 
+  it('shows a "waiting for the job status" notice when no state has been observed yet', () => {
+    render(
+      (
+        <BenchmarkJobProgress
+          jobId="job-123"
+          state={undefined}
+          isLoading={false}
+          poll={{ kind: 'waiting', httpStatus: 429 }}
+        />
+      ) as ReactNode
+    );
+
+    // No successful response has ever arrived for this job, so the notice
+    // must not claim it's "still running" - see the PACT-956 follow-up
+    // regression this branch guards against.
+    const notice = screen.getByTestId('benchmark-job-poll-notice');
+    expect(notice).toHaveTextContent('Waiting for the job status');
+    expect(notice).toHaveTextContent('HTTP 429');
+    expect(notice).not.toHaveTextContent('Still running');
+  });
+
   it('renders no waiting notice while polling normally', () => {
     render(
       (

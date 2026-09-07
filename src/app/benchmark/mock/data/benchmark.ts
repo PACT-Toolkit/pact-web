@@ -445,12 +445,22 @@ export const MOCK_HUB_GATED_SLUG = 'internal-org/gated-dataset';
 /**
  * A marker string that, when it appears anywhere in a submitted corpus's
  * row content, makes the mock job-status handler answer HTTP 429 for the
- * job's first two status polls before it settles into the normal
- * queued -> running -> done sequence. Exercises the gateway rate-limiter
- * path (`nextBenchmarkJobPollDelayMs`/`describeBenchmarkJobPoll`) in
- * dev:mock without depending on real request timing.
+ * job's 3rd and 4th status polls - after the job has already reported at
+ * least one `running` response with nonzero progress - before it settles
+ * back into the normal queued -> running -> done sequence. Exercises the
+ * gateway rate-limiter path (`nextBenchmarkJobPollDelayMs`/
+ * `describeBenchmarkJobPoll`) in dev:mock without depending on real request
+ * timing, and specifically lands the 429 window mid-run (PACT-956 follow-up)
+ * rather than before any progress exists, so it also exercises
+ * BenchmarkWorkbench's job-state retention across a transient failure - the
+ * progress card must keep showing the last known running percentage instead
+ * of snapping back to "queued 0%" while the 429s are in flight.
  */
 export const MOCK_RATE_LIMITED_JOB_MARKER = '__pact_mock_rate_limited_job__';
+
+/** 1-indexed poll numbers on which a rate-limited job (see
+ * MOCK_RATE_LIMITED_JOB_MARKER) answers HTTP 429. */
+export const MOCK_RATE_LIMITED_JOB_POLLS = [3, 4];
 
 export const MOCK_HUB_DATASETS: Record<string, MockHubDataset> = {
   // Has a detected label column already: exercises the plain inspect -> run

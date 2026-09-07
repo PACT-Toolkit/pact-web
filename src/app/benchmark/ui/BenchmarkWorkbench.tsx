@@ -5,17 +5,13 @@ import { useState } from 'react';
 import {
   importBenchmarkDataset,
   submitBenchmarkJob,
-  useGetBenchmarkJob,
 } from '@/src/__codegen__/rest/benchmark';
 import {
   describeHubImportError,
   type HubImportRequestDraft,
 } from '@/src/app/benchmark/domain/benchmark_import';
-import {
-  describeBenchmarkJobPoll,
-  nextBenchmarkJobPollDelayMs,
-} from '@/src/app/benchmark/domain/benchmark_job_poll';
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
+import { useBenchmarkJobState } from '@/src/app/benchmark/domain/use_benchmark_job_state';
 import { BenchmarkComparison } from '@/src/app/benchmark/ui/BenchmarkComparison';
 import { BenchmarkConfusionTiles } from '@/src/app/benchmark/ui/BenchmarkConfusionTiles';
 import { BenchmarkCorpusLibraryCard } from '@/src/app/benchmark/ui/BenchmarkCorpusLibraryCard';
@@ -35,16 +31,7 @@ export const BenchmarkWorkbench = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { data, isLoading } = useGetBenchmarkJob(jobId ?? '', undefined, {
-    swr: {
-      enabled: jobId !== null,
-      refreshInterval: nextBenchmarkJobPollDelayMs,
-      revalidateOnFocus: false,
-    },
-  });
-
-  const jobState = data?.status === 200 ? data.data : undefined;
-  const jobPoll = describeBenchmarkJobPoll(data);
+  const { isLoading, jobState, poll: jobPoll } = useBenchmarkJobState(jobId);
 
   const handleSubmit = async (corpusText: string) => {
     setIsSubmitting(true);

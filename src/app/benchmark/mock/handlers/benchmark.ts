@@ -8,6 +8,7 @@ import {
   MOCK_HUB_DATASETS,
   MOCK_HUB_GATED_SLUG,
   MOCK_RATE_LIMITED_JOB_MARKER,
+  MOCK_RATE_LIMITED_JOB_POLLS,
   MOCK_ROWS,
   MOCK_RUNS,
   TOTAL_ROWS,
@@ -16,9 +17,15 @@ import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 interface MockJob extends BenchmarkJobState {
   createdAt: number;
-  /** Remaining polls that should answer HTTP 429 before falling through to
-   * the normal advanceJob progression - see MOCK_RATE_LIMITED_JOB_MARKER. */
-  rateLimitedPollsRemaining: number;
+  /** Count of GET .../jobs/:id requests answered for this job so far
+   * (1-indexed once incremented) - compared against
+   * `rateLimitedOnPolls` to decide whether this poll should answer
+   * HTTP 429. See MOCK_RATE_LIMITED_JOB_MARKER. */
+  pollCount: number;
+  /** Poll numbers (from `pollCount`) that should answer HTTP 429 instead of
+   * the normal advanceJob progression - empty unless the submitted corpus
+   * carried MOCK_RATE_LIMITED_JOB_MARKER. */
+  rateLimitedOnPolls: number[];
 }
 
 const jobs = new Map<string, MockJob>();
@@ -93,11 +100,12 @@ export const handlers: RequestHandler[] = [
         status: 'queued',
         progress_pct: 0,
         createdAt: Date.now(),
-        rateLimitedPollsRemaining: body.corpus_jsonl?.includes(
+        pollCount: 0,
+        rateLimitedOnPolls: body.corpus_jsonl?.includes(
           MOCK_RATE_LIMITED_JOB_MARKER
         )
-          ? 2
-          : 0,
+          ? MOCK_RATE_LIMITED_JOB_POLLS
+          : [],
       });
 
       return HttpResponse.json({ job_id: jobId }, { status: 202 });
@@ -112,9 +120,12 @@ export const handlers: RequestHandler[] = [
       if (!job) {
         return HttpResponse.json({ error: 'job not found' }, { status: 404 });
       }
-      if (job.rateLimitedPollsRemaining > 0) {
-        job.rateLimitedPollsRemaining -= 1;
-
+      job.pollCount += 1;
+      if (job.rateLimitedOnPolls.includes(job.pollCount)) {
+        // Frozen on purpose: a real rate-limit response carries no job state,
+        // so the mock must not advance progress on a 429 poll either -
+        // that's what the workbench's retention hook is being exercised
+        // against.
         return HttpResponse.json(
           { error: 'rate limit exceeded' },
           { status: 429 }
@@ -123,7 +134,8 @@ export const handlers: RequestHandler[] = [
       advanceJob(job);
       const {
         createdAt: _omit,
-        rateLimitedPollsRemaining: _omit2,
+        pollCount: _omit2,
+        rateLimitedOnPolls: _omit3,
         ...state
       } = job;
 
@@ -226,7 +238,8 @@ export const handlers: RequestHandler[] = [
         status: 'queued',
         progress_pct: 0,
         createdAt: Date.now(),
-        rateLimitedPollsRemaining: 0,
+        pollCount: 0,
+        rateLimitedOnPolls: [],
         hub_import: {
           slug,
           split: body.split || 'train',

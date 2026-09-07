@@ -123,14 +123,28 @@ export const BenchmarkJobProgress = ({
           )}
         </p>
 
-        {/* Transient poll failure notice */}
+        {/* Transient poll failure notice. Wording depends on whether we've
+            ever seen a successful (HTTP 200) response for this job: once we
+            have, `state` is retained across the failure (see
+            use_benchmark_job_state.ts) and it's accurate to say the job is
+            still running; before that, no run has actually been observed
+            yet, so the notice must not claim one. */}
         {poll.kind === 'waiting' && (
           <p
             className="text-xs text-muted-foreground"
             data-testid="benchmark-job-poll-notice"
           >
-            Still running. The last status check returned HTTP {poll.httpStatus}
-            ; retrying.
+            {state ? (
+              <>
+                Still running. The last status check returned HTTP{' '}
+                {poll.httpStatus}; retrying.
+              </>
+            ) : (
+              <>
+                Waiting for the job status. The last check returned HTTP{' '}
+                {poll.httpStatus}; retrying.
+              </>
+            )}
           </p>
         )}
 
