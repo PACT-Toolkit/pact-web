@@ -82,6 +82,13 @@ describe('BenchmarkImportCard', () => {
   });
 
   it('never logs the uncontrolled-to-controlled warning when a column is picked', async () => {
+    // Radix's Select emits this one via console.warn (not console.error) -
+    // see @radix-ui's useControllableState. Keep both spies: warn is the one
+    // that actually fires for a Select outside a <form>, but a regression
+    // that somehow routed it through error should still be caught.
+    const consoleWarnSpy = vi
+      .spyOn(console, 'warn')
+      .mockImplementation(() => {});
     const consoleErrorSpy = vi
       .spyOn(console, 'error')
       .mockImplementation(() => {});
@@ -92,12 +99,16 @@ describe('BenchmarkImportCard', () => {
     fireEvent.click(screen.getByTestId('benchmark-upload-mapping-text-column'));
     fireEvent.click(await screen.findByRole('option', { name: 'quote' }));
 
-    const uncontrolledWarnings = consoleErrorSpy.mock.calls.filter(
-      ([message]) =>
-        typeof message === 'string' && message.includes('uncontrolled')
-    );
-    expect(uncontrolledWarnings).toEqual([]);
+    const isUncontrolledWarning = ([message]: unknown[]) =>
+      typeof message === 'string' &&
+      message.includes('changing from uncontrolled to controlled');
 
+    expect(consoleWarnSpy.mock.calls.filter(isUncontrolledWarning)).toEqual([]);
+    expect(consoleErrorSpy.mock.calls.filter(isUncontrolledWarning)).toEqual(
+      []
+    );
+
+    consoleWarnSpy.mockRestore();
     consoleErrorSpy.mockRestore();
   });
 });
