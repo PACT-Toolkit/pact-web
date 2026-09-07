@@ -51,7 +51,7 @@ export const BenchmarkUploadMapping = ({
           Text column
         </Label>
         <Select
-          value={mapping.textColumn ?? undefined}
+          value={mapping.textColumn ?? ''}
           onValueChange={onTextColumnChange}
         >
           <SelectTrigger
@@ -75,7 +75,7 @@ export const BenchmarkUploadMapping = ({
           Label column
         </Label>
         <Select
-          value={mapping.labelColumn ?? undefined}
+          value={mapping.labelColumn ?? ''}
           onValueChange={onLabelColumnChange}
         >
           <SelectTrigger

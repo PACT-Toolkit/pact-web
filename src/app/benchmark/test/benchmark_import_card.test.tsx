@@ -80,4 +80,24 @@ describe('BenchmarkImportCard', () => {
     ).not.toBeInTheDocument();
     expect(screen.getByTestId('benchmark-import-run')).toBeEnabled();
   });
+
+  it('never logs the uncontrolled-to-controlled warning when a column is picked', async () => {
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+
+    renderCard();
+    await inspect('Abirate/english_quotes');
+
+    fireEvent.click(screen.getByTestId('benchmark-upload-mapping-text-column'));
+    fireEvent.click(await screen.findByRole('option', { name: 'quote' }));
+
+    const uncontrolledWarnings = consoleErrorSpy.mock.calls.filter(
+      ([message]) =>
+        typeof message === 'string' && message.includes('uncontrolled')
+    );
+    expect(uncontrolledWarnings).toEqual([]);
+
+    consoleErrorSpy.mockRestore();
+  });
 });
