@@ -21,6 +21,7 @@ describe('BenchmarkJobProgress', () => {
     );
 
     const notice = screen.getByTestId('benchmark-job-poll-notice');
+    expect(notice).toHaveTextContent('Still in progress');
     expect(notice).toHaveTextContent('HTTP 429');
     // The progress card itself keeps rendering underneath the notice - the
     // job is still running, not replaced by a terminal error state.
@@ -40,12 +41,12 @@ describe('BenchmarkJobProgress', () => {
     );
 
     // No successful response has ever arrived for this job, so the notice
-    // must not claim it's "still running" - see the PACT-956 follow-up
+    // must not claim it's "still in progress" - see the PACT-956 follow-up
     // regression this branch guards against.
     const notice = screen.getByTestId('benchmark-job-poll-notice');
     expect(notice).toHaveTextContent('Waiting for the job status');
     expect(notice).toHaveTextContent('HTTP 429');
-    expect(notice).not.toHaveTextContent('Still running');
+    expect(notice).not.toHaveTextContent('Still in progress');
   });
 
   it('renders no waiting notice while polling normally', () => {

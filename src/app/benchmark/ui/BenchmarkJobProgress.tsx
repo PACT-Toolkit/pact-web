@@ -127,8 +127,11 @@ export const BenchmarkJobProgress = ({
             ever seen a successful (HTTP 200) response for this job: once we
             have, `state` is retained across the failure (see
             use_benchmark_job_state.ts) and it's accurate to say the job is
-            still running; before that, no run has actually been observed
-            yet, so the notice must not claim one. */}
+            still in progress - retained state can be `queued` (a 429 right
+            after submit) as well as `running`, so the wording must not claim
+            "running" specifically; before we've seen any successful
+            response, no run has actually been observed yet, so the notice
+            must not claim one at all. */}
         {poll.kind === 'waiting' && (
           <p
             className="text-xs text-muted-foreground"
@@ -136,7 +139,7 @@ export const BenchmarkJobProgress = ({
           >
             {state ? (
               <>
-                Still running. The last status check returned HTTP{' '}
+                Still in progress. The last status check returned HTTP{' '}
                 {poll.httpStatus}; retrying.
               </>
             ) : (
