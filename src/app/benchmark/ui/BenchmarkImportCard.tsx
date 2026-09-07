@@ -268,7 +268,7 @@ export const BenchmarkImportCard = ({
                   No label column detected - assume every row is
                 </Label>
                 <Select
-                  value={assumeLabel ?? undefined}
+                  value={assumeLabel ?? ''}
                   onValueChange={(value) =>
                     setAssumeLabel(value as 'allow' | 'block')
                   }
