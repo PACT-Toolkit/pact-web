@@ -4,6 +4,7 @@ import {
   buildImportRequest,
   buildPreviewParams,
   describeHubImportError,
+  normalizeDetectedColumn,
   normalizeLabelValueKey,
   previewToDistinctValues,
   type HubDatasetIdentity,
@@ -58,10 +59,34 @@ describe('buildPreviewParams', () => {
   });
 });
 
+describe('normalizeDetectedColumn', () => {
+  it('returns null for an empty string', () => {
+    expect(normalizeDetectedColumn('')).toBeNull();
+  });
+
+  it('returns null for a whitespace-only string', () => {
+    expect(normalizeDetectedColumn('   ')).toBeNull();
+  });
+
+  it('returns null for undefined', () => {
+    expect(normalizeDetectedColumn(undefined)).toBeNull();
+  });
+
+  it('returns the column name unchanged when populated', () => {
+    expect(normalizeDetectedColumn('text')).toBe('text');
+  });
+});
+
 describe('previewToDistinctValues', () => {
   it('returns null when the preview found no label column', () => {
     expect(
       previewToDistinctValues({ ...PREVIEW, detected_label_column: '' })
+    ).toBeNull();
+  });
+
+  it('returns null when the preview label column is whitespace-only', () => {
+    expect(
+      previewToDistinctValues({ ...PREVIEW, detected_label_column: '   ' })
     ).toBeNull();
   });
 

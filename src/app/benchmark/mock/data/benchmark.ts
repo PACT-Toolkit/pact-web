@@ -423,7 +423,9 @@ export const MOCK_CORPUS_LIBRARY_TOTAL_ROWS = MOCK_CORPUS_DATASETS.reduce(
  * import card's mapping UI (which re-fetches the preview with a new
  * `label_column` param) has a visibly different value set to switch to.
  * `defaultLabelColumn` is `''` for `fka/awesome-chatgpt-prompts`, exercising
- * the "no label column detected" assume-label fallback. */
+ * the "no label column detected" assume-label fallback. `textColumn` is `''`
+ * for `Abirate/english_quotes`, exercising the "no text column detected"
+ * path - Run must stay disabled until a text column is chosen by hand. */
 interface MockHubDataset {
   columns: string[];
   rowCount: number;
@@ -498,5 +500,22 @@ export const MOCK_HUB_DATASETS: Record<string, MockHubDataset> = {
     benignRows: 0,
     rowsExcludedTrainedOn: 1993,
     screened: true,
+  },
+  // No text column detected either (textColumn ''), on top of no label
+  // column: exercises the "canRun stays false until a text column is
+  // explicitly picked" path and doubles as another assume-label fallback
+  // case.
+  'Abirate/english_quotes': {
+    columns: ['quote', 'author', 'tags'],
+    rowCount: 2508,
+    sampledRows: 200,
+    textColumn: '',
+    labelColumns: {},
+    defaultLabelColumn: '',
+    rowsSkipped: 0,
+    attackRows: 0,
+    benignRows: 0,
+    rowsExcludedTrainedOn: 0,
+    screened: false,
   },
 };

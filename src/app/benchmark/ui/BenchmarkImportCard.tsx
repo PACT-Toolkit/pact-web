@@ -8,6 +8,7 @@ import {
   buildImportRequest,
   buildPreviewParams,
   describeHubImportError,
+  normalizeDetectedColumn,
   previewToDistinctValues,
   type HubDatasetIdentity,
   type HubImportRequestDraft,
@@ -77,8 +78,10 @@ export const BenchmarkImportCard = ({
       : undefined;
 
   const mapping = {
-    textColumn: textColumnOverride ?? preview?.detected_text_column ?? null,
-    labelColumn: preview?.detected_label_column || null,
+    textColumn:
+      textColumnOverride ??
+      normalizeDetectedColumn(preview?.detected_text_column),
+    labelColumn: normalizeDetectedColumn(preview?.detected_label_column),
   };
 
   const distinctValues = preview ? previewToDistinctValues(preview) : null;
@@ -248,6 +251,16 @@ export const BenchmarkImportCard = ({
               valueDecisions={valueDecisions}
               onValueDecisionChange={handleValueDecisionChange}
             />
+
+            {mapping.textColumn === null && (
+              <p
+                className="text-xs text-muted-foreground"
+                data-testid="benchmark-import-text-column-hint"
+              >
+                No text column detected - pick the column that holds the prompt
+                text before running.
+              </p>
+            )}
 
             {mapping.labelColumn === null && (
               <div className="flex flex-col gap-2">

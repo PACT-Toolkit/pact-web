@@ -91,6 +91,22 @@ export function buildPreviewParams(
 }
 
 /**
+ * Normalizes a hub preview's `detected_text_column` / `detected_label_column`
+ * to `null` when the gateway reports "not detected" as an empty (or
+ * whitespace-only) string - both fields are typed as plain `string`, not
+ * `string | null`, so the "not detected" sentinel is `""`. A bare `?? null`
+ * chain over that value treats `""` as a present column, which is how
+ * `canRun` used to go true with no text column actually chosen.
+ * Every reader of these two fields goes through this so the "" -> null
+ * contract can't drift between them.
+ */
+export function normalizeDetectedColumn(
+  value: string | undefined
+): string | null {
+  return value && value.trim().length > 0 ? value : null;
+}
+
+/**
  * Converts a preview's already-deduplicated label values into the same
  * `DistinctLabelValuesOutcome` shape the upload flow's mapping UI expects,
  * so `BenchmarkUploadMapping` can be reused unchanged. Returns `null` when
@@ -107,7 +123,7 @@ export function buildPreviewParams(
 export function previewToDistinctValues(
   preview: HubDatasetPreview
 ): DistinctLabelValuesOutcome | null {
-  if (!preview.detected_label_column) return null;
+  if (!normalizeDetectedColumn(preview.detected_label_column)) return null;
 
   const defaultDecisions: Record<string, LabelDecision> = {};
   for (const value of preview.label_values) {
