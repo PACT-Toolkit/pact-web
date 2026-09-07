@@ -406,3 +406,160 @@ test.describe('Benchmark upload column mapping', () => {
     expect(results.violations).toEqual([]);
   });
 });
+
+// Covers the Hugging Face import card: inspecting a dataset reuses
+// BenchmarkUploadMapping for the same column-mapping UX as the upload flow,
+// changing the label column re-fetches the preview with a new label_column
+// param, a dataset with no detected label column falls back to an
+// "assume every row is..." control, and both the gated (403) and unknown
+// (404) error paths show a friendly message instead of the raw gateway body.
+test.describe('Benchmark Hugging Face import', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/benchmark');
+    await expect(page.getByTestId('benchmark-workbench')).toBeVisible();
+    await expect(page.getByTestId('benchmark-import-card')).toBeVisible();
+  });
+
+  test('inspects a dataset, switches the label column, and runs the import to completion', async ({
+    page,
+  }) => {
+    await page
+      .getByTestId('benchmark-import-slug')
+      .fill('deepset/prompt-injections');
+    await page.getByTestId('benchmark-import-inspect').click();
+
+    await expect(
+      page.getByTestId('benchmark-import-preview-summary')
+    ).toContainText('662 rows');
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-text-column')
+    ).toContainText('text');
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-label-column')
+    ).toContainText('label');
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-value-block')
+    ).toContainText('Block');
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-value-allow')
+    ).toContainText('Allow');
+
+    // Switching the label column re-fetches the preview with a new
+    // label_column param - a different column, a different value set.
+    await page.getByTestId('benchmark-upload-mapping-label-column').click();
+    await page.getByRole('option', { name: 'label_alt', exact: true }).click();
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-value-positive')
+    ).toBeVisible();
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-value-negative')
+    ).toBeVisible();
+
+    // Switch back to the original label column for the run below.
+    await page.getByTestId('benchmark-upload-mapping-label-column').click();
+    await page.getByRole('option', { name: 'label', exact: true }).click();
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-value-block')
+    ).toBeVisible();
+
+    await page.getByTestId('benchmark-import-run').click();
+
+    // The mock handler advances queued -> running -> done over ~8s, the same
+    // machinery an uploaded-corpus job goes through.
+    await expect(page.getByTestId('benchmark-confusion-tiles')).toBeVisible({
+      timeout: 15000,
+    });
+
+    await expect(page.getByTestId('benchmark-import-summary')).toBeVisible();
+    await expect(
+      page.getByTestId('benchmark-import-summary-slug')
+    ).toContainText('deepset/prompt-injections');
+    await expect(
+      page.getByTestId('benchmark-import-summary-rows-read')
+    ).toContainText('662');
+    await expect(
+      page.getByTestId('benchmark-import-summary-attack-rows')
+    ).toContainText('263');
+    await expect(
+      page.getByTestId('benchmark-import-summary-benign-rows')
+    ).toContainText('387');
+    await expect(
+      page.getByTestId('benchmark-import-summary-rows-skipped')
+    ).toContainText('12');
+    await expect(
+      page.getByTestId('benchmark-import-summary-screened')
+    ).toContainText('Yes');
+  });
+
+  test('falls back to the assume-label control when no label column is detected', async ({
+    page,
+  }) => {
+    await page
+      .getByTestId('benchmark-import-slug')
+      .fill('fka/awesome-chatgpt-prompts');
+    await page.getByTestId('benchmark-import-inspect').click();
+
+    await expect(
+      page.getByTestId('benchmark-import-preview-summary')
+    ).toContainText('1,993 rows');
+    await expect(
+      page.getByTestId('benchmark-import-assume-label')
+    ).toBeVisible();
+    await expect(page.getByTestId('benchmark-import-run')).toBeDisabled();
+
+    await page.getByTestId('benchmark-import-assume-label').click();
+    await page.getByRole('option', { name: 'Allow (benign)' }).click();
+    await expect(page.getByTestId('benchmark-import-run')).toBeEnabled();
+
+    await page.getByTestId('benchmark-import-run').click();
+
+    await expect(page.getByTestId('benchmark-confusion-tiles')).toBeVisible({
+      timeout: 15000,
+    });
+    // Every row is already in the training corpus - the mock reports the
+    // whole dataset excluded rather than any attack/benign rows. StatTile
+    // renders the raw number, unlike the preview summary's toLocaleString
+    // text above.
+    await expect(
+      page.getByTestId('benchmark-import-summary-rows-excluded')
+    ).toContainText('1993');
+    await expect(
+      page.getByTestId('benchmark-import-summary-attack-rows')
+    ).toContainText('0');
+  });
+
+  test('shows a friendly error for a gated dataset', async ({ page }) => {
+    await page
+      .getByTestId('benchmark-import-slug')
+      .fill('internal-org/gated-dataset');
+    await page.getByTestId('benchmark-import-inspect').click();
+
+    await expect(
+      page.getByTestId('benchmark-import-inspect-error')
+    ).toContainText('gated');
+  });
+
+  test('shows a friendly error for an unknown dataset', async ({ page }) => {
+    await page
+      .getByTestId('benchmark-import-slug')
+      .fill('nonexistent/does-not-exist');
+    await page.getByTestId('benchmark-import-inspect').click();
+
+    await expect(
+      page.getByTestId('benchmark-import-inspect-error')
+    ).toContainText('not found');
+  });
+
+  test('passes an accessibility check with the mapping and preview rendered', async ({
+    page,
+  }) => {
+    await page
+      .getByTestId('benchmark-import-slug')
+      .fill('deepset/prompt-injections');
+    await page.getByTestId('benchmark-import-inspect').click();
+    await expect(page.getByTestId('benchmark-upload-mapping')).toBeVisible();
+
+    const results = await makeAxeBuilder(page).analyze();
+    expect(results.violations).toEqual([]);
+  });
+});

@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './benchmarkBenchmarkHubImportSummary';
+export * from './benchmarkBenchmarkImportPreviewResponse';
+export * from './benchmarkBenchmarkImportRequest';
+export * from './benchmarkBenchmarkImportRequestLabelValues';
 export * from './benchmarkBenchmarkRunBody';
 export * from './benchmarkCategoryBreakdownBody';
 export * from './benchmarkCorpusDatasetSummaryBody';
@@ -26,5 +30,6 @@ export * from './benchmarkSubmitJobResponse';
 export * from './benchmarkTestLabRunBody';
 export * from './boundaryErrorResponse';
 export * from './getBenchmarkJobParams';
+export * from './inspectBenchmarkImportParams';
 export * from './listBenchmarkRunsParams';
 export * from './listBenchmarkTestLabRunsParams';

@@ -5,10 +5,17 @@
  * Public REST entrypoint for the PACT safety pipeline.
  * OpenAPI spec version: 0.1.0
  */
+import type { BenchmarkBenchmarkHubImportSummary } from './benchmarkBenchmarkHubImportSummary';
 import type { BenchmarkJobResultBody } from './benchmarkJobResultBody';
 
 export interface BenchmarkGetJobResponse {
   error?: string;
+  /**
+   * HubImport is set only when this job was started by POST
+   * /v1/benchmark/imports (PACT-951) rather than a corpus bulk-test
+   * submission; nil for any other job.
+   */
+  hub_import?: BenchmarkBenchmarkHubImportSummary;
   progress_pct: number;
   result?: BenchmarkJobResultBody;
   status: string;

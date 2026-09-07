@@ -1,5 +1,145 @@
 basePath: /
 definitions:
+    benchmark.BenchmarkHubImportSummary:
+        properties:
+            attack_rows:
+                description: |-
+                    AttackRows is the number of rows with expected label "block", after
+                    screening.
+                type: integer
+            benign_rows:
+                description: |-
+                    BenignRows is the number of rows with expected label "allow", after
+                    screening.
+                type: integer
+            config:
+                description: |-
+                    Config is the dataset config name that was imported; empty when the
+                    dataset has no configs.
+                type: string
+            rows_excluded_trained_on:
+                description: |-
+                    RowsExcludedTrainedOn is the number of rows dropped because their
+                    fingerprint is in the trained-on manifest.
+                type: integer
+            rows_read:
+                description: RowsRead is the number of hub records consumed.
+                type: integer
+            rows_skipped:
+                description: |-
+                    RowsSkipped is the number of rows dropped for blank content or a label
+                    mapped to "skip".
+                type: integer
+            screened:
+                description: Screened is true when a trained-on manifest was configured and applied.
+                type: boolean
+            slug:
+                description: Slug is the imported dataset's "owner/name", as resolved by the import.
+                type: string
+            split:
+                description: Split is the hub split that was imported.
+                type: string
+            truncated:
+                description: Truncated is true when the server ceiling cut the read short.
+                type: boolean
+        required:
+            - attack_rows
+            - benign_rows
+            - config
+            - rows_excluded_trained_on
+            - rows_read
+            - rows_skipped
+            - screened
+            - slug
+            - split
+            - truncated
+        type: object
+    benchmark.BenchmarkImportPreviewResponse:
+        properties:
+            columns:
+                description: Columns is the split's column names, in hub order; never nil.
+                items:
+                    type: string
+                type: array
+            detected_label_column:
+                description: |-
+                    DetectedLabelColumn is the column LabelValues describes: the request's
+                    label_column when set, otherwise the alias guess; empty when none.
+                type: string
+            detected_text_column:
+                description: |-
+                    DetectedTextColumn is the alias-detected text column; empty when none
+                    matched.
+                type: string
+            label_values:
+                description: |-
+                    LabelValues holds the distinct raw values seen in the sample for
+                    DetectedLabelColumn, trimmed and lowercased (the key form
+                    BenchmarkImportRequest.LabelValues accepts), in first-seen order, at
+                    most 20 entries; never nil.
+                items:
+                    type: string
+                type: array
+            label_values_truncated:
+                description: |-
+                    LabelValuesTruncated is true when more than 20 distinct values were
+                    seen in the sample.
+                type: boolean
+            row_count:
+                description: RowCount is the split size from hub metadata; 0 when unknown.
+                type: integer
+            sampled_rows:
+                description: SampledRows is the number of records actually peeked.
+                type: integer
+        required:
+            - columns
+            - detected_label_column
+            - detected_text_column
+            - label_values
+            - label_values_truncated
+            - row_count
+            - sampled_rows
+        type: object
+    benchmark.BenchmarkImportRequest:
+        properties:
+            assume_label:
+                description: |-
+                    AssumeLabel is "allow" or "block" for a dataset with no label column;
+                    empty means read the label from LabelColumn/LabelValues.
+                type: string
+            config:
+                type: string
+            engine:
+                type: string
+            gateway_url:
+                type: string
+            label_column:
+                type: string
+            label_values:
+                additionalProperties:
+                    type: string
+                description: |-
+                    LabelValues maps a raw value (trimmed, lowercased) to "allow", "block",
+                    or "skip". Checked before the built-in vocabulary.
+                type: object
+            max_rows:
+                description: |-
+                    MaxRows is the number of hub records read; 0 -> the server ceiling.
+                    Values above the ceiling are clamped, not rejected.
+                type: integer
+            revision:
+                description: Revision is the hub git revision; empty -> the default branch.
+                type: string
+            slug:
+                type: string
+            split:
+                type: string
+            text_column:
+                type: string
+        required:
+            - gateway_url
+            - slug
+        type: object
     benchmark.BenchmarkRunBody:
         properties:
             corpus_version:
@@ -135,6 +275,13 @@ definitions:
         properties:
             error:
                 type: string
+            hub_import:
+                allOf:
+                    - $ref: '#/definitions/benchmark.BenchmarkHubImportSummary'
+                description: |-
+                    HubImport is set only when this job was started by POST
+                    /v1/benchmark/imports (PACT-951) rather than a corpus bulk-test
+                    submission; nil for any other job.
             progress_pct:
                 type: integer
             result:
@@ -464,6 +611,132 @@ paths:
             security:
                 - Bearer: []
             summary: Get corpus library summary
+            tags:
+                - benchmark
+    /v1/benchmark/imports:
+        post:
+            consumes:
+                - application/json
+            description: |-
+                Starts an asynchronous import (PACT-951): pact-benchmark
+                streams the split, normalises it through the shared corpus
+                mapping, screens it against the trained-on manifest when one
+                is configured, and runs it as a benchmark job. The resulting
+                job is polled the same way as a corpus bulk-test job
+                (GET /v1/benchmark/jobs/{id}).
+            operationId: importBenchmarkDataset
+            parameters:
+                - description: Hugging Face dataset and column mapping
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/benchmark.BenchmarkImportRequest'
+            produces:
+                - application/json
+            responses:
+                "202":
+                    description: Accepted
+                    schema:
+                        $ref: '#/definitions/benchmark.SubmitJobResponse'
+                "400":
+                    description: invalid request body
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "403":
+                    description: forbidden
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "404":
+                    description: dataset not found
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "502":
+                    description: upstream error
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "503":
+                    description: hugging face unavailable
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+            security:
+                - Bearer: []
+            summary: Queue a benchmark import job from a Hugging Face dataset
+            tags:
+                - benchmark
+    /v1/benchmark/imports/preview:
+        get:
+            description: |-
+                Fetches a Hugging Face dataset's schema, split size when the
+                hub reports it, alias-detected text/label columns, and the
+                distinct label values from a bounded streaming sample, so a
+                caller can pick text/label columns before queuing a full
+                import with POST /v1/benchmark/imports (PACT-951).
+            operationId: inspectBenchmarkImport
+            parameters:
+                - description: Hugging Face dataset slug, e.g. owner/name
+                  in: query
+                  name: slug
+                  required: true
+                  type: string
+                - description: 'Dataset split (default: train)'
+                  in: query
+                  name: split
+                  type: string
+                - description: Dataset config name
+                  in: query
+                  name: config
+                  type: string
+                - description: Dataset revision (branch, tag, or commit SHA)
+                  in: query
+                  name: revision
+                  type: string
+                - description: 'Label column name (default: alias-detected)'
+                  in: query
+                  name: label_column
+                  type: string
+                - description: 'Rows to sample for column detection (default: server-chosen)'
+                  in: query
+                  name: sample_rows
+                  type: integer
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/benchmark.BenchmarkImportPreviewResponse'
+                "400":
+                    description: invalid request
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "403":
+                    description: forbidden
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "404":
+                    description: dataset not found
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "502":
+                    description: upstream error
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "503":
+                    description: hugging face unavailable
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+            security:
+                - Bearer: []
+            summary: Preview a Hugging Face dataset before importing it
             tags:
                 - benchmark
     /v1/benchmark/jobs:

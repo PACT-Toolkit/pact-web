@@ -5,6 +5,8 @@ import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job
 import {
   MOCK_CORPUS_DATASETS,
   MOCK_CORPUS_LIBRARY_TOTAL_ROWS,
+  MOCK_HUB_DATASETS,
+  MOCK_HUB_GATED_SLUG,
   MOCK_ROWS,
   MOCK_RUNS,
   TOTAL_ROWS,
@@ -121,5 +123,107 @@ export const handlers: RequestHandler[] = [
       total_rows: MOCK_CORPUS_LIBRARY_TOTAL_ROWS,
       datasets: MOCK_CORPUS_DATASETS,
     })
+  ),
+
+  http.get(
+    `${MSW_PACT_BASE}/gateway/v1/benchmark/imports/preview`,
+    ({ request }) => {
+      const url = new URL(request.url);
+      const slug = url.searchParams.get('slug') ?? '';
+      const labelColumnParam = url.searchParams.get('label_column');
+
+      if (slug === MOCK_HUB_GATED_SLUG) {
+        return HttpResponse.json(
+          { code: 'permission_denied', error: 'This dataset is gated.' },
+          { status: 403 }
+        );
+      }
+
+      const dataset = MOCK_HUB_DATASETS[slug];
+      if (!dataset) {
+        return HttpResponse.json(
+          { code: 'not_found', error: 'Dataset, config, or split not found.' },
+          { status: 404 }
+        );
+      }
+
+      const labelColumn =
+        labelColumnParam && dataset.labelColumns[labelColumnParam]
+          ? labelColumnParam
+          : dataset.defaultLabelColumn;
+
+      return HttpResponse.json({
+        columns: dataset.columns,
+        row_count: dataset.rowCount,
+        sampled_rows: dataset.sampledRows,
+        detected_text_column: dataset.textColumn,
+        detected_label_column: labelColumn,
+        label_values: labelColumn ? dataset.labelColumns[labelColumn] : [],
+        label_values_truncated: false,
+      });
+    }
+  ),
+
+  http.post(
+    `${MSW_PACT_BASE}/gateway/v1/benchmark/imports`,
+    async ({ request }) => {
+      const body = (await request.json()) as {
+        slug?: string;
+        split?: string;
+        config?: string;
+        assume_label?: string;
+      };
+      const slug = body.slug ?? '';
+
+      if (slug === MOCK_HUB_GATED_SLUG) {
+        return HttpResponse.json(
+          { code: 'permission_denied', error: 'This dataset is gated.' },
+          { status: 403 }
+        );
+      }
+
+      const dataset = MOCK_HUB_DATASETS[slug];
+      if (!dataset) {
+        return HttpResponse.json(
+          { code: 'not_found', error: 'Dataset, config, or split not found.' },
+          { status: 404 }
+        );
+      }
+
+      await new Promise((r) => setTimeout(r, 200));
+      const jobId = uuidv4();
+      const includedRows =
+        dataset.rowCount - dataset.rowsSkipped - dataset.rowsExcludedTrainedOn;
+      const assumedBlock = body.assume_label === 'block';
+      const assumedAllow = body.assume_label === 'allow';
+
+      jobs.set(jobId, {
+        status: 'queued',
+        progress_pct: 0,
+        createdAt: Date.now(),
+        hub_import: {
+          slug,
+          split: body.split || 'train',
+          config: body.config ?? '',
+          rows_read: dataset.rowCount,
+          rows_skipped: dataset.rowsSkipped,
+          attack_rows: dataset.defaultLabelColumn
+            ? dataset.attackRows
+            : assumedBlock
+              ? includedRows
+              : 0,
+          benign_rows: dataset.defaultLabelColumn
+            ? dataset.benignRows
+            : assumedAllow
+              ? includedRows
+              : 0,
+          screened: dataset.screened,
+          rows_excluded_trained_on: dataset.rowsExcludedTrainedOn,
+          truncated: false,
+        },
+      });
+
+      return HttpResponse.json({ job_id: jobId }, { status: 202 });
+    }
   ),
 ];

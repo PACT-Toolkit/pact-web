@@ -9,6 +9,8 @@
 import type { Key } from 'swr';
 
 import type {
+  BenchmarkBenchmarkImportPreviewResponse,
+  BenchmarkBenchmarkImportRequest,
   BenchmarkCorpusLibrarySummaryResponse,
   BenchmarkGetJobResponse,
   BenchmarkListRunsResponse,
@@ -21,6 +23,7 @@ import type {
   BenchmarkSubmitJobResponse,
   BoundaryErrorResponse,
   GetBenchmarkJobParams,
+  InspectBenchmarkImportParams,
   ListBenchmarkRunsParams,
   ListBenchmarkTestLabRunsParams,
 } from './types';
@@ -165,6 +168,211 @@ export const getBenchmarkCorpusLibrarySummary = async (
 
 export const getGetBenchmarkCorpusLibrarySummaryKey = () =>
   [`/api/pact/gateway/v1/benchmark/corpus/library`] as const;
+
+export type importBenchmarkDatasetResponse202 = {
+  data: BenchmarkSubmitJobResponse;
+  status: 202;
+};
+
+export type importBenchmarkDatasetResponse400 = {
+  data: BoundaryErrorResponse;
+  status: 400;
+};
+
+export type importBenchmarkDatasetResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type importBenchmarkDatasetResponse403 = {
+  data: BoundaryErrorResponse;
+  status: 403;
+};
+
+export type importBenchmarkDatasetResponse404 = {
+  data: BoundaryErrorResponse;
+  status: 404;
+};
+
+export type importBenchmarkDatasetResponse502 = {
+  data: BoundaryErrorResponse;
+  status: 502;
+};
+
+export type importBenchmarkDatasetResponse503 = {
+  data: BoundaryErrorResponse;
+  status: 503;
+};
+
+export type importBenchmarkDatasetResponseSuccess =
+  importBenchmarkDatasetResponse202 & {
+    headers: Headers;
+  };
+
+export type importBenchmarkDatasetResponseError = (
+  | importBenchmarkDatasetResponse400
+  | importBenchmarkDatasetResponse401
+  | importBenchmarkDatasetResponse403
+  | importBenchmarkDatasetResponse404
+  | importBenchmarkDatasetResponse502
+  | importBenchmarkDatasetResponse503
+) & {
+  headers: Headers;
+};
+
+export type importBenchmarkDatasetResponse =
+  importBenchmarkDatasetResponseSuccess | importBenchmarkDatasetResponseError;
+
+export const getImportBenchmarkDatasetUrl = () => {
+  return `/api/pact/gateway/v1/benchmark/imports`;
+};
+
+/**
+ * Starts an asynchronous import (PACT-951): pact-benchmark
+ * streams the split, normalises it through the shared corpus
+ * mapping, screens it against the trained-on manifest when one
+ * is configured, and runs it as a benchmark job. The resulting
+ * job is polled the same way as a corpus bulk-test job
+ * (GET /v1/benchmark/jobs/{id}).
+ * @summary Queue a benchmark import job from a Hugging Face dataset
+ */
+export const importBenchmarkDataset = async (
+  benchmarkBenchmarkImportRequest: BenchmarkBenchmarkImportRequest,
+  options?: Parameters<typeof customFetch>[1]
+): Promise<importBenchmarkDatasetResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+  return customFetch<importBenchmarkDatasetResponse>(
+    getImportBenchmarkDatasetUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(benchmarkBenchmarkImportRequest),
+    }
+  );
+};
+
+export const getImportBenchmarkDatasetMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
+  return (_: Key, { arg }: { arg: BenchmarkBenchmarkImportRequest }) => {
+    return importBenchmarkDataset(arg, options);
+  };
+};
+
+export const getImportBenchmarkDatasetMutationKey = () =>
+  [`/api/pact/gateway/v1/benchmark/imports`] as const;
+
+export type inspectBenchmarkImportResponse200 = {
+  data: BenchmarkBenchmarkImportPreviewResponse;
+  status: 200;
+};
+
+export type inspectBenchmarkImportResponse400 = {
+  data: BoundaryErrorResponse;
+  status: 400;
+};
+
+export type inspectBenchmarkImportResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type inspectBenchmarkImportResponse403 = {
+  data: BoundaryErrorResponse;
+  status: 403;
+};
+
+export type inspectBenchmarkImportResponse404 = {
+  data: BoundaryErrorResponse;
+  status: 404;
+};
+
+export type inspectBenchmarkImportResponse502 = {
+  data: BoundaryErrorResponse;
+  status: 502;
+};
+
+export type inspectBenchmarkImportResponse503 = {
+  data: BoundaryErrorResponse;
+  status: 503;
+};
+
+export type inspectBenchmarkImportResponseSuccess =
+  inspectBenchmarkImportResponse200 & {
+    headers: Headers;
+  };
+
+export type inspectBenchmarkImportResponseError = (
+  | inspectBenchmarkImportResponse400
+  | inspectBenchmarkImportResponse401
+  | inspectBenchmarkImportResponse403
+  | inspectBenchmarkImportResponse404
+  | inspectBenchmarkImportResponse502
+  | inspectBenchmarkImportResponse503
+) & {
+  headers: Headers;
+};
+
+export type inspectBenchmarkImportResponse =
+  inspectBenchmarkImportResponseSuccess | inspectBenchmarkImportResponseError;
+
+export const getInspectBenchmarkImportUrl = (
+  params: InspectBenchmarkImportParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/pact/gateway/v1/benchmark/imports/preview?${stringifiedParams}`
+    : `/api/pact/gateway/v1/benchmark/imports/preview`;
+};
+
+/**
+ * Fetches a Hugging Face dataset's schema, split size when the
+ * hub reports it, alias-detected text/label columns, and the
+ * distinct label values from a bounded streaming sample, so a
+ * caller can pick text/label columns before queuing a full
+ * import with POST /v1/benchmark/imports (PACT-951).
+ * @summary Preview a Hugging Face dataset before importing it
+ */
+export const inspectBenchmarkImport = async (
+  params: InspectBenchmarkImportParams,
+  options?: Parameters<typeof customFetch>[1]
+): Promise<inspectBenchmarkImportResponse> => {
+  return customFetch<inspectBenchmarkImportResponse>(
+    getInspectBenchmarkImportUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
+};
+
+export const getInspectBenchmarkImportKey = (
+  params: InspectBenchmarkImportParams
+) =>
+  [
+    `/api/pact/gateway/v1/benchmark/imports/preview`,
+    ...(params ? [params] : []),
+  ] as const;
 
 export type submitBenchmarkJobResponse202 = {
   data: BenchmarkSubmitJobResponse;

@@ -3,13 +3,20 @@
 import { useState } from 'react';
 
 import {
+  importBenchmarkDataset,
   submitBenchmarkJob,
   useGetBenchmarkJob,
 } from '@/src/__codegen__/rest/benchmark';
+import {
+  describeHubImportError,
+  type HubImportRequestDraft,
+} from '@/src/app/benchmark/domain/benchmark_import';
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
 import { BenchmarkComparison } from '@/src/app/benchmark/ui/BenchmarkComparison';
 import { BenchmarkConfusionTiles } from '@/src/app/benchmark/ui/BenchmarkConfusionTiles';
 import { BenchmarkCorpusLibraryCard } from '@/src/app/benchmark/ui/BenchmarkCorpusLibraryCard';
+import { BenchmarkImportCard } from '@/src/app/benchmark/ui/BenchmarkImportCard';
+import { BenchmarkImportSummary } from '@/src/app/benchmark/ui/BenchmarkImportSummary';
 import { BenchmarkJobProgress } from '@/src/app/benchmark/ui/BenchmarkJobProgress';
 import { BenchmarkLatencyChart } from '@/src/app/benchmark/ui/BenchmarkLatencyChart';
 import { BenchmarkResultsTable } from '@/src/app/benchmark/ui/BenchmarkResultsTable';
@@ -67,6 +74,31 @@ export const BenchmarkWorkbench = () => {
     }
   };
 
+  const handleImportSubmit = async (request: HubImportRequestDraft) => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+    setJobId(null);
+
+    try {
+      const response = await importBenchmarkDataset({
+        ...request,
+        gateway_url: getPublicGatewayBaseUrl(),
+      });
+      if (response.status !== 202) {
+        throw new Error(describeHubImportError(response.status, response.data));
+      }
+      setJobId(response.data.job_id);
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to queue the import job. Is the gateway reachable?'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6" data-testid="benchmark-workbench">
       <BenchmarkTrendRangeToggle value={dateRange} onChange={setDateRange} />
@@ -82,6 +114,11 @@ export const BenchmarkWorkbench = () => {
 
       <BenchmarkUploadForm
         onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+      />
+
+      <BenchmarkImportCard
+        onSubmit={handleImportSubmit}
         isSubmitting={isSubmitting}
       />
 
@@ -101,6 +138,9 @@ export const BenchmarkWorkbench = () => {
 
       {jobId && jobState?.status === 'done' && jobState.result && (
         <>
+          {jobState.hub_import && (
+            <BenchmarkImportSummary summary={jobState.hub_import} />
+          )}
           <BenchmarkConfusionTiles counts={jobState.result.counts} />
           <BenchmarkResultsTable
             key={jobId}
