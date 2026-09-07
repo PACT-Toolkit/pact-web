@@ -3,6 +3,7 @@
 import { CheckCircle, Loader2, XCircle } from 'lucide-react';
 
 import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
+import { type BenchmarkJobPollDescription } from '@/src/app/benchmark/domain/benchmark_job_poll';
 import {
   Card,
   CardContent,
@@ -15,14 +16,44 @@ interface BenchmarkJobProgressProps {
   jobId: string;
   state: BenchmarkJobState | undefined;
   isLoading: boolean;
+  poll: BenchmarkJobPollDescription;
 }
+
+const JobIdLabel = ({ jobId }: { jobId: string }) => (
+  <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
+    {jobId.slice(0, 12)}…
+  </code>
+);
 
 export const BenchmarkJobProgress = ({
   jobId,
   state,
   isLoading,
+  poll,
 }: BenchmarkJobProgressProps) => {
   const status = state?.status ?? 'queued';
+
+  if (poll.kind === 'not_found') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <XCircle className="h-5 w-5 text-destructive" aria-hidden />
+            Job <JobIdLabel jobId={jobId} />
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p
+            className="text-sm text-destructive"
+            data-testid="benchmark-job-not-found"
+          >
+            This job could not be found. It may have expired, or the id is no
+            longer valid.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -40,10 +71,7 @@ export const BenchmarkJobProgress = ({
               aria-hidden
             />
           )}
-          Job{' '}
-          <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm">
-            {jobId.slice(0, 12)}…
-          </code>
+          Job <JobIdLabel jobId={jobId} />
         </CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -94,6 +122,17 @@ export const BenchmarkJobProgress = ({
             </span>
           )}
         </p>
+
+        {/* Transient poll failure notice */}
+        {poll.kind === 'waiting' && (
+          <p
+            className="text-xs text-muted-foreground"
+            data-testid="benchmark-job-poll-notice"
+          >
+            Still running. The last status check returned HTTP {poll.httpStatus}
+            ; retrying.
+          </p>
+        )}
 
         {/* Results summary */}
         {status === 'done' && state?.result && (

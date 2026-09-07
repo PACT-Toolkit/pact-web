@@ -7,6 +7,7 @@ import {
   MOCK_CORPUS_LIBRARY_TOTAL_ROWS,
   MOCK_HUB_DATASETS,
   MOCK_HUB_GATED_SLUG,
+  MOCK_RATE_LIMITED_JOB_MARKER,
   MOCK_ROWS,
   MOCK_RUNS,
   TOTAL_ROWS,
@@ -15,6 +16,9 @@ import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 interface MockJob extends BenchmarkJobState {
   createdAt: number;
+  /** Remaining polls that should answer HTTP 429 before falling through to
+   * the normal advanceJob progression - see MOCK_RATE_LIMITED_JOB_MARKER. */
+  rateLimitedPollsRemaining: number;
 }
 
 const jobs = new Map<string, MockJob>();
@@ -79,17 +83,26 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json({ runs, total: filtered.length });
   }),
 
-  http.post(`${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`, async () => {
-    await new Promise((r) => setTimeout(r, 200));
-    const jobId = uuidv4();
-    jobs.set(jobId, {
-      status: 'queued',
-      progress_pct: 0,
-      createdAt: Date.now(),
-    });
+  http.post(
+    `${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`,
+    async ({ request }) => {
+      await new Promise((r) => setTimeout(r, 200));
+      const body = (await request.json()) as { corpus_jsonl?: string };
+      const jobId = uuidv4();
+      jobs.set(jobId, {
+        status: 'queued',
+        progress_pct: 0,
+        createdAt: Date.now(),
+        rateLimitedPollsRemaining: body.corpus_jsonl?.includes(
+          MOCK_RATE_LIMITED_JOB_MARKER
+        )
+          ? 2
+          : 0,
+      });
 
-    return HttpResponse.json({ job_id: jobId }, { status: 202 });
-  }),
+      return HttpResponse.json({ job_id: jobId }, { status: 202 });
+    }
+  ),
 
   http.get(
     `${MSW_PACT_BASE}/gateway/v1/benchmark/jobs/:jobId`,
@@ -99,8 +112,20 @@ export const handlers: RequestHandler[] = [
       if (!job) {
         return HttpResponse.json({ error: 'job not found' }, { status: 404 });
       }
+      if (job.rateLimitedPollsRemaining > 0) {
+        job.rateLimitedPollsRemaining -= 1;
+
+        return HttpResponse.json(
+          { error: 'rate limit exceeded' },
+          { status: 429 }
+        );
+      }
       advanceJob(job);
-      const { createdAt: _omit, ...state } = job;
+      const {
+        createdAt: _omit,
+        rateLimitedPollsRemaining: _omit2,
+        ...state
+      } = job;
 
       if (state.status !== 'done' || !state.result) {
         return HttpResponse.json(state);
@@ -201,6 +226,7 @@ export const handlers: RequestHandler[] = [
         status: 'queued',
         progress_pct: 0,
         createdAt: Date.now(),
+        rateLimitedPollsRemaining: 0,
         hub_import: {
           slug,
           split: body.split || 'train',

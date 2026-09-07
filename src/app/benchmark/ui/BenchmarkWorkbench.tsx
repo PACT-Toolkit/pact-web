@@ -11,6 +11,10 @@ import {
   describeHubImportError,
   type HubImportRequestDraft,
 } from '@/src/app/benchmark/domain/benchmark_import';
+import {
+  describeBenchmarkJobPoll,
+  nextBenchmarkJobPollDelayMs,
+} from '@/src/app/benchmark/domain/benchmark_job_poll';
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
 import { BenchmarkComparison } from '@/src/app/benchmark/ui/BenchmarkComparison';
 import { BenchmarkConfusionTiles } from '@/src/app/benchmark/ui/BenchmarkConfusionTiles';
@@ -34,22 +38,13 @@ export const BenchmarkWorkbench = () => {
   const { data, isLoading } = useGetBenchmarkJob(jobId ?? '', undefined, {
     swr: {
       enabled: jobId !== null,
-      refreshInterval: (latest) => {
-        // No response yet: keep polling.
-        if (!latest) return 2000;
-        // Stop on a terminal HTTP error (404 unknown job, 401, 5xx) so we don't
-        // poll a failing endpoint forever with the UI stuck on the spinner.
-        if (latest.status !== 200) return 0;
-
-        const status = latest.data.status;
-
-        return status === 'done' || status === 'error' ? 0 : 2000;
-      },
+      refreshInterval: nextBenchmarkJobPollDelayMs,
       revalidateOnFocus: false,
     },
   });
 
   const jobState = data?.status === 200 ? data.data : undefined;
+  const jobPoll = describeBenchmarkJobPoll(data);
 
   const handleSubmit = async (corpusText: string) => {
     setIsSubmitting(true);
@@ -133,6 +128,7 @@ export const BenchmarkWorkbench = () => {
           jobId={jobId}
           state={jobState}
           isLoading={isLoading}
+          poll={jobPoll}
         />
       )}
 

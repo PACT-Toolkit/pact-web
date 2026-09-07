@@ -442,6 +442,16 @@ interface MockHubDataset {
  * gated-dataset error path both for preview and for the import submission. */
 export const MOCK_HUB_GATED_SLUG = 'internal-org/gated-dataset';
 
+/**
+ * A marker string that, when it appears anywhere in a submitted corpus's
+ * row content, makes the mock job-status handler answer HTTP 429 for the
+ * job's first two status polls before it settles into the normal
+ * queued -> running -> done sequence. Exercises the gateway rate-limiter
+ * path (`nextBenchmarkJobPollDelayMs`/`describeBenchmarkJobPoll`) in
+ * dev:mock without depending on real request timing.
+ */
+export const MOCK_RATE_LIMITED_JOB_MARKER = '__pact_mock_rate_limited_job__';
+
 export const MOCK_HUB_DATASETS: Record<string, MockHubDataset> = {
   // Has a detected label column already: exercises the plain inspect -> run
   // path, plus (via `label_alt`) the "changing the label column re-fetches
