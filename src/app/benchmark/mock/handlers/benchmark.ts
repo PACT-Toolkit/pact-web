@@ -7,6 +7,8 @@ import {
   MOCK_CORPUS_LIBRARY_TOTAL_ROWS,
   MOCK_HUB_DATASETS,
   MOCK_HUB_GATED_SLUG,
+  MOCK_RATE_LIMITED_JOB_MARKER,
+  MOCK_RATE_LIMITED_JOB_POLLS,
   MOCK_ROWS,
   MOCK_RUNS,
   TOTAL_ROWS,
@@ -15,6 +17,15 @@ import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 interface MockJob extends BenchmarkJobState {
   createdAt: number;
+  /** Count of GET .../jobs/:id requests answered for this job so far
+   * (1-indexed once incremented) - compared against
+   * `rateLimitedOnPolls` to decide whether this poll should answer
+   * HTTP 429. See MOCK_RATE_LIMITED_JOB_MARKER. */
+  pollCount: number;
+  /** Poll numbers (from `pollCount`) that should answer HTTP 429 instead of
+   * the normal advanceJob progression - empty unless the submitted corpus
+   * carried MOCK_RATE_LIMITED_JOB_MARKER. */
+  rateLimitedOnPolls: number[];
 }
 
 const jobs = new Map<string, MockJob>();
@@ -79,17 +90,27 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json({ runs, total: filtered.length });
   }),
 
-  http.post(`${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`, async () => {
-    await new Promise((r) => setTimeout(r, 200));
-    const jobId = uuidv4();
-    jobs.set(jobId, {
-      status: 'queued',
-      progress_pct: 0,
-      createdAt: Date.now(),
-    });
+  http.post(
+    `${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`,
+    async ({ request }) => {
+      await new Promise((r) => setTimeout(r, 200));
+      const body = (await request.json()) as { corpus_jsonl?: string };
+      const jobId = uuidv4();
+      jobs.set(jobId, {
+        status: 'queued',
+        progress_pct: 0,
+        createdAt: Date.now(),
+        pollCount: 0,
+        rateLimitedOnPolls: body.corpus_jsonl?.includes(
+          MOCK_RATE_LIMITED_JOB_MARKER
+        )
+          ? MOCK_RATE_LIMITED_JOB_POLLS
+          : [],
+      });
 
-    return HttpResponse.json({ job_id: jobId }, { status: 202 });
-  }),
+      return HttpResponse.json({ job_id: jobId }, { status: 202 });
+    }
+  ),
 
   http.get(
     `${MSW_PACT_BASE}/gateway/v1/benchmark/jobs/:jobId`,
@@ -99,8 +120,24 @@ export const handlers: RequestHandler[] = [
       if (!job) {
         return HttpResponse.json({ error: 'job not found' }, { status: 404 });
       }
+      job.pollCount += 1;
+      if (job.rateLimitedOnPolls.includes(job.pollCount)) {
+        // Frozen on purpose: a real rate-limit response carries no job state,
+        // so the mock must not advance progress on a 429 poll either -
+        // that's what the workbench's retention hook is being exercised
+        // against.
+        return HttpResponse.json(
+          { error: 'rate limit exceeded' },
+          { status: 429 }
+        );
+      }
       advanceJob(job);
-      const { createdAt: _omit, ...state } = job;
+      const {
+        createdAt: _omit,
+        pollCount: _omit2,
+        rateLimitedOnPolls: _omit3,
+        ...state
+      } = job;
 
       if (state.status !== 'done' || !state.result) {
         return HttpResponse.json(state);
@@ -201,6 +238,8 @@ export const handlers: RequestHandler[] = [
         status: 'queued',
         progress_pct: 0,
         createdAt: Date.now(),
+        pollCount: 0,
+        rateLimitedOnPolls: [],
         hub_import: {
           slug,
           split: body.split || 'train',
