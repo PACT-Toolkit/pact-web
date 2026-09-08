@@ -104,4 +104,33 @@ describe('BenchmarkJobProgress', () => {
       screen.getByText('corpus row 12 failed to parse')
     ).toBeInTheDocument();
   });
+
+  it('shows operator-readable copy plus the raw code for a known job-failure code', () => {
+    render(
+      (
+        <BenchmarkJobProgress
+          jobId="job-auth"
+          state={{
+            status: 'error',
+            progress_pct: 40,
+            error: 'auth_token_expired',
+          }}
+          isLoading={false}
+          poll={{ kind: 'failed' }}
+        />
+      ) as ReactNode
+    );
+
+    expect(
+      screen.getByText('Your session expired before the run finished.')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Sign in again and re-run the job. Rows already checked are not kept.'
+      )
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('benchmark-job-error-code')).toHaveTextContent(
+      'auth_token_expired'
+    );
+  });
 });

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
 import {
+  MOCK_AUTH_EXPIRED_JOB_MARKER,
   MOCK_CORPUS_DATASETS,
   MOCK_CORPUS_LIBRARY_TOTAL_ROWS,
   MOCK_HUB_DATASETS,
@@ -26,6 +27,10 @@ interface MockJob extends BenchmarkJobState {
    * the normal advanceJob progression - empty unless the submitted corpus
    * carried MOCK_RATE_LIMITED_JOB_MARKER. */
   rateLimitedOnPolls: number[];
+  /** True when the submitted corpus carried MOCK_AUTH_EXPIRED_JOB_MARKER -
+   * advanceJob settles this job into `error` / `auth_token_expired` instead
+   * of running it to completion. */
+  authExpired: boolean;
 }
 
 const jobs = new Map<string, MockJob>();
@@ -38,6 +43,16 @@ const advanceJob = (job: MockJob) => {
   }
   if (job.status === 'running') {
     job.progress_pct = Math.min(95, Math.floor((age - 1500) / 100));
+    // A session that expires mid-run settles into `error` partway through
+    // instead of reaching `done` - mirrors AuthTokenExpiredError landing
+    // after some rows already completed (pact_benchmark/domain/service.py).
+    if (job.authExpired && age > 3000) {
+      job.status = 'error';
+      job.progress_pct = 42;
+      job.error = 'auth_token_expired';
+
+      return;
+    }
     if (age > 8000) {
       job.status = 'done';
       job.progress_pct = 100;
@@ -106,6 +121,9 @@ export const handlers: RequestHandler[] = [
         )
           ? MOCK_RATE_LIMITED_JOB_POLLS
           : [],
+        authExpired: Boolean(
+          body.corpus_jsonl?.includes(MOCK_AUTH_EXPIRED_JOB_MARKER)
+        ),
       });
 
       return HttpResponse.json({ job_id: jobId }, { status: 202 });
@@ -136,6 +154,7 @@ export const handlers: RequestHandler[] = [
         createdAt: _omit,
         pollCount: _omit2,
         rateLimitedOnPolls: _omit3,
+        authExpired: _omit4,
         ...state
       } = job;
 
@@ -240,6 +259,7 @@ export const handlers: RequestHandler[] = [
         createdAt: Date.now(),
         pollCount: 0,
         rateLimitedOnPolls: [],
+        authExpired: false,
         hub_import: {
           slug,
           split: body.split || 'train',

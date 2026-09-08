@@ -464,6 +464,15 @@ export const MOCK_RATE_LIMITED_JOB_MARKER = '__pact_mock_rate_limited_job__';
  * MOCK_RATE_LIMITED_JOB_MARKER) answers HTTP 429. */
 export const MOCK_RATE_LIMITED_JOB_POLLS = [3, 4];
 
+/**
+ * A marker string that, when it appears anywhere in a submitted corpus's row
+ * content, makes the mock job-status handler settle the job into `error`
+ * with `error: 'auth_token_expired'` once it would otherwise have started
+ * running - exercising BenchmarkJobProgress's mapped-copy error state (see
+ * describeJobError) in dev:mock without depending on a real expired session.
+ */
+export const MOCK_AUTH_EXPIRED_JOB_MARKER = '__pact_mock_auth_expired_job__';
+
 export const MOCK_HUB_DATASETS: Record<string, MockHubDataset> = {
   // Has a detected label column already: exercises the plain inspect -> run
   // path, plus (via `label_alt`) the "changing the label column re-fetches
