@@ -3,6 +3,7 @@
 import { CheckCircle, Loader2, XCircle } from 'lucide-react';
 
 import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
+import { describeJobError } from '@/src/app/benchmark/domain/benchmark_job_error';
 import { type BenchmarkJobPollDescription } from '@/src/app/benchmark/domain/benchmark_job_poll';
 import {
   Card,
@@ -32,6 +33,8 @@ export const BenchmarkJobProgress = ({
   poll,
 }: BenchmarkJobProgressProps) => {
   const status = state?.status ?? 'queued';
+  const errorDescription =
+    status === 'error' && state?.error ? describeJobError(state.error) : null;
 
   if (poll.kind === 'not_found') {
     return (
@@ -117,8 +120,24 @@ export const BenchmarkJobProgress = ({
           {status === 'running' && 'Running corpus against the gateway…'}
           {status === 'done' && 'Benchmark complete.'}
           {status === 'error' && (
-            <span className="text-destructive">
-              {state?.error ?? 'An error occurred during the benchmark run.'}
+            <span className="flex flex-col gap-0.5">
+              <span className="text-destructive">
+                {errorDescription?.title ??
+                  'An error occurred during the benchmark run.'}
+              </span>
+              {errorDescription?.detail && (
+                <span className="text-xs text-muted-foreground">
+                  {errorDescription.detail}
+                </span>
+              )}
+              {errorDescription?.code && (
+                <span
+                  className="font-mono text-xs text-muted-foreground"
+                  data-testid="benchmark-job-error-code"
+                >
+                  {errorDescription.code}
+                </span>
+              )}
             </span>
           )}
         </p>
