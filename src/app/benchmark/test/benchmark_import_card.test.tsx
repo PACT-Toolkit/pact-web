@@ -19,7 +19,11 @@ const renderCard = () =>
   render(
     (
       <SWRTestProvider>
-        <BenchmarkImportCard onSubmit={vi.fn()} isSubmitting={false} />
+        <BenchmarkImportCard
+          onSubmit={vi.fn()}
+          isSubmitting={false}
+          disabled={false}
+        />
       </SWRTestProvider>
     ) as ReactNode
   );
