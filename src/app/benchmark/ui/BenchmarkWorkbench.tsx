@@ -28,13 +28,14 @@ import { getPublicGatewayBaseUrl } from '@/src/lib/proxy/gateway_url';
 export const BenchmarkWorkbench = () => {
   const [dateRange, setDateRange] = useState<TrendDateRange>('90d');
   const [jobId, setJobId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadSubmitting, setIsUploadSubmitting] = useState(false);
+  const [isImportSubmitting, setIsImportSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { isLoading, jobState, poll: jobPoll } = useBenchmarkJobState(jobId);
 
   const handleSubmit = async (corpusText: string) => {
-    setIsSubmitting(true);
+    setIsUploadSubmitting(true);
     setSubmitError(null);
     setJobId(null);
 
@@ -52,12 +53,12 @@ export const BenchmarkWorkbench = () => {
         'Failed to submit benchmark job. Is the gateway reachable?'
       );
     } finally {
-      setIsSubmitting(false);
+      setIsUploadSubmitting(false);
     }
   };
 
   const handleImportSubmit = async (request: HubImportRequestDraft) => {
-    setIsSubmitting(true);
+    setIsImportSubmitting(true);
     setSubmitError(null);
     setJobId(null);
 
@@ -77,7 +78,7 @@ export const BenchmarkWorkbench = () => {
           : 'Failed to queue the import job. Is the gateway reachable?'
       );
     } finally {
-      setIsSubmitting(false);
+      setIsImportSubmitting(false);
     }
   };
 
@@ -96,12 +97,14 @@ export const BenchmarkWorkbench = () => {
 
       <BenchmarkUploadForm
         onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
+        isSubmitting={isUploadSubmitting}
+        disabled={isImportSubmitting}
       />
 
       <BenchmarkImportCard
         onSubmit={handleImportSubmit}
-        isSubmitting={isSubmitting}
+        isSubmitting={isImportSubmitting}
+        disabled={isUploadSubmitting}
       />
 
       {submitError && (

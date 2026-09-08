@@ -24,12 +24,21 @@ import { Label } from '@/src/components/ui/label';
 
 interface BenchmarkUploadFormProps {
   onSubmit: (corpusText: string) => Promise<void>;
+  /** True only while this form's own submission is in flight - drives the
+   * "Submitting..." button copy. Kept separate from `disabled` so a
+   * concurrent submission from a sibling form never makes this button claim
+   * to be submitting when it isn't. */
   isSubmitting: boolean;
+  /** True while a sibling form (the hub import card) is submitting, so this
+   * form stays locked out of a second concurrent submission without
+   * misreporting its own state. */
+  disabled: boolean;
 }
 
 export const BenchmarkUploadForm = ({
   onSubmit,
   isSubmitting,
+  disabled,
 }: BenchmarkUploadFormProps) => {
   const [fileName, setFileName] = useState<string | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -214,8 +223,9 @@ export const BenchmarkUploadForm = ({
 
           <Button
             type="submit"
-            disabled={!canSubmit || isSubmitting}
+            disabled={!canSubmit || isSubmitting || disabled}
             className="w-fit"
+            data-testid="benchmark-upload-submit"
           >
             {isSubmitting ? 'Submitting…' : 'Run benchmark'}
           </Button>

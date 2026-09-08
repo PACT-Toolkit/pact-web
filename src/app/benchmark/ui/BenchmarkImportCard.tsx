@@ -34,12 +34,22 @@ import {
 
 interface BenchmarkImportCardProps {
   onSubmit: (request: HubImportRequestDraft) => Promise<void>;
+  /** True only while this card's own import submission is in flight - drives
+   * the "Queuing..." button copy. Kept separate from `disabled` so a
+   * concurrent submission from a sibling form never makes this button claim
+   * to be queuing when it isn't. */
   isSubmitting: boolean;
+  /** True while a sibling form (the corpus upload form) is submitting, so
+   * this card stays locked out of a second concurrent submission without
+   * misreporting its own state. Only gates "Run import" - inspecting a
+   * dataset doesn't touch the shared job state, so it stays available. */
+  disabled: boolean;
 }
 
 export const BenchmarkImportCard = ({
   onSubmit,
   isSubmitting,
+  disabled,
 }: BenchmarkImportCardProps) => {
   const [slug, setSlug] = useState('');
   const [split, setSplit] = useState('');
@@ -290,7 +300,7 @@ export const BenchmarkImportCard = ({
 
             <Button
               onClick={() => void handleRun()}
-              disabled={!canRun || isSubmitting}
+              disabled={!canRun || isSubmitting || disabled}
               className="w-fit"
               data-testid="benchmark-import-run"
             >
