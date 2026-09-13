@@ -56,6 +56,7 @@ const RunSelect = ({
     <span className="text-xs font-medium text-muted-foreground">{label}</span>
     <select
       id={id}
+      data-testid={id}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className="h-9 max-w-full truncate rounded-md border border-input bg-background px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"

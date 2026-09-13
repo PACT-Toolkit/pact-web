@@ -130,6 +130,49 @@ test.describe('Benchmark latency, corpus composition, and comparison charts', ()
     }
   });
 
+  // Covers PACT-992: the default baseline/candidate pair (run-6, run-8) both
+  // sit on corpus_version 'seed-v2.jsonl', so no warning should show on a
+  // plain page load - proves the mismatch check doesn't false-positive on
+  // the common case.
+  test('shows no corpus-mismatch warning for the default (same-corpus) pair', async ({
+    page,
+  }) => {
+    await expect(
+      page.getByTestId('benchmark-comparison-corpus-mismatch')
+    ).not.toBeVisible();
+  });
+
+  // Covers PACT-992: run-9 is an attack-free 2508-row Hub import on its own
+  // corpus hash - picking it as the candidate must both warn that the
+  // corpora differ and null out the (otherwise meaningless 0/0) detection
+  // rate, while latency - which never depends on counts - stays numeric.
+  test('warns on mismatched corpora and shows n/a rates for a zero-denominator run', async ({
+    page,
+  }) => {
+    await page.getByTestId('benchmark-compare-candidate').selectOption('run-9');
+
+    const warning = page.getByTestId('benchmark-comparison-corpus-mismatch');
+    await expect(warning).toBeVisible();
+    await expect(warning).toContainText(
+      'Different corpora - rates are not comparable.'
+    );
+
+    const detectionRow = page.locator('tbody tr', {
+      hasText: 'Detection rate',
+    });
+    const detectionCells = detectionRow.locator('td');
+    await expect(detectionCells.nth(2)).toHaveText('n/a'); // candidate
+    await expect(detectionCells.nth(3)).toHaveText('n/a'); // delta
+
+    for (const label of ['p50 latency', 'p99 latency']) {
+      const latencyCells = page
+        .locator('tbody tr', { hasText: label })
+        .locator('td');
+      await expect(latencyCells.nth(2)).toContainText('ms');
+      await expect(latencyCells.nth(3)).not.toHaveText('n/a');
+    }
+  });
+
   test('the shared range toggle filters both the trend and latency charts', async ({
     page,
   }) => {
