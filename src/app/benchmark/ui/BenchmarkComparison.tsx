@@ -1,27 +1,28 @@
 'use client';
 
+import { TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import {
   compareRuns,
   comparisonDeltaBars,
+  corporaMismatched,
   defaultComparisonPair,
+  formatRate,
   runOptionLabel,
   type DeltaDirection,
 } from '@/src/app/benchmark/domain/benchmark_comparison';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
 import { BenchmarkCategoryChart } from '@/src/app/benchmark/ui/BenchmarkCategoryChart';
 import { BenchmarkStageLatencyChart } from '@/src/app/benchmark/ui/BenchmarkStageLatencyChart';
+import { Alert, AlertDescription } from '@/src/components/ui/alert';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
-import {
-  formatDelta,
-  formatMetric,
-} from '@/src/framework/format/metric_format';
+import { formatDelta } from '@/src/framework/format/metric_format';
 import { cn } from '@/src/lib/utils';
 
 const DELTA_CLASS: Record<DeltaDirection, string> = {
@@ -95,6 +96,8 @@ const BenchmarkComparisonPanel = () => {
     [baseline, candidate]
   );
   const deltaBars = useMemo(() => comparisonDeltaBars(metrics), [metrics]);
+  const mismatchedCorpora =
+    baseline && candidate ? corporaMismatched(baseline, candidate) : false;
 
   // The category/stage charts below only need one run, not a baseline+candidate
   // pair, so they fall back to the newest run even when there aren't enough
@@ -139,6 +142,18 @@ const BenchmarkComparisonPanel = () => {
                 />
               </div>
 
+              {mismatchedCorpora && (
+                <Alert
+                  variant="warning"
+                  data-testid="benchmark-comparison-corpus-mismatch"
+                >
+                  <TriangleAlert />
+                  <AlertDescription>
+                    Different corpora - rates are not comparable.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -180,10 +195,18 @@ const BenchmarkComparisonPanel = () => {
                         >
                           <td className="px-3 py-2">{m.label}</td>
                           <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                            {formatMetric(m.baseline, m.format)}
+                            {formatRate(
+                              m.baseline,
+                              m.format,
+                              m.baselineDefined
+                            )}
                           </td>
                           <td className="px-3 py-2 text-right tabular-nums">
-                            {formatMetric(m.candidate, m.format)}
+                            {formatRate(
+                              m.candidate,
+                              m.format,
+                              m.candidateDefined
+                            )}
                           </td>
                           <td
                             className={cn(
@@ -191,18 +214,22 @@ const BenchmarkComparisonPanel = () => {
                               DELTA_CLASS[m.deltaDirection]
                             )}
                           >
-                            {m.delta === 0
-                              ? '-'
-                              : formatDelta(m.delta, m.format)}
+                            {m.delta === null
+                              ? 'n/a'
+                              : m.delta === 0
+                                ? '-'
+                                : formatDelta(m.delta, m.format)}
                           </td>
                           <td className="px-3 py-2">
                             <div
                               data-testid="benchmark-comparison-delta-bar"
                               role="img"
                               aria-label={`${m.label} delta: ${
-                                bar.direction === 'neutral'
-                                  ? 'no change'
-                                  : formatDelta(m.delta, m.format)
+                                m.delta === null
+                                  ? 'not comparable'
+                                  : bar.direction === 'neutral'
+                                    ? 'no change'
+                                    : formatDelta(m.delta, m.format)
                               }`}
                               className="relative h-2 w-16"
                             >
