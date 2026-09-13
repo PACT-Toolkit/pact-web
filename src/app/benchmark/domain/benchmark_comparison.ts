@@ -1,6 +1,9 @@
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
 import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
-import { type MetricFormat } from '@/src/framework/format/metric_format';
+import {
+  formatMetric,
+  type MetricFormat,
+} from '@/src/framework/format/metric_format';
 
 /** Whether a larger value is better (detection) or worse (FP, latency). */
 export type MetricGoal = 'higher-better' | 'lower-better';
@@ -49,9 +52,19 @@ export interface ComparisonMetric {
   format: MetricFormat;
   goal: MetricGoal;
   baseline: number;
+  /** Whether `baseline` has a real denominator (see detectionRateDefined /
+   * fpRateDefined) - false means the value is a meaningless 0% rather than
+   * an actual measurement. Always true for the latency metrics. */
+  baselineDefined: boolean;
   candidate: number;
-  /** candidate − baseline, in the metric's native units. */
-  delta: number;
+  /** Same as `baselineDefined`, for `candidate`. */
+  candidateDefined: boolean;
+  /**
+   * candidate − baseline, in the metric's native units. null when either
+   * side's rate is undefined (zero-denominator) - there is nothing
+   * meaningful to subtract.
+   */
+  delta: number | null;
   deltaDirection: DeltaDirection;
 }
 
@@ -62,15 +75,65 @@ function classifyDelta(delta: number, goal: MetricGoal): DeltaDirection {
   return isBetter ? 'improved' : 'regressed';
 }
 
+/**
+ * Whether a run's detection rate has a real denominator (attack rows > 0).
+ * A run persisted before the count breakdown existed carries no `counts` at
+ * all - keep today's behaviour for those and treat the rate as defined
+ * rather than guessing from row_count.
+ */
+export function detectionRateDefined(run: BenchmarkRun): boolean {
+  return run.counts === undefined || run.counts.attacks > 0;
+}
+
+/** Whether a run's false-positive rate has a real denominator (benign rows > 0). */
+export function fpRateDefined(run: BenchmarkRun): boolean {
+  return run.counts === undefined || run.counts.benign > 0;
+}
+
+function rateDefined(key: MetricDef['key'], run: BenchmarkRun): boolean {
+  if (key === 'detection_rate') return detectionRateDefined(run);
+  if (key === 'fp_rate') return fpRateDefined(run);
+
+  return true;
+}
+
+/**
+ * Format one side of a comparison-table cell: "n/a" when that run's rate is
+ * undefined for this metric (see detectionRateDefined/fpRateDefined),
+ * otherwise the normal formatted value.
+ */
+export function formatRate(
+  value: number,
+  format: MetricFormat,
+  defined: boolean
+): string {
+  return defined ? formatMetric(value, format) : 'n/a';
+}
+
+/**
+ * Whether the baseline and candidate runs were measured against different
+ * corpora - when true, their rates are not directly comparable and callers
+ * should warn before trusting the delta.
+ */
+export function corporaMismatched(
+  baseline: BenchmarkRun,
+  candidate: BenchmarkRun
+): boolean {
+  return baseline.corpus_version !== candidate.corpus_version;
+}
+
 /** Build the per-metric comparison rows for a baseline → candidate pair. */
 export function compareRuns(
   baseline: BenchmarkRun,
   candidate: BenchmarkRun
 ): ComparisonMetric[] {
   return COMPARISON_METRICS.map((m) => {
+    const baselineDefined = rateDefined(m.key, baseline);
+    const candidateDefined = rateDefined(m.key, candidate);
     const baseValue = baseline[m.key];
     const candidateValue = candidate[m.key];
-    const delta = candidateValue - baseValue;
+    const delta =
+      baselineDefined && candidateDefined ? candidateValue - baseValue : null;
 
     return {
       key: m.key,
@@ -78,9 +141,11 @@ export function compareRuns(
       format: m.format,
       goal: m.goal,
       baseline: baseValue,
+      baselineDefined,
       candidate: candidateValue,
+      candidateDefined,
       delta,
-      deltaDirection: classifyDelta(delta, m.goal),
+      deltaDirection: delta === null ? 'neutral' : classifyDelta(delta, m.goal),
     };
   });
 }
@@ -127,11 +192,16 @@ export function comparisonDeltaBars(
 ): ComparisonDeltaBar[] {
   const maxAbsDeltaByFormat = new Map<MetricFormat, number>();
   for (const m of metrics) {
+    if (m.delta === null) continue;
     const current = maxAbsDeltaByFormat.get(m.format) ?? 0;
     maxAbsDeltaByFormat.set(m.format, Math.max(current, Math.abs(m.delta)));
   }
 
   return metrics.map((m): ComparisonDeltaBar => {
+    // No denominator on one side - nothing meaningful to plot.
+    if (m.delta === null)
+      return { key: m.key, fraction: 0, direction: 'neutral' };
+
     const maxAbsDelta = maxAbsDeltaByFormat.get(m.format) ?? 0;
 
     return {
@@ -143,7 +213,19 @@ export function comparisonDeltaBars(
   });
 }
 
-/** Human label for a run in a selector: engine · corpus · gateway · date. */
+/**
+ * Row-count segment of a run's picker label: "2508 rows" or, when the run
+ * carries a count breakdown, "2508 rows · 0 attacks / 2508 benign". A run
+ * persisted before the breakdown existed has no `counts` - it shows only
+ * the row count, same as today.
+ */
+export function runRowCountLabel(run: BenchmarkRun): string {
+  if (!run.counts) return `${run.row_count} rows`;
+
+  return `${run.row_count} rows · ${run.counts.attacks} attacks / ${run.counts.benign} benign`;
+}
+
+/** Human label for a run in a selector: engine · corpus · gateway · date · rows. */
 export function runOptionLabel(run: BenchmarkRun): string {
   const date = new Date(run.ran_at * 1000).toLocaleDateString('en-GB', {
     month: 'short',
@@ -151,5 +233,5 @@ export function runOptionLabel(run: BenchmarkRun): string {
     year: 'numeric',
   });
 
-  return `${run.engine} · ${abbreviateHash(run.corpus_version)} · ${run.gateway_version} · ${date}`;
+  return `${run.engine} · ${abbreviateHash(run.corpus_version)} · ${run.gateway_version} · ${date} · ${runRowCountLabel(run)}`;
 }

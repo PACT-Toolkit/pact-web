@@ -317,6 +317,54 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       { layer: 'consensus', p50_ms: 5, p99_ms: 12, samples: 100 },
     ],
   },
+  // PACT-992: two runs added purely for the comparison card's guardrails -
+  // both are older than every run above so they never disturb "run-8 is the
+  // newest run" (the category/stage charts' default candidate). They mirror
+  // the real 2026-09-13 incident: a benign-only Hub import (attacks: 0, so
+  // detection rate is a meaningless 0/0) compared against a small corpus on
+  // a different corpus_version hash. Picking either against any other run
+  // exercises the "different corpora" warning; picking run-9 exercises the
+  // zero-denominator "n/a" rates.
+  {
+    id: 'run-9',
+    gateway_version: 'v0.5.1',
+    engine: 'deberta',
+    corpus_version: 'b4b9b6c1a7d240f8b3e5c9a1d6f2408e',
+    detection_rate: 0,
+    fp_rate: 0.677,
+    p50_latency: 410,
+    p99_latency: 1280,
+    row_count: 2508,
+    ran_at: NOW - 100 * DAY,
+    counts: {
+      attacks: 0,
+      benign: 2508,
+      errors: 0,
+      false_positives: 1698,
+      true_positives: 0,
+      throttled: 0,
+    },
+  },
+  {
+    id: 'run-10',
+    gateway_version: 'v0.5.0',
+    engine: 'deberta',
+    corpus_version: '2f1e0d9c8b7a695847362514f0e1d2c3',
+    detection_rate: 1,
+    fp_rate: 0,
+    p50_latency: 395,
+    p99_latency: 1150,
+    row_count: 6,
+    ran_at: NOW - 95 * DAY,
+    counts: {
+      attacks: 5,
+      benign: 1,
+      errors: 0,
+      false_positives: 0,
+      true_positives: 5,
+      throttled: 0,
+    },
+  },
 ];
 
 // Mirrors the real pact-benchmark corpus_library table as verified end-to-end
