@@ -3,6 +3,7 @@ import {
   type DistinctLabelValuesOutcome,
   type LabelDecision,
 } from '@/src/app/benchmark/domain/benchmark_corpus_mapping';
+import { NO_LABEL_COLUMN } from '@/src/app/benchmark/domain/benchmark_import';
 import { Label } from '@/src/components/ui/label';
 import {
   Select,
@@ -20,7 +21,21 @@ interface BenchmarkUploadMappingProps {
   distinctValues: DistinctLabelValuesOutcome | null;
   valueDecisions: Record<string, LabelDecision>;
   onValueDecisionChange: (value: string, decision: LabelDecision) => void;
+  /** Adds a "No label column" entry (value `NO_LABEL_COLUMN`) to the label
+   * select. Off for the upload flow, where a label column is required. */
+  allowNoLabelColumn?: boolean;
+  /** Flags the shown column as coming from detection rather than the user. */
+  autoDetected?: { textColumn: boolean; labelColumn: boolean };
 }
+
+const AutoDetectedHint = ({ testId }: { testId: string }) => (
+  <span
+    className="text-xs font-normal text-muted-foreground"
+    data-testid={testId}
+  >
+    Auto-detected
+  </span>
+);
 
 const DECISION_OPTIONS: { value: LabelDecision; label: string }[] = [
   { value: 'block', label: 'Block' },
@@ -43,12 +58,17 @@ export const BenchmarkUploadMapping = ({
   distinctValues,
   valueDecisions,
   onValueDecisionChange,
+  allowNoLabelColumn = false,
+  autoDetected,
 }: BenchmarkUploadMappingProps) => (
   <div className="flex flex-col gap-4" data-testid="benchmark-upload-mapping">
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div className="flex flex-col gap-2">
         <Label htmlFor="benchmark-upload-mapping-text-column">
-          Text column
+          Text column{' '}
+          {autoDetected?.textColumn && (
+            <AutoDetectedHint testId="benchmark-upload-mapping-text-column-auto" />
+          )}
         </Label>
         <Select
           value={mapping.textColumn ?? ''}
@@ -72,10 +92,15 @@ export const BenchmarkUploadMapping = ({
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="benchmark-upload-mapping-label-column">
-          Label column
+          Label column{' '}
+          {autoDetected?.labelColumn && (
+            <AutoDetectedHint testId="benchmark-upload-mapping-label-column-auto" />
+          )}
         </Label>
         <Select
-          value={mapping.labelColumn ?? ''}
+          value={
+            mapping.labelColumn ?? (allowNoLabelColumn ? NO_LABEL_COLUMN : '')
+          }
           onValueChange={onLabelColumnChange}
         >
           <SelectTrigger
@@ -85,6 +110,9 @@ export const BenchmarkUploadMapping = ({
             <SelectValue placeholder="Select the label column" />
           </SelectTrigger>
           <SelectContent>
+            {allowNoLabelColumn && (
+              <SelectItem value={NO_LABEL_COLUMN}>No label column</SelectItem>
+            )}
             {columns.map((column) => (
               <SelectItem key={column} value={column}>
                 {column}

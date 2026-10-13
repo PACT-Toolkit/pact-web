@@ -5,8 +5,10 @@ import {
   buildPreviewParams,
   describeHubImportError,
   normalizeDetectedColumn,
+  NO_LABEL_COLUMN,
   normalizeLabelValueKey,
   previewToDistinctValues,
+  resolveHubImportMapping,
   type HubDatasetIdentity,
   type HubDatasetPreview,
 } from '@/src/app/benchmark/domain/benchmark_import';
@@ -24,8 +26,28 @@ const PREVIEW: HubDatasetPreview = {
   sampled_rows: 200,
   detected_text_column: 'text',
   detected_label_column: 'label',
-  label_values: ['block', 'allow'],
+  label_values: ['0', '1'],
   label_values_truncated: false,
+  suggested_label_values: { '0': 'allow', '1': 'block' },
+  suggested_assume_label: '',
+};
+
+const UNLABELED_PREVIEW: HubDatasetPreview = {
+  columns: ['Name', 'Prompt'],
+  row_count: 79,
+  sampled_rows: 79,
+  detected_text_column: 'Prompt',
+  detected_label_column: '',
+  label_values: [],
+  label_values_truncated: false,
+  suggested_label_values: {},
+  suggested_assume_label: 'block',
+};
+
+const NO_SELECTIONS = {
+  textColumn: null,
+  labelColumn: null,
+  assumeLabel: null,
 };
 
 describe('buildPreviewParams', () => {
@@ -48,6 +70,12 @@ describe('buildPreviewParams', () => {
       split: 'train',
       config: 'default',
       revision: 'main',
+    });
+  });
+
+  it('omits label_column for the no-label-column sentinel', () => {
+    expect(buildPreviewParams(IDENTITY, NO_LABEL_COLUMN)).toEqual({
+      slug: 'deepset/prompt-injections',
     });
   });
 
@@ -78,36 +106,126 @@ describe('normalizeDetectedColumn', () => {
 });
 
 describe('previewToDistinctValues', () => {
-  it('returns null when the preview found no label column', () => {
-    expect(
-      previewToDistinctValues({ ...PREVIEW, detected_label_column: '' })
-    ).toBeNull();
+  it('returns null when no label column is in effect', () => {
+    expect(previewToDistinctValues(PREVIEW, null)).toBeNull();
   });
 
-  it('returns null when the preview label column is whitespace-only', () => {
-    expect(
-      previewToDistinctValues({ ...PREVIEW, detected_label_column: '   ' })
-    ).toBeNull();
-  });
-
-  it('maps every label value to its vocabulary-derived default decision', () => {
-    expect(previewToDistinctValues(PREVIEW)).toEqual({
+  it('takes the default decisions from suggested_label_values', () => {
+    expect(previewToDistinctValues(PREVIEW, 'label')).toEqual({
       ok: true,
-      values: ['block', 'allow'],
-      defaultDecisions: { block: 'block', allow: 'allow' },
+      values: ['0', '1'],
+      defaultDecisions: { '0': 'allow', '1': 'block' },
     });
   });
 
-  it('defaults an unrecognized label value to skip', () => {
+  it('defaults a value missing from the suggestions to skip', () => {
     const preview: HubDatasetPreview = {
       ...PREVIEW,
       label_values: ['positive', 'negative'],
+      suggested_label_values: { positive: 'block' },
     };
 
-    expect(previewToDistinctValues(preview)).toEqual({
+    expect(previewToDistinctValues(preview, 'label')).toEqual({
       ok: true,
       values: ['positive', 'negative'],
-      defaultDecisions: { positive: 'skip', negative: 'skip' },
+      defaultDecisions: { positive: 'block', negative: 'skip' },
+    });
+  });
+
+  it('does not apply the client vocabulary when the gateway suggests nothing', () => {
+    const preview: HubDatasetPreview = {
+      ...PREVIEW,
+      label_values: ['block', 'allow'],
+      suggested_label_values: {},
+    };
+
+    expect(previewToDistinctValues(preview, 'label')).toEqual({
+      ok: true,
+      values: ['block', 'allow'],
+      defaultDecisions: { block: 'skip', allow: 'skip' },
+    });
+  });
+});
+
+describe('resolveHubImportMapping', () => {
+  it('uses the detected columns and flags them as auto-detected', () => {
+    expect(resolveHubImportMapping(PREVIEW, NO_SELECTIONS)).toEqual({
+      textColumn: 'text',
+      labelColumn: 'label',
+      assumeLabel: null,
+      textColumnAutoDetected: true,
+      labelColumnAutoDetected: true,
+      assumeLabelAutoDetected: false,
+    });
+  });
+
+  it('lets a user text column override the detection', () => {
+    const resolved = resolveHubImportMapping(PREVIEW, {
+      ...NO_SELECTIONS,
+      textColumn: 'other',
+    });
+
+    expect(resolved.textColumn).toBe('other');
+    expect(resolved.textColumnAutoDetected).toBe(false);
+  });
+
+  it('lets a user label column override the detection', () => {
+    const resolved = resolveHubImportMapping(PREVIEW, {
+      ...NO_SELECTIONS,
+      labelColumn: 'label_alt',
+    });
+
+    expect(resolved.labelColumn).toBe('label_alt');
+    expect(resolved.labelColumnAutoDetected).toBe(false);
+  });
+
+  it('clears a detected label column for the sentinel', () => {
+    const resolved = resolveHubImportMapping(PREVIEW, {
+      ...NO_SELECTIONS,
+      labelColumn: NO_LABEL_COLUMN,
+    });
+
+    expect(resolved.labelColumn).toBeNull();
+    expect(resolved.labelColumnAutoDetected).toBe(false);
+    expect(resolved.assumeLabel).toBeNull();
+  });
+
+  it('derives the assume-label from the suggestion when no label column exists', () => {
+    const resolved = resolveHubImportMapping(UNLABELED_PREVIEW, NO_SELECTIONS);
+
+    expect(resolved.labelColumn).toBeNull();
+    expect(resolved.assumeLabel).toBe('block');
+    expect(resolved.assumeLabelAutoDetected).toBe(true);
+  });
+
+  it('prefers the user assume-label over the suggestion', () => {
+    const resolved = resolveHubImportMapping(UNLABELED_PREVIEW, {
+      ...NO_SELECTIONS,
+      assumeLabel: 'allow',
+    });
+
+    expect(resolved.assumeLabel).toBe('allow');
+    expect(resolved.assumeLabelAutoDetected).toBe(false);
+  });
+
+  it('ignores a suggestion that is neither allow nor block', () => {
+    const resolved = resolveHubImportMapping(
+      { ...UNLABELED_PREVIEW, suggested_assume_label: '' },
+      NO_SELECTIONS
+    );
+
+    expect(resolved.assumeLabel).toBeNull();
+    expect(resolved.assumeLabelAutoDetected).toBe(false);
+  });
+
+  it('treats a missing preview as nothing detected', () => {
+    expect(resolveHubImportMapping(undefined, NO_SELECTIONS)).toEqual({
+      textColumn: null,
+      labelColumn: null,
+      assumeLabel: null,
+      textColumnAutoDetected: false,
+      labelColumnAutoDetected: false,
+      assumeLabelAutoDetected: false,
     });
   });
 });
@@ -171,6 +289,19 @@ describe('buildImportRequest', () => {
     });
 
     expect(result.label_values).toEqual({ block: 'allow' });
+  });
+
+  it('drops assume_label when a label column is mapped', () => {
+    const result = buildImportRequest({
+      identity: IDENTITY,
+      textColumn: 'text',
+      labelColumn: 'label',
+      valueDecisions: { '0': 'allow', '1': 'block' },
+      assumeLabel: 'block',
+    });
+
+    expect(result.assume_label).toBeUndefined();
+    expect(result.label_column).toBe('label');
   });
 
   it('includes assume_label when no label column is mapped', () => {

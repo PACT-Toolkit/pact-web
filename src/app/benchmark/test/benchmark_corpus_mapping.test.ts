@@ -3,6 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   computeDistinctLabelValues,
   detectDefaultColumnMapping,
+  INVERTED_LABEL_COLUMN_ALIASES,
+  LABEL_COLUMN_ALIASES,
   matchLabelVocabulary,
   normalizeCorpus,
   stringifyLabelValue,
@@ -89,6 +91,46 @@ describe('matchLabelVocabulary', () => {
 
   it('defaults an unknown value to skip', () => {
     expect(matchLabelVocabulary('maybe')).toBe('skip');
+  });
+});
+
+describe('alias table parity with the backend', () => {
+  it('lists the inverted-polarity label columns apart from the label aliases', () => {
+    expect(INVERTED_LABEL_COLUMN_ALIASES).toEqual([
+      'is_safe',
+      'safe',
+      'is_benign',
+      'benign',
+      'harmless',
+    ]);
+    for (const alias of INVERTED_LABEL_COLUMN_ALIASES) {
+      expect(LABEL_COLUMN_ALIASES).not.toContain(alias);
+    }
+  });
+
+  it.each([
+    'yes',
+    'y',
+    't',
+    'injected',
+    'prompt injection',
+    'jailbroken',
+    'toxic',
+  ])('maps the extended block value "%s" to block', (value) => {
+    expect(matchLabelVocabulary(value)).toBe('block');
+  });
+
+  it.each(['no', 'n', 'f', 'regular', 'not_injection', 'non_malicious'])(
+    'maps the extended allow value "%s" to allow',
+    (value) => {
+      expect(matchLabelVocabulary(value)).toBe('allow');
+    }
+  );
+
+  it('detects the extended text and label column aliases', () => {
+    expect(
+      detectDefaultColumnMapping(['id', 'jailbreak_prompt', 'is_jailbreak'])
+    ).toEqual({ textColumn: 'jailbreak_prompt', labelColumn: 'is_jailbreak' });
   });
 });
 

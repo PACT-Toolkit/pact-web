@@ -481,10 +481,10 @@ test.describe('Benchmark Hugging Face import', () => {
       page.getByTestId('benchmark-upload-mapping-label-column')
     ).toContainText('label');
     await expect(
-      page.getByTestId('benchmark-upload-mapping-value-block')
+      page.getByTestId('benchmark-upload-mapping-value-1')
     ).toContainText('Block');
     await expect(
-      page.getByTestId('benchmark-upload-mapping-value-allow')
+      page.getByTestId('benchmark-upload-mapping-value-0')
     ).toContainText('Allow');
 
     // Switching the label column re-fetches the preview with a new
@@ -502,7 +502,7 @@ test.describe('Benchmark Hugging Face import', () => {
     await page.getByTestId('benchmark-upload-mapping-label-column').click();
     await page.getByRole('option', { name: 'label', exact: true }).click();
     await expect(
-      page.getByTestId('benchmark-upload-mapping-value-block')
+      page.getByTestId('benchmark-upload-mapping-value-1')
     ).toBeVisible();
 
     await page.getByTestId('benchmark-import-run').click();
@@ -569,6 +569,26 @@ test.describe('Benchmark Hugging Face import', () => {
     await expect(
       page.getByTestId('benchmark-import-summary-attack-rows')
     ).toContainText('0');
+  });
+
+  test('pre-selects the suggested assume-label for an unlabeled dataset', async ({
+    page,
+  }) => {
+    await page
+      .getByTestId('benchmark-import-slug')
+      .fill('rubend18/ChatGPT-Jailbreak-Prompts');
+    await page.getByTestId('benchmark-import-inspect').click();
+
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-text-column')
+    ).toContainText('Prompt');
+    await expect(
+      page.getByTestId('benchmark-import-assume-label')
+    ).toContainText('Block (attack)');
+    await expect(
+      page.getByTestId('benchmark-import-assume-label-auto')
+    ).toBeVisible();
+    await expect(page.getByTestId('benchmark-import-run')).toBeEnabled();
   });
 
   test('shows a friendly error for a gated dataset', async ({ page }) => {

@@ -5,7 +5,6 @@ import {
   type InspectBenchmarkImportParams as HubImportPreviewParams,
 } from '@/src/__codegen__/rest/benchmark';
 import {
-  matchLabelVocabulary,
   type DistinctLabelValuesOutcome,
   type LabelDecision,
 } from '@/src/app/benchmark/domain/benchmark_corpus_mapping';
@@ -71,21 +70,34 @@ export function describeHubImportError(
 }
 
 /**
+ * Sentinel for the label-column select's "No label column" entry. Radix
+ * Select reserves the empty string for "no selection / show placeholder", so
+ * the explicit "this dataset has no label column" choice needs a non-empty
+ * value that can never collide with a real column name in practice.
+ */
+export const NO_LABEL_COLUMN = '__none__';
+
+/**
  * Builds `GET /v1/benchmark/imports/preview`'s query params from a dataset
- * identity plus the currently-selected label column override. Blank
- * identity fields are omitted rather than sent empty - the gateway only
- * applies its own defaults (split "train", alias-detected label column) when
- * the param is absent entirely.
+ * identity plus the user's label column selection (a real column, the
+ * `NO_LABEL_COLUMN` sentinel, or `null` for "untouched"). Blank identity
+ * fields are omitted rather than sent empty - the gateway only applies its
+ * own defaults (split "train", detected label column) when the param is
+ * absent entirely. The sentinel is omitted too: the preview then matches the
+ * untouched one (same cache entry), and `resolveHubImportMapping` ignores the
+ * detected label column for it.
  */
 export function buildPreviewParams(
   identity: HubDatasetIdentity,
-  labelColumnOverride: string | null
+  labelColumnSelection: string | null
 ): HubImportPreviewParams {
   const params: HubImportPreviewParams = { slug: identity.slug.trim() };
   if (identity.split.trim()) params.split = identity.split.trim();
   if (identity.config.trim()) params.config = identity.config.trim();
   if (identity.revision.trim()) params.revision = identity.revision.trim();
-  if (labelColumnOverride) params.label_column = labelColumnOverride;
+  if (labelColumnSelection && labelColumnSelection !== NO_LABEL_COLUMN) {
+    params.label_column = labelColumnSelection;
+  }
 
   return params;
 }
@@ -106,11 +118,76 @@ export function normalizeDetectedColumn(
   return value && value.trim().length > 0 ? value : null;
 }
 
+/** The user's raw choices on the import card; `null` means "untouched, use
+ * what the preview detected". */
+export interface HubImportSelections {
+  textColumn: string | null;
+  /** A real column name, `NO_LABEL_COLUMN`, or `null`. */
+  labelColumn: string | null;
+  assumeLabel: 'allow' | 'block' | null;
+}
+
+/** The mapping the card actually shows and submits, plus which parts came
+ * from the preview rather than from the user. */
+export interface ResolvedHubImportMapping {
+  textColumn: string | null;
+  labelColumn: string | null;
+  /** Meaningful only while `labelColumn` is `null`. */
+  assumeLabel: 'allow' | 'block' | null;
+  textColumnAutoDetected: boolean;
+  labelColumnAutoDetected: boolean;
+  assumeLabelAutoDetected: boolean;
+}
+
+function toAssumeLabel(value: string | undefined): 'allow' | 'block' | null {
+  return value === 'allow' || value === 'block' ? value : null;
+}
+
+/**
+ * Layers the user's selections over the preview's detections: a user choice
+ * always wins, the `NO_LABEL_COLUMN` sentinel clears the label column even
+ * when one was detected, and the assume-label falls back to the gateway's
+ * `suggested_assume_label`. Pure derived state - the card keeps only the
+ * user's raw choices.
+ */
+export function resolveHubImportMapping(
+  preview: HubDatasetPreview | undefined,
+  selections: HubImportSelections
+): ResolvedHubImportMapping {
+  const detectedText = normalizeDetectedColumn(preview?.detected_text_column);
+  const detectedLabel = normalizeDetectedColumn(preview?.detected_label_column);
+  const suggestedAssume = toAssumeLabel(preview?.suggested_assume_label);
+
+  const labelColumn =
+    selections.labelColumn === NO_LABEL_COLUMN
+      ? null
+      : (selections.labelColumn ?? detectedLabel);
+
+  return {
+    textColumn: selections.textColumn ?? detectedText,
+    labelColumn,
+    assumeLabel: selections.assumeLabel ?? suggestedAssume,
+    textColumnAutoDetected:
+      selections.textColumn === null && detectedText !== null,
+    labelColumnAutoDetected:
+      selections.labelColumn === null && detectedLabel !== null,
+    assumeLabelAutoDetected:
+      labelColumn === null &&
+      selections.assumeLabel === null &&
+      suggestedAssume !== null,
+  };
+}
+
+function toLabelDecision(value: string | undefined): LabelDecision {
+  return value === 'allow' || value === 'block' ? value : 'skip';
+}
+
 /**
  * Converts a preview's already-deduplicated label values into the same
  * `DistinctLabelValuesOutcome` shape the upload flow's mapping UI expects,
- * so `BenchmarkUploadMapping` can be reused unchanged. Returns `null` when
- * the preview found no label column (empty `detected_label_column`) - the
+ * so `BenchmarkUploadMapping` can be reused unchanged. Default decisions come
+ * from the gateway's `suggested_label_values`; a value missing from that map
+ * defaults to `skip`. Returns `null` when no label column is in effect - the
  * card falls back to an explicit "assume every row is..." control instead of
  * a per-value mapping grid in that case.
  *
@@ -121,13 +198,16 @@ export function normalizeDetectedColumn(
  * (if partial) list to show.
  */
 export function previewToDistinctValues(
-  preview: HubDatasetPreview
+  preview: HubDatasetPreview,
+  labelColumn: string | null
 ): DistinctLabelValuesOutcome | null {
-  if (!normalizeDetectedColumn(preview.detected_label_column)) return null;
+  if (labelColumn === null) return null;
 
   const defaultDecisions: Record<string, LabelDecision> = {};
   for (const value of preview.label_values) {
-    defaultDecisions[value] = matchLabelVocabulary(value);
+    defaultDecisions[value] = toLabelDecision(
+      preview.suggested_label_values[value]
+    );
   }
 
   return { ok: true, values: preview.label_values, defaultDecisions };
@@ -150,6 +230,8 @@ export interface BuildImportRequestArgs {
   textColumn: string | null;
   labelColumn: string | null;
   valueDecisions: Record<string, LabelDecision>;
+  /** Ignored while a label column is set - the gateway only accepts it for
+   * datasets without one. */
   assumeLabel: 'allow' | 'block' | null;
 }
 
@@ -181,6 +263,6 @@ export function buildImportRequest(
     ...(textColumn ? { text_column: textColumn } : {}),
     ...(labelColumn ? { label_column: labelColumn } : {}),
     ...(Object.keys(label_values).length > 0 ? { label_values } : {}),
-    ...(assumeLabel ? { assume_label: assumeLabel } : {}),
+    ...(assumeLabel && !labelColumn ? { assume_label: assumeLabel } : {}),
   };
 }
