@@ -85,6 +85,71 @@ describe('BenchmarkImportCard', () => {
     expect(screen.getByTestId('benchmark-import-run')).toBeEnabled();
   });
 
+  it('pre-fills the detected columns and per-value decisions from the preview', async () => {
+    renderCard();
+    await inspect('deepset/prompt-injections');
+
+    expect(
+      screen.getByTestId('benchmark-upload-mapping-text-column')
+    ).toHaveTextContent('text');
+    expect(
+      screen.getByTestId('benchmark-upload-mapping-label-column')
+    ).toHaveTextContent('label');
+    expect(
+      screen.getByTestId('benchmark-upload-mapping-text-column-auto')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('benchmark-upload-mapping-label-column-auto')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('benchmark-upload-mapping-value-0')
+    ).toHaveTextContent('Allow');
+    expect(
+      screen.getByTestId('benchmark-upload-mapping-value-1')
+    ).toHaveTextContent('Block');
+  });
+
+  it('pre-selects the suggested assume-label for an unlabeled dataset', async () => {
+    renderCard();
+    await inspect('rubend18/ChatGPT-Jailbreak-Prompts');
+
+    expect(
+      screen.getByTestId('benchmark-import-assume-label')
+    ).toHaveTextContent('Block (attack)');
+    expect(
+      screen.getByTestId('benchmark-import-assume-label-auto')
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('benchmark-import-run')).toBeEnabled();
+  });
+
+  it('switches to the assume-label select when "No label column" is chosen', async () => {
+    renderCard();
+    await inspect('deepset/prompt-injections');
+
+    expect(
+      screen.queryByTestId('benchmark-import-assume-label')
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByTestId('benchmark-upload-mapping-label-column')
+    );
+    fireEvent.click(
+      await screen.findByRole('option', { name: 'No label column' })
+    );
+
+    expect(
+      screen.getByTestId('benchmark-import-assume-label')
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('benchmark-upload-mapping-values')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('benchmark-upload-mapping-label-column-auto')
+    ).not.toBeInTheDocument();
+    // No suggestion for a dataset that has a label column: Run waits for a pick.
+    expect(screen.getByTestId('benchmark-import-run')).toBeDisabled();
+  });
+
   it('never logs the uncontrolled-to-controlled warning when a column is picked', async () => {
     // Radix's Select emits this one via console.warn (not console.error) -
     // see @radix-ui's useControllableState. Keep both spies: warn is the one

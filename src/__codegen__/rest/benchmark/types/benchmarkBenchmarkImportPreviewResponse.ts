@@ -5,6 +5,7 @@
  * Public REST entrypoint for the PACT safety pipeline.
  * OpenAPI spec version: 0.1.0
  */
+import type { BenchmarkBenchmarkImportPreviewResponseSuggestedLabelValues } from './benchmarkBenchmarkImportPreviewResponseSuggestedLabelValues';
 
 export interface BenchmarkBenchmarkImportPreviewResponse {
   /** Columns is the split's column names, in hub order; never nil. */
@@ -35,4 +36,16 @@ export interface BenchmarkBenchmarkImportPreviewResponse {
   row_count: number;
   /** SampledRows is the number of records actually peeked. */
   sampled_rows: number;
+  /**
+   * SuggestedAssumeLabel is "allow" or "block" when the dataset has no
+   * label column and its name implies one, otherwise empty; the client
+   * should pre-select it as the assume-label.
+   */
+  suggested_assume_label: string;
+  /**
+   * SuggestedLabelValues holds one entry per LabelValues item, mapping it
+   * to "allow", "block", or "skip"; never nil ({} when there is no label
+   * column).
+   */
+  suggested_label_values: BenchmarkBenchmarkImportPreviewResponseSuggestedLabelValues;
 }

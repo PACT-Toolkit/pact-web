@@ -216,6 +216,10 @@ export const handlers: RequestHandler[] = [
         detected_label_column: labelColumn,
         label_values: labelColumn ? dataset.labelColumns[labelColumn] : [],
         label_values_truncated: false,
+        suggested_label_values: labelColumn
+          ? (dataset.suggestedLabelValues[labelColumn] ?? {})
+          : {},
+        suggested_assume_label: labelColumn ? '' : dataset.suggestedAssumeLabel,
       });
     }
   ),

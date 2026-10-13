@@ -9,32 +9,81 @@ export const TEXT_COLUMN_ALIASES = [
   'content',
   'text',
   'prompt',
+  'user_prompt',
+  'user_input',
+  'user_message',
   'input',
   'message',
   'query',
+  'question',
+  'instruction',
+  'goal',
+  'adversarial_prompt',
+  'jailbreak_prompt',
+  'attack_prompt',
+  'adversarial',
+  'sentence',
 ] as const;
 
 export const LABEL_COLUMN_ALIASES = [
   'expected_label',
   'label',
+  'labels',
   'type',
   'class',
   'is_injection',
   'injection',
+  'prompt_injection',
+  'is_jailbreak',
+  'jailbreak',
+  'jailbreaking',
+  'jailbroken',
+  'is_attack',
+  'attack',
+  'is_malicious',
   'malicious',
+  'is_harmful',
+  'harmful',
+  'is_unsafe',
+  'unsafe',
+  'toxicity',
+  'toxic',
+  'verdict',
+] as const;
+
+/** Label columns whose boolean-ish values mean the OPPOSITE of the block
+ * vocabulary (`is_safe` = true marks a benign row). Kept out of
+ * `LABEL_COLUMN_ALIASES` for the same reason the backend does: the upload
+ * flow has no per-column polarity inversion, so auto-selecting one of these
+ * would silently flip every label. Mirrored here so the two tables stay
+ * comparable; only the hub import's backend detection consults them. */
+export const INVERTED_LABEL_COLUMN_ALIASES = [
+  'is_safe',
+  'safe',
+  'is_benign',
+  'benign',
+  'harmless',
 ] as const;
 
 export const BLOCK_VALUE_ALIASES = [
   'block',
   '1',
   'true',
+  'yes',
+  'y',
+  't',
   'injection',
+  'injected',
   'prompt_injection',
+  'prompt injection',
   'jailbreak',
+  'jailbroken',
+  'jailbreaking',
   'malicious',
   'attack',
   'unsafe',
   'harmful',
+  'toxic',
   'adversarial',
 ] as const;
 
@@ -42,13 +91,19 @@ export const ALLOW_VALUE_ALIASES = [
   'allow',
   '0',
   'false',
+  'no',
+  'n',
+  'f',
   'benign',
   'safe',
   'legit',
   'legitimate',
   'clean',
   'normal',
+  'regular',
   'harmless',
+  'not_injection',
+  'non_malicious',
 ] as const;
 
 const ID_COLUMN_NAME = 'id';

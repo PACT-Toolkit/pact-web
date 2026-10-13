@@ -8,8 +8,8 @@ import {
   buildImportRequest,
   buildPreviewParams,
   describeHubImportError,
-  normalizeDetectedColumn,
   previewToDistinctValues,
+  resolveHubImportMapping,
   type HubDatasetIdentity,
   type HubImportRequestDraft,
 } from '@/src/app/benchmark/domain/benchmark_import';
@@ -56,22 +56,26 @@ export const BenchmarkImportCard = ({
   const [config, setConfig] = useState('');
   const [revision, setRevision] = useState('');
   const [identity, setIdentity] = useState<HubDatasetIdentity | null>(null);
-  const [labelColumnOverride, setLabelColumnOverride] = useState<string | null>(
-    null
-  );
+  // The user's raw choices only; everything auto-detected is derived from
+  // the preview in `resolveHubImportMapping`. The label selection may be the
+  // NO_LABEL_COLUMN sentinel.
+  const [labelColumnSelection, setLabelColumnSelection] = useState<
+    string | null
+  >(null);
   const [textColumnOverride, setTextColumnOverride] = useState<string | null>(
     null
   );
   const [valueDecisionOverrides, setValueDecisionOverrides] = useState<
     Record<string, LabelDecision>
   >({});
-  const [assumeLabel, setAssumeLabel] = useState<'allow' | 'block' | null>(
-    null
-  );
+  const [assumeLabelOverride, setAssumeLabelOverride] = useState<
+    'allow' | 'block' | null
+  >(null);
 
   const previewParams = useMemo(
-    () => (identity ? buildPreviewParams(identity, labelColumnOverride) : null),
-    [identity, labelColumnOverride]
+    () =>
+      identity ? buildPreviewParams(identity, labelColumnSelection) : null,
+    [identity, labelColumnSelection]
   );
 
   const { data, isLoading } = useInspectBenchmarkImport(
@@ -87,14 +91,21 @@ export const BenchmarkImportCard = ({
       ? describeHubImportError(data.status, data.data)
       : undefined;
 
+  const resolved = resolveHubImportMapping(preview, {
+    textColumn: textColumnOverride,
+    labelColumn: labelColumnSelection,
+    assumeLabel: assumeLabelOverride,
+  });
   const mapping = {
-    textColumn:
-      textColumnOverride ??
-      normalizeDetectedColumn(preview?.detected_text_column),
-    labelColumn: normalizeDetectedColumn(preview?.detected_label_column),
+    textColumn: resolved.textColumn,
+    labelColumn: resolved.labelColumn,
   };
 
-  const distinctValues = preview ? previewToDistinctValues(preview) : null;
+  const distinctValues = useMemo(
+    () =>
+      preview ? previewToDistinctValues(preview, mapping.labelColumn) : null,
+    [preview, mapping.labelColumn]
+  );
 
   const valueDecisions = useMemo(
     () =>
@@ -105,10 +116,10 @@ export const BenchmarkImportCard = ({
   );
 
   const resetMappingState = () => {
-    setLabelColumnOverride(null);
+    setLabelColumnSelection(null);
     setTextColumnOverride(null);
     setValueDecisionOverrides({});
-    setAssumeLabel(null);
+    setAssumeLabelOverride(null);
   };
 
   const handleInspect = (e: React.FormEvent) => {
@@ -120,9 +131,9 @@ export const BenchmarkImportCard = ({
   };
 
   const handleLabelColumnChange = (column: string) => {
-    setLabelColumnOverride(column);
+    setLabelColumnSelection(column);
     setValueDecisionOverrides({});
-    setAssumeLabel(null);
+    setAssumeLabelOverride(null);
   };
 
   const handleValueDecisionChange = (
@@ -141,7 +152,7 @@ export const BenchmarkImportCard = ({
         textColumn: mapping.textColumn,
         labelColumn: mapping.labelColumn,
         valueDecisions,
-        assumeLabel,
+        assumeLabel: resolved.assumeLabel,
       })
     );
   };
@@ -149,7 +160,7 @@ export const BenchmarkImportCard = ({
   const canRun =
     preview !== undefined &&
     mapping.textColumn !== null &&
-    (mapping.labelColumn !== null || assumeLabel !== null);
+    (mapping.labelColumn !== null || resolved.assumeLabel !== null);
 
   return (
     <Card data-testid="benchmark-import-card">
@@ -260,6 +271,11 @@ export const BenchmarkImportCard = ({
               distinctValues={distinctValues}
               valueDecisions={valueDecisions}
               onValueDecisionChange={handleValueDecisionChange}
+              allowNoLabelColumn
+              autoDetected={{
+                textColumn: resolved.textColumnAutoDetected,
+                labelColumn: resolved.labelColumnAutoDetected,
+              }}
             />
 
             {mapping.textColumn === null && (
@@ -275,12 +291,20 @@ export const BenchmarkImportCard = ({
             {mapping.labelColumn === null && (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="benchmark-import-assume-label">
-                  No label column detected - assume every row is
+                  No label column - assume every row is{' '}
+                  {resolved.assumeLabelAutoDetected && (
+                    <span
+                      className="text-xs font-normal text-muted-foreground"
+                      data-testid="benchmark-import-assume-label-auto"
+                    >
+                      Auto-detected
+                    </span>
+                  )}
                 </Label>
                 <Select
-                  value={assumeLabel ?? ''}
+                  value={resolved.assumeLabel ?? ''}
                   onValueChange={(value) =>
-                    setAssumeLabel(value as 'allow' | 'block')
+                    setAssumeLabelOverride(value as 'allow' | 'block')
                   }
                 >
                   <SelectTrigger

@@ -480,6 +480,15 @@ interface MockHubDataset {
   sampledRows: number;
   textColumn: string;
   labelColumns: Record<string, string[]>;
+  /** The gateway's per-column default decision for each label value, as
+   * returned in `suggested_label_values`. */
+  suggestedLabelValues: Record<
+    string,
+    Record<string, 'allow' | 'block' | 'skip'>
+  >;
+  /** `suggested_assume_label`: set only for datasets without a label column
+   * whose slug/split implies one, `''` otherwise. */
+  suggestedAssumeLabel: 'allow' | 'block' | '';
   defaultLabelColumn: string;
   rowsSkipped: number;
   attackRows: number;
@@ -531,9 +540,14 @@ export const MOCK_HUB_DATASETS: Record<string, MockHubDataset> = {
     sampledRows: 200,
     textColumn: 'text',
     labelColumns: {
-      label: ['block', 'allow'],
+      label: ['0', '1'],
       label_alt: ['positive', 'negative'],
     },
+    suggestedLabelValues: {
+      label: { '0': 'allow', '1': 'block' },
+      label_alt: { positive: 'skip', negative: 'skip' },
+    },
+    suggestedAssumeLabel: '',
     defaultLabelColumn: 'label',
     rowsSkipped: 12,
     attackRows: 263,
@@ -551,12 +565,32 @@ export const MOCK_HUB_DATASETS: Record<string, MockHubDataset> = {
     sampledRows: 200,
     textColumn: 'prompt',
     labelColumns: {},
+    suggestedLabelValues: {},
+    suggestedAssumeLabel: '',
     defaultLabelColumn: '',
     rowsSkipped: 0,
     attackRows: 0,
     benignRows: 0,
     rowsExcludedTrainedOn: 1993,
     screened: true,
+  },
+  // Unlabeled jailbreak collection: the gateway infers "block" from the
+  // slug, so the assume-label arrives pre-selected and Run is enabled with
+  // no manual step.
+  'rubend18/ChatGPT-Jailbreak-Prompts': {
+    columns: ['Name', 'Prompt', 'Votes', 'Jailbreak Score', 'GPT-4'],
+    rowCount: 79,
+    sampledRows: 79,
+    textColumn: 'Prompt',
+    labelColumns: {},
+    suggestedLabelValues: {},
+    suggestedAssumeLabel: 'block',
+    defaultLabelColumn: '',
+    rowsSkipped: 0,
+    attackRows: 0,
+    benignRows: 0,
+    rowsExcludedTrainedOn: 0,
+    screened: false,
   },
   // No text column detected either (textColumn ''), on top of no label
   // column: exercises the "canRun stays false until a text column is
@@ -568,6 +602,8 @@ export const MOCK_HUB_DATASETS: Record<string, MockHubDataset> = {
     sampledRows: 200,
     textColumn: '',
     labelColumns: {},
+    suggestedLabelValues: {},
+    suggestedAssumeLabel: '',
     defaultLabelColumn: '',
     rowsSkipped: 0,
     attackRows: 0,
