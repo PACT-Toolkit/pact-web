@@ -8,6 +8,7 @@
 
 export * from './benchmarkBenchmarkHubImportSummary';
 export * from './benchmarkBenchmarkImportPreviewResponse';
+export * from './benchmarkBenchmarkImportPreviewResponseSuggestedLabelValues';
 export * from './benchmarkBenchmarkImportRequest';
 export * from './benchmarkBenchmarkImportRequestLabelValues';
 export * from './benchmarkBenchmarkRunBody';

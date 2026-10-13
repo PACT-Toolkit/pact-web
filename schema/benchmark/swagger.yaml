@@ -91,6 +91,20 @@ definitions:
             sampled_rows:
                 description: SampledRows is the number of records actually peeked.
                 type: integer
+            suggested_assume_label:
+                description: |-
+                    SuggestedAssumeLabel is "allow" or "block" when the dataset has no
+                    label column and its name implies one, otherwise empty; the client
+                    should pre-select it as the assume-label.
+                type: string
+            suggested_label_values:
+                additionalProperties:
+                    type: string
+                description: |-
+                    SuggestedLabelValues holds one entry per LabelValues item, mapping it
+                    to "allow", "block", or "skip"; never nil ({} when there is no label
+                    column).
+                type: object
         required:
             - columns
             - detected_label_column
@@ -99,6 +113,8 @@ definitions:
             - label_values_truncated
             - row_count
             - sampled_rows
+            - suggested_assume_label
+            - suggested_label_values
         type: object
     benchmark.BenchmarkImportRequest:
         properties:
