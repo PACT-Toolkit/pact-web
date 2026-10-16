@@ -210,6 +210,44 @@ definitions:
             - ran_at
             - row_count
         type: object
+    benchmark.BenchmarkRunRowBody:
+        properties:
+            category:
+                type: string
+            classifier_label:
+                type: string
+            classifier_score:
+                type: number
+            decision:
+                type: string
+            decisive_layer:
+                type: string
+            error:
+                type: string
+            expected_label:
+                type: string
+            filter_rule_id:
+                type: string
+            fingerprint:
+                type: string
+            latency_ms:
+                type: number
+            reason:
+                type: string
+            row_id:
+                type: string
+            seq:
+                type: integer
+            throttled:
+                type: boolean
+            unscored:
+                type: boolean
+        required:
+            - decision
+            - expected_label
+            - latency_ms
+            - row_id
+        type: object
     benchmark.CategoryBreakdownBody:
         properties:
             attacks:
@@ -394,6 +432,18 @@ definitions:
             - p50_ms
             - p99_ms
             - samples
+        type: object
+    benchmark.ListRunRowsResponse:
+        properties:
+            rows:
+                items:
+                    $ref: '#/definitions/benchmark.BenchmarkRunRowBody'
+                type: array
+            total:
+                type: integer
+        required:
+            - rows
+            - total
         type: object
     benchmark.ListRunsResponse:
         properties:
@@ -898,6 +948,59 @@ paths:
             security:
                 - Bearer: []
             summary: List persisted benchmark run history
+            tags:
+                - benchmark
+    /v1/benchmark/runs/{id}/rows:
+        get:
+            operationId: listBenchmarkRunRows
+            parameters:
+                - description: Run ID (BenchmarkRun.id)
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+                - description: Max rows to return (0 or omitted = 100; pact-benchmark accepts 1-5000)
+                  in: query
+                  name: limit
+                  type: integer
+                - description: Row page offset (default 0)
+                  in: query
+                  name: offset
+                  type: integer
+                - description: Exact-match category filter (omitted = all)
+                  in: query
+                  name: category
+                  type: string
+                - description: 'Row class filter: false_negative, false_positive, error, unscored (omitted = all)'
+                  in: query
+                  name: outcome
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/benchmark.ListRunRowsResponse'
+                "400":
+                    description: invalid query parameter
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "404":
+                    description: run not found
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "502":
+                    description: upstream error
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+            security:
+                - Bearer: []
+            summary: List the persisted rows of one benchmark run
             tags:
                 - benchmark
     /v1/benchmark/testlab/runs:

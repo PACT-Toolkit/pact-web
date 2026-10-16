@@ -13,6 +13,7 @@ import type {
   BenchmarkBenchmarkImportRequest,
   BenchmarkCorpusLibrarySummaryResponse,
   BenchmarkGetJobResponse,
+  BenchmarkListRunRowsResponse,
   BenchmarkListRunsResponse,
   BenchmarkListTestLabRunsResponse,
   BenchmarkSaveCorpusRequest,
@@ -24,6 +25,7 @@ import type {
   BoundaryErrorResponse,
   GetBenchmarkJobParams,
   InspectBenchmarkImportParams,
+  ListBenchmarkRunRowsParams,
   ListBenchmarkRunsParams,
   ListBenchmarkTestLabRunsParams,
 } from './types';
@@ -606,6 +608,93 @@ export const listBenchmarkRuns = async (
 
 export const getListBenchmarkRunsKey = (params?: ListBenchmarkRunsParams) =>
   [`/api/pact/gateway/v1/benchmark/runs`, ...(params ? [params] : [])] as const;
+
+export type listBenchmarkRunRowsResponse200 = {
+  data: BenchmarkListRunRowsResponse;
+  status: 200;
+};
+
+export type listBenchmarkRunRowsResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type listBenchmarkRunRowsResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type listBenchmarkRunRowsResponse404 = {
+  data: BoundaryErrorResponse;
+  status: 404;
+};
+
+export type listBenchmarkRunRowsResponse502 = {
+  data: BoundaryErrorResponse;
+  status: 502;
+};
+
+export type listBenchmarkRunRowsResponseSuccess =
+  listBenchmarkRunRowsResponse200 & {
+    headers: Headers;
+  };
+
+export type listBenchmarkRunRowsResponseError = (
+  | listBenchmarkRunRowsResponse400
+  | listBenchmarkRunRowsResponse401
+  | listBenchmarkRunRowsResponse404
+  | listBenchmarkRunRowsResponse502
+) & {
+  headers: Headers;
+};
+
+export type listBenchmarkRunRowsResponse =
+  listBenchmarkRunRowsResponseSuccess | listBenchmarkRunRowsResponseError;
+
+export const getListBenchmarkRunRowsUrl = (
+  id: string,
+  params?: ListBenchmarkRunRowsParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/pact/gateway/v1/benchmark/runs/${id}/rows?${stringifiedParams}`
+    : `/api/pact/gateway/v1/benchmark/runs/${id}/rows`;
+};
+
+/**
+ * @summary List the persisted rows of one benchmark run
+ */
+export const listBenchmarkRunRows = async (
+  id: string,
+  params?: ListBenchmarkRunRowsParams,
+  options?: Parameters<typeof customFetch>[1]
+): Promise<listBenchmarkRunRowsResponse> => {
+  return customFetch<listBenchmarkRunRowsResponse>(
+    getListBenchmarkRunRowsUrl(id, params),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
+};
+
+export const getListBenchmarkRunRowsKey = (
+  id: string,
+  params?: ListBenchmarkRunRowsParams
+) =>
+  [
+    `/api/pact/gateway/v1/benchmark/runs/${id}/rows`,
+    ...(params ? [params] : []),
+  ] as const;
 
 export type listBenchmarkTestLabRunsResponse200 = {
   data: BenchmarkListTestLabRunsResponse;

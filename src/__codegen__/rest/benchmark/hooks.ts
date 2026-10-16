@@ -17,6 +17,7 @@ import type {
   BenchmarkBenchmarkImportRequest,
   BenchmarkCorpusLibrarySummaryResponse,
   BenchmarkGetJobResponse,
+  BenchmarkListRunRowsResponse,
   BenchmarkListRunsResponse,
   BenchmarkListTestLabRunsResponse,
   BenchmarkSaveCorpusRequest,
@@ -28,6 +29,7 @@ import type {
   BoundaryErrorResponse,
   GetBenchmarkJobParams,
   InspectBenchmarkImportParams,
+  ListBenchmarkRunRowsParams,
   ListBenchmarkRunsParams,
   ListBenchmarkTestLabRunsParams,
 } from './types';
@@ -112,6 +114,17 @@ import {
   listBenchmarkRunsResponse,
   listBenchmarkRuns,
   getListBenchmarkRunsKey,
+  listBenchmarkRunRowsResponse200,
+  listBenchmarkRunRowsResponse400,
+  listBenchmarkRunRowsResponse401,
+  listBenchmarkRunRowsResponse404,
+  listBenchmarkRunRowsResponse502,
+  listBenchmarkRunRowsResponseSuccess,
+  listBenchmarkRunRowsResponseError,
+  getListBenchmarkRunRowsUrl,
+  listBenchmarkRunRowsResponse,
+  listBenchmarkRunRows,
+  getListBenchmarkRunRowsKey,
   listBenchmarkTestLabRunsResponse200,
   listBenchmarkTestLabRunsResponse400,
   listBenchmarkTestLabRunsResponse401,
@@ -373,6 +386,47 @@ export const useListBenchmarkRuns = <TError = string | BoundaryErrorResponse>(
     swrOptions?.swrKey ??
     (() => (isEnabled ? getListBenchmarkRunsKey(params) : null));
   const swrFn = () => listBenchmarkRuns(params, requestOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type ListBenchmarkRunRowsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listBenchmarkRunRows>>
+>;
+
+/**
+ * @summary List the persisted rows of one benchmark run
+ */
+export const useListBenchmarkRunRows = <
+  TError = string | BoundaryErrorResponse,
+>(
+  id: string,
+  params?: ListBenchmarkRunRowsParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof listBenchmarkRunRows>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+    request?: SecondParameter<typeof customFetch>;
+  }
+) => {
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
+
+  const isEnabled =
+    swrOptions?.enabled !== false && id !== null && id !== undefined;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getListBenchmarkRunRowsKey(id, params) : null));
+  const swrFn = () => listBenchmarkRunRows(id, params, requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,
