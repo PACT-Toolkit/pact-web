@@ -35,7 +35,9 @@ httpClient.interceptors.response.use(
       // after signing in, instead of always landing on the default
       // post-login destination.
       const returnTo = `${window.location.pathname}${window.location.search}`;
-      window.location.href = `/login?return_to=${encodeURIComponent(returnTo)}`;
+      const loginUrl = new URL('/login', window.location.origin);
+      loginUrl.searchParams.set('return_to', returnTo);
+      window.location.href = loginUrl.href;
     }
 
     return Promise.reject(error);

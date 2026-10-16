@@ -2,6 +2,8 @@ import { isCommonAssetRequest } from 'msw';
 
 import { signalMswReady } from '@/src/framework/msw/msw_ready';
 
+let started: Promise<void> | undefined;
+
 // Browser-side bootstrap. Called from MSWProvider on mount.
 // The Node-runtime side is started by instrumentation.ts so that
 // Server Components and route handlers also see mocked responses.
@@ -11,7 +13,16 @@ import { signalMswReady } from '@/src/framework/msw/msw_ready';
 // failed worker.start() still releases queued requests - they hit the real
 // (mocked-nothing) network and surface a visible error, same as the
 // pre-gate behavior, instead of hanging the app forever.
-export async function init() {
+// Idempotent: React's dev-time double effect run calls init() twice, and
+// msw's worker.start() rejects a second concurrent call with an "already
+// enabled network" invariant.
+export function init(): Promise<void> {
+  started ??= startWorker();
+
+  return started;
+}
+
+async function startWorker() {
   if (typeof window === 'undefined') return;
 
   try {
