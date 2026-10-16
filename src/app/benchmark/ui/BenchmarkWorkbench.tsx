@@ -20,6 +20,7 @@ import { BenchmarkImportSummary } from '@/src/app/benchmark/ui/BenchmarkImportSu
 import { BenchmarkJobProgress } from '@/src/app/benchmark/ui/BenchmarkJobProgress';
 import { BenchmarkLatencyChart } from '@/src/app/benchmark/ui/BenchmarkLatencyChart';
 import { BenchmarkResultsTable } from '@/src/app/benchmark/ui/BenchmarkResultsTable';
+import { BenchmarkRunHistory } from '@/src/app/benchmark/ui/BenchmarkRunHistory';
 import { BenchmarkTrendChart } from '@/src/app/benchmark/ui/BenchmarkTrendChart';
 import { BenchmarkTrendRangeToggle } from '@/src/app/benchmark/ui/BenchmarkTrendRangeToggle';
 import { BenchmarkUploadForm } from '@/src/app/benchmark/ui/BenchmarkUploadForm';
@@ -92,6 +93,8 @@ export const BenchmarkWorkbench = () => {
       </div>
 
       <BenchmarkComparison />
+
+      <BenchmarkRunHistory dateRange={dateRange} />
 
       <BenchmarkCorpusLibraryCard />
 

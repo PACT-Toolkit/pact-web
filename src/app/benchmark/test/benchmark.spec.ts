@@ -672,3 +672,79 @@ test.describe('Benchmark Hugging Face import', () => {
     expect(results.violations).toEqual([]);
   });
 });
+
+// Covers the persisted per-row verdicts of a benchmark run: the run history
+// card on the benchmark page links to /benchmark/runs/<id>, which pages and
+// filters the run's rows.
+test.describe('Benchmark run rows', () => {
+  test('lists run-11 in the run history with a link to its rows', async ({
+    page,
+  }) => {
+    await page.goto('/benchmark');
+
+    const history = page.getByTestId('benchmark-run-history');
+    await expect(history).toBeVisible();
+    await expect(
+      history.getByTestId('benchmark-run-history-row').first()
+    ).toBeVisible();
+
+    const run11 = history
+      .getByTestId('benchmark-run-history-row')
+      .filter({ hasText: '2000' });
+    await expect(run11.getByRole('link', { name: /rows/i })).toHaveAttribute(
+      'href',
+      '/benchmark/runs/run-11'
+    );
+  });
+
+  test('opens the rows of run-11, then filters to unscored and pages', async ({
+    page,
+  }) => {
+    await page.goto('/benchmark');
+    await page
+      .getByTestId('benchmark-run-history-row')
+      .filter({ hasText: '2000' })
+      .getByRole('link', { name: /rows/i })
+      .click();
+
+    await expect(page).toHaveURL(/\/benchmark\/runs\/run-11$/);
+    await expect(page.getByRole('heading', { name: 'Run rows' })).toBeVisible();
+    await expect(page.getByTestId('benchmark-run-rows-row')).toHaveCount(50);
+    await expect(page.getByTestId('benchmark-run-rows')).toContainText(
+      '1-50 of 2000'
+    );
+
+    await page.getByTestId('benchmark-run-rows-outcome').click();
+    await page.getByRole('option', { name: 'Unscored' }).click();
+
+    await expect(page.getByTestId('benchmark-run-rows')).toContainText(
+      '1-50 of 300'
+    );
+    const rows = page.getByTestId('benchmark-run-rows-row');
+    await expect(rows).toHaveCount(50);
+    for (const row of await rows.all()) {
+      await expect(row.getByText('unscored')).toBeVisible();
+    }
+
+    await page.getByRole('button', { name: 'Next page' }).click();
+    await expect(page.getByTestId('benchmark-run-rows')).toContainText(
+      '51-100 of 300'
+    );
+  });
+
+  test('passes an accessibility check on the run rows page', async ({
+    page,
+  }) => {
+    await page.goto('/benchmark/runs/run-11');
+    await expect(page.getByTestId('benchmark-run-rows-row')).toHaveCount(50);
+
+    const results = await makeAxeBuilder(page).analyze();
+    expect(results.violations).toEqual([]);
+  });
+
+  test('says the run was not found for an unknown run id', async ({ page }) => {
+    await page.goto('/benchmark/runs/run-missing');
+
+    await expect(page.getByText('Run not found.')).toBeVisible();
+  });
+});
