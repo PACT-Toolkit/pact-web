@@ -1,6 +1,5 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { useGetBenchmarkJob } from '@/src/__codegen__/rest/benchmark';
@@ -8,7 +7,10 @@ import {
   isRowCorrect,
   type RowResult,
 } from '@/src/app/benchmark/domain/benchmark_job';
-import { Button } from '@/src/components/ui/button';
+import { rowVerdictKind } from '@/src/app/benchmark/domain/benchmark_run_rows';
+import { BenchmarkTablePagination } from '@/src/app/benchmark/ui/BenchmarkTablePagination';
+import { BenchmarkVerdictCell } from '@/src/app/benchmark/ui/BenchmarkVerdictCell';
+import { BenchmarkVerdictChip } from '@/src/app/benchmark/ui/BenchmarkVerdictChip';
 import {
   Card,
   CardContent,
@@ -103,36 +105,11 @@ export const BenchmarkResultsTable = ({
         </div>
 
         {pageCount > 1 && (
-          <nav
-            aria-label="Table pagination"
-            className="flex items-center justify-end gap-2 border-t px-4 py-2"
-          >
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => p - 1)}
-              disabled={page === 0}
-              aria-label="Previous page"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span
-              aria-live="polite"
-              aria-atomic="true"
-              className="text-xs text-muted-foreground"
-            >
-              {page + 1} / {pageCount}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={page >= pageCount - 1}
-              aria-label="Next page"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </nav>
+          <BenchmarkTablePagination
+            page={page}
+            pageCount={pageCount}
+            onPageChange={setPage}
+          />
         )}
       </CardContent>
     </Card>
@@ -141,34 +118,19 @@ export const BenchmarkResultsTable = ({
 
 const BenchmarkResultRow = ({ row }: { row: RowResult }) => {
   const correct = isRowCorrect(row);
-  const hasError = Boolean(row.error);
-  const isUnscored = Boolean(row.unscored);
+  // Only a row with a real verdict is judged correct or incorrect.
+  const hasVerdict = rowVerdictKind(row) === 'verdict';
 
   return (
     <tr className="border-b last:border-0 hover:bg-muted/40">
       <td className="px-4 py-2">
-        <VerdictLabel text={row.expected_label} />
+        <BenchmarkVerdictChip text={row.expected_label} />
       </td>
       <td className="px-4 py-2">
-        {hasError ? (
-          <span className="text-xs text-destructive">error</span>
-        ) : isUnscored ? (
-          // The decision on an unscored row is the gateway's fail-open allow,
-          // not a verdict - never render it as one.
-          <span
-            className="text-xs text-muted-foreground"
-            title="The classifier gave no verdict; the gateway allowed the request by default."
-          >
-            unscored
-          </span>
-        ) : (
-          <VerdictLabel text={row.decision ?? '-'} />
-        )}
+        <BenchmarkVerdictCell row={row} />
       </td>
       <td className="px-4 py-2">
-        {hasError || isUnscored ? (
-          <span className="text-xs text-muted-foreground">-</span>
-        ) : (
+        {hasVerdict ? (
           <span
             aria-label={correct ? 'Correct' : 'Incorrect'}
             className={
@@ -179,6 +141,8 @@ const BenchmarkResultRow = ({ row }: { row: RowResult }) => {
           >
             {correct ? '✓' : '✗'}
           </span>
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
         )}
       </td>
       <td className="px-4 py-2 tabular-nums text-muted-foreground">
@@ -193,9 +157,3 @@ const BenchmarkResultRow = ({ row }: { row: RowResult }) => {
     </tr>
   );
 };
-
-const VerdictLabel = ({ text }: { text: string }) => (
-  <span className="rounded-sm bg-muted px-1.5 py-0.5 font-mono text-xs">
-    {text}
-  </span>
-);

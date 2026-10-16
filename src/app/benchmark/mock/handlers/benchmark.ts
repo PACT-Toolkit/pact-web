@@ -2,6 +2,7 @@ import { http, HttpResponse, type RequestHandler } from 'msw';
 import { v4 as uuidv4 } from 'uuid';
 
 import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
+import { RUN_ROW_OUTCOMES } from '@/src/app/benchmark/domain/benchmark_run_rows';
 import {
   MOCK_AUTH_EXPIRED_JOB_MARKER,
   MOCK_CORPUS_DATASETS,
@@ -15,6 +16,10 @@ import {
   MOCK_UNSCORED_ROW_COUNT,
   TOTAL_ROWS,
 } from '@/src/app/benchmark/mock/data/benchmark';
+import {
+  mockRunRows,
+  rowMatchesOutcome,
+} from '@/src/app/benchmark/mock/data/benchmark_run_rows';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 interface MockJob extends BenchmarkJobState {
@@ -106,6 +111,59 @@ export const handlers: RequestHandler[] = [
 
     return HttpResponse.json({ runs, total: filtered.length });
   }),
+
+  http.get(
+    `${MSW_PACT_BASE}/gateway/v1/benchmark/runs/:runId/rows`,
+    ({ params, request }) => {
+      const rows = mockRunRows(params.runId as string);
+      if (!rows) {
+        return HttpResponse.json(
+          { code: 'not_found', error: 'run not found' },
+          { status: 404 }
+        );
+      }
+
+      const url = new URL(request.url);
+      // 0 or omitted limit = 100, mirroring the real endpoint.
+      const limit = Number(url.searchParams.get('limit') ?? 0) || 100;
+      const offset = Number(url.searchParams.get('offset') ?? 0);
+      const category = url.searchParams.get('category');
+      const outcome = url.searchParams.get('outcome');
+
+      if (!Number.isInteger(limit) || limit < 1 || limit > 5000) {
+        return HttpResponse.json(
+          {
+            code: 'invalid_argument',
+            error: 'limit must be between 1 and 5000',
+          },
+          { status: 400 }
+        );
+      }
+      if (!Number.isInteger(offset) || offset < 0) {
+        return HttpResponse.json(
+          { code: 'invalid_argument', error: 'offset must not be negative' },
+          { status: 400 }
+        );
+      }
+      if (outcome && !RUN_ROW_OUTCOMES.some((o) => o.value === outcome)) {
+        return HttpResponse.json(
+          { code: 'invalid_argument', error: 'unknown outcome filter' },
+          { status: 400 }
+        );
+      }
+
+      const filtered = rows.filter(
+        (row) =>
+          (!category || row.category === category) &&
+          (!outcome || rowMatchesOutcome(row, outcome))
+      );
+
+      return HttpResponse.json({
+        rows: filtered.slice(offset, offset + limit),
+        total: filtered.length,
+      });
+    }
+  ),
 
   http.post(
     `${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`,
