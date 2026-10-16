@@ -5,7 +5,7 @@ import { proxyToGateway } from '@/src/lib/proxy/proxy_to_gateway';
 // Route handler proxy for GET /api/pact/gateway/v1/benchmark/corpus/library ->
 // pact-gateway /v1/benchmark/corpus/library.
 //
-// PACT-483: surfaces the aggregate corpus_library stats pact-benchmark's
+// Surfaces the aggregate corpus_library stats pact-benchmark's
 // `corpus ingest` CLI populates, so the Benchmark page can show what corpus
 // data is available server-side. Same proxy pattern as the sibling
 // benchmark/corpus and benchmark/runs routes -- see corpus/route.ts's

@@ -29,7 +29,7 @@ const baseResponse = (over: Partial<CheckResponse> = {}): CheckResponse => ({
 const byId = (layers: ReturnType<typeof applyLiveLayers>) =>
   Object.fromEntries(layers.map((l) => [l.id, l]));
 
-describe('applyLiveLayers - PACT-702 reason-driven block attribution', () => {
+describe('applyLiveLayers - reason-driven block attribution', () => {
   it('benign input: every stage allows, no rule_id, no classifier/redactor/consensus metadata leaks through', () => {
     const out = byId(applyLiveLayers(startingLayers(), baseResponse(), []));
     expect(out.filter.decision).toBe('allow');
@@ -86,7 +86,7 @@ describe('applyLiveLayers - PACT-702 reason-driven block attribution', () => {
   });
 
   it('filter_suspicious_enforced blocks the filter layer with enforcement-nuance wording, rule id shown', () => {
-    // The user-reported PACT-702 bug: a suspicious verdict promoted to a
+    // The user-reported bug: a suspicious verdict promoted to a
     // block by vector enforcement must land on the FILTER chip, not read as
     // an allow with the block unattributed anywhere.
     const out = byId(
@@ -108,7 +108,7 @@ describe('applyLiveLayers - PACT-702 reason-driven block attribution', () => {
   });
 
   it('filter blocks via legacy filter_rule_id when the structural sub-object is entirely absent', () => {
-    // Back-compat for gateway builds older than PACT-249: no `filter`
+    // Back-compat for older gateway builds: no `filter`
     // sub-object at all, an arbitrary internal reason string, but
     // filter_rule_id + decision=block is still authoritative.
     const out = byId(
@@ -206,7 +206,7 @@ describe('applyLiveLayers - PACT-702 reason-driven block attribution', () => {
   });
 
   it('consensus_enforced blocks the consensus layer; classifier stays allow with its own tag (the headline attribution bug)', () => {
-    // This is exactly the PACT-702 bug: a downstream block (here consensus)
+    // This is exactly the headline bug: a downstream block (here consensus)
     // must not paint the classifier chip BLOCK just because the classifier
     // responded with a label.
     const out = byId(
@@ -269,7 +269,7 @@ describe('applyLiveLayers - PACT-702 reason-driven block attribution', () => {
   it('policy_tool_mitigation: observe/redact override neutralised the block -- filter reads allow despite a hostile verdict', () => {
     // Observe/redact mode suppresses filterStage's own block branch
     // (`&& !sc.observeOrRedact`), so a hostile verdict can co-exist with an
-    // overall allow decision. The pre-PACT-702 heuristic
+    // overall allow decision. The older heuristic
     // (`verdict === 'hostile' && !shadow => block`) would have painted this
     // chip BLOCK; the reason-driven fix must not.
     const out = byId(
@@ -340,7 +340,7 @@ describe('applyLiveLayers - PACT-702 reason-driven block attribution', () => {
   });
 });
 
-describe('resultCausalSpans - PACT-757 unattributed-block spans on the Result node', () => {
+describe('resultCausalSpans - unattributed-block spans on the Result node', () => {
   it('cel_rule_fired with diagnostics: returns the causal spans', () => {
     const spans = resultCausalSpans(
       baseResponse({
@@ -393,7 +393,7 @@ describe('resultCausalSpans - PACT-757 unattributed-block spans on the Result no
   });
 });
 
-describe('applyLiveLayers - PACT-703 consensus/redactor/sandbox layer states', () => {
+describe('applyLiveLayers - consensus/redactor/sandbox layer states', () => {
   it('external_refs present: sandbox is spliced in between classifier and consensus, in true execution order', () => {
     const defs = deriveLayerDefinitions(
       baseResponse({ external_refs: { scanned: 1, blocked: 0, mitigated: 0 } })
@@ -515,7 +515,7 @@ describe('applyLiveLayers - PACT-703 consensus/redactor/sandbox layer states', (
     expect(out.classifier.latencyMs).toBe(15);
   });
 
-  it('PACT-745: diagnostics.causal_spans attaches to the stage that blocked, not to any other stage', () => {
+  it('diagnostics.causal_spans attaches to the stage that blocked, not to any other stage', () => {
     const out = byId(
       applyLiveLayers(
         startingLayers(),
@@ -543,7 +543,7 @@ describe('applyLiveLayers - PACT-703 consensus/redactor/sandbox layer states', (
     expect(out.consensus.causalSpans).toBeUndefined();
   });
 
-  it('PACT-745: causal spans never leak onto an allow decision, even when diagnostics is present', () => {
+  it('causal spans never leak onto an allow decision, even when diagnostics is present', () => {
     const out = byId(
       applyLiveLayers(
         startingLayers(),
@@ -558,7 +558,7 @@ describe('applyLiveLayers - PACT-703 consensus/redactor/sandbox layer states', (
   });
 });
 
-describe("parseCheckResponse - PACT-576 parse-don't-cast against the regenerated literal-union contract", () => {
+describe("parseCheckResponse - parse-don't-cast against the regenerated literal-union contract", () => {
   const validResponse = (): Record<string, unknown> => ({
     request_id: 'req-1',
     decision: 'allow',
@@ -699,7 +699,7 @@ describe("parseCheckResponse - PACT-576 parse-don't-cast against the regenerated
     ).toThrow(/consensus/);
   });
 
-  it('accepts a consensus sub-object (duration_ms only -- PACT-623 has no closed-set field on it yet)', () => {
+  it('accepts a consensus sub-object (duration_ms only -- it has no closed-set field yet)', () => {
     const parsed = parseCheckResponse({
       ...validResponse(),
       consensus: { duration_ms: 42 },
@@ -716,7 +716,7 @@ describe("parseCheckResponse - PACT-576 parse-don't-cast against the regenerated
     ).toThrow(/external_refs\.refs/);
   });
 
-  it('PACT-745: accepts diagnostics.causal_spans (start/end only, no closed-set field)', () => {
+  it('accepts diagnostics.causal_spans (start/end only, no closed-set field)', () => {
     const parsed = parseCheckResponse({
       ...validResponse(),
       diagnostics: { causal_spans: [{ start: 0, end: 11 }] },
@@ -724,13 +724,13 @@ describe("parseCheckResponse - PACT-576 parse-don't-cast against the regenerated
     expect(parsed.diagnostics?.causal_spans).toEqual([{ start: 0, end: 11 }]);
   });
 
-  it('PACT-745: rejects a non-object diagnostics sub-object', () => {
+  it('rejects a non-object diagnostics sub-object', () => {
     expect(() =>
       parseCheckResponse({ ...validResponse(), diagnostics: 'ran' })
     ).toThrow(/diagnostics/);
   });
 
-  it('PACT-745: rejects a non-array diagnostics.causal_spans', () => {
+  it('rejects a non-array diagnostics.causal_spans', () => {
     expect(() =>
       parseCheckResponse({
         ...validResponse(),
@@ -746,7 +746,7 @@ describe("parseCheckResponse - PACT-576 parse-don't-cast against the regenerated
   });
 });
 
-describe('toTestRun - PACT-595 persisted failed runs', () => {
+describe('toTestRun - persisted failed runs', () => {
   const baseRecord = (
     over: Partial<TestLabRunRecord> = {}
   ): TestLabRunRecord => ({

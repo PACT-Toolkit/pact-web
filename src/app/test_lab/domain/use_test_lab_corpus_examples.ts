@@ -5,7 +5,7 @@ import { httpClient } from '@/src/framework/http';
 
 // Attack example chips are served by a Next.js-only route
 // (app/api/pact/benchmark/v1/corpus/examples/route.ts) that stands in until
-// pact-benchmark exposes a real /v1/corpus/examples endpoint (PACT-191). It
+// pact-benchmark exposes a real /v1/corpus/examples endpoint. It
 // never appears in pact-gateway's OpenAPI contract, so orval has nothing to
 // generate a hook from -- this wraps the endpoint in the same
 // useSWR + httpClient pattern the generated hooks use internally, with the

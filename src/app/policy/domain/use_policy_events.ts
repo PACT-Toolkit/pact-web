@@ -11,7 +11,7 @@ const REFRESH_INTERVAL_MS = 30_000;
 // usePolicyEvents wraps the generated useGetAuditPolicyEvents SWR hook (GET
 // /v1/audit/policy-events) with the params/polling config PolicyEventsFeed
 // needs. Replaces a hand-rolled fetch this feature used before schema/audit
-// gained the policy-events path (PACT-326): the two shared the same
+// gained the policy-events path. The two shared the same
 // domain-vocabulary shape by design (pact-gateway's
 // internal/features/audit/types.go says as much), so swapping the
 // transport is a pure refactor, not a contract change.

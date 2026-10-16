@@ -16,7 +16,7 @@ export const runtime = 'nodejs';
 // No body - the mfa_token comes off the same httpOnly pact_mfa_token
 // cookie /api/auth/mfa/verify reads. Starts a WebAuthn assertion ceremony
 // scoped to that token's owner, as an alternative to submitting a
-// TOTP/recovery code (PACT-697).
+// TOTP/recovery code.
 // Returns: { ceremonyId, options }
 export const POST = async () => {
   const mfaToken = await getMfaToken();

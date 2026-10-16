@@ -160,7 +160,7 @@ describe('categoryChartData', () => {
     expect(point.throttled).toBe(4);
   });
 
-  it('coalesces a category missing throttled entirely (pre-PACT-933 run) to zero', () => {
+  it('coalesces a category missing throttled entirely (older run) to zero', () => {
     const legacyCategory = {
       category: 'mixed-injection',
       entries: 30,

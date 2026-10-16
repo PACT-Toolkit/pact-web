@@ -180,7 +180,7 @@ export const createFilterMockData = (db: DB): void => {
     db.decisions.create(buildEvent(offsetMs, payload));
   };
 
-  // A few rows declare a traffic_source (PACT-484) so the dashboard's
+  // A few rows declare a traffic_source so the dashboard's
   // source tabs (Client app / Test Lab / Benchmark) have every bucket
   // populated on first load in dev:mock. Undeclared rows are real
   // client-app traffic, same as on the live wire.
@@ -192,7 +192,7 @@ export const createFilterMockData = (db: DB): void => {
     filter: {
       verdict: 'hostile',
       rule_id: 'inject-003',
-      // Matched span (PACT-734) -- the redactor-masked excerpt of the
+      // Matched span -- the redactor-masked excerpt of the
       // normalized input that triggered the block, so the audit UI has a
       // dev:mock row exercising the collapsed "blocked by filter" badge and
       // the expanded matched-span/causal-span detail together. The
@@ -426,7 +426,7 @@ export const createFilterMockData = (db: DB): void => {
     engine: 'filter',
     filter: {
       verdict: 'hostile',
-      // Fixed to BLOCKED_RULES[0] (PACT-757) -- dev:mock seed data must be
+      // Fixed to BLOCKED_RULES[0] -- dev:mock seed data must be
       // reproducible run-to-run, which Math.random() at seed time was not.
       // The excerpt stays deliberately theme-generic (touches
       // instruction-override, role-override, and jailbreak phrasing at
@@ -449,9 +449,9 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 3,
     created_at: '',
   });
-  // PACT-749: a block whose engine (cel) has no visualised-stage mapping, so
+  // A block whose engine (cel) has no visualised-stage mapping, so
   // the audit UI must render its causal spans as unattributed rather than
-  // silently dropping them. Exercises the same PACT-734 diagnostics field as
+  // silently dropping them. Exercises the same diagnostics field as
   // the filter_hostile row above, but on an engine outside
   // STAGE_ATTRIBUTED_ENGINES (decision_stage_attribution.ts). Seeded at the
   // same 1-minute offset as the newest row above so it sorts onto the
@@ -473,7 +473,7 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 9,
     created_at: '',
   });
-  // PACT-758: a decision whose CEL stage ran but failed open on a budget
+  // A decision whose CEL stage ran but failed open on a budget
   // timeout -- no rule ever finished evaluating, so rule_id/rule_name/outcome
   // are absent (celeval only names a rule once its expression actually
   // resolves) while skipped_reason still carries why. The pipeline's earlier
@@ -489,7 +489,7 @@ export const createFilterMockData = (db: DB): void => {
     latency_ms: 11,
     created_at: '',
   });
-  // Compliance (PACT-915): the gateway's deferred shadow stage -- always
+  // Compliance: the gateway's deferred shadow stage -- always
   // `shadow: true` today, never enforced, never the engine of a block (see
   // AuditDecisionInsights.tsx's compliance block comment). All three rows
   // below allow, same as any shadow-only stage: the verdict is advisory and

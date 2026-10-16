@@ -17,7 +17,7 @@ const shortHash = (h: string) =>
   h.length > 12 ? `${h.slice(0, 12)}\u2026` : h;
 
 // hasForensics gates the Trace group so we don't render an empty divider on
-// pre-PACT-265 payloads.
+// older payloads.
 const hasForensics = (dp: DecisionPayload): boolean =>
   Boolean(
     dp.conversation_id ||
@@ -75,8 +75,7 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         )}
       </div>
     )}
-    {/* Matched span is gated on its own presence only (PACT-745 deliverable
-        2), independent of filter.verdict -- both fields are independently
+    {/* Matched span is gated on its own presence only, independent of filter.verdict -- both fields are independently
         optional in the wire schema, so coupling this to the verdict block
         above would silently drop a masked excerpt whenever a producer sends
         matched_span without a non-safe verdict. */}
@@ -88,7 +87,7 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         <span className="text-muted-foreground">matched</span>
         {dp.filter.matched_span.excerpt && (
           // Rendered verbatim -- the excerpt is already redactor-masked
-          // server-side (PACT-734), so no client-side truncation or
+          // server-side, so no client-side truncation or
           // cleanup here that could hide the masking.
           <code className="whitespace-pre-wrap break-words rounded bg-muted px-1.5 py-0.5">
             {dp.filter.matched_span.excerpt}
@@ -233,7 +232,7 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         )}
       </div>
     )}
-    {/* CEL (PACT-758): the tier-3 CEL rule engine (PACT-335), evaluated after
+    {/* CEL: the tier-3 CEL rule engine, evaluated after
         every visualised stage -- see decisions.ts's CelDecision doc comment.
         Gated on dp.cel presence alone, independent of dp.decision, matching
         every other stage section above: older payloads with no `cel`

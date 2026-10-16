@@ -60,8 +60,8 @@ const ContentReplay = ({
   );
 };
 
-// Ad-hoc diagnostics / causal-span replay probe (PACT-303 causal-diagnostic
-// harness, PACT-327 console). Sourced live from POST /v1/check's
+// Ad-hoc diagnostics / causal-span replay probe (causal-diagnostic
+// harness). Sourced live from POST /v1/check's
 // diagnostics.causal_spans -- there is no historical equivalent, see
 // gateway_diagnostics.ts's docblock (pact-gateway explicitly does not mirror
 // this field onto the pact.decisions audit event).

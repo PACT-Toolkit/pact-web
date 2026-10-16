@@ -18,7 +18,7 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 
-// Ad-hoc spotlighting probe (PACT-327 console): shows how fetched/RAG/tool
+// Ad-hoc spotlighting probe: shows how fetched/RAG/tool
 // content gets marker-wrapped before LLM injection. Sourced live from POST
 // /v1/check's spotlight response -- populated on the allow path only (the
 // swagger contract), so this probe always uses benign content. No config

@@ -9,7 +9,7 @@ import { proxyToGateway } from '@/src/lib/proxy/proxy_to_gateway';
 // app/api/pact/gateway/v1/... matches first - Next.js always prefers the
 // more specific static/dynamic segment route over a catch-all.
 //
-// PACT-390/PACT-416: this used to build the upstream URL as
+// This used to build the upstream URL as
 // `${GATEWAY_URL}/api/pact/${path.join('/')}` (pact-gateway has no
 // /api/pact/* namespace - always wrong), forward the browser's raw Cookie
 // header instead of translating pact_session into a Bearer token, and

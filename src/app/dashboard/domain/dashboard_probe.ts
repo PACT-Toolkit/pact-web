@@ -9,11 +9,11 @@ import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 // data.filter/data.redactor come from the /v1/check OpenAPI contract
 // (CheckFilterInfo/CheckRedactorInfo, schema/check via orval), a distinct,
 // swagger-generated wire type from the pact.decisions Kafka schema
-// (PACT-426) DecisionPayload is now generated from. Both describe the same
+// DecisionPayload is now generated from. Both describe the same
 // closed verdict vocabularies (pipeline.Decision.FilterVerdict /
 // RedactorVerdict - see each field's doc comment on both sides).
 //
-// Pre-PACT-576, orval didn't extract swagger's string-with-enum-in-description
+// Previously, orval didn't extract swagger's string-with-enum-in-description
 // as a TS literal union the way json-schema-to-typescript does for the
 // pact-decisions schema, so data.filter.verdict/data.redactor.verdict typed as
 // plain `string` here and needed an `as FilterDecision['verdict']` cast to

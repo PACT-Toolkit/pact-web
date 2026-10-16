@@ -83,7 +83,7 @@ describe('deriveConfusionCounts', () => {
     expect(confusion.trueNegatives).toBe(95);
   });
 
-  it('coalesces a missing throttled field (pre-PACT-933 counts) to zero', () => {
+  it('coalesces a missing throttled field (older counts) to zero', () => {
     const counts = {
       attacks: 100,
       benign: 100,

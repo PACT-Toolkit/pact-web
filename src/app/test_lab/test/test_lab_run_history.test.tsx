@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { type TestRun } from '@/src/app/test_lab/domain/test_lab_check';
 import { TestLabRunHistory } from '@/src/app/test_lab/ui/TestLabRunHistory';
 
-// PACT-595: a run that failed before the gateway returned a verdict has no
+// A run that failed before the gateway returned a verdict has no
 // decision to show. These tests pin down that the history row renders a
 // distinct FAILED badge for that case instead of misreporting a green ALLOW
 // (the bug this issue closes -- decision defaulted to falsy/allow-shaped
@@ -45,7 +45,7 @@ const failedRun: TestRun = {
 const renderHistory = (history: TestRun[]) =>
   render((<TestLabRunHistory history={history} />) as ReactNode);
 
-describe('TestLabRunHistory - PACT-595 FAILED run rendering', () => {
+describe('TestLabRunHistory - FAILED run rendering', () => {
   it('renders a distinct FAILED badge and the error summary for a status=error run', () => {
     renderHistory([failedRun]);
 

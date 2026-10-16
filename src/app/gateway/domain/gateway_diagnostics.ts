@@ -1,5 +1,5 @@
 // Domain types and helpers for the diagnostics / causal-span replay section
-// (PACT-303 causal-diagnostic harness). Sourced live from the /v1/check
+// (causal-diagnostic harness). Sourced live from the /v1/check
 // response's diagnostics.causal_spans -- there is no historical equivalent.
 // pact-gateway's pipeline/types.go marks DiagnosticsInfo "response-only --
 // not mirrored on kafka.DecisionEvent", so the pact.decisions audit feed

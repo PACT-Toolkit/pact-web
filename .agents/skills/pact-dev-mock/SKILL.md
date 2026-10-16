@@ -40,7 +40,7 @@ MSW runs in three places, all wired off the same handler array in `mocks/handler
 
 **Both browser and Node use the same `handlers` array.** That means handler URL patterns must work in both - see the [Handler patterns](#handler-patterns) rule below.
 
-### Browser worker readiness (PACT-455)
+### Browser worker readiness
 
 The browser Service Worker only intercepts fetch/XHR once it has registered, activated, and taken control of the page. Any request fired before that point slips past MSW onto the real network - which in dev:mock has no backend behind it. An older `worker.start()` readiness option that was once documented as the guard for this turned out to be a deprecated no-op in the installed msw version (prints a warning, defers nothing) and has been removed from `mocks/index.ts`.
 

@@ -16,7 +16,7 @@ const makeRequest = (cookieHeader?: string, path = '/dashboard') =>
     headers: cookieHeader ? { cookie: cookieHeader } : {},
   });
 
-// PACT-726: proxy.ts's silent-renewal branch. See the file's own docblock
+// proxy.ts's silent-renewal branch. See the file's own docblock
 // for why this can't share proxy_to_gateway.ts's rotation (structurally
 // disjoint on session-cookie presence) and why redeemRefreshToken itself
 // (not this test) owns the single-flight guarantee - these tests mock it

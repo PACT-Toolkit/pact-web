@@ -94,7 +94,7 @@ describe('listMfaFactors', () => {
     await expect(listMfaFactors()).resolves.toEqual([]);
   });
 
-  // Regression test for PACT-717: dev:mock's auto-login never sets a real
+  // Regression test: dev:mock's auto-login never sets a real
   // pact_session cookie (validateSessionFromCookies short-circuits before
   // ever touching cookies - see session.ts), so a fresh mock session used
   // to hit the "no cookie" branch above and silently return [] even though
@@ -165,7 +165,7 @@ describe('listPasskeys', () => {
     ]);
   });
 
-  // Regression test for PACT-717 (see listMfaFactors' matching test above
+  // Regression test (see listMfaFactors' matching test above
   // for the full explanation): a fresh dev:mock session now sees the
   // seeded passkey without a manual login round trip.
   it('falls back to the shared mock session token in mock mode with no cookie set', async () => {
@@ -205,7 +205,7 @@ describe('listIdentities', () => {
     expect(listIdentitiesMock).not.toHaveBeenCalled();
   });
 
-  // Regression test for PACT-717 (see listMfaFactors' matching test above
+  // Regression test (see listMfaFactors' matching test above
   // for the full explanation): a fresh dev:mock session now sees the
   // seeded GitHub identity without a manual login round trip.
   it('falls back to the shared mock session token in mock mode with no cookie set', async () => {

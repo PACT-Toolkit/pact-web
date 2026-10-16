@@ -30,7 +30,7 @@ interface BenchmarkStageLatencyChartProps {
   isLoading: boolean;
 }
 
-// Matches the latency trend chart's y-axis width (PACT-939 follow-up):
+// Matches the latency trend chart's y-axis width:
 // wide enough for a single-line "2500 ms" tick without wrapping.
 const Y_AXIS_WIDTH = 72;
 

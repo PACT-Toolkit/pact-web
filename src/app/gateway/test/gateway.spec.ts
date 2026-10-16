@@ -2,12 +2,11 @@ import { expect, test } from '@playwright/test';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
-// Covers PACT-327 (read-only sandbox/diagnostics/spotlight probes) and
-// PACT-473 (live shadow/enforce toggles on the enforcement panel).
+// Covers the read-only sandbox/diagnostics/spotlight probes and
+// the live shadow/enforce toggles on the enforcement panel.
 //
-// - GatewayEnforcementPanel reads GET /v1/config (pact-gateway PACT-320,
-//   PR #88) and writes classifier/vector enforce mode + consensus mode
-//   through PATCH /v1/config/enforcement (pact-gateway PACT-472) via
+// - GatewayEnforcementPanel reads GET /v1/config and writes classifier/vector enforce mode + consensus mode
+//   through PATCH /v1/config/enforcement (pact-gateway) via
 //   GatewayEnforcementControls's segmented controls -- see that component's
 //   docblock. classifierEnforceMode/vectorEnforceMode only ever take
 //   "shadow"/"enforce" (no "off"); consensusMode takes "inline"/"shadow".

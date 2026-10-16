@@ -6,12 +6,12 @@ import { fileURLToPath } from 'node:url';
 import { ESLint, type Linter } from 'eslint';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
-// Regression canary for PACT-715: import-x/no-cycle silently skipped every
+// Regression canary: import-x/no-cycle silently skipped every
 // .ts/.tsx file because eslint-plugin-import-x reads its own
 // `import-x/parsers` settings key, not the legacy `import/parsers` key that
 // eslint-config-next populates. A seeded mutual-import cycle produced zero
-// detections until PACT-715 added the `import-x/parsers` bridge in
-// eslint.config.mjs. Nothing else in CI would notice a regression - a
+// detections until the `import-x/parsers` bridge in
+// eslint.config.mjs was added. Nothing else in CI would notice a regression - a
 // plugin update changing how parser settings are read, or a config refactor
 // dropping the bridge, would leave lint green while cycle detection quietly
 // stopped covering TypeScript. This test lints a deliberate mutual-import

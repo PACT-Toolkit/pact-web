@@ -49,7 +49,7 @@ export interface CategoryChartPoint {
   attacks: number;
   benign: number;
   errors: number;
-  /** Rows in this category shed by the gateway's rate limiter (PACT-933). See benchmark_confusion.ts. */
+  /** Rows in this category shed by the gateway's rate limiter. See benchmark_confusion.ts. */
   throttled: number;
   /** Rows in this category the classifier gave no verdict on (fail-open allow). See benchmark_confusion.ts. */
   unscored: number;
@@ -114,7 +114,7 @@ export function categoryChartData(
         benign: c.benign,
         errors: c.errors,
         // Coalesced to 0 for the same reason deriveConfusionCounts does -
-        // a category persisted before PACT-933 won't carry it on the wire
+        // a category persisted before the gateway added the field won't carry it on the wire
         // despite the generated type marking it required.
         throttled,
         // Coalesced for the same reason: a category persisted before the

@@ -3,8 +3,8 @@
 #
 # Exercises the /api/auth/* routes against a live pact-web (default :3000)
 # backed by a running pact-gateway + pact-auth stack (pact-web talks to
-# pact-auth exclusively through pact-gateway's /v1/auth/* proxy as of
-# PACT-681; this script still reaches Postgres directly at
+# pact-auth exclusively through pact-gateway's /v1/auth/* proxy;
+# this script still reaches Postgres directly at
 # postgres://pact:pact@localhost:5432/pact_auth to seed/verify users).
 # Curl-only, no Node/Playwright deps, suitable for CI smoke or pre-merge
 # sanity.
@@ -200,7 +200,7 @@ echo "$LAST_BODY" | grep -q '"code":"email_already_registered"' \
 
 # --- Login: unverified -> 403 -----------------------------------------------
 #
-# KNOWN REGRESSION (PACT-681): this assertion is expected to FAIL until
+# KNOWN REGRESSION: this assertion is expected to FAIL until
 # pact-gateway fixes its gRPC-to-HTTP error mapping
 # (internal/boundary.HTTPStatusFromGRPC), which currently collapses
 # FailedPrecondition into the same generic HTTP 400 "invalid request" body

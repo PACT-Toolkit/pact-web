@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import nextConfig from '../../next.config';
 
-// Regression test for a real bug found while verifying PACT-697: the
+// Regression test for a real bug: the
 // Permissions-Policy header denied publickey-credentials-get to every
 // origin, including this app's own top-level pages - silently breaking
 // navigator.credentials.get() for passkey login/registration AND the new

@@ -8,12 +8,12 @@ import {
 import { type ClassifierLabelVerdictRequest } from '@/src/__codegen__/rest/classifier';
 import { type DecisionPayload } from '@/src/app/filter/domain/filter_decision';
 
-// PACT-325 wires FilterDecisionRow's "Flag as false positive" button to
-// gateway's POST /v1/classifier/label (PACT-318) so an operator's correction
+// This file wires FilterDecisionRow's "Flag as false positive" button to
+// gateway's POST /v1/classifier/label so an operator's correction
 // feeds pact-classifier's fine-tune feedback corpus. That endpoint
 // hard-requires a non-empty `content` field at runtime (pact-gateway
 // internal/features/classifier/handler.go's labelVerdict; the OpenAPI spec
-// was caught up to this in PACT-456/commit bf2c77c) -- but pact.decisions
+// was since caught up to this) -- but pact.decisions
 // audit rows never carry raw content by design. pact-gateway's
 // internal/kafka/producer.go documents this explicitly on ContentRef: "PACT
 // is a redaction system -- raw prompt content is deliberately never
@@ -22,8 +22,8 @@ import { type DecisionPayload } from '@/src/app/filter/domain/filter_decision';
 // operator pastes fresh text; the filter console's rows are historical,
 // already-decided rows with no fresh text to offer.
 //
-// Rather than leaving the button permanently disabled (defeating PACT-325's
-// ask), this sends a clearly-marked, non-natural-language placeholder in
+// Rather than leaving the button permanently disabled (defeating the
+// original ask), this sends a clearly-marked, non-natural-language placeholder in
 // `content` and tags the request with a distinct `source` so anyone curating
 // the classifier's fine-tune feedback corpus can filter these rows out --
 // they carry no usable training text, only an operator-confirmed FP signal
@@ -34,7 +34,7 @@ import { type DecisionPayload } from '@/src/app/filter/domain/filter_decision';
 //
 // This write is distinct from, and fires alongside, the decision-annotation
 // write below -- LabelVerdict only ever reaches pact-classifier's corpus, it
-// has no bearing on whether the row renders as flagged. See PACT-474 for the
+// has no bearing on whether the row renders as flagged. See below for the
 // annotation persistence this file also owns.
 const FALSE_POSITIVE_SOURCE = 'filter_console_decision_flag';
 
@@ -58,8 +58,8 @@ export const resolveFlagRequestId = (
   payload: DecisionPayload | null
 ): string | undefined => event.requestId || payload?.request_id;
 
-// PACT-474: durable false-positive persistence via pact-gateway's decision
-// annotations proxy (PACT-464/PACT-466), replacing the PACT-325 sessionStorage
+// Durable false-positive persistence via pact-gateway's decision
+// annotations proxy, replacing the earlier sessionStorage
 // stand-in. Writes go through POST /v1/audit/annotations (below); reads are
 // batched per page of visible rows through POST /v1/audit/annotations/query
 // rather than one call per row, wired as a plain useSWR read keyed on the
@@ -73,8 +73,8 @@ export const buildAnnotateDecisionRequest = (
   kind: 'false_positive',
 });
 
-// PACT-835 wires FilterDecisionRow's flag button to a real toggle, now that
-// pact-gateway exposes DELETE /v1/audit/annotations (PACT-834, backed by
+// This wires FilterDecisionRow's flag button to a real toggle, now that
+// pact-gateway exposes DELETE /v1/audit/annotations (backed by
 // pact-audit's RemoveDecisionAnnotation RPC). Un-flagging was previously
 // impossible -- AnnotateDecision is an idempotent *create* with no delete
 // counterpart on pact-audit's surface, so the button used to disable
@@ -180,7 +180,7 @@ export const applyOptimisticAnnotationFlag = (
   };
 };
 
-// Optimistic-update transform for the un-flag write (PACT-835). Mirrors
+// Optimistic-update transform for the un-flag write. Mirrors
 // applyOptimisticAnnotationFlag's shape but drops the matching false_positive
 // row instead of inserting one, so the row renders as un-flagged immediately
 // -- rollbackOnError (wired at the call site) restores it if the DELETE

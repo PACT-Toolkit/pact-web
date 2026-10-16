@@ -14,7 +14,7 @@ import {
 // enforce_mode (or any per-verdict enforcement-mode) field on the wire.
 export type ClassifierSubObject = NonNullable<DecisionPayload['classifier']>;
 
-// Client-side page size for the classifier console (PACT-322), matching the
+// Client-side page size for the classifier console, matching the
 // sibling pact.decisions consoles (FilterDecisionsWorkbench PAGE_SIZE,
 // ConsensusRecord PAGE_SIZE, RedactorRecord PAGE_SIZE).
 export const PAGE_SIZE = 25;

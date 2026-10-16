@@ -1,7 +1,7 @@
 # Pin generated files to LF line endings regardless of a developer's local
 # core.autocrlf setting. Without this, Windows checkouts (autocrlf=true)
 # convert these files to CRLF on checkout, and re-running codegen (which
-# always writes LF) produces phantom line-ending diffs. (PACT-370)
+# always writes LF) produces phantom line-ending diffs.
 
 # Orval REST client + buf-generated proto stubs (pnpm rest:codegen / pnpm proto:gen)
 src/__codegen__/** text eol=lf

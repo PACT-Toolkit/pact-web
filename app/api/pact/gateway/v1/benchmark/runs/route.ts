@@ -5,7 +5,7 @@ import { proxyToGateway } from '@/src/lib/proxy/proxy_to_gateway';
 // Route handler proxy for GET /api/pact/gateway/v1/benchmark/runs ->
 // pact-gateway /v1/benchmark/runs.
 //
-// Relocated from /api/pact/benchmark/v1/runs under PACT-465 - see
+// Relocated from /api/pact/benchmark/v1/runs - see
 // app/api/pact/gateway/v1/benchmark/jobs/route.ts's docblock. Logic is
 // unchanged: benchmark run history is still read through the gateway
 // (auth-gated, rate-limited), not by hitting pact-benchmark's internal port

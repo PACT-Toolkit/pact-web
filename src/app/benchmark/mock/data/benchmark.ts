@@ -45,7 +45,7 @@ const NOW = Math.floor(Date.now() / 1000);
 const DAY = 86400;
 
 // Detection 88-99%, FP 0.5-6%, p50 120-600ms, p99 400-1800ms across the
-// spread (PACT-928): wide enough that every chart on the benchmark page
+// spread: wide enough that every chart on the benchmark page
 // (trend, latency, comparison delta bars) shows real movement in dev:mock
 // instead of a flat line. stub stays the faster, less accurate engine and
 // deberta the slower, more accurate one, matching the real gateway's
@@ -276,7 +276,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     p99_latency: 1750,
     row_count: 100,
     ran_at: NOW - 2 * DAY,
-    // Deliberately the run with throttled rows (PACT-933/PACT-942): 2 in
+    // Deliberately the run with throttled rows: 2 in
     // prompt-hacking, 3 in mixed-injection, run-level throttled = 5 (their
     // sum). It's the newest run, so it's also the one the category chart and
     // stage-latency chart fall back to without any selection - the natural
@@ -412,7 +412,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       { layer: 'consensus', p50_ms: 4, p99_ms: 11, samples: 1700 },
     ],
   },
-  // PACT-992: two runs added purely for the comparison card's guardrails -
+  // Two runs added purely for the comparison card's guardrails -
   // both are older than every run above so they never disturb "run-8 is the
   // newest run" (the category/stage charts' default candidate). They mirror
   // the real 2026-09-13 incident: a benign-only Hub import (attacks: 0, so
@@ -465,7 +465,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
 ];
 
 // Mirrors the real pact-benchmark corpus_library table as verified end-to-end
-// against the gateway's GET /v1/benchmark/corpus/library (PACT-483). Rows are
+// against the gateway's GET /v1/benchmark/corpus/library. Rows are
 // listed in the server's sort order (total_rows desc, source_dataset asc) --
 // the mock handler serves this array as-is, it does not re-sort.
 //
@@ -606,7 +606,7 @@ export const MOCK_HUB_GATED_SLUG = 'internal-org/gated-dataset';
  * back into the normal queued -> running -> done sequence. Exercises the
  * gateway rate-limiter path (`nextBenchmarkJobPollDelayMs`/
  * `describeBenchmarkJobPoll`) in dev:mock without depending on real request
- * timing, and specifically lands the 429 window mid-run (PACT-956 follow-up)
+ * timing, and specifically lands the 429 window mid-run
  * rather than before any progress exists, so it also exercises
  * BenchmarkWorkbench's job-state retention across a transient failure - the
  * progress card must keep showing the last known running percentage instead

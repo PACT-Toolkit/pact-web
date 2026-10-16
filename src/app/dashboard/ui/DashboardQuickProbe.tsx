@@ -55,7 +55,7 @@ export const DashboardQuickProbe = ({
     resetSaveState();
 
     try {
-      // Attribution, not authorization (PACT-484): probes are synthetic
+      // Attribution, not authorization: probes are synthetic
       // traffic fired from the console, so they declare the same source the
       // full Test Lab does and land in the dashboard's Test Lab bucket.
       const response = await checkContent({

@@ -26,7 +26,7 @@ import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
 import { extractServerErrorMessage } from '@/src/framework/http';
 
-// Ad-hoc capability-token issuance panel (PACT-326): mints a token via the
+// Ad-hoc capability-token issuance panel: mints a token via the
 // real gateway endpoint POST /v1/policy/tokens so an operator can hand a
 // scoped, time-limited credential to an agent without writing a rule.
 // Distinct from PolicyRuleEditor (which authors the policy rules a token is

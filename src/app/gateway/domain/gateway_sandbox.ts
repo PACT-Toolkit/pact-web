@@ -1,5 +1,5 @@
 // Domain types and helpers for the sandbox / indirect-injection section
-// (PACT-236 external_refs re-scan). Sourced live from the /v1/check response
+// (external_refs re-scan). Sourced live from the /v1/check response
 // -- NOT the pact.decisions audit feed. pact-gateway's
 // internal/kafka/producer.go deliberately excludes PurifiedContent from the
 // audit event ("it contains third-party fetched content and has not been

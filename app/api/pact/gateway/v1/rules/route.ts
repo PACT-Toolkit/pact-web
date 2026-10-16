@@ -8,7 +8,7 @@ import { proxyToGateway } from '@/src/lib/proxy/proxy_to_gateway';
 // In mock mode MSW intercepts the browser fetch before it reaches Next.js,
 // so this handler is only hit in real mode. See proxy_to_gateway.ts for the
 // shared session-cookie -> Bearer translation and rotated-session handling.
-// Publish/revoke live in their own routes under rules/[id]/ (PACT-416) -
+// Publish/revoke live in their own routes under rules/[id]/ -
 // they were previously unrouted and fell through to the (differently
 // broken) catch-all in app/api/pact/[...path]/route.ts.
 

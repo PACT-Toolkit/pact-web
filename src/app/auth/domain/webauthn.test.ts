@@ -4,8 +4,8 @@ import { ApiError } from '@/src/framework/auth/pact_auth/web_mutations';
 
 import { completeMfaWithPasskey, PasskeyError } from './webauthn';
 
-// completeMfaWithPasskey is the one webauthn.ts ceremony with logic this PR
-// changed (PACT-697's Wrap-up review caught it): the finish route's failure
+// completeMfaWithPasskey is the one webauthn.ts ceremony with logic that
+// needs direct coverage: the finish route's failure
 // carries a { code, error } body that AuthLoginMfaChallengeForm's catch
 // block needs to redirect on, same as the TOTP path - see the function's
 // own docblock. signInWithPasskey/enrollPasskey above it are untouched and

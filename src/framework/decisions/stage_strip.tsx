@@ -6,7 +6,7 @@ import {
   type PipelineStageId,
 } from '@/src/framework/decisions/pipeline_stage';
 
-// Compact, read-only per-stage strip (PACT-748): one chip per pipeline stage
+// Compact, read-only per-stage strip: one chip per pipeline stage
 // that fired on this request, the blocking stage picked out in red -- the
 // same at-a-glance stage attribution the Test Lab's pipeline card gives an
 // interactive run, applied to an audit row that only ever renders once.

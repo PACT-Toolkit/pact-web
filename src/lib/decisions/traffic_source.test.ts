@@ -9,7 +9,7 @@ import {
 
 describe('decisionTrafficBucket', () => {
   it('buckets an undeclared traffic_source as client traffic', () => {
-    // Absence means real traffic per the PACT-484 contract - traffic_source
+    // Absence means real traffic per the contract - traffic_source
     // declares synthetic-vs-real, so real client apps send nothing.
     expect(decisionTrafficBucket({ decision: 'allow' })).toBe('client');
   });

@@ -48,7 +48,7 @@ export const STATS_REFRESH_MS = 30_000;
 // vendored at schema/pact-decisions/benign_labels.json and re-exported as
 // BENIGN_LABELS via `pnpm schema:codegen`) -- pact-audit's Go-side
 // decisions.BenignClassifierLabels is the same list, drift-tested against
-// the same contract (PACT-574). Lowercased here to honor the contract's
+// the same contract. Lowercased here to honor the contract's
 // case-insensitive matching rule explicitly at the comparison boundary.
 export const BENIGN_CLASSIFIER_LABELS = new Set(
   BENIGN_LABELS.map((label) => label.toLowerCase())
@@ -173,13 +173,13 @@ export const useDashboardPipelineStats = (live: boolean) => {
     [statsQuery.data]
   );
 
-  // A 403 on /v1/audit/stats (PACT-363's audit:stats permission gate) is a
+  // A 403 on /v1/audit/stats (the audit:stats permission gate) is a
   // stable, expected outcome for non-operator users -- not a transient
   // error. The Filter/Classifier/Redactor widgets render a permission-aware
   // empty state for this instead of the generic error banner.
   const statsForbidden = isDecisionStatsForbidden(statsQuery.data);
 
-  // PACT-914: same non-403 resolved-failure gap as useFilterDecisionStats
+  // Same non-403 resolved-failure gap as useFilterDecisionStats
   // (see filter_decision_stats.ts) -- a stale bearer racing a session
   // rotation can come back 401 on /v1/audit/stats without ever throwing,
   // silently normalizing to an all-zero PipelineStats with no error flag
@@ -195,7 +195,7 @@ export const useDashboardPipelineStats = (live: boolean) => {
   // The two queries fail independently, and their consumers must not share
   // one error flag: a stats-side failure (e.g. the real gateway's
   // text/plain 403 body throwing in the generated fetcher's JSON.parse -
-  // see PACT-363's permission gate) would otherwise paint the live stream's
+  // see the permission gate) would otherwise paint the live stream's
   // "failed to load decisions" banner while the stream itself is healthy.
   return {
     stats,

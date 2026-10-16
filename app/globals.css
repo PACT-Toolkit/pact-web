@@ -137,7 +137,7 @@
   --warning: oklch(0.78 0.16 75);
   --warning-foreground: oklch(0.205 0 0);
 
-  /* Categorical chart palette (blue/red/green/amber/violet) - see PACT-927.
+  /* Categorical chart palette (blue/red/green/amber/violet).
      Previously these were greyscale (chroma 0), which resolved to nothing
      when chart.tsx wrapped them in hsl() and left every line unpainted. */
   --chart-1: oklch(0.6 0.18 250);

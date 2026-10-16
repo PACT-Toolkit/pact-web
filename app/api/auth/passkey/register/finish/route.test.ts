@@ -75,7 +75,7 @@ describe('POST /api/auth/passkey/register/finish', () => {
     expect(mockGetPactAuthClient).not.toHaveBeenCalled();
   });
 
-  // The whole point of PACT-714: recoveryCodes must survive the hop from
+  // The point of this test: recoveryCodes must survive the hop from
   // the pact-auth client's result to the JSON body the browser reads.
   it('includes recoveryCodes when pact-auth issues them', async () => {
     mockGetPactAuthClient.mockReturnValue(

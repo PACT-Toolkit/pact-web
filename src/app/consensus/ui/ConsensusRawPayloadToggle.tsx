@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 import { prettyPayload } from '@/src/app/audit/domain/audit_event_variant';
 
-// Collapsible raw-JSON fallback for one consensus record (PACT-369).
+// Collapsible raw-JSON fallback for one consensus record.
 // Visually mirrors AuditRowShell's expand/collapse chrome on /audit rather
 // than reusing it directly -- ConsensusRecordCard's layout (badge row +
 // vote chips) doesn't nest inside AuditRowShell's header/body split, so

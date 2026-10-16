@@ -5,7 +5,7 @@ import { proxyToGateway } from '@/src/lib/proxy/proxy_to_gateway';
 // Route handler proxy for POST /api/pact/gateway/v1/rules/{id}/revoke ->
 // pact-gateway /v1/rules/{id}/revoke.
 //
-// PACT-416: this endpoint had no explicit proxy route, so the generated
+// This endpoint had no explicit proxy route, so the generated
 // revokeRule() client's request fell through to the catch-all in
 // app/api/pact/[...path]/route.ts, which built the wrong upstream URL and
 // never translated the pact_session cookie into the Bearer header

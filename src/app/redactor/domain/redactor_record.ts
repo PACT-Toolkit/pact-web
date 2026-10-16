@@ -12,7 +12,7 @@ import {
 export type RedactorSubObject = NonNullable<DecisionPayload['redactor']>;
 export type RedactorSpan = NonNullable<RedactorSubObject['spans']>[number];
 
-// Client-side page size for the redactor console (PACT-324), matching the
+// Client-side page size for the redactor console, matching the
 // sibling pact.decisions consoles (FilterDecisionsWorkbench PAGE_SIZE,
 // ConsensusRecord PAGE_SIZE).
 export const PAGE_SIZE = 25;

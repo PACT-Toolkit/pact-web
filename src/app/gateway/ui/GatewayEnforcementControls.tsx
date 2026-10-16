@@ -127,7 +127,7 @@ interface GatewayEnforcementControlsProps {
 // GatewayEnforcementControls renders the three live runtime-enforcement
 // controls (classifier/vector enforce mode, consensus mode) as segmented
 // controls matching the read-only tiles' visual language, and writes
-// through PACT-472's PATCH /v1/config/enforcement. Rendered as siblings
+// through the PATCH /v1/config/enforcement. Rendered as siblings
 // inside GatewayEnforcementPanel's existing grid -- see that component for
 // why classifier/vector no longer render as static ModeBadge tiles.
 export const GatewayEnforcementControls = ({

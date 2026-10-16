@@ -17,7 +17,7 @@ import {
 
 // Discriminated union over every audit topic pact-web knows how to render.
 // `unknown` is the fallback for a topic we don't have a decoder for yet
-// (e.g. pact.policy, ahead of PACT-306/308) or a payload that failed to
+// (e.g. pact.policy) or a payload that failed to
 // decode against the topic we expected -- decodeAuditEventVariant is total,
 // it always returns a variant and never throws.
 export type AuditEventVariant =
@@ -31,11 +31,11 @@ export type AuditEventVariant =
 // the Kafka topic string (key), the decoder function, the AuditEventVariant
 // discriminant it produces, and the human label AuditWorkbench's topic
 // filter shows for it. Insertion order is display order -- AuditWorkbench
-// derives its topic dropdown by iterating these entries in place (PACT-581),
+// derives its topic dropdown by iterating these entries in place,
 // so reordering this object reorders the dropdown.
 //
 // pact.policy is deliberately absent: it's queryable server-side
-// (PACT-306/308) but pact-web has no decoder for it yet, so it falls
+// but pact-web has no decoder for it yet, so it falls
 // through decodeAuditEventVariant's registry lookup to the 'unknown'
 // variant, same as any topic pact-web hasn't shipped a decoder for.
 // AuditWorkbench lists it separately, for discoverability.
@@ -71,8 +71,8 @@ export type AuditTopic = keyof typeof AUDIT_TOPIC_REGISTRY;
 // AuditWorkbench for the QueryEvents behavior that makes it valid), then
 // every topic with a registered decoder in AUDIT_TOPIC_REGISTRY order, then
 // pact.policy last for discoverability even though pact-audit doesn't
-// consume that topic yet (PACT-306/308; selecting it always yields an
-// honest empty result, never a crash). A domain constant (PACT-581) rather
+// consume that topic yet (selecting it always yields an
+// honest empty result, never a crash). A domain constant rather
 // than hand-rolled in the UI, so the dropdown can never drift from the
 // topics decodeAuditEventVariant actually knows how to render.
 export const AUDIT_TOPIC_OPTIONS: { value: string; label: string }[] = [
@@ -104,7 +104,7 @@ export const decodeAuditEventVariant = (
   payloadJson: string
 ): AuditEventVariant => {
   if (!(topic in AUDIT_TOPIC_REGISTRY)) {
-    // Covers pact.policy (not consumed yet, PACT-306/308) and any future
+    // Covers pact.policy (not consumed yet) and any future
     // topic pact-web hasn't shipped a decoder for.
     return { kind: 'unknown', raw: payloadJson };
   }

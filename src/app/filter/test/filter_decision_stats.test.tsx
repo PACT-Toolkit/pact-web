@@ -6,7 +6,7 @@ import { server } from '@/mocks/server';
 import { SWRTestProvider } from '@/mocks/swr_test_provider';
 import { useFilterDecisionStats } from '@/src/app/filter/domain/filter_decision_stats';
 
-describe('useFilterDecisionStats - PACT-363 audit:stats 403 gate (PACT-377)', () => {
+describe('useFilterDecisionStats - audit:stats 403 gate', () => {
   it('exposes forbidden=true and empty stats on a 403, not a raw error', async () => {
     server.use(
       http.get('*/v1/audit/stats', () =>
@@ -69,7 +69,7 @@ describe('useFilterDecisionStats - PACT-363 audit:stats 403 gate (PACT-377)', ()
   });
 });
 
-describe('useFilterDecisionStats - PACT-914 non-403 failure surfacing', () => {
+describe('useFilterDecisionStats - non-403 failure surfacing', () => {
   it('exposes error=true and empty stats on a 401, not silent zeros', async () => {
     server.use(
       http.get('*/v1/audit/stats', () =>

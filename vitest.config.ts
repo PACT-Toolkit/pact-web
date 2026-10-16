@@ -16,7 +16,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     // Pinned here (not a shell prefix) so `pnpm test` is shell-agnostic
-    // across cmd.exe, PowerShell, and Git Bash (PACT-763). `test.env` is
+    // across cmd.exe, PowerShell, and Git Bash. `test.env` is
     // applied to each worker's process.env before setupFiles or test files
     // load, so it also reaches module-scope Intl/Date objects constructed
     // during setupFiles' own import graph -- a setupFiles-body assignment

@@ -25,8 +25,8 @@ const STAGE_PRESENT: Record<
 
 // Derives the audit stage strip's entries from a decisions payload: every
 // visualised stage with a present sub-object, in pipeline order, the one
-// named by `engine` marked as the blocker (PACT-748). `engine` stays the
-// single stage-attribution authority the PACT-745 badge already uses -- no
+// named by `engine` marked as the blocker. `engine` stays the
+// single stage-attribution authority the blocked-by badge already uses -- no
 // parallel mapping is introduced here.
 //
 // Returns [] when the payload carries no per-stage sub-objects at all

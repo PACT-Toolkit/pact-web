@@ -22,7 +22,7 @@ import {
 } from '@/src/components/ui/card';
 import { formatPercent } from '@/src/framework/format/format_percent';
 
-// Ad-hoc classifier test-and-label panel (PACT-322 part 2): paste text, run
+// Ad-hoc classifier test-and-label panel: paste text, run
 // it through the real pipeline via /v1/check with kind "input" (prompt
 // injection/jailbreak is a property of what the caller sends the model, the
 // direction the classifier stage is most commonly exercised against --

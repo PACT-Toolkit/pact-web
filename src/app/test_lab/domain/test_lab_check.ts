@@ -29,9 +29,9 @@ import {
 // closed-set fields of check.CheckResponse, so orval now emits `decision` as
 // the literal union CheckCheckResponseDecision ('allow' | 'block') instead of
 // a plain string -- CheckResponse no longer needs to hand-refine it the way
-// it did pre-PACT-576.
+// it did before.
 //
-// PACT-702 removed the mock-only `_mock_layers` escape hatch: dev:mock now
+// The mock-only `_mock_layers` escape hatch is gone: dev:mock now
 // returns a faithful CheckResponse (canonical `reason`, `filter`/`classifier`/
 // `consensus`/`redactor`/`external_refs` sub-objects) and layer inference
 // (applyLiveLayers below) runs identically against mock and live responses.
@@ -45,7 +45,7 @@ export type CheckResponse = CheckCheckResponse;
 // the real gateway ignores unknown fields).
 export type CheckInput = CheckCheckRequest & { _bypass_layers?: string[] };
 
-// ─── response parsing (PACT-576) ───────────────────────────────────────────────
+// ─── response parsing ───────────────────────────────────────────────
 //
 // parse-don't-cast, mirroring parseDecisionPayload in
 // src/lib/decisions/decision_payload.ts: validate the wire shape
@@ -170,8 +170,8 @@ export const parseCheckResponse = (raw: unknown): CheckResponse => {
     assertEnumField(REDACTOR_VERDICTS, redactor.verdict, 'redactor.verdict');
   }
 
-  // consensus has no closed-set field of its own today (PACT-623 added it
-  // duration_ms-only) -- still validated as a record so a malformed payload
+  // consensus has no closed-set field of its own today (it carries
+  // duration_ms only) -- still validated as a record so a malformed payload
   // fails parseCheckResponse's parse-don't-cast contract instead of reaching
   // `data.consensus.duration_ms` unguarded downstream.
   assertRecordField(raw.consensus, 'consensus');
@@ -219,7 +219,7 @@ export const parseCheckResponse = (raw: unknown): CheckResponse => {
     );
   }
 
-  // diagnostics.causal_spans (PACT-734/745) has no closed-set field of its
+  // diagnostics.causal_spans has no closed-set field of its
   // own -- same reasoning as consensus above -- but each element must still
   // be an object, same shape check as external_refs.refs.
   const diagnostics = assertRecordField(raw.diagnostics, 'diagnostics');
@@ -273,7 +273,7 @@ export type TestRun =
 
 // ─── persisted run + corpus types (gateway API shape) ────────────────────────
 //
-// PACT-465 repoints Test Lab's "Save to corpus" and run-history save/list
+// This repoints Test Lab's "Save to corpus" and run-history save/list
 // onto the gateway's POST /v1/benchmark/corpus and GET+POST
 // /v1/benchmark/testlab/runs (schema/benchmark, pulled from pact-gateway).
 // The gateway resolves the actor from the session server-side -- callers
@@ -375,7 +375,7 @@ export const deriveLayerDefinitions = (
 };
 
 // ─── layer inference ────────────────────────────────────────────────────────
-// PACT-702: block attribution is driven exclusively from the gateway's
+// Block attribution is driven exclusively from the gateway's
 // top-level `reason` (the aggregate CheckChallenge.Evaluate fold already
 // resolved to a single canonical value pact-gateway commits to as a closed
 // set -- see BLOCKING_STAGE_OF below). The structural sub-objects (`filter`,
@@ -383,7 +383,7 @@ export const deriveLayerDefinitions = (
 // for DETAIL (rule id, verdict, score, span count) once attribution is
 // already settled -- never as a second, competing attribution heuristic.
 //
-// This replaces the pre-PACT-702 heuristics (`filter.verdict === 'hostile'`,
+// This replaces the older heuristics (`filter.verdict === 'hostile'`,
 // `decision === 'block' && classifier responded`), which misattributed any
 // downstream block (e.g. consensus_enforced) to whichever earlier stage
 // happened to have structural signal, because neither heuristic looked at
@@ -404,7 +404,7 @@ const STAGE_LABEL: Partial<Record<StageId, string>> = {
 // BLOCKING_STAGE_OF is the closed set of gateway block reasons that this UI
 // attributes to one of the five visualised stages, mirroring pact-gateway's
 // internal/pipeline/stages.go byte-for-byte (verified against gateway HEAD
-// 7352bcf, PACT-702):
+// 7352bcf):
 //
 //   - filter_hostile / filter_suspicious_enforced -> filterStage's two block
 //     branches (hostile verdict; suspicious verdict promoted by vector
@@ -441,7 +441,7 @@ const BLOCKING_STAGE_OF: Record<string, StageId> = {
 
 // blockingStageId resolves which visualised stage (if any) is the true
 // source of a block decision. Reason-driven first; falls back to the
-// pre-PACT-249 signal (`filter_rule_id` set, structural `filter` sub-object
+// older signal (`filter_rule_id` set, structural `filter` sub-object
 // absent entirely, decision=block) only for gateway builds old enough to
 // predate the `reason` closed set this map covers -- modern builds always
 // carry both surfaces together (handler.go sets top-level filter_rule_id
@@ -629,7 +629,7 @@ const blankDetail: Omit<LayerState, 'id' | 'label' | 'decision'> = {
   causalSpans: undefined,
 };
 
-// stageCausalSpans (PACT-745) attaches diagnostics.causal_spans to whichever
+// stageCausalSpans attaches diagnostics.causal_spans to whichever
 // stage actually blocked the request -- causal_spans is a top-level wire
 // field (not nested under any one stage's sub-object), so blockingStageId is
 // the single attribution authority here too, same as every other detail
@@ -700,7 +700,7 @@ const deriveStageState = (
     case 'redactor': {
       if (!data.redactor?.verdict) {
         // No redactor sub-object and nothing upstream forced this stage to
-        // skip -- either a pre-PACT-249 build that never sent one, or a
+        // skip -- either an older build that never sent one, or a
         // block reason this map does not (yet) recognise. Stay honest
         // rather than asserting a "ran" state the response cannot back.
         return {
@@ -724,13 +724,13 @@ const deriveStageState = (
   }
 };
 
-// resultCausalSpans (PACT-757) surfaces diagnostics.causal_spans on the
+// resultCausalSpans surfaces diagnostics.causal_spans on the
 // Result node when a block cannot be attributed to any visualised stage
 // (cel_rule_fired, policy_token_denied, or any future unmapped reason).
 // stageCausalSpans above only ever attaches spans to the one stage that
 // actually blocked, so an unattributed block's spans would otherwise never
 // render anywhere in the pipeline view -- mirrors the audit feature's
-// PACT-749 pattern (CausalSpanList with attributed=false), just surfaced at
+// unattributed-spans pattern (CausalSpanList with attributed=false), just surfaced at
 // the overall-result level instead of a per-stage level since neither the
 // CEL nor the policy engine has a visualised chip.
 export const resultCausalSpans = (
@@ -742,7 +742,7 @@ export const resultCausalSpans = (
 
 // applyLiveLayers assembles every visualised layer's final state for one
 // /v1/check response. It is the single inference path for both dev:mock and
-// the real gateway (PACT-702 deleted the mock-only `_mock_layers` escape
+// the real gateway (the former mock-only `_mock_layers` escape
 // hatch that used to bypass it) -- a mocked scenario and a live gateway
 // response with the same shape render identically.
 export const applyLiveLayers = (

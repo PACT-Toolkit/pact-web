@@ -4,13 +4,13 @@ import { MOCK_CORPUS_DATASETS } from '@/src/app/benchmark/mock/data/benchmark';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
-// Covers PACT-939: the trend and latency charts render their legend through
+// Coverage: the trend and latency charts render their legend through
 // the canonical shadcn `<ChartLegend content={<ChartLegendContent />} />`
 // composition rather than a hand-rolled legend row, so recharts mounts a
 // `.recharts-legend-wrapper` containing one item per series with a swatch
 // coloured from the series' ChartConfig entry. This asserts both the item
 // count and that each swatch actually resolves to a painted colour (not
-// `transparent` - the PACT-927 failure mode of an unresolved CSS variable).
+// `transparent` - the failure mode of an unresolved CSS variable).
 async function expectPaintedLegendSwatches(
   chart: Locator,
   expectedCount: number
@@ -33,7 +33,7 @@ async function expectPaintedLegendSwatches(
   }
 }
 
-// Covers PACT-927: the trend chart's two lines never painted (chart.tsx
+// Coverage: the trend chart's two lines never painted (chart.tsx
 // wrapped the --chart-1/--chart-2 custom properties in hsl(), but they held
 // greyscale oklch() values, so the emitted --color-detection_rate /
 // --color-fp_rate custom properties resolved to nothing). This spec proves
@@ -75,7 +75,7 @@ test.describe('Benchmark trend chart', () => {
   });
 });
 
-// Covers PACT-928: latency, corpus composition, and comparison-delta charts
+// Coverage: latency, corpus composition, and comparison-delta charts
 // added alongside the fixed trend chart.
 test.describe('Benchmark latency, corpus composition, and comparison charts', () => {
   test.beforeEach(async ({ page }) => {
@@ -130,7 +130,7 @@ test.describe('Benchmark latency, corpus composition, and comparison charts', ()
     }
   });
 
-  // Covers PACT-992: the default baseline/candidate pair (run-6, run-8) both
+  // Coverage: the default baseline/candidate pair (run-6, run-8) both
   // sit on corpus_version 'seed-v2.jsonl', so no warning should show on a
   // plain page load - proves the mismatch check doesn't false-positive on
   // the common case.
@@ -170,7 +170,7 @@ test.describe('Benchmark latency, corpus composition, and comparison charts', ()
     await expect(detectionCells.nth(3)).toHaveText('n/a'); // delta
   });
 
-  // Covers PACT-992: run-9 is an attack-free 2508-row Hub import on its own
+  // Coverage: run-9 is an attack-free 2508-row Hub import on its own
   // corpus hash - picking it as the candidate must both warn that the
   // corpora differ and null out the (otherwise meaningless 0/0) detection
   // rate, while latency - which never depends on counts - stays numeric.
@@ -238,7 +238,7 @@ test.describe('Benchmark latency, corpus composition, and comparison charts', ()
   });
 });
 
-// Covers PACT-932: per-category detection/FP bars, per-stage p50/p99 bars,
+// Coverage: per-category detection/FP bars, per-stage p50/p99 bars,
 // and the trend chart's Wilson confidence bands, all driven from the newest
 // mock run's counts/per_category/per_layer breakdown (run-8 by default,
 // since BenchmarkComparison's candidate picker defaults to the newest run).
@@ -288,7 +288,7 @@ test.describe('Benchmark per-category, per-stage, and confidence-interval charts
     await expect(errorBars.first()).toBeVisible();
     expect(await errorBars.count()).toBeGreaterThan(0);
 
-    // run-8's prompt-hacking category has throttled: 2 (PACT-942/PACT-933) -
+    // run-8's prompt-hacking category has throttled: 2 -
     // its bar label reads "2 thr", matching the existing "N err" label style.
     await expect(chart.getByText('2 thr', { exact: true })).toBeVisible();
   });
@@ -345,8 +345,8 @@ test.describe('Benchmark per-category, per-stage, and confidence-interval charts
   });
 });
 
-// Covers PACT-932's confusion tiles on the live job progress card (spec item
-// 8), derived from the job result's counts breakdown once a submitted
+// Covers the confusion tiles on the live job progress card,
+// derived from the job result's counts breakdown once a submitted
 // benchmark run completes.
 test.describe('Benchmark confusion tiles on a completed job', () => {
   test('shows the derived confusion matrix once the mock job finishes', async ({
@@ -382,7 +382,7 @@ test.describe('Benchmark confusion tiles on a completed job', () => {
     await expect(page.getByTestId('benchmark-confusion-errors')).toContainText(
       '0'
     );
-    // throttled: 3, excluded from attacks/benign/errors above (PACT-942).
+    // throttled: 3, excluded from attacks/benign/errors above.
     await expect(
       page.getByTestId('benchmark-confusion-throttled')
     ).toContainText('3');

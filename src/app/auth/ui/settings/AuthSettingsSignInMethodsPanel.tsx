@@ -31,14 +31,14 @@ export const AuthSettingsSignInMethodsPanel = ({
 
   const refresh = () => startTransition(() => router.refresh());
 
-  // PACT-718 found that `canGenerate` used to count ANY TOTP factor,
+  // `canGenerate` used to count ANY TOTP factor,
   // including an unverified one still mid-enrollment (a factor started via
   // totp/enroll/begin exists, and is user-visible via
   // AuthSettingsTotpFactorRow's "pending verification" state, before its
-  // enroll/confirm call sets `verified`). PACT-723 ruled that gate must
+  // enroll/confirm call sets `verified`). That gate must
   // instead require a verified factor, mirroring pact-auth's
   // RegenerateRecoveryCodes step-up gate exactly: HasVerifiedTOTPFactor OR
-  // HasVerifiedPasskey (PACT-707). `hasVerifiedTotpFactor` is the same
+  // HasVerifiedPasskey. `hasVerifiedTotpFactor` is the same
   // predicate AuthSettingsTwoFactorCard uses to decide whether to show the
   // "Add authenticator app" button - both consumers now share one
   // definition of "verified TOTP"

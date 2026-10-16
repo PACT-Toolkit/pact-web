@@ -1,6 +1,6 @@
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
-// Traffic-source attribution vocabulary (PACT-484): /v1/check callers declare
+// Traffic-source attribution vocabulary: /v1/check callers declare
 // synthetic traffic via the optional `traffic_source` request field, and the
 // gateway mirrors it verbatim onto the pact.decisions audit event. Real
 // client-app traffic is deliberately UNDECLARED - per the contract,
@@ -11,7 +11,7 @@ import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 //
 // pact-web's Test Lab and dashboard Quick Probe both stamp `test_lab`;
 // pact-benchmark stamps `benchmark` (its own TRAFFIC_SOURCE_BENCHMARK in
-// runner.py, PACT-485). Keep this file in sync with any new declared source
+// runner.py). Keep this file in sync with any new declared source
 // fleet-wide.
 export const TRAFFIC_SOURCE_TEST_LAB = 'test_lab';
 export const TRAFFIC_SOURCE_BENCHMARK = 'benchmark';

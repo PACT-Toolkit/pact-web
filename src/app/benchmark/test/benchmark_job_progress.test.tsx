@@ -41,7 +41,7 @@ describe('BenchmarkJobProgress', () => {
     );
 
     // No successful response has ever arrived for this job, so the notice
-    // must not claim it's "still in progress" - see the PACT-956 follow-up
+    // must not claim it's "still in progress" - see the
     // regression this branch guards against.
     const notice = screen.getByTestId('benchmark-job-poll-notice');
     expect(notice).toHaveTextContent('Waiting for the job status');

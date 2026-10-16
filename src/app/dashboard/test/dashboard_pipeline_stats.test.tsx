@@ -11,7 +11,7 @@ import {
   useDashboardPipelineStats,
 } from '@/src/app/dashboard/domain/dashboard_pipeline_stats';
 
-describe('useDashboardPipelineStats - PACT-363 audit:stats 403 gate (PACT-377)', () => {
+describe('useDashboardPipelineStats - audit:stats 403 gate', () => {
   it('exposes statsForbidden=true and empty stats on a 403, without touching the live decisions query', async () => {
     server.use(
       http.get('*/v1/audit/stats', () =>
@@ -36,11 +36,11 @@ describe('useDashboardPipelineStats - PACT-363 audit:stats 403 gate (PACT-377)',
     expect(result.current.stats.total).toBe(0);
   });
 
-  it('exposes statsForbidden=true when the 403 body is text/plain (real gateway shape, PACT-737)', async () => {
+  it('exposes statsForbidden=true when the 403 body is text/plain (real gateway shape)', async () => {
     // The real gateway's authz middleware answers 403 with a text/plain
     // body, not JSON. The generated custom fetch must resolve that as
     // { data: '...', status: 403 } instead of throwing from JSON.parse --
-    // pre-PACT-737 the parse threw, SWR saw an error, and this gate never
+    // previously the parse threw, SWR saw an error, and this gate never
     // engaged outside mock mode (where the 403 body happens to be JSON).
     server.use(
       http.get(
@@ -101,7 +101,7 @@ describe('useDashboardPipelineStats - PACT-363 audit:stats 403 gate (PACT-377)',
   });
 });
 
-describe('useDashboardPipelineStats - PACT-914 non-403 failure surfacing', () => {
+describe('useDashboardPipelineStats - non-403 failure surfacing', () => {
   it('exposes statsError=true and empty stats on a 401, without touching the live decisions query', async () => {
     server.use(
       http.get('*/v1/audit/stats', () =>
@@ -121,7 +121,7 @@ describe('useDashboardPipelineStats - PACT-914 non-403 failure surfacing', () =>
   });
 });
 
-describe('BENIGN_CLASSIFIER_LABELS (PACT-574)', () => {
+describe('BENIGN_CLASSIFIER_LABELS', () => {
   it('matches the vendored pact-contracts benign-label contract exactly', () => {
     // Drift guard: BENIGN_CLASSIFIER_LABELS must derive 1:1 from BENIGN_LABELS
     // (src/__codegen__/schema/pact-decisions, vendored from pact-contracts'

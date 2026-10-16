@@ -105,7 +105,7 @@ describe('BenchmarkConfusionTiles', () => {
     );
   });
 
-  it('handles a counts object missing throttled entirely (pre-PACT-933 run)', () => {
+  it('handles a counts object missing throttled entirely (older run)', () => {
     render(
       (
         <BenchmarkConfusionTiles

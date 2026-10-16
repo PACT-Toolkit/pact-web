@@ -5,7 +5,7 @@ import { proxyToGateway } from '@/src/lib/proxy/proxy_to_gateway';
 // Route handler proxy for POST /api/pact/gateway/v1/benchmark/jobs ->
 // pact-gateway /v1/benchmark/jobs (submit a corpus bulk-test job).
 //
-// Relocated from /api/pact/benchmark/v1/jobs under PACT-465, which moved the
+// Relocated from /api/pact/benchmark/v1/jobs, which moved the
 // whole schema/benchmark orval group onto the gateway-edge-proxy baseUrl
 // convention (mirroring schema/filter) so Test Lab's corpus/testlab-runs
 // hooks resolve correctly - this bulk-test surface shares the same

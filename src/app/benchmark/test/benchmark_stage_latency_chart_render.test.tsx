@@ -20,7 +20,7 @@ function makeRun(overrides: Partial<BenchmarkRun>): BenchmarkRun {
   };
 }
 
-// PACT-932 fix (coordinator finding): same "Select a run to inspect." bug as
+// Regression guard: same "Select a run to inspect." bug as
 // BenchmarkCategoryChart (see that test file's docblock) -- `isLoading` now
 // disambiguates "runs still fetching" from "fetch settled, zero runs."
 describe('BenchmarkStageLatencyChart empty states', () => {

@@ -52,7 +52,7 @@ describe('decodeAuditEventVariant', () => {
     }
   });
 
-  it('falls back to unknown for pact.policy (not yet consumed, PACT-306/308)', () => {
+  it('falls back to unknown for pact.policy (not yet consumed)', () => {
     const v = decodeAuditEventVariant('pact.policy', '{"verdict":"allow"}');
     expect(v.kind).toBe('unknown');
     if (v.kind === 'unknown') {
@@ -82,7 +82,7 @@ describe('decodeAuditEventVariant', () => {
 describe('AUDIT_TOPIC_REGISTRY', () => {
   it('decodes every registered topic to its matching variant kind', () => {
     // One representative payload per registered topic, exercising the
-    // registry lookup path in decodeAuditEventVariant end to end (PACT-581)
+    // registry lookup path in decodeAuditEventVariant end to end
     // rather than just the decoder in isolation.
     const samples: Record<keyof typeof AUDIT_TOPIC_REGISTRY, string> = {
       'pact.auth': JSON.stringify({ event_id: 'login_succeeded' }),
@@ -101,7 +101,7 @@ describe('AUDIT_TOPIC_REGISTRY', () => {
 });
 
 describe('AUDIT_TOPIC_OPTIONS', () => {
-  it('preserves the exact pre-PACT-581 dropdown order and labels', () => {
+  it('preserves the exact previous dropdown order and labels', () => {
     // Frozen expectation of AuditWorkbench's hand-written TOPIC_OPTIONS
     // before it was derived from AUDIT_TOPIC_REGISTRY -- guards against the
     // registry-driven dropdown silently reordering or relabeling.

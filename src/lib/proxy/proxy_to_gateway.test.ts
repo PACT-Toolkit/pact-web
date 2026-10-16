@@ -3,14 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { proxyToGateway } from './proxy_to_gateway';
 
-// proxyToGateway had no dedicated test file before PACT-687 - every route
+// proxyToGateway had no dedicated test file - every route
 // that uses it (app/api/pact/[...path]/route.ts and friends) mocks it
 // at the module boundary instead. These tests cover the shared core
 // directly against a stubbed fetch.
 //
 // The upstreamPath examples below (e.g. '/v1/account/profile') are
 // pact-gateway's own wire paths, unrelated to pact-web's now-removed
-// app/v1/{account,audit,files} mirror routes (PACT-923) - proxyToGateway
+// app/v1/{account,audit,files} mirror routes - proxyToGateway
 // just forwards whatever upstreamPath its caller passes.
 const makeRequest = (headers: Record<string, string> = {}) =>
   new NextRequest('http://localhost:3000/v1/account/profile', {
@@ -33,7 +33,7 @@ describe('proxyToGateway', () => {
     vi.unstubAllEnvs();
   });
 
-  // PACT-687: pact-gateway keys its per-IP rate buckets on the right-most
+  // pact-gateway keys its per-IP rate buckets on the right-most
   // X-Forwarded-For hop, so this proxy must append its own determination
   // of the end-user's client IP as that one hop.
   it('appends the right-most inbound X-Forwarded-For hop to the outbound header', async () => {
@@ -68,7 +68,7 @@ describe('proxyToGateway', () => {
     expect(new Headers(init?.headers).has('x-forwarded-for')).toBe(false);
   });
 
-  // PACT-705: pact_refresh_token is now a real httpOnly cookie the auth
+  // pact_refresh_token is now a real httpOnly cookie the auth
   // routes set alongside pact_session, and this proxy attaches it as
   // X-Pact-Refresh-Token on every call (no more per-route opt-in) so
   // pact-gateway's authMiddleware can silently renew a near-expiry session.
@@ -174,7 +174,7 @@ describe('proxyToGateway', () => {
     expect(res2.cookies.get('pact_refresh_token')?.value).toBe('ref-2');
   });
 
-  // PACT-914: a follower attaches the pre-rotation bearer (its own cookie
+  // A follower attaches the pre-rotation bearer (its own cookie
   // read happened before the leader's rotation landed), so its own upstream
   // call can legitimately come back 401 even though the session itself is
   // fine - the leader just finished proving that by rotating it. These
@@ -234,7 +234,7 @@ describe('proxyToGateway', () => {
       );
     });
 
-    // PACT-914: the superseded first response's body was never read before
+    // The superseded first response's body was never read before
     // being discarded, which pins the upstream keep-alive connection open
     // under undici until GC runs. The retry path must cancel it explicitly.
     it('cancels the superseded first response body before retrying a follower 401', async () => {

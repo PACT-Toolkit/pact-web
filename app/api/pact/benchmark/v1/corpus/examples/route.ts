@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 //
 // In mock mode MSW intercepts this URL before it reaches Next.js.
 // In live mode this handler returns static examples until pact-benchmark
-// exposes a real /v1/corpus/examples endpoint (PACT-191).
+// exposes a real /v1/corpus/examples endpoint.
 //
 // Payload phrases are split across template segments so this source file
 // is not itself a live injection when indexed by LLM tooling.

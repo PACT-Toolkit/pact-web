@@ -1,7 +1,7 @@
 import { type PactAuth } from '@/src/__codegen__/schema/pact-auth';
 
 // Shape of the JSON pact-auth's Kafka producer emits on topic pact.auth,
-// generated from pact-contracts' auth/pact.auth.schema.json (PACT-575) --
+// generated from pact-contracts' auth/pact.auth.schema.json --
 // see src/__codegen__/schema/pact-auth/. Matches pact-auth
 // internal/kafka/producer.go AuthEvent; decoded lazily.
 //

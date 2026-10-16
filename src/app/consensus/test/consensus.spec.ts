@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
-// Covers the consensus-mode gaps closed in PACT-369: the console previously
+// Covers the consensus-mode gaps: the console previously
 // had no seeded consensus-bearing decisions at all (empty state only) and
 // no pagination once it did. createConsensusMockData seeds 30 rows cycling
 // through every consensus_flags.ts scenario (SPLIT / NO QUORUM / FAIL-OPEN

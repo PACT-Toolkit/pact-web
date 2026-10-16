@@ -1,5 +1,5 @@
 // Domain-owned vocabulary for FilesFileResponse.status (GET/POST /v1/files).
-// pact-gateway's generated per-tag OpenAPI slice (schema/files, PACT-706)
+// pact-gateway's generated per-tag OpenAPI slice (schema/files)
 // serialises status as a free-form `string` with no enum, so this closed
 // set - and its display fallback - has to be a client-side refinement, same
 // pattern as policy_rule.ts's RuleStatus over the equally free-form

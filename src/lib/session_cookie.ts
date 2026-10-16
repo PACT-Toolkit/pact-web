@@ -10,17 +10,17 @@ export const SESSION_COOKIE = 'pact_session';
 // SESSION_COOKIE, and that the gateway proxy attaches as the
 // X-Pact-Refresh-Token request header on every proxied call so
 // pact-gateway's authMiddleware can silently rotate the session pair before
-// the short-lived session token expires (PACT-705). Same layering
+// the short-lived session token expires. Same layering
 // rationale as SESSION_COOKIE above.
 export const REFRESH_TOKEN_COOKIE = 'pact_refresh_token';
 
 // The refresh token itself has no fixed expiry pact-web can read off a
 // response - it's single-use and stays valid until pact-auth's underlying
 // session goes idle or hits its absolute cap (SESSION_IDLE_TTL_HOURS,
-// default 168h/7d as of PACT-727; see pact-auth/internal/app/config.go). We
+// default 168h/7d; see pact-auth/internal/app/config.go). We
 // can't mirror the short-lived session token's own expiry here - that would
 // make the refresh cookie vanish almost as fast as the session token it
-// exists to renew, defeating the point of PACT-705/PACT-726 for anyone who
+// exists to renew, defeating the point of refresh-token rotation for anyone who
 // returns after the token TTL but before the session itself goes idle.
 // Instead the cookie caps out at the idle-TTL default and slides forward on
 // every write (initial login, every rotation the gateway proxy performs,

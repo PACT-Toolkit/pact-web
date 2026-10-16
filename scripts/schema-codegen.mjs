@@ -8,7 +8,7 @@
  * `pnpm api:update`) into src/__codegen__/schema/pact-{topic}.
  *
  * pact.decisions also vendors a non-schema benign-label vocabulary
- * (schema/pact-decisions/benign_labels.json, PACT-574) alongside its JSON
+ * (schema/pact-decisions/benign_labels.json) alongside its JSON
  * Schema. That file isn't a JSON Schema, so it's a straight read-and-emit
  * rather than a json-schema-to-typescript compile, and only pact.decisions
  * carries it today.

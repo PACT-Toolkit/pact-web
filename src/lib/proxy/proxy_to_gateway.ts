@@ -15,7 +15,7 @@ import {
 // propagates a rotated session (new session/refresh token pair) back to the
 // browser cookie jar.
 //
-// Extracted under PACT-390/PACT-416: the rules publish/revoke endpoints
+// Extracted because the rules publish/revoke endpoints
 // shipped with no explicit proxy route, so requests fell through to
 // app/api/pact/[...path]/route.ts, which built the wrong upstream URL and
 // never did this cookie-to-Bearer translation at all. Every proxy route in
@@ -25,7 +25,7 @@ import {
 // the next new endpoint gets the translation for free instead of silently
 // falling back to the broken catch-all again.
 //
-// PACT-705: pact_refresh_token is now a real httpOnly cookie (set
+// pact_refresh_token is now a real httpOnly cookie (set
 // server-side at login/MFA-finish/OAuth-callback - see
 // src/framework/auth/pact_auth/cookies.ts's setSessionCookies), so this
 // proxy attaches it as X-Pact-Refresh-Token on every call rather than
@@ -82,7 +82,7 @@ const inFlightRefresh = new Map<string, Promise<RotatedPair | null>>();
 // rotation headers here (rather than leaving them for the caller to read
 // once) matters because this now runs twice on a follower's retry path -
 // forgetting it on either call would leak the refresh token to client JS,
-// exactly what PACT-705 moved off of.
+// exactly what the refresh-cookie rotation moved off of.
 const toProxyResponse = (upstream: Response): NextResponse => {
   const out = new Headers();
   upstream.headers.forEach((value, key) => {
@@ -145,7 +145,7 @@ export async function proxyToGateway(
     inFlightRefresh.set(session, promise);
   }
 
-  // Forward the end-user's client IP to pact-gateway (PACT-687). Same
+  // Forward the end-user's client IP to pact-gateway. Same
   // single-trusted-hop model as the pact-auth REST client
   // (src/framework/auth/pact_auth/client.ts): pact-gateway's rate limiter
   // (trustedProxyHops=1) reads only the right-most X-Forwarded-For entry,
@@ -160,7 +160,7 @@ export async function proxyToGateway(
 
   const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
 
-  // PACT-914: a follower attaches the pre-rotation bearer (the session
+  // A follower attaches the pre-rotation bearer (the session
   // cookie value is still the old one on the way in) and can come back 401
   // from pact-gateway while the leader is still redeeming the refresh
   // token - the session genuinely was near/past expiry, that's why a
@@ -215,7 +215,7 @@ export async function proxyToGateway(
   // back 401, or never rotated at all, there is nothing to retry with - the
   // 401 stands, same as today.
   //
-  // PACT-914 residual gap: a request that reaches this proxy after the
+  // Residual gap: a request that reaches this proxy after the
   // leader has already resolved (its inFlightRefresh entry deleted, see the
   // finally block above) but before the browser has stored the rotated
   // session cookie is not a follower at all - leaderPromise is undefined by

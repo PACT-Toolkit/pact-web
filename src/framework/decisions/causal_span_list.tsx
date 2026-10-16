@@ -1,5 +1,5 @@
 // Shared rendering for pact.decisions' diagnostics.causal_spans /
-// CheckResponse's diagnostics.causal_spans (PACT-734/745): a causal-replay
+// CheckResponse's diagnostics.causal_spans: a causal-replay
 // byte-range list with no text (PII avoidance by design), so both the audit
 // console (AuditDecisionInsights, reading DecisionPayload) and the Test Lab
 // layer detail (TestLabLayerDetail, reading LayerState) render it the exact
@@ -14,7 +14,7 @@ export const CausalSpanList = ({
   spans: { start?: number; end?: number }[];
   testId?: string;
   // False when the caller could not pin these spans to one pipeline stage
-  // (PACT-749, e.g. a cel_rule_fired/policy_token_denied block on the audit
+  // (e.g. a cel_rule_fired/policy_token_denied block on the audit
   // feed). Never fabricate a stage name in that case -- render a muted,
   // honest qualifier instead. Defaults to true so every pre-existing caller
   // (and Test Lab, whose layer.causalSpans are only ever set for the one

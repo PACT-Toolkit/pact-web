@@ -15,7 +15,7 @@ import {
 } from '@/src/app/audit/mock/data/audit';
 import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
 
-// PACT-464's maxAnnotationRequestIDs cap, mirrored from pact-gateway's
+// The maxAnnotationRequestIDs cap, mirrored from pact-gateway's
 // internal/features/audit/handler.go so the mock 400s the same input the
 // real gateway does.
 const MAX_ANNOTATION_REQUEST_IDS = 200;
@@ -62,7 +62,7 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json({ events: page, total: all.length });
   }),
 
-  // Answers POST /v1/audit/annotations (PACT-464/PACT-474). Error bodies use
+  // Answers POST /v1/audit/annotations. Error bodies use
   // HttpResponse.json(message, {status}) rather than HttpResponse.text --
   // the real gateway's error bodies are plain text (see this repo's
   // schema/audit/swagger.yaml PlainTextBadRequest response), but orval's
@@ -70,7 +70,7 @@ export const handlers: RequestHandler[] = [
   // status, which would throw on a genuinely unquoted plain-text body.
   // HttpResponse.json on a string JSON-encodes it (wraps it in quotes),
   // which JSON.parse can read back as that same string -- mirrors the same
-  // choice PACT-473's gateway.ts PATCH handler already made for this exact
+  // choice the gateway.ts PATCH handler already made for this exact
   // orval/plain-text mismatch.
   http.post('*/v1/audit/annotations', async ({ request }) => {
     const body = (await request.json()) as AuditAnnotateDecisionRequest;
@@ -103,7 +103,7 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json(response);
   }),
 
-  // Answers DELETE /v1/audit/annotations (PACT-834/PACT-835). Idempotent
+  // Answers DELETE /v1/audit/annotations. Idempotent
   // like the real RemoveDecisionAnnotation RPC -- removing an annotation
   // that was never flagged (or already un-flagged) is a 200 with
   // `removed: false`, not a 404. Same plain-text error-body shape as the
@@ -146,7 +146,7 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json(response);
   }),
 
-  // Answers POST /v1/audit/annotations/query (PACT-464/PACT-474). Not
+  // Answers POST /v1/audit/annotations/query. Not
   // offset-paginated -- returns every db.auditAnnotations row matching the
   // requested ids in one response, mirroring the real RPC's contract.
   http.post('*/v1/audit/annotations/query', async ({ request }) => {

@@ -31,7 +31,7 @@ const config = [
       // eslint-config-next populates - without this, import-x's valid
       // extensions default to ['.js', '.mjs', '.cjs'] and every import-x
       // rule that walks resolved files (no-cycle among them) silently skips
-      // .ts/.tsx (PACT-715).
+      // .ts/.tsx.
       'import-x/parsers': {
         '@typescript-eslint/parser': ['.ts', '.tsx', '.cts', '.mts'],
       },
@@ -155,7 +155,7 @@ const config = [
                 { to: { type: 'mocks' } },
               ],
             },
-            // ── Grandfathered cross-feature imports (PACT-573) ──────────
+            // ── Grandfathered cross-feature imports ──────────
             // These are the only 7 cross-feature import pairs that exist at
             // HEAD. New cross-feature imports beyond this closed list must
             // not be added here - extract shared code into a proper shared
@@ -169,7 +169,7 @@ const config = [
             // classifier and redactor used to appear here too, for the
             // shared decision-vocabulary types and helpers (DecisionPayload,
             // parseDecisionPayload, etc.) that lived in the audit slice -
-            // that vocabulary is promoted to src/lib/decisions (PACT-581),
+            // that vocabulary is promoted to src/lib/decisions,
             // which every feature may import unconditionally, so those two
             // pairs are gone from this closed list.
             {
@@ -224,8 +224,8 @@ const config = [
                 // src/framework/msw/msw_provider.tsx dynamically imports the
                 // central mocks/ entrypoint to bootstrap MSW in dev:mock mode
                 // (isMock()-guarded, dynamic so mocks stay out of the prod
-                // bundle). Not part of the PACT-573 spec's original matrix -
-                // the spec assumed framework->mocks was test-only; this
+                // bundle). Not part of the original matrix -
+                // which assumed framework->mocks was test-only; this
                 // static edge is the real, non-test import discovered while
                 // wiring the matrix. See PR description for detail.
                 { to: { type: 'mocks' } },
@@ -236,7 +236,7 @@ const config = [
               allow: [
                 { to: { type: 'lib' } },
                 // Generated types are leaves too, and src/lib/decisions
-                // (PACT-581) needs the pact-decisions codegen schema to
+                // needs the pact-decisions codegen schema to
                 // define the shared DecisionPayload vocabulary.
                 { to: { type: 'codegen' } },
               ],
@@ -258,8 +258,8 @@ const config = [
       // ── Imports ──────────────────────────────────────────────────────
       // Kept here (not as a `pnpm run lint:eslint` --rule CLI flag) because
       // pnpm on Windows shells the script through cmd.exe, which strips the
-      // single quotes around the flag's value and breaks the argument in two
-      // (PACT-711). A plain `eslint .` in package.json has no shell-quoting
+      // single quotes around the flag's value and breaks the argument in two.
+      // A plain `eslint .` in package.json has no shell-quoting
       // to mangle, so the rule lives in config instead.
       'import-x/no-cycle': ['error', { ignoreExternal: true, maxDepth: 4 }],
       'import-x/no-extraneous-dependencies': 'error',
@@ -319,7 +319,7 @@ const config = [
   },
   prettier,
   {
-    // Headless-domain enforcement (PACT-572): domain/ holds pure logic, API
+    // Headless-domain enforcement: domain/ holds pure logic, API
     // contracts, and hooks without JSX. Rendering never happens in domain/.
     files: ['src/app/*/domain/**/*.tsx'],
     rules: {

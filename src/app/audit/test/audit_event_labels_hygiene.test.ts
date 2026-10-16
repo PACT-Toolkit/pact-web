@@ -14,7 +14,7 @@ import {
   decodeFilesPayload,
 } from '@/src/app/audit/domain/audit_files_payload';
 
-// Drift guard for the hand-maintained *_EVENT_LABELS maps (PACT-369).
+// Drift guard for the hand-maintained *_EVENT_LABELS maps.
 // These maps have no compile-time link to the Go producers whose event
 // names they mirror -- a producer can add/rename/remove an event constant
 // and nothing here would notice until an operator saw a raw event id

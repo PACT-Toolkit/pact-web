@@ -70,9 +70,9 @@ const advanceJob = (job: MockJob) => {
         total_rows: TOTAL_ROWS,
         rows: [],
         // 100 attacks / 100 benign so true_positives/false_positives divide
-        // out to exactly the detection/fp rates above (PACT-932's confusion
+        // out to exactly the detection/fp rates above (the confusion
         // tiles on the live job progress card). throttled: 3 exercises the
-        // Throttled tile (PACT-942) on this same card - it's additive on
+        // Throttled tile on this same card - it's additive on
         // top of attacks/benign/errors, not carved out of them.
         counts: {
           attacks: 100,
@@ -88,14 +88,14 @@ const advanceJob = (job: MockJob) => {
   }
 };
 
-// PACT-465: the whole schema/benchmark orval group (this bulk-test surface
+// The whole schema/benchmark orval group (this bulk-test surface
 // included) moved from the direct pact-benchmark proxy
 // (${MSW_PACT_BASE}/benchmark/v1/...) onto the gateway edge proxy, mirroring
 // schema/filter's baseUrl convention. Bulk-test jobs/runs are unrelated to
-// PACT-465's Test Lab corpus/run-history scope but share the same
+// the Test Lab corpus/run-history scope but share the same
 // pact-gateway swagger tag, so their generated hook URLs moved too -- these
 // mock paths follow. The old duplicate corpus-save handler that used to live
-// here (returning the pre-PACT-315 {corpus_version} shape) was dead code --
+// here (returning the old {corpus_version} shape) was dead code --
 // src/app/test_lab/mock/handlers/test_lab.ts's handler always shadowed it --
 // and is dropped rather than moved.
 export const handlers: RequestHandler[] = [

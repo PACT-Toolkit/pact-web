@@ -18,7 +18,7 @@ import {
 } from '@/src/components/ui/card';
 import { StatTile } from '@/src/framework/components/stat_tile';
 
-// Live view over GET /v1/config (pact-gateway PACT-320, PR #88): the
+// Live view over GET /v1/config (pact-gateway): the
 // enforcement posture that determines how the pipeline classifies and blocks
 // traffic. Auth-gated, no secrets -- see gateway_config.ts's docblock. This
 // is the section the other three /gateway sections (sandbox/diagnostics/
@@ -27,7 +27,7 @@ import { StatTile } from '@/src/framework/components/stat_tile';
 // here without a manual page reload.
 //
 // Classifier/vector enforce mode and consensus mode are live-writable via
-// PACT-472's PATCH /v1/config/enforcement (PACT-473) -- see
+// the PATCH /v1/config/enforcement -- see
 // GatewayEnforcementControls for the segmented controls, optimistic write,
 // and confirm-before-enforce flow. This override is not persisted: a
 // gateway restart reverts to its env defaults, which the controls' footer

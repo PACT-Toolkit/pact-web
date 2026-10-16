@@ -1,7 +1,7 @@
 import { getGatewayBaseUrl } from '@/src/lib/proxy/gateway_url';
 
 // Redeems a pact_refresh_token cookie value against pact-gateway's
-// bearer-less POST /v1/auth/session/refresh (added for PACT-726) and returns
+// bearer-less POST /v1/auth/session/refresh (added for silent renewal) and returns
 // the new session/refresh pair, or null if the token was missing, invalid,
 // expired, or already used (pact-gateway answers all of those with a plain
 // 400/401 body - see internal/features/auth/handler.go - so both statuses

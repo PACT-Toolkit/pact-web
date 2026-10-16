@@ -1,6 +1,6 @@
 // pact-gateway's boundary middleware returns a non-2xx body that is either
 // a plain string or a structured boundary.ErrorResponse ({ code, error }),
-// depending on the endpoint (PACT-868 corrected several endpoints -- auth's
+// depending on the endpoint (several endpoints were corrected -- auth's
 // 401s, filter/policy's 503/504, classifier's 503/504 -- from the plain
 // string shape to the structured one; see each service's swagger.yaml
 // under schema/). Every orval-generated REST slice re-declares its own

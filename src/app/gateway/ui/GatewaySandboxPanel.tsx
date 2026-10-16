@@ -17,8 +17,8 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 
-// Ad-hoc sandbox / indirect-injection probe (PACT-236 re-scan, PACT-327
-// console). Sourced live from POST /v1/check's external_refs response, not
+// Ad-hoc sandbox / indirect-injection probe (external_refs re-scan).
+// Sourced live from POST /v1/check's external_refs response, not
 // the pact.decisions audit feed -- see gateway_sandbox.ts's docblock for why
 // (the audit event deliberately excludes purified_content). Same
 // ad-hoc-test-panel shape as ClassifierTestPanel/RedactorTestPanel.

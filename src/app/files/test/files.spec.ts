@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
-// PACT-924: the presigned upload target (mock-object-storage.local) is now
+// The presigned upload target (mock-object-storage.local) is now
 // answered by the global files MSW handlers, so a real click-through upload
 // completes end to end in dev:mock instead of hanging on the PUT step.
 test.describe('Files workbench', () => {
@@ -20,7 +20,7 @@ test.describe('Files workbench', () => {
     await page.getByTestId('files-upload-input').setInputFiles({
       name: fileName,
       mimeType: 'text/plain',
-      buffer: Buffer.from('hello from PACT-924'),
+      buffer: Buffer.from('hello from the upload test'),
     });
 
     const newRow = page.getByTestId('files-row').filter({ hasText: fileName });

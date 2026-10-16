@@ -30,7 +30,7 @@ const TEST_LAB_RUN_DECISION_VALUES = new Set(['allow', 'block']);
 const TEST_LAB_RUN_STATUS_VALUES = new Set(['ok', 'error']);
 
 // validateSaveTestLabRunBody mirrors pact-gateway's POST
-// /v1/benchmark/testlab/runs validation (PACT-595: failed-run support,
+// /v1/benchmark/testlab/runs validation (failed-run support,
 // schema/benchmark/swagger.yaml SaveTestLabRunRequest). content is always
 // required (internal/features/benchmark/handler.go's saveTestLabRun:
 // `req.Content == ""` -> "content is required"). Status defaults to "ok"
@@ -86,7 +86,7 @@ export const handlers: RequestHandler[] = [
     const content = body.content ?? '';
     const bypass = body._bypass_layers ?? [];
 
-    // Mirrors pact-gateway's validateTrafficSource (PACT-484): a declared
+    // Mirrors pact-gateway's validateTrafficSource: a declared
     // traffic_source must match the decisions schema's pattern or the whole
     // request is rejected before any stage runs.
     const trafficSource = body.traffic_source;
@@ -99,8 +99,7 @@ export const handlers: RequestHandler[] = [
 
     await new Promise((r) => setTimeout(r, 120 + Math.random() * 80));
 
-    // Reads the single stateful db.gatewayConfig row (PACT-473 made this
-    // stateful so PATCH /v1/config/enforcement has something to mutate) --
+    // Reads the single stateful db.gatewayConfig row (made stateful so PATCH /v1/config/enforcement has something to mutate) --
     // sandboxEnabled/diagnosticsEnabled/spotlightFormat aren't PATCH-writable
     // fields, so this is equivalent to the old static-constant read, just
     // sourced from the one shared row instead of a second copy.
@@ -116,7 +115,7 @@ export const handlers: RequestHandler[] = [
     // range s.stages { halt, err := st.run(...); if halt { break } }") --
     // each stage below only runs once `blocked` is still false, exactly like
     // the real Check loop stopping at the first halting stage. This is what
-    // makes dev:mock a faithful fixture for PACT-702's reason-driven
+    // makes dev:mock a faithful fixture for the reason-driven
     // attribution logic (test_lab_check.ts's applyLiveLayers) rather than a
     // parallel computation that could drift from real halt behaviour.
     let blocked = false;
@@ -156,7 +155,7 @@ export const handlers: RequestHandler[] = [
       // gateway's DeferConsensusVote path) -- never blocks inline.
     }
 
-    // Stage 3: sandbox re-scan (PACT-236/327). Only runs if nothing upstream
+    // Stage 3: sandbox re-scan. Only runs if nothing upstream
     // already halted the pipeline, same as the real gateway.
     const externalRefsResult = !blocked
       ? runSandboxProbe(
@@ -178,10 +177,10 @@ export const handlers: RequestHandler[] = [
     // DOES run, not that it runs after an already-halted pipeline. Shared
     // with createRedactorMockData's seed data via
     // redactor/mock/data/redactor.ts so /redactor's ad-hoc test panel
-    // (PACT-324) exercises the same detection logic as the live console.
+    // exercises the same detection logic as the live console.
     const redactorResult = !blocked ? runRedactor(content) : undefined;
 
-    // Stage 5 (virtual, PACT-757): the CEL rule engine, evaluated after
+    // Stage 5 (virtual): the CEL rule engine, evaluated after
     // every visualised stage per BLOCKING_STAGE_OF's comment in
     // test_lab_check.ts -- only reached if nothing upstream already
     // blocked. A fired CEL rule is deliberately never attributed to a
@@ -195,7 +194,7 @@ export const handlers: RequestHandler[] = [
 
     const decision = blocked ? 'block' : 'allow';
 
-    // Diagnostics (PACT-303/327): the causal-diagnostic harness only ever
+    // Diagnostics: the causal-diagnostic harness only ever
     // replays a block decision, and only when the gateway build has it
     // enabled. filterMatchPattern/celMatchPattern resolve the exact pattern
     // the filter/CEL stage matched so the span lines up with the submitted
@@ -213,7 +212,7 @@ export const handlers: RequestHandler[] = [
       decision === 'block'
     );
 
-    // Spotlight (PACT-327): populated on the allow path only, mirroring the
+    // Spotlight: populated on the allow path only, mirroring the
     // swagger contract ("Populated on allow path only").
     const spotlightResult =
       decision === 'allow'
@@ -254,7 +253,7 @@ export const handlers: RequestHandler[] = [
           ? { label: classifierResult.label, score: classifierResult.score }
           : undefined,
         redactor: redactorResult,
-        // PACT-758: a fired CEL rule stamps the audit event's `cel`
+        // A fired CEL rule stamps the audit event's `cel`
         // sub-object -- absent on the /v1/check response (see runCelRules's
         // doc comment) but present on the pact.decisions Kafka payload,
         // mirroring the audit feed's own req-i7j8k9 fixture
@@ -268,7 +267,7 @@ export const handlers: RequestHandler[] = [
               fired_count: 1,
             }
           : undefined,
-        // PACT-757: mirror the response body's diagnostics field (below) so
+        // Mirror the response body's diagnostics field (below) so
         // a dev:mock audit row carries the same causal_spans a live gateway
         // would emit -- this was previously dropped, so a Test Lab probe's
         // seeded decisions.ts row never matched what /v1/check actually
@@ -310,7 +309,7 @@ export const handlers: RequestHandler[] = [
             duration_ms: 12 + Math.random() * 22,
           }
         : undefined,
-      // PACT-682/623: Ran is the dedicated presence signal, set alongside
+      // Ran is the dedicated presence signal, set alongside
       // Duration -- consensus never rendering-relevant unless it actually
       // voted inline.
       consensus: consensusRan
@@ -328,7 +327,7 @@ export const handlers: RequestHandler[] = [
     });
   }),
 
-  // PACT-465: corpus save + run-history save/list moved from the direct
+  // Corpus save + run-history save/list moved from the direct
   // pact-benchmark proxy (${MSW_PACT_BASE}/benchmark/v1/...) onto the gateway
   // edge proxy, matching the schema/benchmark orval group's new baseUrl.
   http.post(

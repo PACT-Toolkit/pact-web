@@ -2,7 +2,7 @@ import { type ClassifierLabelVerdictRequest } from '@/src/__codegen__/rest/class
 
 // The gateway's classifier.LabelVerdictRequest.operatorLabel enum also
 // accepts "agree" (operator confirms the verdict was correct), but this
-// ad-hoc test panel (PACT-322 part 2) only offers the two correction
+// ad-hoc test panel only offers the two correction
 // actions -- there is no "confirm" affordance here, same as the
 // redactor/consensus consoles never offer a "this was right" button.
 export type OperatorLabelAction = 'false_positive' | 'false_negative';
@@ -54,11 +54,11 @@ export interface BuildLabelVerdictRequestParams {
 }
 
 // Builds the POST /v1/classifier/label body. `content` is required both by
-// the generated ClassifierLabelVerdictRequest type (PACT-456/commit bf2c77c
-// caught the OpenAPI spec's `required` list up to this) and, more strictly,
+// the generated ClassifierLabelVerdictRequest type (the OpenAPI spec's
+// `required` list was caught up to this) and, more strictly,
 // by the handler at runtime, which also 400s without requestId,
 // predictedLabel, or operatorLabel -- none of which the spec declares
-// required yet (a remaining gateway doc gap tracked as PACT-448; see
+// required yet (a remaining gateway doc gap; see
 // pact-gateway internal/features/classifier/handler.go's labelVerdict).
 // note is intentionally omitted: this panel doesn't collect free text.
 export const buildLabelVerdictRequest = (

@@ -25,7 +25,7 @@ const renderDetail = (layer: LayerState) =>
     ) as ReactNode
   );
 
-describe('TestLabLayerDetail causal spans (PACT-745)', () => {
+describe('TestLabLayerDetail causal spans', () => {
   it('lists offset ranges when causalSpans is present and non-empty', () => {
     renderDetail(
       baseLayer({

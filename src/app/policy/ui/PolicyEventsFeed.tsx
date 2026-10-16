@@ -20,10 +20,9 @@ import { formatPercentValue } from '@/src/framework/format/format_percent';
 import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 // Live view over the caller's pact.policy decisions (GET
-// /v1/audit/policy-events, PACT-306): one row per capability-token
+// /v1/audit/policy-events): one row per capability-token
 // evaluation the gateway ran during a /v1/check request. Populated once
-// pact-audit consumes the pact.policy topic (PACT-308, in flight in
-// another lane) -- an empty feed in the meantime is expected, not a bug.
+// pact-audit consumes the pact.policy topic -- an empty feed in the meantime is expected, not a bug.
 // Auto-refreshes every 30s, same cadence as ClassifierWorkbench and the
 // other pact.decisions consoles.
 export const PolicyEventsFeed = () => {

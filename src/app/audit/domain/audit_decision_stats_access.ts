@@ -10,7 +10,7 @@ import {
 // versus every other outcome. Shared by the two consumers of the decision
 // stats aggregate -- useDashboardPipelineStats (dashboard) and
 // useFilterDecisionStats (filter workbench) -- so both react identically to
-// PACT-363's audit:stats permission gate: stop polling a permanently
+// the audit:stats permission gate: stop polling a permanently
 // forbidden endpoint and render a permission-aware empty state instead of a
 // raw error banner.
 //
@@ -34,8 +34,8 @@ export const isDecisionStatsForbidden = (value: unknown): boolean => {
 
 // Classifies a resolved GET /v1/audit/stats response as a failure that is
 // neither a success (any 2xx) nor the already-handled permission gate (403)
-// -- e.g. a stale bearer racing a session rotation coming back 401
-// (PACT-914), or a 5xx. Before this, only exactly 200 counted as success:
+// -- e.g. a stale bearer racing a session rotation coming back 401,
+// or a 5xx. Before this, only exactly 200 counted as success:
 // any other 2xx (e.g. a 204 on an empty aggregate) was misclassified as a
 // failure. And before that, only the 403 case was special-cased at all: any
 // other non-200 status silently normalized to EMPTY_DECISION_STATS with no
@@ -92,7 +92,7 @@ export const decisionStatsPollingConfig = (
 });
 
 // GET /v1/audit/stats is now served from pact-gateway's generated per-tag
-// OpenAPI slice (PACT-706), which has no `required:` markers -- every field
+// OpenAPI slice, which has no `required:` markers -- every field
 // on AuditQueryDecisionStatsResponse and its sub-objects is optional, even
 // though pact-gateway's DTOs never actually omit them. Both consumers
 // (useDashboardPipelineStats, useFilterDecisionStats) want a fully-populated

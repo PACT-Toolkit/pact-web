@@ -17,13 +17,13 @@ describe('isStageAttributed', () => {
   );
 
   it.each(['policy', 'gateway', 'cel'] as const)(
-    'is false for engine=%s (no visualised-stage mapping, PACT-749)',
+    'is false for engine=%s (no visualised-stage mapping)',
     (engine) => {
       expect(isStageAttributed({ decision: 'block', engine })).toBe(false);
     }
   );
 
-  it('is false when engine is absent entirely (pre-PACT-745 payloads)', () => {
+  it('is false when engine is absent entirely (older payloads)', () => {
     expect(isStageAttributed({ decision: 'block' })).toBe(false);
   });
 
