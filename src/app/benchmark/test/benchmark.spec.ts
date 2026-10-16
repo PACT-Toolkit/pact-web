@@ -142,6 +142,34 @@ test.describe('Benchmark latency, corpus composition, and comparison charts', ()
     ).not.toBeVisible();
   });
 
+  // run-11 left 300 of its 2,000 rows unscored (15.0%), over the 10% limit:
+  // its rates are n/a with no delta, and the flag names the share. The
+  // default pair (run-6, run-8) is within the limit and shows no flag.
+  test('flags a candidate over the unscored limit as not quotable', async ({
+    page,
+  }) => {
+    await expect(
+      page.getByTestId('benchmark-comparison-unscored')
+    ).not.toBeVisible();
+
+    await page
+      .getByTestId('benchmark-compare-candidate')
+      .selectOption('run-11');
+
+    await expect(
+      page.getByTestId('benchmark-comparison-unscored')
+    ).toContainText('Candidate: 15.0% of rows unscored');
+    await expect(
+      page.getByTestId('benchmark-comparison-corpus-mismatch')
+    ).not.toBeVisible();
+
+    const detectionCells = page
+      .locator('tbody tr', { hasText: 'Detection rate' })
+      .locator('td');
+    await expect(detectionCells.nth(2)).toHaveText('n/a'); // candidate
+    await expect(detectionCells.nth(3)).toHaveText('n/a'); // delta
+  });
+
   // Covers PACT-992: run-9 is an attack-free 2508-row Hub import on its own
   // corpus hash - picking it as the candidate must both warn that the
   // corpora differ and null out the (otherwise meaningless 0/0) detection
@@ -179,13 +207,18 @@ test.describe('Benchmark latency, corpus composition, and comparison charts', ()
     const toggle = page.getByTestId('benchmark-trend-range-toggle');
     await expect(toggle).toBeVisible();
 
-    await toggle.getByRole('button', { name: '7d', exact: true }).click();
-    // Longer timeout than the default 5s: this click re-renders both the
-    // trend and latency charts (two Recharts LineCharts) in the same commit,
-    // which can outrun the default window under CPU load.
-    await expect(
-      toggle.getByRole('button', { name: '7d', exact: true })
-    ).toHaveAttribute('aria-pressed', 'true', { timeout: 15000 });
+    // Retry the click with its assertion: under the dev server a click that
+    // lands before the toggle's handler is hydrated is silently dropped, and
+    // the button then never reports itself pressed. The longer timeout (vs
+    // the default 5s) covers the click re-rendering both the trend and
+    // latency charts (two Recharts LineCharts) in the same commit, which can
+    // outrun the default window under CPU load.
+    await expect(async () => {
+      await toggle.getByRole('button', { name: '7d', exact: true }).click();
+      await expect(
+        toggle.getByRole('button', { name: '7d', exact: true })
+      ).toHaveAttribute('aria-pressed', 'true', { timeout: 2000 });
+    }).toPass({ timeout: 20000 });
 
     // Both charts stay mounted and keep painting after the range narrows -
     // proves the lifted state actually reaches both consumers, not just one.
@@ -353,6 +386,19 @@ test.describe('Benchmark confusion tiles on a completed job', () => {
     await expect(
       page.getByTestId('benchmark-confusion-throttled')
     ).toContainText('3');
+    // unscored: 3, also excluded from attacks/benign/errors above - the same
+    // three rows the results table marks "unscored" (rows 4, 11 and 38).
+    await expect(
+      page.getByTestId('benchmark-confusion-unscored')
+    ).toContainText('3');
+    // Rows 4 and 11 sit on the first page of 20.
+    await expect(
+      page
+        .getByRole('table', { name: 'Per-row verdicts' })
+        .getByText('unscored', {
+          exact: true,
+        })
+    ).toHaveCount(2);
   });
 });
 

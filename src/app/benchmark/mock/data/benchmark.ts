@@ -4,6 +4,13 @@ import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
 
 export const TOTAL_ROWS = 200;
 
+// Rows the gateway answered with a fail-open allow because the classifier gave
+// no verdict. Spread across the first pages so the results table shows the
+// "unscored" marker without paging; MOCK_UNSCORED_ROW_COUNT feeds the mock
+// job's counts so the Unscored tile agrees with the table.
+const MOCK_UNSCORED_ROW_INDEXES: ReadonlySet<number> = new Set([4, 11, 38]);
+export const MOCK_UNSCORED_ROW_COUNT = MOCK_UNSCORED_ROW_INDEXES.size;
+
 // expected_label/decision mirror the real gateway/pact-benchmark contract
 // (lowercase "allow"/"block" - see pact-benchmark's runner/corpus.py and
 // runner/runner.py). Most rows are correct (decision matches expected); every
@@ -20,11 +27,16 @@ export const MOCK_ROWS: RowResult[] = Array.from(
         ? 'allow'
         : 'block';
 
+    const unscored = MOCK_UNSCORED_ROW_INDEXES.has(i);
+
     return {
       row_id: `row-${String(i).padStart(3, '0')}`,
       expected_label: expected,
-      decision,
+      // An unscored row's decision is the gateway's fail-open allow, whatever
+      // the expected label was - the classifier produced no verdict.
+      decision: unscored ? 'allow' : decision,
       latency_ms: 10 + (i % 40) + Math.round((i * 1.3) % 10) / 10,
+      unscored,
     };
   }
 );
@@ -118,6 +130,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       false_positives: 1,
       true_positives: 56,
       throttled: 0,
+      unscored: 0,
     },
     per_category: [
       {
@@ -129,6 +142,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         errors: 0,
         fp: 0,
         throttled: 0,
+        unscored: 0,
       },
       {
         category: 'password-extraction',
@@ -139,6 +153,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         errors: 1,
         fp: 0,
         throttled: 0,
+        unscored: 0,
       },
       {
         category: 'benign-chat',
@@ -149,6 +164,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         errors: 0,
         fp: 1,
         throttled: 0,
+        unscored: 0,
       },
       {
         category: 'mixed-injection',
@@ -159,6 +175,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         errors: 0,
         fp: 0,
         throttled: 0,
+        unscored: 0,
       },
     ],
     // Stub-engine runs skip the sandbox stage - only these four layers run,
@@ -188,6 +205,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       false_positives: 0,
       true_positives: 68,
       throttled: 0,
+      unscored: 0,
     },
     per_category: [
       {
@@ -199,6 +217,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         errors: 0,
         fp: 0,
         throttled: 0,
+        unscored: 0,
       },
       {
         category: 'password-extraction',
@@ -209,6 +228,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         errors: 0,
         fp: 0,
         throttled: 0,
+        unscored: 0,
       },
       {
         category: 'jailbreak',
@@ -219,6 +239,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         errors: 0,
         fp: 0,
         throttled: 0,
+        unscored: 0,
       },
       {
         category: 'benign-roleplay',
@@ -229,6 +250,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         errors: 0,
         fp: 0,
         throttled: 0,
+        unscored: 0,
       },
     ],
     // deberta runs add the sandbox stage - listed here in a different
@@ -266,6 +288,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       false_positives: 0,
       true_positives: 74,
       throttled: 5,
+      unscored: 0,
     },
     per_category: [
       {
@@ -277,6 +300,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         errors: 0,
         fp: 0,
         throttled: 2,
+        unscored: 0,
       },
       {
         category: 'password-extraction',
@@ -287,6 +311,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         errors: 1,
         fp: 0,
         throttled: 0,
+        unscored: 0,
       },
       {
         category: 'mixed-injection',
@@ -297,6 +322,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         errors: 0,
         fp: 0,
         throttled: 3,
+        unscored: 0,
       },
       {
         category: 'benign-chat',
@@ -307,6 +333,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         errors: 0,
         fp: 0,
         throttled: 0,
+        unscored: 0,
       },
     ],
     per_layer: [
@@ -315,6 +342,74 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       { layer: 'sandbox', p50_ms: 50, p99_ms: 180, samples: 100 },
       { layer: 'redactor', p50_ms: 12, p99_ms: 30, samples: 100 },
       { layer: 'consensus', p50_ms: 5, p99_ms: 12, samples: 100 },
+    ],
+  },
+  // A run whose classifier gave no verdict on 15 % of its rows (300 of 2,000):
+  // over the 10 % limit, so the comparison card flags its rates as not
+  // quotable. Placed between run-7 and the older runs so run-8 stays the
+  // newest run (the charts' default candidate); same corpus as run-7/run-8 so
+  // picking it never trips the different-corpora warning instead.
+  {
+    id: 'run-11',
+    gateway_version: 'v0.5.1',
+    engine: 'deberta',
+    corpus_version: 'seed-v2.jsonl',
+    detection_rate: 0.93,
+    fp_rate: 0.03,
+    p50_latency: 440,
+    p99_latency: 1350,
+    row_count: 2000,
+    ran_at: NOW - 5 * DAY,
+    counts: {
+      attacks: 1000,
+      benign: 700,
+      errors: 0,
+      false_positives: 21,
+      true_positives: 930,
+      throttled: 0,
+      unscored: 300,
+    },
+    per_category: [
+      {
+        category: 'prompt-hacking',
+        attacks: 600,
+        benign: 0,
+        detected: 560,
+        entries: 700,
+        errors: 0,
+        fp: 0,
+        throttled: 0,
+        unscored: 100,
+      },
+      {
+        category: 'password-extraction',
+        attacks: 400,
+        benign: 0,
+        detected: 370,
+        entries: 500,
+        errors: 0,
+        fp: 0,
+        throttled: 0,
+        unscored: 100,
+      },
+      {
+        category: 'benign-chat',
+        attacks: 0,
+        benign: 700,
+        detected: 0,
+        entries: 800,
+        errors: 0,
+        fp: 21,
+        throttled: 0,
+        unscored: 100,
+      },
+    ],
+    per_layer: [
+      { layer: 'filter', p50_ms: 6, p99_ms: 15, samples: 1700 },
+      { layer: 'classifier', p50_ms: 330, p99_ms: 1020, samples: 1700 },
+      { layer: 'sandbox', p50_ms: 42, p99_ms: 155, samples: 1700 },
+      { layer: 'redactor', p50_ms: 10, p99_ms: 26, samples: 1700 },
+      { layer: 'consensus', p50_ms: 4, p99_ms: 11, samples: 1700 },
     ],
   },
   // PACT-992: two runs added purely for the comparison card's guardrails -
@@ -343,6 +438,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       false_positives: 1698,
       true_positives: 0,
       throttled: 0,
+      unscored: 0,
     },
   },
   {
@@ -363,6 +459,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       false_positives: 0,
       true_positives: 5,
       throttled: 0,
+      unscored: 0,
     },
   },
 ];

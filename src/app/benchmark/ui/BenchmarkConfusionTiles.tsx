@@ -23,7 +23,7 @@ export const BenchmarkConfusionTiles = ({
 
   return (
     <div
-      className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6"
+      className="grid grid-cols-2 gap-4 sm:grid-cols-4"
       data-testid="benchmark-confusion-tiles"
     >
       <StatTile
@@ -64,6 +64,14 @@ export const BenchmarkConfusionTiles = ({
         valueClass={confusion.throttled > 0 ? 'text-warning' : undefined}
         secondaryText={formatMetric(confusion.throttledRate, 'percent')}
         testId="benchmark-confusion-throttled"
+      />
+      <StatTile
+        label="Unscored"
+        value={confusion.unscored}
+        valueClass={confusion.unscored > 0 ? 'text-warning' : undefined}
+        secondaryText={`${formatMetric(confusion.unscoredRate, 'percent')} · classifier gave no verdict, excluded from the rates`}
+        className="col-span-2"
+        testId="benchmark-confusion-unscored"
       />
     </div>
   );
