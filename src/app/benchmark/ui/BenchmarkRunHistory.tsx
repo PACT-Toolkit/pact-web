@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
+import { benchmarkRunRowsHref } from '@/src/app/benchmark/domain/benchmark_run_rows';
 import { formatRunTimestamp } from '@/src/app/benchmark/domain/benchmark_trend';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
 import {
@@ -128,7 +129,7 @@ export const BenchmarkRunHistory = ({
                       </td>
                       <td className="px-3 py-2 text-right">
                         <Link
-                          href={`/benchmark/runs/${encodeURIComponent(run.id)}`}
+                          href={benchmarkRunRowsHref(run.id)}
                           className="text-sm font-medium underline-offset-4 hover:underline"
                           aria-label={`View rows of the ${run.engine} run from ${formatRunTimestamp(run.ran_at)}`}
                         >

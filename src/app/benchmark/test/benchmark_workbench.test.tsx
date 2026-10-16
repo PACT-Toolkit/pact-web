@@ -47,7 +47,10 @@ const uploadCorpusFile = async () => {
   );
 };
 
-describe('BenchmarkWorkbench submitting state', () => {
+// Both tests render the whole workbench and drive it through the mock
+// handlers, which takes about two seconds each on an idle machine and
+// crossed the 5 s default when the full suite ran in parallel workers.
+describe('BenchmarkWorkbench submitting state', { timeout: 15_000 }, () => {
   it('leaves the upload button label unchanged while the import card submits', async () => {
     renderWorkbench();
     await inspectImportDataset('deepset/prompt-injections');
