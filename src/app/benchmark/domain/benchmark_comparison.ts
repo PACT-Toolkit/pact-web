@@ -1,3 +1,4 @@
+import { deriveConfusionCounts } from '@/src/app/benchmark/domain/benchmark_confusion';
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
 import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
 import {
@@ -76,18 +77,50 @@ function classifyDelta(delta: number, goal: MetricGoal): DeltaDirection {
 }
 
 /**
- * Whether a run's detection rate has a real denominator (attack rows > 0).
- * A run persisted before the count breakdown existed carries no `counts` at
- * all - keep today's behaviour for those and treat the rate as defined
- * rather than guessing from row_count.
+ * The largest share of a run's rows that may be unscored (the classifier gave
+ * no verdict) before its rates stop being quotable - the same 10 % the
+ * release promote gate applies. A share exactly at the limit is still
+ * quotable.
  */
-export function detectionRateDefined(run: BenchmarkRun): boolean {
-  return run.counts === undefined || run.counts.attacks > 0;
+export const UNSCORED_SHARE_LIMIT = 0.1;
+
+/**
+ * Fraction (0-1) of every row the run touched that was unscored. A run
+ * persisted before the count breakdown existed carries no `counts` and
+ * reports 0, same as a run whose `counts` predate the unscored field.
+ */
+export function unscoredShare(run: BenchmarkRun): number {
+  return run.counts ? deriveConfusionCounts(run.counts).unscoredRate : 0;
 }
 
-/** Whether a run's false-positive rate has a real denominator (benign rows > 0). */
+/** Whether too many of a run's rows went unscored for its rates to be quoted. */
+export function unscoredShareExceedsLimit(run: BenchmarkRun): boolean {
+  return unscoredShare(run) > UNSCORED_SHARE_LIMIT;
+}
+
+/**
+ * Whether a run's detection rate has a real denominator (attack rows > 0)
+ * and is quotable (unscored share within the limit). A run persisted before
+ * the count breakdown existed carries no `counts` at all - keep today's
+ * behaviour for those and treat the rate as defined rather than guessing
+ * from row_count.
+ */
+export function detectionRateDefined(run: BenchmarkRun): boolean {
+  return (
+    (run.counts === undefined || run.counts.attacks > 0) &&
+    !unscoredShareExceedsLimit(run)
+  );
+}
+
+/**
+ * Whether a run's false-positive rate has a real denominator (benign rows >
+ * 0) and is quotable (unscored share within the limit).
+ */
 export function fpRateDefined(run: BenchmarkRun): boolean {
-  return run.counts === undefined || run.counts.benign > 0;
+  return (
+    (run.counts === undefined || run.counts.benign > 0) &&
+    !unscoredShareExceedsLimit(run)
+  );
 }
 
 function rateDefined(key: MetricDef['key'], run: BenchmarkRun): boolean {
@@ -120,6 +153,28 @@ export function corporaMismatched(
   candidate: BenchmarkRun
 ): boolean {
   return baseline.corpus_version !== candidate.corpus_version;
+}
+
+/**
+ * One sentence per compared run whose unscored share is over the limit,
+ * naming the run's role and share, so the comparison view can say why the
+ * delta is not quotable. Empty when both runs are within the limit.
+ */
+export function unscoredNotQuotableReasons(
+  baseline: BenchmarkRun,
+  candidate: BenchmarkRun
+): string[] {
+  return (
+    [
+      ['Baseline', baseline],
+      ['Candidate', candidate],
+    ] as const
+  )
+    .filter(([, run]) => unscoredShareExceedsLimit(run))
+    .map(
+      ([role, run]) =>
+        `${role}: ${formatMetric(unscoredShare(run), 'percent')} of rows unscored (limit ${formatMetric(UNSCORED_SHARE_LIMIT, 'percent')}) - detection and false-positive rates are not quotable.`
+    );
 }
 
 /** Build the per-metric comparison rows for a baseline → candidate pair. */

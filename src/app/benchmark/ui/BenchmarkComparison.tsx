@@ -10,6 +10,7 @@ import {
   defaultComparisonPair,
   formatRate,
   runOptionLabel,
+  unscoredNotQuotableReasons,
   type DeltaDirection,
 } from '@/src/app/benchmark/domain/benchmark_comparison';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
@@ -99,6 +100,10 @@ const BenchmarkComparisonPanel = () => {
   const deltaBars = useMemo(() => comparisonDeltaBars(metrics), [metrics]);
   const mismatchedCorpora =
     baseline && candidate ? corporaMismatched(baseline, candidate) : false;
+  const unscoredReasons =
+    baseline && candidate
+      ? unscoredNotQuotableReasons(baseline, candidate)
+      : [];
 
   // The category/stage charts below only need one run, not a baseline+candidate
   // pair, so they fall back to the newest run even when there aren't enough
@@ -151,6 +156,20 @@ const BenchmarkComparisonPanel = () => {
                   <TriangleAlert />
                   <AlertDescription>
                     Different corpora - rates are not comparable.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {unscoredReasons.length > 0 && (
+                <Alert
+                  variant="warning"
+                  data-testid="benchmark-comparison-unscored"
+                >
+                  <TriangleAlert />
+                  <AlertDescription>
+                    {unscoredReasons.map((reason) => (
+                      <p key={reason}>{reason}</p>
+                    ))}
                   </AlertDescription>
                 </Alert>
               )}

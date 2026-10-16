@@ -51,6 +51,28 @@ export interface CategoryChartPoint {
   errors: number;
   /** Rows in this category shed by the gateway's rate limiter (PACT-933). See benchmark_confusion.ts. */
   throttled: number;
+  /** Rows in this category the classifier gave no verdict on (fail-open allow). See benchmark_confusion.ts. */
+  unscored: number;
+  /**
+   * Bar-end annotation for the detection bar: the non-zero throttled count
+   * and, for a category with attack rows, the unscored count
+   * ("2 thr · 4 unscored"). Empty when there is nothing to show.
+   */
+  detectionNote: string;
+  /**
+   * Bar-end annotation for the FP bar: the non-zero error count and, for a
+   * category with no attack rows (whose detection bar is empty), the
+   * unscored count ("1 err · 4 unscored").
+   */
+  fpNote: string;
+}
+
+/** Join the non-zero `[count, suffix]` pairs as "<count> <suffix>" segments. */
+function countNote(parts: readonly (readonly [number, string])[]): string {
+  return parts
+    .filter(([count]) => count > 0)
+    .map(([count, suffix]) => `${count} ${suffix}`)
+    .join(' · ');
 }
 
 /**
@@ -73,6 +95,9 @@ export function categoryChartData(
       const fpRate =
         c.benign > 0 ? roundToOneDecimalPercent(c.fp / c.benign) : 0;
 
+      const throttled = c.throttled ?? 0;
+      const unscored = c.unscored ?? 0;
+
       return {
         category: c.category,
         detectionRate,
@@ -91,7 +116,20 @@ export function categoryChartData(
         // Coalesced to 0 for the same reason deriveConfusionCounts does -
         // a category persisted before PACT-933 won't carry it on the wire
         // despite the generated type marking it required.
-        throttled: c.throttled ?? 0,
+        throttled,
+        // Coalesced for the same reason: a category persisted before the
+        // gateway reported unscored rows won't carry the field.
+        unscored,
+        // An unscored row's label is unknown (attacks/benign exclude it), so
+        // the count rides on whichever bar the category actually draws.
+        detectionNote: countNote([
+          [throttled, 'thr'],
+          [c.attacks > 0 ? unscored : 0, 'unscored'],
+        ]),
+        fpNote: countNote([
+          [c.errors, 'err'],
+          [c.attacks > 0 ? 0 : unscored, 'unscored'],
+        ]),
       };
     });
 }

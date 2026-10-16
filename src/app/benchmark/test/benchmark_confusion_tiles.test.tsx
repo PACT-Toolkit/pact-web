@@ -25,6 +25,7 @@ describe('BenchmarkConfusionTiles', () => {
             false_positives: 4,
             true_positives: 93,
             throttled: 0,
+            unscored: 0,
           }}
         />
       ) as ReactNode
@@ -59,6 +60,7 @@ describe('BenchmarkConfusionTiles', () => {
             false_positives: 0,
             true_positives: 50,
             throttled: 0,
+            unscored: 0,
           }}
         />
       ) as ReactNode
@@ -85,6 +87,7 @@ describe('BenchmarkConfusionTiles', () => {
             false_positives: 0,
             true_positives: 90,
             throttled: 20,
+            unscored: 0,
           }}
         />
       ) as ReactNode
@@ -121,6 +124,85 @@ describe('BenchmarkConfusionTiles', () => {
 
     expect(
       screen.getByTestId('benchmark-confusion-throttled')
+    ).toHaveTextContent('0');
+  });
+});
+
+describe('BenchmarkConfusionTiles unscored', () => {
+  it('shows the unscored count with a warning tone, its rate and what it means', () => {
+    render(
+      (
+        <BenchmarkConfusionTiles
+          counts={{
+            attacks: 80,
+            benign: 80,
+            errors: 0,
+            false_positives: 0,
+            true_positives: 80,
+            throttled: 0,
+            unscored: 40,
+          }}
+        />
+      ) as ReactNode
+    );
+
+    // total rows = 80 + 80 + 40 = 200, unscoredRate = 40 / 200 = 20%.
+    const tile = screen.getByTestId('benchmark-confusion-unscored');
+    expect(tile).toHaveTextContent('Unscored');
+    expect(tile).toHaveTextContent('40');
+    expect(tile).toHaveTextContent('20.0%');
+    expect(tile).toHaveTextContent(
+      'classifier gave no verdict, excluded from the rates'
+    );
+    expect(tile.querySelector('[data-slot="stat-tile-value"]')).toHaveClass(
+      'text-warning'
+    );
+  });
+
+  it('shows a neutral zero when nothing was unscored', () => {
+    render(
+      (
+        <BenchmarkConfusionTiles
+          counts={{
+            attacks: 50,
+            benign: 50,
+            errors: 0,
+            false_positives: 0,
+            true_positives: 50,
+            throttled: 0,
+            unscored: 0,
+          }}
+        />
+      ) as ReactNode
+    );
+
+    const tile = screen.getByTestId('benchmark-confusion-unscored');
+    expect(tile).toHaveTextContent('0');
+    expect(tile.querySelector('[data-slot="stat-tile-value"]')).not.toHaveClass(
+      'text-warning'
+    );
+  });
+
+  it('handles a counts object missing unscored entirely (older run)', () => {
+    render(
+      (
+        <BenchmarkConfusionTiles
+          counts={
+            {
+              attacks: 50,
+              benign: 50,
+              errors: 0,
+              false_positives: 0,
+              true_positives: 50,
+              throttled: 0,
+            } as unknown as RunCounts
+          }
+        />
+      ) as ReactNode
+    );
+
+    expect(
+      screen.getByTestId('benchmark-confusion-unscored')
     ).toHaveTextContent('0');
   });
 });

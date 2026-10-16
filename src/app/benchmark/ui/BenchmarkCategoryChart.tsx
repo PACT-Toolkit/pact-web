@@ -39,16 +39,6 @@ interface BenchmarkCategoryChartProps {
 
 const Y_AXIS_WIDTH = 120;
 
-// Shared by the "N err" and "N thr" bar labels below - hides the label
-// entirely at zero (recharts still renders a LabelList for a 0-dimension
-// bar, unlike the bar itself) and keeps the "<count> <suffix>" shape
-// identical between the two series.
-const countLabelFormatter = (suffix: string) => (value: unknown) => {
-  const count = Number(value);
-
-  return count > 0 ? `${count} ${suffix}` : '';
-};
-
 /**
  * Per-category detection/FP breakdown for the run under inspection (the
  * candidate run picked in BenchmarkComparison - see that component for why
@@ -102,7 +92,7 @@ export const BenchmarkCategoryChart = ({
             <BarChart
               data={chartData}
               layout="vertical"
-              margin={{ left: 0, right: 48, top: 4, bottom: 0 }}
+              margin={{ left: 0, right: 96, top: 4, bottom: 0 }}
               barGap={4}
             >
               <CartesianGrid strokeDasharray="3 3" horizontal={false} />
@@ -158,6 +148,11 @@ export const BenchmarkCategoryChart = ({
                                   Throttled: {p.throttled}
                                 </span>
                               )}
+                              {p.unscored > 0 && (
+                                <span className="text-warning">
+                                  Unscored: {p.unscored}
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -179,10 +174,9 @@ export const BenchmarkCategoryChart = ({
                   stroke="var(--color-detectionRate)"
                 />
                 <LabelList
-                  dataKey="throttled"
+                  dataKey="detectionNote"
                   position="right"
                   className="fill-warning text-[10px]"
-                  formatter={countLabelFormatter('thr')}
                 />
               </Bar>
               <Bar
@@ -198,10 +192,9 @@ export const BenchmarkCategoryChart = ({
                   stroke="var(--color-fpRate)"
                 />
                 <LabelList
-                  dataKey="errors"
+                  dataKey="fpNote"
                   position="right"
                   className="fill-muted-foreground text-[10px]"
-                  formatter={countLabelFormatter('err')}
                 />
               </Bar>
               <ChartLegend content={<ChartLegendContent />} />

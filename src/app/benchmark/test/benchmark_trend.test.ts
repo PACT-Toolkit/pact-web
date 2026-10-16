@@ -139,6 +139,7 @@ describe('trendChartData', () => {
         false_positives: 5,
         errors: 0,
         throttled: 0,
+        unscored: 0,
       },
     });
 

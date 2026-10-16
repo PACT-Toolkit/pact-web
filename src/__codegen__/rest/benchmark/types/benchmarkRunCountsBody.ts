@@ -19,4 +19,10 @@ export interface BenchmarkRunCountsBody {
    */
   throttled: number;
   true_positives: number;
+  /**
+   * Unscored is the number of rows the gateway answered with a fail-open
+   * allow because the classifier produced no verdict. Excluded from the
+   * detection and false-positive rates (PACT-1078).
+   */
+  unscored: number;
 }

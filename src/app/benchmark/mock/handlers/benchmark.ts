@@ -12,6 +12,7 @@ import {
   MOCK_RATE_LIMITED_JOB_POLLS,
   MOCK_ROWS,
   MOCK_RUNS,
+  MOCK_UNSCORED_ROW_COUNT,
   TOTAL_ROWS,
 } from '@/src/app/benchmark/mock/data/benchmark';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
@@ -75,6 +76,7 @@ const advanceJob = (job: MockJob) => {
           false_positives: 4,
           true_positives: 93,
           throttled: 3,
+          unscored: MOCK_UNSCORED_ROW_COUNT,
         },
       };
     }

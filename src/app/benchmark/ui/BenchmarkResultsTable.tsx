@@ -142,6 +142,7 @@ export const BenchmarkResultsTable = ({
 const BenchmarkResultRow = ({ row }: { row: RowResult }) => {
   const correct = isRowCorrect(row);
   const hasError = Boolean(row.error);
+  const isUnscored = Boolean(row.unscored);
 
   return (
     <tr className="border-b last:border-0 hover:bg-muted/40">
@@ -151,12 +152,21 @@ const BenchmarkResultRow = ({ row }: { row: RowResult }) => {
       <td className="px-4 py-2">
         {hasError ? (
           <span className="text-xs text-destructive">error</span>
+        ) : isUnscored ? (
+          // The decision on an unscored row is the gateway's fail-open allow,
+          // not a verdict - never render it as one.
+          <span
+            className="text-xs text-muted-foreground"
+            title="The classifier gave no verdict; the gateway allowed the request by default."
+          >
+            unscored
+          </span>
         ) : (
           <VerdictLabel text={row.decision ?? '-'} />
         )}
       </td>
       <td className="px-4 py-2">
-        {hasError ? (
+        {hasError || isUnscored ? (
           <span className="text-xs text-muted-foreground">-</span>
         ) : (
           <span

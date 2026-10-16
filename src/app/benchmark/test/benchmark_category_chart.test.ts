@@ -41,6 +41,7 @@ describe('categoryChartData', () => {
           fp: 0,
           errors: 0,
           throttled: 0,
+          unscored: 0,
         },
         {
           category: 'large',
@@ -51,6 +52,7 @@ describe('categoryChartData', () => {
           fp: 0,
           errors: 0,
           throttled: 0,
+          unscored: 0,
         },
       ],
     });
@@ -72,6 +74,7 @@ describe('categoryChartData', () => {
           fp: 2,
           errors: 0,
           throttled: 0,
+          unscored: 0,
         },
       ],
     });
@@ -98,6 +101,7 @@ describe('categoryChartData', () => {
           fp: 1,
           errors: 0,
           throttled: 0,
+          unscored: 0,
         },
       ],
     });
@@ -120,6 +124,7 @@ describe('categoryChartData', () => {
           fp: 0,
           errors: 0,
           throttled: 0,
+          unscored: 0,
         },
       ],
     });
@@ -142,6 +147,7 @@ describe('categoryChartData', () => {
           fp: 1,
           errors: 3,
           throttled: 4,
+          unscored: 0,
         },
       ],
     });
@@ -172,5 +178,105 @@ describe('categoryChartData', () => {
     const [point] = categoryChartData(run);
 
     expect(point.throttled).toBe(0);
+  });
+});
+
+describe('categoryChartData unscored', () => {
+  const category = (
+    overrides: Partial<CategoryBreakdown>
+  ): CategoryBreakdown => ({
+    category: 'mixed-injection',
+    entries: 30,
+    attacks: 20,
+    benign: 10,
+    detected: 18,
+    fp: 1,
+    errors: 0,
+    throttled: 0,
+    unscored: 0,
+    ...overrides,
+  });
+
+  it('carries the per-category unscored count through', () => {
+    const [point] = categoryChartData(
+      makeRun({ per_category: [category({ unscored: 6 })] })
+    );
+
+    expect(point.unscored).toBe(6);
+  });
+
+  it('coalesces a category missing unscored entirely to zero', () => {
+    const legacyCategory = {
+      ...category({}),
+      unscored: undefined,
+    } as unknown as CategoryBreakdown;
+
+    const [point] = categoryChartData(
+      makeRun({ per_category: [legacyCategory] })
+    );
+
+    expect(point.unscored).toBe(0);
+  });
+
+  it('annotates the detection bar with throttled and unscored counts, omitting zeros', () => {
+    const points = categoryChartData(
+      makeRun({
+        per_category: [
+          category({
+            category: 'both',
+            attacks: 40,
+            throttled: 2,
+            unscored: 5,
+          }),
+          category({ category: 'only-unscored', attacks: 30, unscored: 4 }),
+          category({ category: 'only-throttled', attacks: 20, throttled: 3 }),
+          category({ category: 'neither', attacks: 10 }),
+        ],
+      })
+    );
+    const note = Object.fromEntries(
+      points.map((p) => [p.category, p.detectionNote])
+    );
+
+    expect(note).toEqual({
+      both: '2 thr · 5 unscored',
+      'only-unscored': '4 unscored',
+      'only-throttled': '3 thr',
+      neither: '',
+    });
+  });
+
+  it('annotates the FP bar with the error count only for a category with attack rows', () => {
+    const [withErrors, clean] = categoryChartData(
+      makeRun({
+        per_category: [
+          category({ attacks: 20, errors: 2, unscored: 9 }),
+          category({ attacks: 10 }),
+        ],
+      })
+    );
+
+    expect(withErrors.fpNote).toBe('2 err');
+    expect(clean.fpNote).toBe('');
+  });
+
+  it('moves the unscored annotation to the FP bar for a category with no attack rows', () => {
+    const [benignOnly] = categoryChartData(
+      makeRun({
+        per_category: [
+          category({
+            category: 'benign-chat',
+            attacks: 0,
+            benign: 25,
+            detected: 0,
+            errors: 1,
+            unscored: 7,
+          }),
+        ],
+      })
+    );
+
+    expect(benignOnly.detectionNote).toBe('');
+    expect(benignOnly.fpNote).toBe('1 err · 7 unscored');
   });
 });

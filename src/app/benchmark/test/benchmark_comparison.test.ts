@@ -10,6 +10,9 @@ import {
   fpRateDefined,
   runOptionLabel,
   runRowCountLabel,
+  UNSCORED_SHARE_LIMIT,
+  unscoredNotQuotableReasons,
+  unscoredShare,
 } from '@/src/app/benchmark/domain/benchmark_comparison';
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
 
@@ -99,6 +102,7 @@ describe('detectionRateDefined', () => {
         false_positives: 0,
         true_positives: 1,
         throttled: 0,
+        unscored: 0,
       },
     });
     expect(detectionRateDefined(run)).toBe(true);
@@ -113,6 +117,7 @@ describe('detectionRateDefined', () => {
         false_positives: 1698,
         true_positives: 0,
         throttled: 0,
+        unscored: 0,
       },
     });
     expect(detectionRateDefined(run)).toBe(false);
@@ -133,6 +138,7 @@ describe('fpRateDefined', () => {
         false_positives: 0,
         true_positives: 6,
         throttled: 0,
+        unscored: 0,
       },
     });
     expect(fpRateDefined(run)).toBe(false);
@@ -178,6 +184,7 @@ describe('compareRuns with a zero-denominator run', () => {
         false_positives: 0,
         true_positives: 5,
         throttled: 0,
+        unscored: 0,
       },
     });
     const candidate = makeRun({
@@ -191,6 +198,7 @@ describe('compareRuns with a zero-denominator run', () => {
         false_positives: 1698,
         true_positives: 0,
         throttled: 0,
+        unscored: 0,
       },
     });
 
@@ -269,6 +277,7 @@ describe('comparisonDeltaBars', () => {
         false_positives: 0,
         true_positives: 5,
         throttled: 0,
+        unscored: 0,
       },
     });
     const candidate = makeRun({
@@ -281,6 +290,7 @@ describe('comparisonDeltaBars', () => {
         false_positives: 0,
         true_positives: 0,
         throttled: 0,
+        unscored: 0,
       },
     });
 
@@ -339,6 +349,7 @@ describe('runRowCountLabel', () => {
         false_positives: 1698,
         true_positives: 0,
         throttled: 0,
+        unscored: 0,
       },
     });
     expect(runRowCountLabel(run)).toBe('2508 rows · 0 attacks / 2508 benign');
@@ -375,11 +386,139 @@ describe('runOptionLabel', () => {
         false_positives: 1,
         true_positives: 38,
         throttled: 0,
+        unscored: 0,
       },
     });
 
     expect(runOptionLabel(run)).toBe(
       'stub · seed-v1.jsonl · v0.3.0 · 14 Nov 2023 · 60 rows · 40 attacks / 20 benign'
     );
+  });
+});
+
+describe('unscored share', () => {
+  // 1,000 attacks + 1,000 benign + `unscored` = every row the run touched.
+  const runWithUnscored = (unscored: number): BenchmarkRun =>
+    makeRun({
+      counts: {
+        attacks: 1000,
+        benign: 1000,
+        errors: 0,
+        false_positives: 20,
+        true_positives: 900,
+        throttled: 0,
+        unscored,
+      },
+    });
+
+  it("limits the unscored share to the promote gate's 10 %", () => {
+    expect(UNSCORED_SHARE_LIMIT).toBe(0.1);
+  });
+
+  it('is 0 for a run with no counts (pre-breakdown run)', () => {
+    expect(unscoredShare(makeRun({}))).toBe(0);
+  });
+
+  it('is the unscored rows over every row the run touched', () => {
+    // 300 / (1000 + 1000 + 300) = 13.04 %.
+    expect(unscoredShare(runWithUnscored(300))).toBeCloseTo(300 / 2300);
+  });
+
+  it('keeps both rates quotable below the limit', () => {
+    const run = runWithUnscored(100); // 100 / 2100 = 4.8 %
+
+    expect(detectionRateDefined(run)).toBe(true);
+    expect(fpRateDefined(run)).toBe(true);
+  });
+
+  it('keeps both rates quotable exactly at the limit', () => {
+    // 900 + 900 scored rows and 200 unscored: 200 / 2,000 is exactly 10 %.
+    const run = makeRun({
+      counts: {
+        attacks: 900,
+        benign: 900,
+        errors: 0,
+        false_positives: 10,
+        true_positives: 800,
+        throttled: 0,
+        unscored: 200,
+      },
+    });
+
+    expect(unscoredShare(run)).toBe(UNSCORED_SHARE_LIMIT);
+    expect(detectionRateDefined(run)).toBe(true);
+    expect(fpRateDefined(run)).toBe(true);
+  });
+
+  it('flags both rates as not quotable above the limit', () => {
+    const run = runWithUnscored(300);
+
+    expect(detectionRateDefined(run)).toBe(false);
+    expect(fpRateDefined(run)).toBe(false);
+  });
+
+  it('leaves the delta null and the direction neutral for a run over the limit, like a run with no attack rows', () => {
+    const metrics = compareRuns(
+      makeRun({ id: 'base', detection_rate: 0.8, fp_rate: 0.05 }),
+      {
+        ...runWithUnscored(300),
+        id: 'cand',
+        detection_rate: 0.9,
+        fp_rate: 0.03,
+      }
+    );
+    const byKey = Object.fromEntries(metrics.map((m) => [m.key, m]));
+
+    expect(byKey.detection_rate.candidateDefined).toBe(false);
+    expect(byKey.detection_rate.delta).toBeNull();
+    expect(byKey.detection_rate.deltaDirection).toBe('neutral');
+    expect(byKey.fp_rate.delta).toBeNull();
+    // Latency is measured per answered request and stays comparable.
+    expect(byKey.p50_latency.delta).not.toBeNull();
+  });
+
+  it('still computes deltas when the runs are within the limit', () => {
+    const metrics = compareRuns(makeRun({ id: 'base', detection_rate: 0.8 }), {
+      ...runWithUnscored(100),
+      id: 'cand',
+      detection_rate: 0.9,
+    });
+
+    expect(metrics.find((m) => m.key === 'detection_rate')?.delta).toBeCloseTo(
+      0.1
+    );
+  });
+});
+
+describe('unscoredNotQuotableReasons', () => {
+  const overLimit = makeRun({
+    counts: {
+      attacks: 1000,
+      benign: 700,
+      errors: 0,
+      false_positives: 21,
+      true_positives: 930,
+      throttled: 0,
+      unscored: 300,
+    },
+  });
+
+  it('is empty when neither run exceeds the limit', () => {
+    expect(unscoredNotQuotableReasons(makeRun({}), makeRun({}))).toEqual([]);
+  });
+
+  it('names the candidate and its unscored share when only it is over the limit', () => {
+    // 300 / 2,000 = 15.0 %.
+    expect(unscoredNotQuotableReasons(makeRun({}), overLimit)).toEqual([
+      'Candidate: 15.0% of rows unscored (limit 10.0%) - detection and false-positive rates are not quotable.',
+    ]);
+  });
+
+  it('names both runs when both are over the limit', () => {
+    const reasons = unscoredNotQuotableReasons(overLimit, overLimit);
+
+    expect(reasons).toHaveLength(2);
+    expect(reasons[0]).toMatch(/^Baseline: 15\.0%/);
+    expect(reasons[1]).toMatch(/^Candidate: 15\.0%/);
   });
 });
