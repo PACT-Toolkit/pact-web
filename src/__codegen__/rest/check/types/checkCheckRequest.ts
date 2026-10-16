@@ -21,7 +21,7 @@ export interface CheckCheckRequest {
   /**
    * ExternalRefs is an optional list of third-party references (URLs) the
    * gateway fetches in an isolated worker and re-scans for indirect prompt
-   * injection (PACT-236). When present and the sandbox is enabled, the request
+   * injection. When present and the sandbox is enabled, the request
    * blocks if any reference is hostile - before the caller passes the fetched
    * content to its LLM. Unlike SpotlightChunks, the content is NOT supplied
    * inline; the gateway fetches it.
@@ -37,7 +37,7 @@ export interface CheckCheckRequest {
   /**
    * TrafficSource is the caller's own declaration of synthetic vs real
    * traffic (e.g. "benchmark"), mirrored verbatim onto the pact.decisions
-   * audit event (PACT-484). Attribution only - it carries no access-control
+   * audit event. Attribution only - it carries no access-control
    * weight and is never used to grant or deny a request. Optional; when
    * present it must match ^[a-z0-9_-]{1,32}$, the same pattern the
    * decisions schema enforces on the audit event.

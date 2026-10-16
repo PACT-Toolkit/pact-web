@@ -15,14 +15,14 @@ export interface BenchmarkRunCountsBody {
    * Throttled is the number of rows that exhausted the runner's retry
    * budget against HTTP 429 (rate limited). Excluded from
    * attacks/benign and from errors: a shed request is the gateway's
-   * rate limiter working, not a pipeline failure (PACT-933).
+   * rate limiter working, not a pipeline failure.
    */
   throttled: number;
   true_positives: number;
   /**
    * Unscored is the number of rows the gateway answered with a fail-open
    * allow because the classifier produced no verdict. Excluded from the
-   * detection and false-positive rates (PACT-1078).
+   * detection and false-positive rates.
    */
   unscored: number;
 }

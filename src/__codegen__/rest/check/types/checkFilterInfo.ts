@@ -10,7 +10,7 @@ import type { CheckFilterInfoVerdict } from './checkFilterInfoVerdict';
 export interface CheckFilterInfo {
   /**
    * DurationMs is the filter stage's wall-clock RPC time in fractional
-   * milliseconds (PACT-613); present whenever this sub-object is, since the
+   * milliseconds; present whenever this sub-object is, since the
    * filter stage always ran to produce a verdict. nil is never emitted as 0.
    */
   duration_ms?: number;

@@ -10,21 +10,21 @@ import type { CheckConsensusInfoLabel } from './checkConsensusInfoLabel';
 export interface CheckConsensusInfo {
   /**
    * Confidence is the consensus stage's aggregated confidence score,
-   * mirroring decisions.ConsensusDecision.Confidence (PACT-704). 0 on the
+   * mirroring decisions.ConsensusDecision.Confidence. 0 on the
    * transport fail-open path.
    */
   confidence?: number;
   /**
    * DurationMs is the consensus stage's wall-clock RPC time in fractional
-   * milliseconds (PACT-613 convention); present whenever this sub-object
+   * milliseconds, the fleet duration convention; present whenever this sub-object
    * is. nil is never emitted as 0.
    */
   duration_ms?: number;
   /**
    * Label is the consensus stage's aggregated outcome, mirroring
    * decisions.ConsensusDecision.Label - the pact.decisions Kafka event's
-   * consensus sub-object - byte-for-byte in field name and value set
-   * (PACT-704). Empty on the transport fail-open path (the sub-object is
+   * consensus sub-object - byte-for-byte in field name and value set.
+   * Empty on the transport fail-open path (the sub-object is
    * still present for DurationMs, but the vote never produced a verdict).
    */
   label?: CheckConsensusInfoLabel;

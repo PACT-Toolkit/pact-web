@@ -31,5 +31,11 @@ export interface BenchmarkJobResultBody {
    */
   per_layer?: BenchmarkLayerBreakdownBody[];
   rows: BenchmarkJobRowBody[];
+  /**
+   * RunID names the persisted benchmark run this job produced, usable with
+   * GET /v1/benchmark/runs/{id}/rows. Absent until the run is persisted and
+   * stays absent when persistence is disabled or failed.
+   */
+  run_id?: string;
   total_rows: number;
 }

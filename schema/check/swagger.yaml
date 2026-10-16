@@ -23,7 +23,7 @@ definitions:
                 description: |-
                     ExternalRefs is an optional list of third-party references (URLs) the
                     gateway fetches in an isolated worker and re-scans for indirect prompt
-                    injection (PACT-236). When present and the sandbox is enabled, the request
+                    injection. When present and the sandbox is enabled, the request
                     blocks if any reference is hostile - before the caller passes the fetched
                     content to its LLM. Unlike SpotlightChunks, the content is NOT supplied
                     inline; the gateway fetches it.
@@ -44,7 +44,7 @@ definitions:
                 description: |-
                     TrafficSource is the caller's own declaration of synthetic vs real
                     traffic (e.g. "benchmark"), mirrored verbatim onto the pact.decisions
-                    audit event (PACT-484). Attribution only - it carries no access-control
+                    audit event. Attribution only - it carries no access-control
                     weight and is never used to grant or deny a request. Optional; when
                     present it must match ^[a-z0-9_-]{1,32}$, the same pattern the
                     decisions schema enforces on the audit event.
@@ -92,7 +92,7 @@ definitions:
             duration_ms:
                 description: |-
                     DurationMs is the classifier stage's wall-clock RPC time in fractional
-                    milliseconds (PACT-613), for the primary Classify call only; absent
+                    milliseconds, for the primary Classify call only; absent
                     when the classifier stage did not run.
                 type: number
             engine:
@@ -111,21 +111,21 @@ definitions:
             confidence:
                 description: |-
                     Confidence is the consensus stage's aggregated confidence score,
-                    mirroring decisions.ConsensusDecision.Confidence (PACT-704). 0 on the
+                    mirroring decisions.ConsensusDecision.Confidence. 0 on the
                     transport fail-open path.
                 type: number
             duration_ms:
                 description: |-
                     DurationMs is the consensus stage's wall-clock RPC time in fractional
-                    milliseconds (PACT-613 convention); present whenever this sub-object
+                    milliseconds, the fleet duration convention; present whenever this sub-object
                     is. nil is never emitted as 0.
                 type: number
             label:
                 description: |-
                     Label is the consensus stage's aggregated outcome, mirroring
                     decisions.ConsensusDecision.Label - the pact.decisions Kafka event's
-                    consensus sub-object - byte-for-byte in field name and value set
-                    (PACT-704). Empty on the transport fail-open path (the sub-object is
+                    consensus sub-object - byte-for-byte in field name and value set.
+                    Empty on the transport fail-open path (the sub-object is
                     still present for DurationMs, but the vote never produced a verdict).
                 enum:
                     - unspecified
@@ -186,7 +186,7 @@ definitions:
             duration_ms:
                 description: |-
                     DurationMs is the filter stage's wall-clock RPC time in fractional
-                    milliseconds (PACT-613); present whenever this sub-object is, since the
+                    milliseconds; present whenever this sub-object is, since the
                     filter stage always ran to produce a verdict. nil is never emitted as 0.
                 type: number
             rule_id:
@@ -219,7 +219,7 @@ definitions:
             duration_ms:
                 description: |-
                     DurationMs is the redactor stage's wall-clock RPC time in fractional
-                    milliseconds (PACT-613); present whenever this sub-object is, including
+                    milliseconds; present whenever this sub-object is, including
                     the transport fail-open path (verdict "unknown").
                 type: number
             spans:

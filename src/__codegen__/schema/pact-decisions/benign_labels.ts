@@ -5,6 +5,6 @@
  */
 
 /**
- * Canonical benign classifier label vocabulary (PACT-574). JSON twin of decisions.BenignClassifierLabels (benign_labels.go) - the two are asserted equal by benign_labels_test.go and must never drift. This is an analytics-side vocabulary, not a pact.decisions schema enum: ClassifierDecision.Label stays an open string by design. Consumption rules, both the caller's responsibility: (1) matching is case-insensitive; (2) an absent or empty label also counts as benign - a consumer-side presence rule, deliberately not an entry in this list.
+ * Canonical benign classifier label vocabulary. JSON twin of decisions.BenignClassifierLabels (benign_labels.go) - the two are asserted equal by benign_labels_test.go and must never drift. This is an analytics-side vocabulary, not a pact.decisions schema enum: ClassifierDecision.Label stays an open string by design. Consumption rules, both the caller's responsibility: (1) matching is case-insensitive; (2) an absent or empty label also counts as benign - a consumer-side presence rule, deliberately not an entry in this list.
  */
 export const BENIGN_LABELS = ["benign","none","safe","clean"] as const;
