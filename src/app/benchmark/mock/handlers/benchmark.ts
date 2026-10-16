@@ -9,6 +9,7 @@ import {
   MOCK_CORPUS_LIBRARY_TOTAL_ROWS,
   MOCK_HUB_DATASETS,
   MOCK_HUB_GATED_SLUG,
+  MOCK_JOB_RUN_ID,
   MOCK_RATE_LIMITED_JOB_MARKER,
   MOCK_RATE_LIMITED_JOB_POLLS,
   MOCK_ROWS,
@@ -69,6 +70,8 @@ const advanceJob = (job: MockJob) => {
         p99_latency_ms: 112.7,
         total_rows: TOTAL_ROWS,
         rows: [],
+        // A seeded run, so the "View rows" link lands on a page with rows.
+        run_id: MOCK_JOB_RUN_ID,
         // 100 attacks / 100 benign so true_positives/false_positives divide
         // out to exactly the detection/fp rates above (the confusion
         // tiles on the live job progress card). throttled: 3 exercises the

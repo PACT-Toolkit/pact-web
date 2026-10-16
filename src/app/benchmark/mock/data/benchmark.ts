@@ -4,6 +4,9 @@ import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
 
 export const TOTAL_ROWS = 200;
 
+/** The seeded run (see MOCK_RUNS) the finished mock job reports as persisted. */
+export const MOCK_JOB_RUN_ID = 'run-1';
+
 // Rows the gateway answered with a fail-open allow because the classifier gave
 // no verdict. Spread across the first pages so the results table shows the
 // "unscored" marker without paging; MOCK_UNSCORED_ROW_COUNT feeds the mock

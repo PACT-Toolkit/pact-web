@@ -3,6 +3,10 @@
 // vocabulary so the feature imports a stable name from the domain layer.
 export type { BenchmarkBenchmarkRunRowBody as BenchmarkRunRow } from '@/src/__codegen__/rest/benchmark';
 
+/** The rows view of one persisted benchmark run. */
+export const benchmarkRunRowsHref = (runId: string): string =>
+  `/benchmark/runs/${encodeURIComponent(runId)}`;
+
 /** Rows requested per page in the run rows table. */
 export const RUN_ROWS_PAGE_SIZE = 50;
 

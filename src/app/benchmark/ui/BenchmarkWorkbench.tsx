@@ -21,6 +21,7 @@ import { BenchmarkJobProgress } from '@/src/app/benchmark/ui/BenchmarkJobProgres
 import { BenchmarkLatencyChart } from '@/src/app/benchmark/ui/BenchmarkLatencyChart';
 import { BenchmarkResultsTable } from '@/src/app/benchmark/ui/BenchmarkResultsTable';
 import { BenchmarkRunHistory } from '@/src/app/benchmark/ui/BenchmarkRunHistory';
+import { BenchmarkRunRowsLink } from '@/src/app/benchmark/ui/BenchmarkRunRowsLink';
 import { BenchmarkTrendChart } from '@/src/app/benchmark/ui/BenchmarkTrendChart';
 import { BenchmarkTrendRangeToggle } from '@/src/app/benchmark/ui/BenchmarkTrendRangeToggle';
 import { BenchmarkUploadForm } from '@/src/app/benchmark/ui/BenchmarkUploadForm';
@@ -130,6 +131,7 @@ export const BenchmarkWorkbench = () => {
           {jobState.hub_import && (
             <BenchmarkImportSummary summary={jobState.hub_import} />
           )}
+          <BenchmarkRunRowsLink runId={jobState.result.run_id} />
           <BenchmarkConfusionTiles counts={jobState.result.counts} />
           <BenchmarkResultsTable
             key={jobId}
