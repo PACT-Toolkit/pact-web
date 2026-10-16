@@ -232,6 +232,12 @@ definitions:
                     runner's retry budget against HTTP 429 (rate limited). Excluded
                     from attacks/benign and from errors (PACT-933).
                 type: integer
+            unscored:
+                description: |-
+                    Unscored is the number of rows in this category the gateway answered
+                    with a fail-open allow because the classifier produced no verdict.
+                    Excluded from the detection and false-positive rates (PACT-1078).
+                type: integer
         required:
             - attacks
             - benign
@@ -241,6 +247,7 @@ definitions:
             - errors
             - fp
             - throttled
+            - unscored
         type: object
     benchmark.CorpusDatasetSummaryBody:
         properties:
@@ -364,6 +371,8 @@ definitions:
                 type: number
             row_id:
                 type: string
+            unscored:
+                type: boolean
         required:
             - decision
             - expected_label
@@ -429,6 +438,12 @@ definitions:
                 type: integer
             true_positives:
                 type: integer
+            unscored:
+                description: |-
+                    Unscored is the number of rows the gateway answered with a fail-open
+                    allow because the classifier produced no verdict. Excluded from the
+                    detection and false-positive rates (PACT-1078).
+                type: integer
         required:
             - attacks
             - benign
@@ -436,6 +451,7 @@ definitions:
             - false_positives
             - throttled
             - true_positives
+            - unscored
         type: object
     benchmark.SaveCorpusRequest:
         properties:

@@ -12,4 +12,5 @@ export interface BenchmarkJobRowBody {
   expected_label: string;
   latency_ms: number;
   row_id: string;
+  unscored?: boolean;
 }
