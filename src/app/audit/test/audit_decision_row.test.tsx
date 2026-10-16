@@ -26,7 +26,7 @@ const renderRow = (payload: DecisionPayload) =>
     ) as ReactNode | null
   );
 
-// A blocked filter decision carrying every PACT-745 field (engine,
+// A blocked filter decision carrying every stage-attribution field (engine,
 // filter.matched_span, diagnostics.causal_spans) -- the row this feature
 // exists to surface.
 const SPAN_PAYLOAD: DecisionPayload = {
@@ -71,7 +71,7 @@ describe('AuditDecisionRow collapsed badges', () => {
   });
 });
 
-describe('AuditDecisionRow collapsed stage strip (PACT-748)', () => {
+describe('AuditDecisionRow collapsed stage strip', () => {
   it('renders a chip per present stage, with the blocking stage distinguished, for a blocked decision with engine', () => {
     renderRow({
       decision: 'block',
@@ -193,7 +193,7 @@ describe('AuditDecisionRow expanded detail - matched span and causal spans', () 
   });
 });
 
-// PACT-749: engine=cel (a PACT-335 tier-3 CEL rule escalation) and
+// engine=cel (a tier-3 CEL rule escalation) and
 // engine=policy have no visualised-stage mapping (see
 // decision_stage_attribution.ts's STAGE_ATTRIBUTED_ENGINES), unlike
 // engine=filter above. Their causal spans must still render -- just with an
@@ -242,7 +242,7 @@ describe('AuditDecisionRow expanded detail - unattributed causal spans', () => {
     expect(causalSpans).toHaveTextContent('not attributed to a stage');
   });
 
-  it('renders the qualifier when engine is absent entirely (pre-PACT-745 payload)', () => {
+  it('renders the qualifier when engine is absent entirely (older payload)', () => {
     renderRow({
       decision: 'block',
       reason: 'filter_hostile',
@@ -259,7 +259,7 @@ describe('AuditDecisionRow expanded detail - unattributed causal spans', () => {
     );
   });
 
-  it('never shows the qualifier for an attributed block (engine=filter, unchanged from before PACT-749)', () => {
+  it('never shows the qualifier for an attributed block (engine=filter)', () => {
     renderRow(SPAN_PAYLOAD);
 
     fireEvent.click(screen.getByTestId('audit-row-toggle'));
@@ -270,11 +270,11 @@ describe('AuditDecisionRow expanded detail - unattributed causal spans', () => {
   });
 });
 
-// PACT-758: renders the CelDecision sub-object (rule_id, rule_name, outcome,
-// fired_count and, when present, skipped_reason) that PACT-749 already
+// Renders the CelDecision sub-object (rule_id, rule_name, outcome,
+// fired_count and, when present, skipped_reason) that the unattributed-block tests already
 // exercised for its own purpose (unattributed causal spans) but never
 // asserted on directly.
-describe('AuditDecisionInsights - CEL section (PACT-758)', () => {
+describe('AuditDecisionInsights - CEL section', () => {
   it('renders rule_id, rule_name, outcome and fired_count for a fired rule', () => {
     renderRow({
       decision: 'block',
@@ -344,11 +344,11 @@ describe('AuditDecisionInsights - CEL section (PACT-758)', () => {
   });
 });
 
-// PACT-915: renders the ComplianceDecision sub-object (the gateway's
+// Renders the ComplianceDecision sub-object (the gateway's
 // deferred shadow stage) -- verdict badge, score, model_version, the
 // "shadow" pill, and the fail-open "skipped" state. Always allow decisions:
 // the stage is advisory-only and never changes the outcome.
-describe('AuditDecisionInsights - compliance section (PACT-915)', () => {
+describe('AuditDecisionInsights - compliance section', () => {
   it('renders a compliant verdict, score and model_version', () => {
     renderRow({
       decision: 'allow',

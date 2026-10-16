@@ -209,7 +209,7 @@ classDiagram
     MockData ..> MockRepository~T~ : create(overrides)
 ```
 
-Every generated client fetches `/api/pact/gateway/v1` (PACT-923: the `app/v1/{account,audit,files}` mirror routes this diagram used to show as an alternative were removed - no Orval group and no other consumer ever called them). The proxy core still gives every feature cookie-to-Bearer translation and session rotation for free.
+Every generated client fetches `/api/pact/gateway/v1` (the `app/v1/{account,audit,files}` mirror routes this diagram used to show as an alternative were removed - no Orval group and no other consumer ever called them). The proxy core still gives every feature cookie-to-Bearer translation and session rotation for free.
 
 ## Class diagram (C4 L4) - decision vocabulary and its consoles
 

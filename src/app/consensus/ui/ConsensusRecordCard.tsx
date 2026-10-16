@@ -21,7 +21,7 @@ import { formatTimestamp } from '@/src/lib/format_timestamp';
 // One arbitrated request: winning label, confidence, backend count, quorum
 // badge, per-model vote chips, highlight badges for the cases an operator
 // cares about most (SPLIT / NO QUORUM / FAIL-OPEN / LOW CONFIDENCE), and a
-// collapsible raw-JSON fallback (PACT-369, ConsensusRawPayloadToggle).
+// collapsible raw-JSON fallback (ConsensusRawPayloadToggle).
 // Mirrors the badge-row + info-line visual language of
 // AuditRowShell/AuditDecisionInsights without reusing AuditRowShell's
 // header/body split directly -- this card's layout (badge row + vote chips)

@@ -4,7 +4,7 @@
 //   1. GET /v1/config's stateful response (owned by this module's
 //      mockGatewayConfig instantiator + createGatewayConfigMockData seeder,
 //      read/written by src/app/gateway/mock/handlers/gateway.ts via
-//      db.gatewayConfig). Stateful (not a plain constant) since PACT-473's
+//      db.gatewayConfig). Stateful (not a plain constant) since the
 //      PATCH /v1/config/enforcement needs a session-scoped value to mutate
 //      -- see dbFactory.ts's singleton-entity convention.
 //   2. The sandbox/diagnostics/spotlight simulation logic the shared /v1/check
@@ -27,7 +27,7 @@
 // override (Playwright has no per-test handler override mechanism in this
 // repo -- see that test file's docblock).
 //
-// complianceShadowEnabled: true (PACT-936) similarly seeds the "on" state
+// complianceShadowEnabled: true similarly seeds the "on" state
 // for the demo -- real dev deployments default PACT_COMPLIANCE_SHADOW_ENABLED
 // to false, same as sandbox/diagnostics above.
 import { type DB } from '@/mocks/data/dbFactory';
@@ -135,7 +135,7 @@ const SPOTLIGHT_FORMATS: ReadonlySet<string> = new Set(
 
 // gatewayConfig.spotlightFormat (this mock handler's only caller passes it
 // through here) is a plain string on the wire -- schema/config's swagger
-// slice doesn't `enum:`-tag SpotlightFormat the way PACT-576 tagged
+// slice doesn't `enum:`-tag SpotlightFormat the way it tags
 // check.CheckResponse's fields, so it isn't statically guaranteed to be one
 // of the three values check.CheckResponse.spotlight.format actually allows.
 // Every mock response this handler emits is validated client-side by

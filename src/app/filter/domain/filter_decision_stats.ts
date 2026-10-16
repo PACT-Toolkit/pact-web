@@ -53,13 +53,13 @@ export const useFilterDecisionStats = () => {
     [data]
   );
 
-  // A 403 (PACT-363's audit:stats permission gate) is a stable, expected
+  // A 403 (the audit:stats permission gate) is a stable, expected
   // outcome for non-operator users -- not a transient error. The workbench
   // renders a permission-aware empty state for this instead of the "try
   // refreshing" copy that fits a real transient failure.
   const forbidden = isDecisionStatsForbidden(data);
 
-  // PACT-914: the fetcher never throws on a non-2xx (see
+  // The fetcher never throws on a non-2xx (see
   // audit_decision_stats_access.ts's docblock), so a resolved-but-failed
   // response (e.g. a stale bearer racing a session rotation coming back 401)
   // previously slipped past both `error` (SWR's thrown error, which never

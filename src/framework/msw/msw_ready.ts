@@ -1,6 +1,6 @@
 import { isMock } from '@/src/framework/helpers/environment';
 
-// PACT-455: MSW's browser Service Worker only intercepts requests once it
+// MSW's browser Service Worker only intercepts requests once it
 // has registered, activated, and taken control of the page. Any fetch/XHR
 // issued before that point slips straight through to the real network -
 // which in dev:mock has no backend behind it. `mocks/index.ts` used to rely

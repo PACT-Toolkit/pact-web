@@ -16,7 +16,7 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 
-// Ad-hoc redaction test panel (PACT-324): paste text, run it through the
+// Ad-hoc redaction test panel: paste text, run it through the
 // real pipeline via /v1/check with kind "output" (the direction the
 // redactor stage is most commonly exercised against -- masking sensitive
 // content before it leaves the pipeline), and render the masked preview
@@ -35,7 +35,7 @@ export const RedactorTestPanel = () => {
   // Snapshot of the text that produced the last result -- useCheckContent's
   // `data` is the last resolved response, not keyed to any particular
   // request, so without this the panel re-applies spans from an old
-  // response onto whatever the user has since typed (PACT-921). Every
+  // response onto whatever the user has since typed. Every
   // derived value below reads from this snapshot, never from the live
   // `content` state, so a result can never be painted onto text it wasn't
   // computed from.

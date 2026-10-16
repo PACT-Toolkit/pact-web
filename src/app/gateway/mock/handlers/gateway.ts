@@ -62,8 +62,8 @@ export const handlers: RequestHandler[] = [
     HttpResponse.json(db.gatewayConfig.findFirst(() => true)!)
   ),
 
-  // PACT-472's runtime enforcement write surface (PACT-473 wires this
-  // console up to it). Partial update -- omitted fields are left unchanged
+  // The runtime enforcement write surface the console is wired up to.
+  // Partial update -- omitted fields are left unchanged
   // (see MockRepository.update's mutator merging onto the existing row).
   // Session-stateful only: like the real gateway, nothing here survives a
   // restart, which for mock mode means a full page reload of the dev

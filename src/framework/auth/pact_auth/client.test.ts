@@ -18,7 +18,7 @@ vi.mock('next/headers', async (importOriginal) => {
   return { ...actual, headers: vi.fn(actual.headers) };
 });
 
-// client.ts is the one module in this migration (PACT-681) with genuinely
+// client.ts is the one module in this migration with genuinely
 // new logic: every /api/auth/* route handler test mocks getPactAuthClient
 // at the module boundary (see app/api/auth/login/route.test.ts and
 // friends), so none of them exercise the request-building, response
@@ -165,12 +165,12 @@ describe('getPactAuthClient', () => {
     expect((err as ConnectError).code).toBe(expectedCode);
   });
 
-  // PACT-686: pact-gateway's error bodies now carry a stable `code` slug
-  // (PACT-684) on every gRPC-mapped error path. authRequest prefers that
+  // pact-gateway's error bodies now carry a stable `code` slug
+  // on every gRPC-mapped error path. authRequest prefers that
   // slug over the HTTP-status mapping above, since status alone can't
   // distinguish InvalidArgument/FailedPrecondition/OutOfRange - they all
   // share HTTP 400 on the wire.
-  describe('gateway error-body code mapping (PACT-686)', () => {
+  describe('gateway error-body code mapping', () => {
     it('prefers a known body code over the status mapping (failed_precondition on 400)', async () => {
       fetchMock.mockResolvedValue(
         jsonResponse(
@@ -317,7 +317,7 @@ describe('getPactAuthClient', () => {
     });
   });
 
-  // PACT-697: the MFA passkey step-up mirrors beginPasskeyLogin/
+  // The MFA passkey step-up mirrors beginPasskeyLogin/
   // finishPasskeyLogin's request shape exactly, plus the mfaToken every
   // mfa_token-scoped RPC carries.
   it('beginMfaPasskey posts mfaToken to /mfa/passkey/begin', async () => {
@@ -353,10 +353,10 @@ describe('getPactAuthClient', () => {
     });
   });
 
-  // PACT-687: pact-gateway keys its per-IP rate buckets on the right-most
+  // pact-gateway keys its per-IP rate buckets on the right-most
   // X-Forwarded-For hop, so authRequest forwards its best determination of
   // the end-user's client IP - read via next/headers - as that one hop.
-  describe('client IP forwarding (PACT-687)', () => {
+  describe('client IP forwarding', () => {
     it('sends no X-Forwarded-For header outside a request scope, which is the default here', async () => {
       // No mockResolvedValueOnce override: this hits the real next/headers
       // implementation, which rejects with "called outside a request

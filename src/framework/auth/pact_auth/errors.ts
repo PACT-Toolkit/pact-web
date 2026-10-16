@@ -56,13 +56,13 @@ const friendlyRateLimited =
 
 // mapPactAuthError turns any error thrown from the pact_auth client
 // (client.ts synthesises a ConnectError with a mapped Code - preferring
-// pact-gateway's own error-body `code` slug (PACT-684) and falling back to
+// pact-gateway's own error-body `code` slug and falling back to
 // its HTTP status only when that slug is absent or unrecognised, e.g. on
-// pact-gateway's plain-text middleware error paths - see PACT-686) into a
+// pact-gateway's plain-text middleware error paths) into a
 // consistent `{ status, body }` shape for the /api/auth/* route to return.
 // Callers that need to special-case a code (e.g. register's AlreadyExists
 // with a domain-specific link block, or login's FailedPrecondition for
-// "email not verified" - reachable again as of PACT-686, since
+// "email not verified" - reachable again, since
 // FailedPrecondition no longer collapses into InvalidArgument) should
 // branch on the ConnectError directly before falling through to this
 // default mapping.

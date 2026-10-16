@@ -109,7 +109,7 @@ else in `src/app/audit/**`, but not from `src/app/policy/**` - each feature is
 its own boundary.
 Cross-feature imports are disallowed by default.
 
-**Grandfathered cross-feature imports (tracked debt, PACT-573):** seven
+**Grandfathered cross-feature imports (tracked debt):** seven
 cross-feature import pairs pre-date this enforcement and are explicitly
 allow-listed rather than broken:
 
@@ -120,7 +120,7 @@ allow-listed rather than broken:
   `AuditDecisionInsights` / `audit_decision_stats_access`). `classifier` and
   `redactor` used to be in this list too, for the shared decision-vocabulary
   types (`DecisionPayload` and friends) - that vocabulary has been promoted
-  to `src/lib/decisions` (PACT-581), which every feature may import
+  to `src/lib/decisions`, which every feature may import
   unconditionally, so those two pairs are gone from this closed list.
 - `dashboard` → `benchmark`, `dashboard` → `test_lab`
 - `test_lab` → `gateway`, `test_lab` → `redactor`

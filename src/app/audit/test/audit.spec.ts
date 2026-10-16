@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
-// Covers the audit-mode gaps closed in PACT-369: every topic the activity
+// Covers the audit-mode gaps: every topic the activity
 // explorer offers now has seeded mock data (previously only pact.decisions
 // did, so /audit rendered hollow under dev:mock for every other topic),
 // pact.policy still honestly resolves to empty, the raw-payload fallback
@@ -95,11 +95,11 @@ test.describe('Audit activity log', () => {
 
   test('has no accessibility violations', async ({ page }) => {
     const results = await makeAxeBuilder(page).analyze();
-    // PACT-427 fixed the duplicate <main> landmark (landmark-no-duplicate-main /
-    // landmark-unique / landmark-main-is-top-level) by changing per-page <main>
+    // The duplicate <main> landmark (landmark-no-duplicate-main /
+    // landmark-unique / landmark-main-is-top-level) was fixed by changing per-page <main>
     // wrappers to <div>, since app/(app)/layout.tsx's SidebarInset already owns
-    // the page's <main> landmark. PACT-475 fixed the remaining "region"
-    // violation by giving the shadcn Sidebar primitive
+    // the page's <main> landmark. The remaining "region"
+    // violation was fixed by giving the shadcn Sidebar primitive
     // (src/components/ui/sidebar.tsx) a <nav aria-label="Primary"> landmark,
     // so every sidebar link/label is now contained by a landmark.
     expect(results.violations).toEqual([]);

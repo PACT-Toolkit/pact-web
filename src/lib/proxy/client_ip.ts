@@ -1,6 +1,6 @@
 // End-user client IP extraction and forwarding, shared by every module
 // that talks to pact-gateway on pact-web's behalf (the auth REST client,
-// the generic gateway edge proxy). See PACT-687: pact-gateway keys its
+// the generic gateway edge proxy). pact-gateway keys its
 // per-IP rate buckets on the right-most trusted X-Forwarded-For hop
 // (internal/boundary/boundary.go, trustedProxyHops=1 in
 // internal/app/server.go), and pact-web is that one trusted hop. Without

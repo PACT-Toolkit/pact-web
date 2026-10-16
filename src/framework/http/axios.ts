@@ -11,7 +11,7 @@ export const httpClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// PACT-455: axios's browser adapter uses XMLHttpRequest rather than
+// axios's browser adapter uses XMLHttpRequest rather than
 // `fetch`, so it isn't covered by the global fetch gate in
 // msw_fetch_gate.ts. Await the same `mswReady` signal here so httpClient
 // calls (TestLabWorkbench, DashboardQuickProbe, FilesWorkbench) can't slip

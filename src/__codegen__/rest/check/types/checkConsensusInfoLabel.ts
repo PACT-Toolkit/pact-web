@@ -9,8 +9,8 @@
 /**
  * Label is the consensus stage's aggregated outcome, mirroring
  * decisions.ConsensusDecision.Label - the pact.decisions Kafka event's
- * consensus sub-object - byte-for-byte in field name and value set
- * (PACT-704). Empty on the transport fail-open path (the sub-object is
+ * consensus sub-object - byte-for-byte in field name and value set.
+ * Empty on the transport fail-open path (the sub-object is
  * still present for DurationMs, but the vote never produced a verdict).
  */
 export type CheckConsensusInfoLabel =

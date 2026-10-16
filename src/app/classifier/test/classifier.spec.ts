@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
-// Covers PACT-322: a live classifier console (label, confidence score,
+// Coverage: a live classifier console (label, confidence score,
 // engine, and whether consensus arbitrated the request) sourced from
 // pact.decisions events. createClassifierMockData seeds 30 rows cycling
 // through benign/prompt_injection/jailbreak/sensitive/unknown scenarios,

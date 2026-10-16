@@ -84,7 +84,7 @@ export const FilesWorkbench = () => {
   // Passed to each FilesRow so it can trigger a list refresh after a delete
   // or after discovering (via a 404 on its own download-URL mint) that its
   // file no longer exists server-side. See FilesRow.tsx for why this
-  // replaces the old useEffect-driven retry loop (PACT-417).
+  // replaces the old useEffect-driven retry loop.
   const refreshList = useCallback(() => {
     void mutate();
   }, [mutate]);

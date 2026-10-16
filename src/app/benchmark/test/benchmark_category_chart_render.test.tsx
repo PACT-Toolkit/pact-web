@@ -20,7 +20,7 @@ function makeRun(overrides: Partial<BenchmarkRun>): BenchmarkRun {
   };
 }
 
-// PACT-932 fix (coordinator finding): "Select a run to inspect." used to
+// Regression guard: "Select a run to inspect." used to
 // render whenever `run` was undefined, which is also true while
 // BenchmarkComparison's runs are still loading and when there are zero runs
 // -- neither state has a picker on screen, so the sentence told the user to

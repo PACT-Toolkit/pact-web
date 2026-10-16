@@ -2,11 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { redeemRefreshToken } from './refresh_session';
 
-// PACT-726: redeemRefreshToken is the Edge-safe replacement for calling
+// redeemRefreshToken is the Edge-safe replacement for calling
 // client.ts's refreshSession from proxy.ts (client.ts imports next/headers,
 // which middleware can't use). These tests exercise it directly against a
 // stubbed fetch - same pattern proxy_to_gateway.test.ts already uses for the
-// sibling PACT-705 rotation logic.
+// sibling rotation logic.
 describe('redeemRefreshToken', () => {
   const fetchMock = vi.fn<typeof fetch>();
 

@@ -31,7 +31,7 @@ export type {
 };
 
 // Shape of kafka.DecisionEvent fields surfaced in the audit UI, generated
-// from pact-contracts' decisions/pact.decisions.schema.json (PACT-426) --
+// from pact-contracts' decisions/pact.decisions.schema.json --
 // see src/__codegen__/schema/pact-decisions/. Matches the shared Go event
 // structs in pact-contracts' decisions/types.go; decoded lazily.
 //
@@ -51,10 +51,9 @@ export type {
 // src/app/test_lab/domain/test_lab_check.ts (CheckFilterInfo /
 // CheckRedactorInfo / CheckRedactedSpan). The Test Lab consumes the /v1/check
 // REST response (OpenAPI-generated, a distinct wire contract); the audit
-// feed consumes pact.decisions JSONB payloads (this schema). See PACT-426's
-// "out of scope" note -- the two are never unified.
+// feed consumes pact.decisions JSONB payloads (this schema); the two are never unified.
 //
-// Promoted out of the audit feature slice into src/lib (PACT-581): every
+// Promoted out of the audit feature slice into src/lib: every
 // pact.decisions-shaped feature (audit itself, classifier, consensus,
 // dashboard, filter, redactor) reads this vocabulary, so it lives in the
 // framework-agnostic shared layer rather than being a cross-feature

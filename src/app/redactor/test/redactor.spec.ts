@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
-// Covers PACT-324: a live redactor console (verdict, engine, span count,
+// Coverage: a live redactor console (verdict, engine, span count,
 // expandable span detail) sourced from pact.decisions events, plus an
 // ad-hoc test panel that runs pasted text through /v1/check and renders
 // the masked preview + span table. createRedactorMockData seeds 30 rows
@@ -112,7 +112,7 @@ test.describe('Redactor console', () => {
     await expect(resultPane).toContainText('0 spans');
   });
 
-  // PACT-913: content that trips the filter stage (stage 1, upstream of the
+  // Content that trips the filter stage (stage 1, upstream of the
   // redactor at stage 4) blocks the pipeline before the redactor ever runs --
   // the mock /v1/check handler mirrors the real gateway's halt-on-first-block
   // stage loop (test_lab/mock/handlers/test_lab.ts's `!blocked ?

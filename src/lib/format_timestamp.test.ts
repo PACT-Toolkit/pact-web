@@ -5,7 +5,7 @@ import { formatTimestamp } from './format_timestamp';
 describe('formatTimestamp', () => {
   // 2026-01-15T10:00:00Z falls in CET's winter (standard, UTC+1) offset, so
   // the wall-clock hour rendered here is 11, not the UTC hour of 10. This
-  // pins vitest.config.ts's `test.env.TZ = 'CET'` setting (PACT-763): if
+  // pins vitest.config.ts's `test.env.TZ = 'CET'` setting: if
   // that pin stopped applying (e.g. reverted to a shell-only prefix that
   // cmd.exe cannot parse), the formatter would render the UTC hour instead
   // and this would fail. Matches on the HH:MM:SS fragment rather than the

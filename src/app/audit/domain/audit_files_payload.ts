@@ -1,7 +1,7 @@
 import { type PactFiles } from '@/src/__codegen__/schema/pact-files';
 
 // Shape of the JSON pact-files' Kafka producer emits on topic pact.files,
-// generated from pact-contracts' files/pact.files.schema.json (PACT-575) --
+// generated from pact-contracts' files/pact.files.schema.json --
 // see src/__codegen__/schema/pact-files/. Matches pact-files
 // internal/events/producer.go FileEvent; decoded lazily.
 //

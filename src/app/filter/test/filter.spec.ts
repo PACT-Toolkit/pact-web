@@ -2,21 +2,21 @@ import { expect, test } from '@playwright/test';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
-// Covers PACT-325: /filter grows from a decisions list into a filter
+// Coverage: /filter grows from a decisions list into a filter
 // console with three new sections, each backed by a real gateway proxy.
 //
-// - FilterPacksPanel reads GET /v1/filter/packs (pact-gateway PACT-457):
+// - FilterPacksPanel reads GET /v1/filter/packs (pact-gateway):
 //   read-only view of the rule packs/engines pact-filter has active.
-// - FilterTestRuleSandbox runs POST /v1/filter/test-rule (pact-gateway
-//   PACT-451): paste a candidate rule + sample, see whether it matches,
+// - FilterTestRuleSandbox runs POST /v1/filter/test-rule (pact-gateway):
+//   paste a candidate rule + sample, see whether it matches,
 //   with no side effects (nothing persisted or audited).
 // - FilterDecisionRow's flag button toggles a false-positive flag via
 //   gateway's decision-annotations proxy: POST /v1/audit/annotations to
-//   flag (PACT-464/PACT-474) and DELETE /v1/audit/annotations to un-flag
-//   (PACT-834/PACT-835), both with an optimistic SWR update. Reads flags
+//   flag and DELETE /v1/audit/annotations to un-flag,
+//   both with an optimistic SWR update. Reads flags
 //   back via a single batched POST /v1/audit/annotations/query call per
 //   page of visible rows rather than one call per row. Flagging also fires
-//   the pre-existing classifier LabelVerdict write (PACT-318/PACT-325) as a
+//   the pre-existing classifier LabelVerdict write as a
 //   distinct, parallel action feeding the fine-tune corpus -- un-flagging
 //   does not reverse it. See filter_false_positive.ts's docblock for the
 //   full write-up.
@@ -188,7 +188,7 @@ test.describe('Filter console', () => {
       'Remove false-positive flag'
     );
 
-    // PACT-474 requirement: one POST /v1/audit/annotations/query call per
+    // Requirement: one POST /v1/audit/annotations/query call per
     // page of visible rows, not one per row -- strictly fewer calls than
     // flaggable rows on the page proves the read is batched.
     expect(annotationsQueryCalls).toBeGreaterThan(0);

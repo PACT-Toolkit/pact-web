@@ -17,9 +17,9 @@ const blockedEvent: AuditAuditEventResponse = {
   }),
 };
 
-describe('FilterDecisionRow flag-failure banner (PACT-835)', () => {
+describe('FilterDecisionRow flag-failure banner', () => {
   it('renders "Flag failed." for a failed flag attempt even when isFlagged is true', () => {
-    // Reproduces the PACT-835 review finding: a flag click whose annotation
+    // Reproduces a review finding: a flag click whose annotation
     // write succeeded but whose classifier label write failed leaves
     // isFlagged=true post-rollback/revalidate, while the operator's
     // attempted action was still "flag". The banner must reflect the

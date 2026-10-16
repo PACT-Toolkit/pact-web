@@ -8,7 +8,7 @@ let started: Promise<void> | undefined;
 // The Node-runtime side is started by instrumentation.ts so that
 // Server Components and route handlers also see mocked responses.
 //
-// PACT-455: signalMswReady() unblocks every request that msw_fetch_gate.ts
+// signalMswReady() unblocks every request that msw_fetch_gate.ts
 // and axios.ts have queued behind mswReady. It runs in `finally` so a
 // failed worker.start() still releases queued requests - they hit the real
 // (mocked-nothing) network and surface a visible error, same as the

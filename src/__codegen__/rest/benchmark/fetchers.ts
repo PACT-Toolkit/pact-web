@@ -230,7 +230,7 @@ export const getImportBenchmarkDatasetUrl = () => {
 };
 
 /**
- * Starts an asynchronous import (PACT-951): pact-benchmark
+ * Starts an asynchronous import: pact-benchmark
  * streams the split, normalises it through the shared corpus
  * mapping, screens it against the trained-on manifest when one
  * is configured, and runs it as a benchmark job. The resulting
@@ -352,7 +352,7 @@ export const getInspectBenchmarkImportUrl = (
  * hub reports it, alias-detected text/label columns, and the
  * distinct label values from a bounded streaming sample, so a
  * caller can pick text/label columns before queuing a full
- * import with POST /v1/benchmark/imports (PACT-951).
+ * import with POST /v1/benchmark/imports.
  * @summary Preview a Hugging Face dataset before importing it
  */
 export const inspectBenchmarkImport = async (

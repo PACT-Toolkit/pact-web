@@ -17,12 +17,12 @@ const renderPanel = () =>
     ) as ReactNode
   );
 
-// PACT-936: the config grid's "Compliance shadow" tile reflects
+// The config grid's "Compliance shadow" tile reflects
 // complianceShadowEnabled the same way the pre-existing "Sandbox" and
 // "Diagnostics" tiles reflect their booleans -- Enabled when the gateway
 // build reports the deferred compliance-check stage is on, Disabled
 // otherwise (including when the field is absent, i.e. a gateway build that
-// predates PACT-814).
+// predates the field).
 describe('GatewayEnforcementPanel compliance shadow tile', () => {
   it('shows Enabled when the gateway reports complianceShadowEnabled: true', async () => {
     server.use(

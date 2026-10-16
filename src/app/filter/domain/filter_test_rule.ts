@@ -1,8 +1,8 @@
 import { type FilterTestRuleRequest } from '@/src/__codegen__/rest/filter';
 import { type TestRuleFormState } from '@/src/app/filter/ui/types';
 
-// Domain helpers for the TestRule sandbox (pact-gateway PACT-451, wired here
-// under PACT-325). Lets an operator paste a candidate rule (pattern +
+// Domain helpers for the TestRule sandbox (pact-gateway).
+// Lets an operator paste a candidate rule (pattern +
 // verdict) and a sample and see whether pact-filter's engine would match it,
 // without creating the rule via POST /v1/rules first. No side effects --
 // pact-filter persists nothing for this call (see pact-gateway

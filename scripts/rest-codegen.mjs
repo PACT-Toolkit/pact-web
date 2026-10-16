@@ -290,7 +290,7 @@ const generateCustomFetch = async () => {
  * response declares a JSON media type. The real gateway returns text/plain
  * authz errors ("missing required permission"), which an unconditional
  * JSON.parse turns into a thrown SyntaxError, masking the resolved 403
- * from permission gates like isDecisionStatsForbidden (PACT-737).
+ * from permission gates like isDecisionStatsForbidden.
  * A declared-JSON body that fails to parse still resolves as raw text
  * instead of throwing, so proxy-injected error pages cannot crash a
  * query either.

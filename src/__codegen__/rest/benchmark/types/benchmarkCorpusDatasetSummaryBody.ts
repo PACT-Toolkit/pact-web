@@ -14,7 +14,7 @@ export interface BenchmarkCorpusDatasetSummaryBody {
   /**
    * Role is the dataset's train/eval role: "training" or "evaluation" in
    * the common case. An empty string means the row predates the role
-   * column and has not yet been backfilled by pact-benchmark (PACT-850) --
+   * column and has not yet been backfilled by pact-benchmark --
    * treat it as unknown, not as an invalid value. No `enums` annotation
    * here deliberately: swag's enum constraint has no way to express
    * "one of these two, or empty during backfill", and a false enum

@@ -30,7 +30,7 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
         { backend_id: 'gemini-flash', label: 'jailbreak', score: 0.93 },
       ],
     },
-    // PACT-750: causal spans (PACT-734) carry no text by design (PII
+    // Causal spans carry no text by design (PII
     // avoidance) -- these offsets are illustrative byte ranges only, same
     // convention as the pre-existing redactor.ts SCENARIOS spans.
     diagnostics: {

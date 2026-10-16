@@ -29,7 +29,7 @@ type Body = { ceremonyId?: unknown; assertion?: unknown };
 //
 // Completes the WebAuthn assertion ceremony /api/auth/mfa/passkey/begin
 // started, as an alternative to /api/auth/mfa/verify's TOTP/recovery-code
-// path (PACT-697). mfa_token comes off the same httpOnly cookie verify
+// path. mfa_token comes off the same httpOnly cookie verify
 // reads.
 //
 // On success: writes pact_session, clears pact_mfa_token, returns

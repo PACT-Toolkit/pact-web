@@ -22,7 +22,7 @@ import { RecoveryCodesList } from '@/src/framework/auth/recovery_codes_list';
 type Props = {
   // Recovery codes are only meaningful as a fallback into an account that
   // has some OTHER sign-in factor to fall back to - a passkey or a TOTP
-  // factor both qualify (PACT-714 un-gated this from TOTP-only, since
+  // factor both qualify (this used to be gated on TOTP only, since
   // pact-auth now accepts a passkey step-up for RegenerateRecoveryCodes
   // too).
   canGenerate: boolean;

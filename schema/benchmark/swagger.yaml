@@ -268,13 +268,13 @@ definitions:
                 description: |-
                     Throttled is the number of rows in this category that exhausted the
                     runner's retry budget against HTTP 429 (rate limited). Excluded
-                    from attacks/benign and from errors (PACT-933).
+                    from attacks/benign and from errors.
                 type: integer
             unscored:
                 description: |-
                     Unscored is the number of rows in this category the gateway answered
                     with a fail-open allow because the classifier produced no verdict.
-                    Excluded from the detection and false-positive rates (PACT-1078).
+                    Excluded from the detection and false-positive rates.
                 type: integer
         required:
             - attacks
@@ -301,7 +301,7 @@ definitions:
                 description: |-
                     Role is the dataset's train/eval role: "training" or "evaluation" in
                     the common case. An empty string means the row predates the role
-                    column and has not yet been backfilled by pact-benchmark (PACT-850) --
+                    column and has not yet been backfilled by pact-benchmark --
                     treat it as unknown, not as an invalid value. No `enums` annotation
                     here deliberately: swag's enum constraint has no way to express
                     "one of these two, or empty during backfill", and a false enum
@@ -341,7 +341,7 @@ definitions:
                     - $ref: '#/definitions/benchmark.BenchmarkHubImportSummary'
                 description: |-
                     HubImport is set only when this job was started by POST
-                    /v1/benchmark/imports (PACT-951) rather than a corpus bulk-test
+                    /v1/benchmark/imports rather than a corpus bulk-test
                     submission; nil for any other job.
             progress_pct:
                 type: integer
@@ -387,6 +387,12 @@ definitions:
                 items:
                     $ref: '#/definitions/benchmark.JobRowBody'
                 type: array
+            run_id:
+                description: |-
+                    RunID names the persisted benchmark run this job produced, usable with
+                    GET /v1/benchmark/runs/{id}/rows. Absent until the run is persisted and
+                    stays absent when persistence is disabled or failed.
+                type: string
             total_rows:
                 type: integer
         required:
@@ -484,7 +490,7 @@ definitions:
                     Throttled is the number of rows that exhausted the runner's retry
                     budget against HTTP 429 (rate limited). Excluded from
                     attacks/benign and from errors: a shed request is the gateway's
-                    rate limiter working, not a pipeline failure (PACT-933).
+                    rate limiter working, not a pipeline failure.
                 type: integer
             true_positives:
                 type: integer
@@ -492,7 +498,7 @@ definitions:
                 description: |-
                     Unscored is the number of rows the gateway answered with a fail-open
                     allow because the classifier produced no verdict. Excluded from the
-                    detection and false-positive rates (PACT-1078).
+                    detection and false-positive rates.
                 type: integer
         required:
             - attacks
@@ -700,7 +706,7 @@ paths:
             consumes:
                 - application/json
             description: |-
-                Starts an asynchronous import (PACT-951): pact-benchmark
+                Starts an asynchronous import: pact-benchmark
                 streams the split, normalises it through the shared corpus
                 mapping, screens it against the trained-on manifest when one
                 is configured, and runs it as a benchmark job. The resulting
@@ -757,7 +763,7 @@ paths:
                 hub reports it, alias-detected text/label columns, and the
                 distinct label values from a bounded streaming sample, so a
                 caller can pick text/label columns before queuing a full
-                import with POST /v1/benchmark/imports (PACT-951).
+                import with POST /v1/benchmark/imports.
             operationId: inspectBenchmarkImport
             parameters:
                 - description: Hugging Face dataset slug, e.g. owner/name

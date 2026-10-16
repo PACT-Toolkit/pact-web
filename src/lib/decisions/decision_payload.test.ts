@@ -25,7 +25,7 @@ const REDACTED_EMAIL_PAYLOAD = JSON.stringify({
   created_at: '2026-06-12T14:00:00Z',
 });
 
-describe('parseDecisionPayload - redactor.spans surface (PACT-231)', () => {
+describe('parseDecisionPayload - redactor.spans surface', () => {
   it('exposes spans verbatim when verdict=redacted', () => {
     const dp = parseDecisionPayload(REDACTED_EMAIL_PAYLOAD);
     expect(dp?.redactor?.verdict).toBe('redacted');
@@ -35,8 +35,8 @@ describe('parseDecisionPayload - redactor.spans surface (PACT-231)', () => {
     ]);
   });
 
-  it('tolerates pre-PACT-231 payloads with no spans field', () => {
-    // Older gateway builds (between PACT-249 W1 ship and this issue) emit
+  it('tolerates older payloads with no spans field', () => {
+    // Older gateway builds emit
     // redactor.verdict without spans. The audit UI must not crash on those.
     const dp = parseDecisionPayload(
       JSON.stringify({
@@ -72,10 +72,10 @@ describe('parseDecisionPayload - redactor.spans surface (PACT-231)', () => {
   });
 });
 
-describe('parseDecisionPayload - consensus surface (PACT-263)', () => {
+describe('parseDecisionPayload - consensus surface', () => {
   // Production-shaped sample: classifier score below PACT_CONSENSUS_THRESHOLD,
-  // gateway invoked pact-consensus as stage 2.5 (PACT-217), quorum reached.
-  // Mirrors the JSONB observed during PACT-231 dev-stack verification.
+  // gateway invoked pact-consensus as stage 2.5, quorum reached.
+  // Mirrors the JSONB observed during dev-stack verification.
   it('exposes consensus when quorum reached', () => {
     const dp = parseDecisionPayload(
       JSON.stringify({
@@ -126,7 +126,7 @@ describe('parseDecisionPayload - consensus surface (PACT-263)', () => {
     expect(dp?.consensus?.backend_count).toBe(3);
   });
 
-  it('tolerates pre-PACT-217 payloads with no consensus field', () => {
+  it('tolerates older payloads with no consensus field', () => {
     // Classic two-stage decision: filter + classifier, no consensus.
     const dp = parseDecisionPayload(
       JSON.stringify({
@@ -140,7 +140,7 @@ describe('parseDecisionPayload - consensus surface (PACT-263)', () => {
   });
 });
 
-describe('parseDecisionPayload - consensus votes + classifier engine (PACT-328/PACT-323)', () => {
+describe('parseDecisionPayload - consensus votes + classifier engine', () => {
   // Production-shaped sample: gateway PR #96 additively started emitting
   // per-model votes on consensus and a model/checkpoint tag on classifier.
   it('exposes votes and classifier engine when present', () => {
@@ -198,7 +198,7 @@ describe('parseDecisionPayload - consensus votes + classifier engine (PACT-328/P
     ]);
   });
 
-  it('tolerates pre-PACT-328 payloads with no votes and no classifier engine', () => {
+  it('tolerates older payloads with no votes and no classifier engine', () => {
     const dp = parseDecisionPayload(
       JSON.stringify({
         request_id: 'req-13',
@@ -218,7 +218,7 @@ describe('parseDecisionPayload - consensus votes + classifier engine (PACT-328/P
   });
 });
 
-describe('parseDecisionPayload - forensic-trace surface (PACT-265)', () => {
+describe('parseDecisionPayload - forensic-trace surface', () => {
   // Production-shaped sample: a full pipeline decision enriched with the
   // forensic-trace block the gateway stamps on every pact.decisions event.
   // Mirrors pact-gateway DecisionEvent - field names are frozen there.
@@ -262,7 +262,7 @@ describe('parseDecisionPayload - forensic-trace surface (PACT-265)', () => {
     expect(dp?.content).toBeUndefined();
   });
 
-  it('tolerates pre-PACT-265 payloads with no forensic fields', () => {
+  it('tolerates older payloads with no forensic fields', () => {
     const dp = parseDecisionPayload(
       JSON.stringify({
         request_id: 'req-10',

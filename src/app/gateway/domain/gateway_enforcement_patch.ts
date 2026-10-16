@@ -1,5 +1,5 @@
 // Domain types and helpers for the gateway's runtime enforcement write path
-// (PATCH /v1/config/enforcement, pact-gateway PACT-472, PACT-473 here).
+// (PATCH /v1/config/enforcement).
 // Pairs with gateway_config.ts's read-side EnforceMode/labels -- this file
 // owns the write-path concerns: which fields are writable, what values a
 // segmented control may pick from, the optimistic-cache transform for the
@@ -74,7 +74,7 @@ export const isFlipToEnforce = (
 
 // buildEnforcementPatch wraps a single field change into the partial PATCH
 // body -- every other field is omitted (not set to undefined) so the
-// gateway leaves it unchanged, matching PACT-472's partial-update contract.
+// gateway leaves it unchanged, matching the partial-update contract.
 export const buildEnforcementPatch = (
   field: EnforcementField,
   value: string
@@ -108,7 +108,7 @@ export const applyOptimisticEnforcementPatch = (
 };
 
 // enforcementPatchErrorMessage turns a non-200 PATCH status into operator-
-// readable copy. 403 is called out explicitly per PACT-473's spec (the
+// readable copy. 403 is called out explicitly (the
 // write surface requires the config:enforce permission server-side) so a
 // forbidden operator sees why, not a generic failure.
 export const enforcementPatchErrorMessage = (status: number): string => {

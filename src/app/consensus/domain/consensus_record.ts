@@ -11,7 +11,7 @@ import {
 export type ConsensusSubObject = NonNullable<DecisionPayload['consensus']>;
 export type ConsensusVote = NonNullable<ConsensusSubObject['votes']>[number];
 
-// Client-side page size for the consensus console (PACT-369). Distinct from
+// Client-side page size for the consensus console. Distinct from
 // the fixed fetch window in ConsensusWorkbench.tsx (FETCH_WINDOW_SIZE):
 // that constant bounds the single SWR request against the server-side
 // clamp, this one bounds how many already-fetched records are shown per
@@ -25,7 +25,7 @@ export const PAGE_SIZE = 25;
 // context on which model triggered the stage 2.5 escalation).
 export interface ConsensusRecord extends StageRecordBase {
   consensus: ConsensusSubObject;
-  // Additive (PACT-328) -- absent on pre-PACT-328 payloads.
+  // Additive -- absent on older payloads.
   classifierEngine?: string;
 }
 

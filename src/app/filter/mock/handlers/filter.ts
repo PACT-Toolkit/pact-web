@@ -87,7 +87,7 @@ export const handlers: RequestHandler[] = [
     const limit = Math.min(Number(url.searchParams.get('limit') ?? '50'), 200);
     const offset = Number(url.searchParams.get('offset') ?? '0');
     // Sort newest-first explicitly rather than relying on insertion order --
-    // consensus.ts (PACT-369) appends a second batch of pact.decisions rows
+    // consensus.ts appends a second batch of pact.decisions rows
     // via createConsensusMockData, so insertion order no longer coincides
     // with recency once both seeders have run.
     const all = db.decisions
@@ -103,9 +103,9 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json({ events: page, total: all.length });
   }),
   http.get('*/v1/audit/stats', ({ request }) => {
-    // Mirrors pact-gateway's audit:stats permission gate (PACT-363):
+    // Mirrors pact-gateway's audit:stats permission gate:
     // operator/admin only. The 'admin' mock persona is the operator stand-in
-    // -- 'auditor' and 'developer' exercise the 403 path so PACT-377's
+    // -- 'auditor' and 'developer' exercise the 403 path so the
     // permission-aware empty state is reachable in dev:mock without a real
     // gateway. Switch personas via the sidebar's mock-user-type dropdown.
     if (getMockUserType() !== 'admin') {

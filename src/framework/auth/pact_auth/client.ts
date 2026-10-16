@@ -22,7 +22,7 @@ import { getGatewayBaseUrl } from '@/src/lib/proxy/gateway_url';
 // /v1/auth/* proxy (PACT_GATEWAY_URL) instead of dialing pact-auth's gRPC
 // port directly - the mesh-mTLS rollout closed that listener to allowlisted
 // workloads, so pact-web's plaintext connect-node dial started failing at
-// the TLS preface. See PACT-681.
+// the TLS preface.
 //
 // The wire types imported above come from the auth REST codegen
 // (`schema/auth/`, `pnpm run rest:codegen`), which mirrors pact-gateway's
@@ -34,7 +34,7 @@ import { getGatewayBaseUrl } from '@/src/lib/proxy/gateway_url';
 // caller-supplied bearer token, which every session-authed method below
 // needs (the caller passes the token as a plain argument, not a cookie).
 //
-// The one exception is the end-user client IP (PACT-687): authRequest
+// The one exception is the end-user client IP: authRequest
 // reads it from `next/headers` via inboundRequestHeaders() below, purely
 // to forward it on to pact-gateway (see the X-Forwarded-For comment on
 // authRequest). That read is wrapped so it is a clean no-op outside an
@@ -62,7 +62,7 @@ const AUTH_BASE_PATH = '/v1/auth';
 // bare 400 with no body code always decodes to InvalidArgument even when the
 // upstream gRPC code was one of the other two. Same story for Canceled vs
 // DeadlineExceeded on 504. That was a real, confirmed gap for the
-// gRPC-mapped error paths - closed by PACT-684's stable `code` slug on
+// gRPC-mapped error paths - closed by the stable `code` slug on
 // those responses, which authRequest below now prefers over this table
 // whenever it's present.
 const httpStatusToCode = (status: number): Code => {
@@ -90,7 +90,7 @@ const httpStatusToCode = (status: number): Code => {
   }
 };
 
-// pact-gateway's stable error-body code slugs (PACT-684), on every
+// pact-gateway's stable error-body code slugs, on every
 // gRPC-mapped error path: `{"code": "<slug>", "error": "<stable msg>"}`
 // with a JSON content-type. This is the authoritative source for the
 // `Code` on those paths - notably failed_precondition and out_of_range,
@@ -119,7 +119,7 @@ type GatewayErrorBody = {
   error?: string;
 };
 
-// Parses pact-gateway's error envelope (PACT-684) out of a raw response
+// Parses pact-gateway's error envelope out of a raw response
 // body. Returns undefined for anything that isn't a JSON object - a plain
 // error string from pact-gateway's middleware paths, an empty body, or any
 // other non-conforming payload - so the caller can fall back to the
@@ -180,7 +180,7 @@ const authRequest = async <T>(opts: AuthRequestOptions): Promise<T> => {
     headers.set('authorization', `Bearer ${opts.sessionToken}`);
   }
 
-  // Forward the end-user's client IP to pact-gateway (PACT-687), which
+  // Forward the end-user's client IP to pact-gateway, which
   // keys its per-IP rate buckets on the right-most X-Forwarded-For hop
   // under PACT_TRUST_XFF=true. pact-web is the gateway's single trusted
   // proxy hop (trustedProxyHops=1), so exactly one hop is appended here -
@@ -218,7 +218,7 @@ const authRequest = async <T>(opts: AuthRequestOptions): Promise<T> => {
   const text = await res.text();
 
   if (!res.ok) {
-    // Prefer the gateway's own body code (PACT-684) over the HTTP-status
+    // Prefer the gateway's own body code over the HTTP-status
     // fallback whenever it's present and recognised - see
     // GATEWAY_BODY_CODE_TO_CODE's docstring for why the status alone can't
     // always tell the right Code apart. Same for the message: a JSON body
@@ -376,7 +376,7 @@ export interface PactAuthClient {
     code: string;
     isRecovery: boolean;
   }): Promise<AuthSessionResult>;
-  // Alternative to verifyMfa's TOTP/recovery-code step-up (PACT-696/700):
+  // Alternative to verifyMfa's TOTP/recovery-code step-up:
   // completes the same outstanding mfa_token via a WebAuthn assertion
   // instead of a code.
   beginMfaPasskey(req: {

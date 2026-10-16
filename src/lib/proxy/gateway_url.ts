@@ -2,7 +2,7 @@
 // talks to the gateway directly (the cookie-to-Bearer proxy helper, the auth
 // REST client, BenchmarkWorkbench's direct browser fetch) reads it from here
 // instead of re-declaring the same `... ?? 'http://localhost:8110'`
-// expression - see PACT-681, which added the second caller and made the
+// expression - the second caller made the
 // duplication worth collapsing.
 const GATEWAY_DEFAULT_URL = 'http://localhost:8110';
 

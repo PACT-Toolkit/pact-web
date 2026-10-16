@@ -51,7 +51,7 @@ const recoveryCodesButton = () =>
   screen.getByRole('button', { name: /generate recovery codes/i });
 
 describe('AuthSettingsSignInMethodsPanel', () => {
-  // PACT-718 / PACT-723: an unverified, pending-enrollment TOTP factor
+  // An unverified, pending-enrollment TOTP factor
   // (created by totp/enroll/begin, before enroll/confirm) must not unlock
   // recovery-code generation - mirrors pact-auth's RegenerateRecoveryCodes
   // gate, which checks HasVerifiedTOTPFactor, not "any TOTP row exists".

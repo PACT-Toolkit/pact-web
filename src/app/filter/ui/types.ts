@@ -1,7 +1,7 @@
-// UI-state types for the filter console (PACT-325). Visual/form state only --
+// UI-state types for the filter console. Visual/form state only --
 // wire shapes and business helpers live in domain/ (see pact-domain-layer).
 
-// Which flag-toggle action a row's last attempt failed on (PACT-835). Keyed
+// Which flag-toggle action a row's last attempt failed on. Keyed
 // per-event in FilterDecisionsWorkbench so FilterDecisionRow can render
 // "Flag failed." vs "Unflag failed." from the action the operator actually
 // attempted, rather than inferring it from isFlagged -- that state reflects

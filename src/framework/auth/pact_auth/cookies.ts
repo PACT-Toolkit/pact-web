@@ -70,7 +70,7 @@ export const refreshTokenCookieOptions = () => ({
 // login (password, MFA verify, passkey, OAuth callback, password-reset
 // confirm, email verify) mints a session the same way pact-gateway's
 // authMiddleware later needs to silently renew, so this is the single
-// place that pairs the two writes - PACT-705 exists because refreshToken
+// place that pairs the two writes - exists because refreshToken
 // used to be parsed and dropped here.
 export const setSessionCookies = (
   res: NextResponse,

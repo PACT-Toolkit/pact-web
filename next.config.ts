@@ -83,7 +83,7 @@ const nextConfig: NextConfig = {
             'payment=()',
             'picture-in-picture=()',
             // This app's own top-level pages are the only origin that ever
-            // needs this (passkey login/registration, and PACT-697's MFA
+            // needs this (passkey login/registration, and the MFA
             // passkey step-up) - `=()` denies it even to self, which was
             // silently breaking navigator.credentials.get() for every real
             // browser (Chrome surfaces it as a generic NotAllowedError

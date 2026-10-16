@@ -24,7 +24,7 @@ const runTest = (content: string) => {
   fireEvent.click(screen.getByTestId('redactor-test-run'));
 };
 
-// PACT-913: the panel used to classify purely on `decision === 'block'`,
+// The panel used to classify purely on `decision === 'block'`,
 // which mislabeled two real gateway shapes -- allow with no redactor object
 // (a classifier transport failure halts the pipeline before the redactor
 // stage, reason "classifier_unreachable") and block with a redactor object
@@ -162,7 +162,7 @@ describe('RedactorTestPanel', () => {
     ).not.toBeInTheDocument();
   });
 
-  // PACT-921: useCheckContent's `data` is the last resolved response, not
+  // useCheckContent's `data` is the last resolved response, not
   // keyed to the request that produced it. Editing the textarea after a run
   // without re-running used to leave the old response's spans applied to
   // whatever text was now in the box, painting a stale PII span onto text

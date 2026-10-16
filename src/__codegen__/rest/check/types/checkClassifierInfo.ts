@@ -9,7 +9,7 @@
 export interface CheckClassifierInfo {
   /**
    * DurationMs is the classifier stage's wall-clock RPC time in fractional
-   * milliseconds (PACT-613), for the primary Classify call only; absent
+   * milliseconds, for the primary Classify call only; absent
    * when the classifier stage did not run.
    */
   duration_ms?: number;

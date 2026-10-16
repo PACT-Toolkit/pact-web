@@ -33,9 +33,9 @@ export const PIPELINE_STAGE_LABEL: Record<PipelineStageId, string> = {
   redactor: 'Redactor',
 };
 
-// One icon per pipeline stage (PACT-703 added consensus/redactor/sandbox
+// One icon per pipeline stage (consensus/redactor/sandbox
 // alongside the original filter/classifier pair). Shared between the Test
-// Lab's TestLabLayerNode and the audit console's StageStrip (PACT-748) --
+// Lab's TestLabLayerNode and the audit console's StageStrip --
 // promoted here on its second use per the shared-code rule rather than kept
 // as two copies of the same map. Keyed by plain string (not the closed
 // PipelineStageId) because TestLabLayerNode indexes it with LayerState.id,

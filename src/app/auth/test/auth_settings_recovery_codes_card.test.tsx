@@ -17,7 +17,7 @@ const renderCard = (canGenerate: boolean) =>
   );
 
 describe('AuthSettingsRecoveryCodesCard', () => {
-  // PACT-714: this gate used to be TOTP-only. A passkey now qualifies too
+  // This gate used to be TOTP-only. A passkey now qualifies too
   // (pact-auth accepts a passkey step-up for RegenerateRecoveryCodes), so
   // the card takes a pre-computed `canGenerate` instead of deciding for
   // itself which factor types count.

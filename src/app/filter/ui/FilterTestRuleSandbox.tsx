@@ -31,8 +31,8 @@ const selectClassName = 'h-9 rounded-md border bg-background px-3 text-sm';
 const textareaClassName =
   'w-full resize-none rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none';
 
-// TestRule sandbox (pact-gateway PACT-451's POST /v1/filter/test-rule, wired
-// here under PACT-325 part 2). Paste a candidate rule (pattern + verdict)
+// TestRule sandbox (pact-gateway POST /v1/filter/test-rule).
+// Paste a candidate rule (pattern + verdict)
 // and a sample and see whether pact-filter's engine would match it, before
 // creating the rule for real via POST /v1/rules. No side effects -- nothing
 // here is persisted or audited (see pact-gateway

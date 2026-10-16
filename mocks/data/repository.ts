@@ -12,7 +12,7 @@ export class MockRepository<T> {
   // in `overrides` that the instantiator doesn't map onto T are dropped,
   // not grafted onto the stored item: a store whose rows silently grow
   // fields outside T defeats the type contract Partial<T> is meant to
-  // enforce (PACT-582).
+  // enforce.
   create = (overrides: Partial<T>): T => {
     const item = this.instantiator(overrides);
 

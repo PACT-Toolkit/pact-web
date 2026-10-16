@@ -26,12 +26,12 @@ const PUBLIC_PATHS = [
 // auth barrier. requireSession() in app/(app)/layout.tsx is what actually
 // validates against pact-auth.
 //
-// PACT-726: page navigations used to bounce straight to /login the moment
+// Page navigations used to bounce straight to /login the moment
 // pact_session expired (10 minutes - PACT_ENGINE's short-lived edge token),
 // even though the far-longer-lived pact_refresh_token cookie (now 7 days,
 // see REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS) and the pact-auth session behind
-// it were both still good. Only the API proxy route (proxy_to_gateway.ts,
-// PACT-705) ever redeemed that refresh token - a plain page load never hit
+// it were both still good. Only the API proxy route (proxy_to_gateway.ts)
+// ever redeemed that refresh token - a plain page load never hit
 // it. This is the missing silent-renewal path for that case: no/expired
 // pact_session but a present pact_refresh_token now gets one redemption
 // attempt against pact-gateway's POST /v1/auth/session/refresh before
@@ -52,7 +52,7 @@ const PUBLIC_PATHS = [
 // client.ts imports `next/headers`, which isn't callable from middleware.
 //
 // Race safety against proxy_to_gateway.ts's existing single-use-refresh-
-// token rotation (PACT-705): the two mechanisms cannot race each other,
+// token rotation: the two mechanisms cannot race each other,
 // structurally, not just by convention. proxy_to_gateway.ts only attaches
 // X-Pact-Refresh-Token when a *session* cookie is present (it keys its own
 // single-flight map on that cookie's value); the branch below only runs

@@ -1,5 +1,5 @@
 // Domain types and helpers for the gateway's live enforcement posture (GET
-// /v1/config, pact-gateway PACT-320, PR #88). This is the read-only source of
+// /v1/config). This is the read-only source of
 // truth the other three /gateway sections (sandbox, diagnostics, spotlight)
 // gate their empty/disabled states on -- see use_gateway_config.ts's docblock
 // for why every section re-reads the same SWR key instead of prop-drilling.

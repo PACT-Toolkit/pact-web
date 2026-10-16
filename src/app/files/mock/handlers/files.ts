@@ -77,7 +77,7 @@ export const handlers: RequestHandler[] = [
     );
   }),
 
-  // PACT-924: pact-web's presign step hands the browser a
+  // pact-web's presign step hands the browser a
   // mock-object-storage.local URL to PUT the raw bytes to directly, bypassing
   // the Next.js proxy entirely (same as a real S3 presigned URL would). That
   // origin was never registered as an MSW handler, so the PUT fell through
@@ -110,7 +110,7 @@ export const handlers: RequestHandler[] = [
   http.get('*/v1/files/:id', ({ params }) => {
     const { id } = params as { id: string };
 
-    // PACT-417 fixture: always fail the mint for this one file, even
+    // regression fixture: always fail the mint for this one file, even
     // though it is otherwise "ready". See mock/data/files.ts's docblock.
     if (id === MINT_FAILURE_FILE_ID) {
       return HttpResponse.json(

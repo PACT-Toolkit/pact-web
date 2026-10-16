@@ -5,13 +5,13 @@ import { server } from '@/mocks/server';
 import { uploadFile } from '@/src/app/files/domain/upload_file';
 
 // The presigned PUT target (mock-object-storage.local) is answered by the
-// app's global MSW handlers (src/app/files/mock/handlers/files.ts, PACT-924)
+// app's global MSW handlers (src/app/files/mock/handlers/files.ts)
 // with a 200, so the happy-path and confirm-failure cases below exercise it
 // as-is. Only the PUT-failure case below needs a scoped override.
 const makeFile = (name = 'report.pdf') =>
   new File(['hello world'], name, { type: 'application/pdf' });
 
-describe('uploadFile - PACT-580 presign -> PUT -> confirm protocol helper', () => {
+describe('uploadFile - presign -> PUT -> confirm protocol helper', () => {
   it('returns ok with the confirmed fileId on the full happy path', async () => {
     const result = await uploadFile(makeFile());
 

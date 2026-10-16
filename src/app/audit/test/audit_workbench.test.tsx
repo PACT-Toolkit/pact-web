@@ -16,7 +16,7 @@ const renderWorkbench = () =>
     ) as ReactNode
   );
 
-// PACT-917: PaginationFooter's emptyText and the inline "Loading activity..."
+// PaginationFooter's emptyText and the inline "Loading activity..."
 // message both key off an empty events list, which is true both mid-fetch
 // (before the first page has arrived) and once a genuinely empty result has
 // settled. Before this fix, AuditWorkbench passed emptyText unconditionally,

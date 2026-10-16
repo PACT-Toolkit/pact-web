@@ -6,7 +6,7 @@ import { proxyToGateway } from '@/src/lib/proxy/proxy_to_gateway';
 // pact-gateway /v1/benchmark/testlab/runs (list + save Test Lab run-history
 // entries).
 //
-// PACT-465 retires the old direct-to-pact-benchmark proxy at
+// This route replaces the old direct-to-pact-benchmark proxy at
 // /api/pact/benchmark/v1/testlab/runs, which forwarded the pact_session
 // cookie as an X-Pact-Actor header so pact-benchmark could scope runs per
 // user without decoding the JWT itself. The gateway resolves the actor from
@@ -15,7 +15,7 @@ import { proxyToGateway } from '@/src/lib/proxy/proxy_to_gateway';
 // See proxy_to_gateway.ts for the shared session-cookie -> Bearer
 // translation and rotated-session handling.
 //
-// PACT-459 accepted an identity discontinuity here: the gateway persists the
+// An identity discontinuity is accepted here: the gateway persists the
 // session user id verbatim, while the retired REST path persisted a hash of
 // X-Pact-Actor. Rows saved through the old path will not appear under the
 // gateway identity.

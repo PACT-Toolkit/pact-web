@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
-// Covers PACT-465: Test Lab's "Save to corpus" and run-history save/list now
+// Coverage: Test Lab's "Save to corpus" and run-history save/list now
 // go through the gateway's session-authenticated routes
 // (POST /v1/benchmark/corpus, GET+POST /v1/benchmark/testlab/runs) instead of
 // the retired direct pact-benchmark proxy that injected an X-Pact-Actor
@@ -82,7 +82,7 @@ test.describe('Test Lab', () => {
   test('a previously failed run shows a FAILED badge and error summary, not a green ALLOW', async ({
     page,
   }) => {
-    // PACT-595: createTestLabRunsMockData seeds one status=error row
+    // createTestLabRunsMockData seeds one status=error row
     // (run-3) alongside the allow/block rows, so dev:mock exercises the
     // failed-run history render without needing to trigger a live
     // /v1/check failure first.

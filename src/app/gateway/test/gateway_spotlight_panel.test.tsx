@@ -17,7 +17,7 @@ const renderPanel = () =>
     ) as ReactNode
   );
 
-// PACT-917: spotlightFormatLabel(undefined) returns "Unknown", so before
+// spotlightFormatLabel(undefined) returns "Unknown", so before
 // this fix the panel flashed "Current format: Unknown" on every mount while
 // GET /v1/config was still in flight -- indistinguishable from a resolved
 // response that genuinely has no spotlightFormat. The loading state must

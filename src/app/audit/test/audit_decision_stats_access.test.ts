@@ -32,7 +32,7 @@ describe('isDecisionStatsForbidden', () => {
   });
 });
 
-// PACT-914: isDecisionStatsFailure originally treated any non-200,
+// isDecisionStatsFailure originally treated any non-200,
 // non-403 status as a failure, which mislabeled a non-200 success status
 // (e.g. 204) as a failure. It now accepts any 2xx as success.
 describe('isDecisionStatsFailure', () => {

@@ -75,7 +75,7 @@ export const FilterDecisionsWorkbench = () => {
   const pagination = useLocalPagination(allEvents, PAGE_SIZE);
   const pageEvents = pagination.pageItems;
 
-  // One batched read per page of visible rows (PACT-474), not one read per
+  // One batched read per page of visible rows, not one read per
   // row -- gathers every distinct requestId currently on screen and looks
   // them all up in a single POST /v1/audit/annotations/query call.
   const pageRequestIds = useMemo(() => {
@@ -105,13 +105,13 @@ export const FilterDecisionsWorkbench = () => {
     [annotationsData]
   );
 
-  // Toggles the "false positive" flag on a decision (PACT-835). Flagging
-  // persists two writes (PACT-474): a durable annotation via gateway's POST
-  // /v1/audit/annotations (PACT-464 proxy), which is what backs the row's
+  // Toggles the "false positive" flag on a decision. Flagging
+  // persists two writes: a durable annotation via gateway's POST
+  // /v1/audit/annotations, which is what backs the row's
   // flagged state, and the pre-existing POST /v1/classifier/label write
-  // (PACT-318/PACT-325) that feeds pact-classifier's fine-tune corpus -- a
+  // that feeds pact-classifier's fine-tune corpus -- a
   // distinct purpose, kept as-is. Un-flagging only touches the annotation
-  // (via DELETE /v1/audit/annotations, PACT-834's RemoveDecisionAnnotation
+  // (via DELETE /v1/audit/annotations, the RemoveDecisionAnnotation
   // proxy) -- it must not reverse the classifier label write, which stays a
   // durable, one-way training signal regardless of whether the operator
   // later reconsiders the flag. Both directions optimistically update the

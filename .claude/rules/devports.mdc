@@ -20,7 +20,7 @@ This rule also fires when you are about to:
 - Run `doppler secrets set` (any config: `dev`, `dev_personal`,
   `stg`, `prd`) for the same set of keys.
 - Wire `PACT_GATEWAY_URL` in pact-web env files (pact-web no longer
-  dials pact-auth's gRPC port directly - see PACT-681 - so
+  dials pact-auth's gRPC port directly - so
   `PACT_AUTH_GRPC_ADDR` is retired from the app runtime; only the
   Playwright-only `PACT_AUTH_GRPC_ADDR_E2E` remains, for direct
   test-fixture seeding).

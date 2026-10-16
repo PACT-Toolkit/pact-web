@@ -1,7 +1,7 @@
 import { isMock } from '@/src/framework/helpers/environment';
 import { mswReady } from '@/src/framework/msw/msw_ready';
 
-// PACT-455: delays every outgoing `fetch()` call until `mswReady` resolves
+// Delays every outgoing `fetch()` call until `mswReady` resolves
 // (see msw_ready.ts for why that's needed). This covers the orval-generated
 // REST hooks - `client: 'swr'` in orval.config.ts means the generated
 // fetchers call the global `fetch` directly, and being generated code they

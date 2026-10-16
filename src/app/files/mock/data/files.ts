@@ -3,7 +3,7 @@ import { type FilesFileResponse } from '@/src/__codegen__/rest/files';
 import { type FileStatus } from '@/src/app/files/domain/file_status';
 
 // A file whose GET (download-URL mint) always fails upstream, even though
-// its own status is "ready". This is the PACT-417 regression fixture: the
+// its own status is "ready". This is the regression fixture for that loop: the
 // old FilesWorkbench implementation re-minted this id every render forever
 // with no backoff (see FilesRow.tsx's docblock for the fix). Exercising
 // this row in dev:mock is how the fix is verified end-to-end - the network

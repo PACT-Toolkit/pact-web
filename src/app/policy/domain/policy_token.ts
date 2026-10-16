@@ -1,5 +1,5 @@
 // Domain helpers for the capability-token issuance panel (POST
-// /v1/policy/tokens, PACT-319). Wire types are generated from
+// /v1/policy/tokens). Wire types are generated from
 // pact-gateway's per-tag swagger slice (schema/policy, pulled from
 // pact-gateway's api/swagger/policy.yaml).
 import {

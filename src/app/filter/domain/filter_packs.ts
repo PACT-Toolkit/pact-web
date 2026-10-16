@@ -1,7 +1,7 @@
 import { type FilterLoadedPackResponse } from '@/src/__codegen__/rest/filter';
 
-// Display helpers for GET /v1/filter/packs (pact-gateway PACT-450, wired here
-// under PACT-325). Read-only introspection: pact-filter reports pack/engine
+// Display helpers for GET /v1/filter/packs (pact-gateway).
+// Read-only introspection: pact-filter reports pack/engine
 // metadata only, never rule bodies. Packs are not user-scoped, so every
 // authenticated caller sees the same set (mirrors GET /v1/rules).
 

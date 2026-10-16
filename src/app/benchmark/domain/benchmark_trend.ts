@@ -34,7 +34,7 @@ interface TrendSeriesEntry {
  * Series config for the detection/FP trend chart's two lines. Colors
  * reference the app's categorical `--chart-*` custom properties directly -
  * chart.tsx's `ChartStyle` re-emits `color` verbatim as `--color-<key>`,
- * so wrapping it in `hsl(...)` (the pre-PACT-927 shape) breaks once those
+ * so wrapping it in `hsl(...)` (the older shape) breaks once those
  * properties hold oklch values.
  */
 export const TREND_SERIES: Record<

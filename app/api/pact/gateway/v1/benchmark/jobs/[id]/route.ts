@@ -6,7 +6,7 @@ import { proxyToGateway } from '@/src/lib/proxy/proxy_to_gateway';
 // pact-gateway /v1/benchmark/jobs/{id} (poll a bulk-test job's status and
 // result).
 //
-// Relocated from /api/pact/benchmark/v1/jobs/{id} under PACT-465 - see
+// Relocated from /api/pact/benchmark/v1/jobs/{id} - see
 // app/api/pact/gateway/v1/benchmark/jobs/route.ts's docblock. Logic is
 // unchanged: still reached through the gateway (auth-gated, rate-limited),
 // not pact-benchmark's internal port directly. In mock mode MSW intercepts

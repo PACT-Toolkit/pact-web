@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { SWRTestProvider } from '@/mocks/swr_test_provider';
 import { BenchmarkWorkbench } from '@/src/app/benchmark/ui/BenchmarkWorkbench';
 
-// PACT-970: the workbench used to hold one shared `isSubmitting` boolean for
+// The workbench used to hold one shared `isSubmitting` boolean for
 // both the upload form and the hub-import card, so submitting either one
 // flipped the other's button to its own "pending" copy even though nothing
 // was submitted there. These tests pin each button's label to the form it

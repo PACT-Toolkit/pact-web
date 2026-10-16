@@ -1,4 +1,4 @@
-// Full-stack Playwright spec for PACT-446: the password-reset confirm
+// Full-stack Playwright spec for the password-reset confirm
 // flow's MFA step-up gate. pact-auth PR #60 made ConfirmPasswordReset
 // behave like Login for an MFA-enrolled user - it withholds the session
 // and returns mfa_required=true + a short-lived mfa_token instead. This

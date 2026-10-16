@@ -2,7 +2,7 @@ import { type PactAccount } from '@/src/__codegen__/schema/pact-account';
 
 // Shape of the JSON pact-account's Kafka producer emits on topic
 // pact.account, generated from pact-contracts'
-// account/pact.account.schema.json (PACT-575) -- see
+// account/pact.account.schema.json -- see
 // src/__codegen__/schema/pact-account/. Matches pact-account
 // internal/kafka/producer.go AccountEvent; decoded lazily.
 //

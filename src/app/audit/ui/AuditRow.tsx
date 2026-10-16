@@ -32,7 +32,7 @@ export const AuditRow = ({ event }: { event: AuditAuditEventResponse }) => {
     case 'unknown':
       return <AuditUnknownRow event={event} raw={variant.raw} />;
     default:
-      // Exhaustiveness insurance (PACT-581): if AuditEventVariant ever grows
+      // Exhaustiveness insurance: if AuditEventVariant ever grows
       // a new `kind` without a case above, `variant` stops being `never`
       // here and this line fails to compile instead of silently falling
       // through at runtime.

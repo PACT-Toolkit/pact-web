@@ -36,7 +36,7 @@ describe('useBenchmarkJobState', () => {
         pollCount += 1;
 
         // Poll 1: a real HTTP-200 running response at 40%. Poll 2+: a
-        // transient 429, mirroring the coordinator's PACT-956 follow-up
+        // transient 429, mirroring the
         // scenario (429s landing mid-run, after progress already exists).
         return pollCount === 1
           ? HttpResponse.json({ status: 'running', progress_pct: 40 })
@@ -64,7 +64,7 @@ describe('useBenchmarkJobState', () => {
     await waitFor(() =>
       expect(result.current.poll).toEqual({ kind: 'waiting', httpStatus: 429 })
     );
-    // Regression guard (PACT-956 follow-up): the card's data source must not
+    // Regression guard: the card's data source must not
     // snap back to undefined during the 429 window - it must keep showing
     // the last known-good running/40% state.
     expect(result.current.jobState).toEqual({

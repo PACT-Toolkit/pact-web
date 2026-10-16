@@ -14,7 +14,7 @@ import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
 // of their own -- pact.decisions is seeded by filter.ts and consensus.ts
 // instead, since that payload is what the filter and consensus consoles
 // both read. pact.policy is intentionally NOT seeded here: pact-audit
-// doesn't consume that topic yet (PACT-306/308) and AuditWorkbench
+// doesn't consume that topic yet and AuditWorkbench
 // documents selecting it as an honest empty result, not a bug -- seeding it
 // would contradict that documented behaviour.
 export const mockAuditEvent = (
@@ -29,8 +29,8 @@ export const mockAuditEvent = (
   ...overrides,
 });
 
-// db.auditAnnotations backs the decision-annotations proxy (PACT-464/
-// PACT-474): POST /v1/audit/annotations creates rows here, POST
+// db.auditAnnotations backs the decision-annotations proxy: POST /v1/audit/annotations
+// creates rows here, POST
 // /v1/audit/annotations/query reads them back. See audit.ts's mock handlers
 // for both.
 export const mockDecisionAnnotation = (
@@ -173,7 +173,7 @@ export const createAuditMockData = (db: DB): void => {
     event_id: 'password_changed',
     user_id: MOCK_USER_ID,
   });
-  // PACT-527's session-revocation pair, so pact-gateway's edge revocation
+  // The session-revocation pair, so pact-gateway's edge revocation
   // set has a mock counterpart to observe in dev:mock's activity log.
   seedAuth(2 * hour + 30 * min, 'req-auth-h8', {
     event_id: 'session_revoked',
@@ -258,7 +258,7 @@ export const createAuditMockData = (db: DB): void => {
   });
 };
 
-// PACT-474's decision-annotations flag needs to survive a real page reload
+// The decision-annotations flag needs to survive a real page reload
 // to be a meaningful E2E check, but `db` itself cannot -- it's a plain
 // module-scope object re-created from these seeders every time this module
 // re-evaluates, which happens on every full navigation in the browser (the
@@ -304,7 +304,7 @@ export const persistDecisionAnnotationRequestId = (requestId: string): void => {
   }
 };
 
-// PACT-835's counterpart to persistDecisionAnnotationRequestId, called by
+// The counterpart to persistDecisionAnnotationRequestId, called by
 // mock/handlers/audit.ts's removeDecisionAnnotation handler right after it
 // deletes the matching db.auditAnnotations row, so the un-flag also
 // survives the next reseed rather than the annotation silently reappearing

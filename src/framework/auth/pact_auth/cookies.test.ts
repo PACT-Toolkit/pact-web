@@ -11,7 +11,7 @@ import {
 // setSessionCookies/clearSessionCookies are the single place every
 // session-issuing route (login, MFA verify, MFA passkey finish, passkey
 // login, OAuth callback, password-reset confirm, email verify) and the
-// logout route funnel through (PACT-705) - covered directly here rather
+// logout route funnel through - covered directly here rather
 // than duplicating the same cookie-shape assertions across every route's
 // own test file.
 describe('setSessionCookies', () => {

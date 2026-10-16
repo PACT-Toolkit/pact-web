@@ -105,7 +105,7 @@ createAccountMockData(db);
 createAuditMockData(db);
 createAuthMockData(db);
 // No ordering dependency on the decisions-producing seeders below --
-// annotations are independent rows keyed on requestId (PACT-464/PACT-474),
+// annotations are independent rows keyed on requestId,
 // looked up by whatever the caller passes, not tied to a decision row
 // existing in db.decisions.
 createDecisionAnnotationsMockData(db);
@@ -116,10 +116,10 @@ createFilterMockData(db);
 // newest-first before slicing) but keeps the two decisions-producing
 // seeders visually adjacent here.
 createConsensusMockData(db);
-// Third seeder appending to the shared db.decisions repository (PACT-324);
+// Third seeder appending to the shared db.decisions repository;
 // see redactor.ts's header comment for its distinct offset scheme.
 createRedactorMockData(db);
-// Fourth seeder appending to the shared db.decisions repository (PACT-322);
+// Fourth seeder appending to the shared db.decisions repository;
 // see classifier.ts's header comment for its distinct offset scheme.
 createClassifierMockData(db);
 createFilesMockData(db);

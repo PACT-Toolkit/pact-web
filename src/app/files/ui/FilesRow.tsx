@@ -19,7 +19,7 @@ import { Button } from '@/src/components/ui/button';
 // keeps its own SWR cache entry, so a failed mint for one file never
 // affects another.
 //
-// PACT-417: the previous implementation minted download URLs in a
+// The previous implementation minted download URLs in a
 // useEffect in the parent, keyed off a `serverFiles`/`extras` dependency
 // pair. A failed mint set an error flag in `extras` but never set
 // `downloadUrl`, so the effect's own "still missing a URL" filter matched

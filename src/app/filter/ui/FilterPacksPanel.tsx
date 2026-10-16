@@ -20,8 +20,8 @@ import {
 } from '@/src/components/ui/card';
 import { formatTimestamp } from '@/src/lib/format_timestamp';
 
-// Loaded rule packs / engines view (pact-gateway PACT-450's GET
-// /v1/filter/packs, wired here under PACT-325 part 1). Lets an operator see
+// Loaded rule packs / engines view (pact-gateway GET
+// /v1/filter/packs). Lets an operator see
 // which rule packs and engines pact-filter actually has active without
 // SSHing into a pod. Read-only, not user-scoped -- every authenticated
 // caller sees the same set.

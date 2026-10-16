@@ -10,7 +10,7 @@ export interface ConfusionCounts {
   /**
    * Rows that exhausted the runner's retry budget against HTTP 429 - the
    * gateway's rate limiter working, not a pipeline failure. Already
-   * excluded from attacks/benign/errors on the wire (PACT-933), so it
+   * excluded from attacks/benign/errors on the wire, so it
    * never changes the four confusion cells above; it's surfaced here
    * purely so the run-detail tiles can show it next to Errors.
    */
@@ -37,7 +37,7 @@ export interface ConfusionCounts {
  *
  * `counts.throttled` is coalesced to 0 rather than trusted as always
  * present: the generated type marks it required, but a `counts` object
- * persisted before the gateway added the field (PACT-933) won't actually
+ * persisted before the gateway added the field won't actually
  * carry it on the wire - the same "don't assume presence" caveat
  * benchmark_breakdown.ts documents for the rest of this struct. The same
  * goes for `counts.unscored`, absent on runs persisted before it existed.

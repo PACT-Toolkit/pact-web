@@ -90,7 +90,7 @@ export const AuthLoginMfaChallengeForm = ({
     },
   });
 
-  // Alternative to the TOTP/recovery-code form below (PACT-697). A ceremony
+  // Alternative to the TOTP/recovery-code form below. A ceremony
   // that never reaches the server (cancelled, unsupported) or one pact-auth
   // rejects before consuming the mfa_token never disables the code input or
   // submit button - the TOTP path stays fully usable. One that pact-auth

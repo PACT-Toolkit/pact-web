@@ -277,7 +277,7 @@ export const signInWithPasskey = async ({
   }
 };
 
-// Run the MFA passkey step-up ceremony end-to-end (PACT-697): an
+// Run the MFA passkey step-up ceremony end-to-end: an
 // alternative to submitting a TOTP/recovery code from
 // AuthLoginMfaChallengeForm. The outstanding mfa_token never leaves the
 // server - both routes read it off the httpOnly pact_mfa_token cookie,

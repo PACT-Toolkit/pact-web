@@ -12,7 +12,7 @@ export interface BenchmarkGetJobResponse {
   error?: string;
   /**
    * HubImport is set only when this job was started by POST
-   * /v1/benchmark/imports (PACT-951) rather than a corpus bulk-test
+   * /v1/benchmark/imports rather than a corpus bulk-test
    * submission; nil for any other job.
    */
   hub_import?: BenchmarkBenchmarkHubImportSummary;
