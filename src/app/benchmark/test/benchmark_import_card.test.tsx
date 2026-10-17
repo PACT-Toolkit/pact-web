@@ -111,8 +111,11 @@ describe('BenchmarkImportCard', () => {
 
   it('pre-selects the suggested assume-label for an unlabeled dataset', async () => {
     renderCard();
-    await inspect('rubend18/ChatGPT-Jailbreak-Prompts');
+    await inspect('walledai/AdvBench');
 
+    expect(
+      screen.queryByTestId('benchmark-import-score-threshold')
+    ).not.toBeInTheDocument();
     expect(
       screen.getByTestId('benchmark-import-assume-label')
     ).toHaveTextContent('Block (attack)');
@@ -120,6 +123,80 @@ describe('BenchmarkImportCard', () => {
       screen.getByTestId('benchmark-import-assume-label-auto')
     ).toBeInTheDocument();
     expect(screen.getByTestId('benchmark-import-run')).toBeEnabled();
+  });
+
+  it('shows the score threshold instead of the assume-label for a scored dataset', async () => {
+    renderCard();
+    await inspect('rubend18/ChatGPT-Jailbreak-Prompts');
+
+    expect(screen.getByTestId('benchmark-import-score-threshold')).toHaveValue(
+      47.5
+    );
+    expect(
+      screen.getByTestId('benchmark-import-score-threshold-auto')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByTestId('benchmark-import-score-split')
+    ).toHaveTextContent(
+      '40 rows at or above -> attack, 39 below -> benign (of 79 sampled)'
+    );
+    expect(
+      screen.queryByTestId('benchmark-import-assume-label')
+    ).not.toBeInTheDocument();
+    expect(screen.getByTestId('benchmark-import-run')).toBeEnabled();
+  });
+
+  it('refetches the split once a new threshold is committed', async () => {
+    renderCard();
+    await inspect('rubend18/ChatGPT-Jailbreak-Prompts');
+
+    const input = screen.getByTestId('benchmark-import-score-threshold');
+    fireEvent.change(input, { target: { value: '80' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() =>
+      expect(
+        screen.getByTestId('benchmark-import-score-split')
+      ).toHaveTextContent('10 rows at or above')
+    );
+    expect(input).toHaveValue(80);
+    expect(
+      screen.queryByTestId('benchmark-import-score-threshold-auto')
+    ).not.toBeInTheDocument();
+  });
+
+  it('marks the preview busy until the refetched split arrives', async () => {
+    renderCard();
+    await inspect('rubend18/ChatGPT-Jailbreak-Prompts');
+
+    const preview = screen.getByTestId('benchmark-import-preview');
+    expect(preview).toHaveAttribute('aria-busy', 'false');
+
+    const input = screen.getByTestId('benchmark-import-score-threshold');
+    fireEvent.change(input, { target: { value: '80' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(preview).toHaveAttribute('aria-busy', 'true'));
+    await waitFor(() =>
+      expect(
+        screen.getByTestId('benchmark-import-score-split')
+      ).toHaveTextContent('10 rows at or above')
+    );
+    await waitFor(() => expect(preview).toHaveAttribute('aria-busy', 'false'));
+  });
+
+  it('reverts an empty threshold draft on blur', async () => {
+    renderCard();
+    await inspect('rubend18/ChatGPT-Jailbreak-Prompts');
+
+    const input = screen.getByTestId('benchmark-import-score-threshold');
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.blur(input);
+
+    expect(input).toHaveValue(47.5);
+    expect(
+      screen.getByTestId('benchmark-import-score-threshold-auto')
+    ).toBeInTheDocument();
   });
 
   it('switches to the assume-label select when "No label column" is chosen', async () => {

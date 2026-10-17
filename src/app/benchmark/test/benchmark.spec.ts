@@ -620,14 +620,12 @@ test.describe('Benchmark Hugging Face import', () => {
   test('pre-selects the suggested assume-label for an unlabeled dataset', async ({
     page,
   }) => {
-    await page
-      .getByTestId('benchmark-import-slug')
-      .fill('rubend18/ChatGPT-Jailbreak-Prompts');
+    await page.getByTestId('benchmark-import-slug').fill('walledai/AdvBench');
     await page.getByTestId('benchmark-import-inspect').click();
 
     await expect(
       page.getByTestId('benchmark-upload-mapping-text-column')
-    ).toContainText('Prompt');
+    ).toContainText('prompt');
     await expect(
       page.getByTestId('benchmark-import-assume-label')
     ).toContainText('Block (attack)');
@@ -635,6 +633,33 @@ test.describe('Benchmark Hugging Face import', () => {
       page.getByTestId('benchmark-import-assume-label-auto')
     ).toBeVisible();
     await expect(page.getByTestId('benchmark-import-run')).toBeEnabled();
+  });
+
+  test('shows the score threshold for a dataset with a score column', async ({
+    page,
+  }) => {
+    await page
+      .getByTestId('benchmark-import-slug')
+      .fill('rubend18/ChatGPT-Jailbreak-Prompts');
+    await page.getByTestId('benchmark-import-inspect').click();
+
+    const threshold = page.getByTestId('benchmark-import-score-threshold');
+    await expect(threshold).toHaveValue('47.5');
+    await expect(
+      page.getByTestId('benchmark-import-score-threshold-auto')
+    ).toBeVisible();
+    await expect(page.getByTestId('benchmark-import-assume-label')).toHaveCount(
+      0
+    );
+    await expect(page.getByTestId('benchmark-import-run')).toBeEnabled();
+
+    await threshold.fill('80');
+    await threshold.press('Enter');
+    await expect(
+      page.getByTestId('benchmark-import-score-split')
+    ).toContainText('10 rows at or above');
+    // The refetch dims the preview but must not blur the input.
+    await expect(threshold).toBeFocused();
   });
 
   test('shows a friendly error for a gated dataset', async ({ page }) => {

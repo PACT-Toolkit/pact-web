@@ -91,6 +91,22 @@ definitions:
             sampled_rows:
                 description: SampledRows is the number of records actually peeked.
                 type: integer
+            score_column:
+                description: |-
+                    ScoreColumn is the numeric score column the preview resolved (the
+                    requested one, or alias-detected when no label column resolves); empty
+                    when the dataset has none. The three fields below are 0 in that case.
+                type: string
+            score_sample_allow_rows:
+                description: |-
+                    ScoreSampleAllowRows is the number of sampled rows below the effective
+                    threshold, which the import labels "allow".
+                type: integer
+            score_sample_block_rows:
+                description: |-
+                    ScoreSampleBlockRows is the number of sampled rows at or above the
+                    effective threshold, which the import labels "block".
+                type: integer
             suggested_assume_label:
                 description: |-
                     SuggestedAssumeLabel is "allow" or "block" when the dataset has no
@@ -105,6 +121,12 @@ definitions:
                     to "allow", "block", or "skip"; never nil ({} when there is no label
                     column).
                 type: object
+            suggested_threshold:
+                description: |-
+                    SuggestedThreshold is 0.5 when every sampled score is in [0, 1],
+                    otherwise the midpoint of the observed minimum and maximum. Meaningful
+                    only when ScoreColumn is non-empty.
+                type: number
         required:
             - columns
             - detected_label_column
@@ -113,8 +135,12 @@ definitions:
             - label_values_truncated
             - row_count
             - sampled_rows
+            - score_column
+            - score_sample_allow_rows
+            - score_sample_block_rows
             - suggested_assume_label
             - suggested_label_values
+            - suggested_threshold
         type: object
     benchmark.BenchmarkImportRequest:
         properties:
@@ -146,6 +172,16 @@ definitions:
             revision:
                 description: Revision is the hub git revision; empty -> the default branch.
                 type: string
+            score_column:
+                description: |-
+                    ScoreColumn names the numeric score column; empty -> detection as in
+                    the preview.
+                type: string
+            score_threshold:
+                description: |-
+                    ScoreThreshold is the block threshold for ScoreColumn; nil -> the
+                    suggested threshold.
+                type: number
             slug:
                 type: string
             split:
@@ -791,6 +827,14 @@ paths:
                   in: query
                   name: sample_rows
                   type: integer
+                - description: 'Numeric score column name (default: alias-detected, only when no label column resolves)'
+                  in: query
+                  name: score_column
+                  type: string
+                - description: 'Block threshold for score_column (default: the server''s suggested threshold)'
+                  in: query
+                  name: score_threshold
+                  type: number
             produces:
                 - application/json
             responses:

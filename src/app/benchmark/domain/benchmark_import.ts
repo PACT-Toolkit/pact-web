@@ -85,11 +85,14 @@ export const NO_LABEL_COLUMN = '__none__';
  * own defaults (split "train", detected label column) when the param is
  * absent entirely. The sentinel is omitted too: the preview then matches the
  * untouched one (same cache entry), and `resolveHubImportMapping` ignores the
- * detected label column for it.
+ * detected label column for it. The score threshold is sent only once the
+ * user committed one (`null` = untouched, the server uses its suggestion);
+ * `0` is a real threshold, so the check is `!== null`, not truthiness.
  */
 export function buildPreviewParams(
   identity: HubDatasetIdentity,
-  labelColumnSelection: string | null
+  labelColumnSelection: string | null,
+  scoreThreshold: number | null
 ): HubImportPreviewParams {
   const params: HubImportPreviewParams = { slug: identity.slug.trim() };
   if (identity.split.trim()) params.split = identity.split.trim();
@@ -98,6 +101,7 @@ export function buildPreviewParams(
   if (labelColumnSelection && labelColumnSelection !== NO_LABEL_COLUMN) {
     params.label_column = labelColumnSelection;
   }
+  if (scoreThreshold !== null) params.score_threshold = scoreThreshold;
 
   return params;
 }
@@ -125,6 +129,8 @@ export interface HubImportSelections {
   /** A real column name, `NO_LABEL_COLUMN`, or `null`. */
   labelColumn: string | null;
   assumeLabel: 'allow' | 'block' | null;
+  /** The user's committed score threshold; `null` = untouched. */
+  scoreThreshold: number | null;
 }
 
 /** The mapping the card actually shows and submits, plus which parts came
@@ -132,11 +138,18 @@ export interface HubImportSelections {
 export interface ResolvedHubImportMapping {
   textColumn: string | null;
   labelColumn: string | null;
-  /** Meaningful only while `labelColumn` is `null`. */
+  /** The numeric score column the preview resolved; always `null` while
+   * `labelColumn` is set (the label column wins server-side). */
+  scoreColumn: string | null;
+  /** The threshold shown and submitted; non-null only with `scoreColumn`. */
+  scoreThreshold: number | null;
+  /** Non-null only while neither a label column nor a score column is in
+   * effect - exactly one of the three labelling paths is active. */
   assumeLabel: 'allow' | 'block' | null;
   textColumnAutoDetected: boolean;
   labelColumnAutoDetected: boolean;
   assumeLabelAutoDetected: boolean;
+  scoreThresholdAutoDetected: boolean;
 }
 
 function toAssumeLabel(value: string | undefined): 'allow' | 'block' | null {
@@ -147,7 +160,8 @@ function toAssumeLabel(value: string | undefined): 'allow' | 'block' | null {
  * Layers the user's selections over the preview's detections: a user choice
  * always wins, the `NO_LABEL_COLUMN` sentinel clears the label column even
  * when one was detected, and the assume-label falls back to the gateway's
- * `suggested_assume_label`. Pure derived state - the card keeps only the
+ * `suggested_assume_label`. Import precedence mirrors the server: label
+ * column, then score column, then assume-label. Pure derived state - the card keeps only the
  * user's raw choices.
  */
 export function resolveHubImportMapping(
@@ -163,18 +177,35 @@ export function resolveHubImportMapping(
       ? null
       : (selections.labelColumn ?? detectedLabel);
 
+  const scoreColumn =
+    labelColumn === null
+      ? normalizeDetectedColumn(preview?.score_column)
+      : null;
+  const scoreThreshold =
+    scoreColumn === null
+      ? null
+      : (selections.scoreThreshold ?? preview?.suggested_threshold ?? null);
+
   return {
     textColumn: selections.textColumn ?? detectedText,
     labelColumn,
-    assumeLabel: selections.assumeLabel ?? suggestedAssume,
+    scoreColumn,
+    scoreThreshold,
+    assumeLabel:
+      labelColumn === null && scoreColumn === null
+        ? (selections.assumeLabel ?? suggestedAssume)
+        : null,
     textColumnAutoDetected:
       selections.textColumn === null && detectedText !== null,
     labelColumnAutoDetected:
       selections.labelColumn === null && detectedLabel !== null,
     assumeLabelAutoDetected:
       labelColumn === null &&
+      scoreColumn === null &&
       selections.assumeLabel === null &&
       suggestedAssume !== null,
+    scoreThresholdAutoDetected:
+      scoreColumn !== null && selections.scoreThreshold === null,
   };
 }
 
@@ -230,8 +261,11 @@ export interface BuildImportRequestArgs {
   textColumn: string | null;
   labelColumn: string | null;
   valueDecisions: Record<string, LabelDecision>;
-  /** Ignored while a label column is set - the gateway only accepts it for
-   * datasets without one. */
+  /** Sent with `scoreThreshold` only while no label column is set. */
+  scoreColumn: string | null;
+  scoreThreshold: number | null;
+  /** Ignored while a label column or score column is set - the gateway only
+   * accepts it for datasets with neither. */
   assumeLabel: 'allow' | 'block' | null;
 }
 
@@ -247,8 +281,16 @@ export interface BuildImportRequestArgs {
 export function buildImportRequest(
   args: BuildImportRequestArgs
 ): HubImportRequestDraft {
-  const { identity, textColumn, labelColumn, valueDecisions, assumeLabel } =
-    args;
+  const {
+    identity,
+    textColumn,
+    labelColumn,
+    scoreColumn,
+    scoreThreshold,
+    valueDecisions,
+    assumeLabel,
+  } = args;
+  const useScore = scoreColumn !== null && !labelColumn;
 
   const label_values: HubImportLabelValues = {};
   for (const [rawValue, decision] of Object.entries(valueDecisions)) {
@@ -263,6 +305,12 @@ export function buildImportRequest(
     ...(textColumn ? { text_column: textColumn } : {}),
     ...(labelColumn ? { label_column: labelColumn } : {}),
     ...(Object.keys(label_values).length > 0 ? { label_values } : {}),
-    ...(assumeLabel && !labelColumn ? { assume_label: assumeLabel } : {}),
+    ...(useScore ? { score_column: scoreColumn } : {}),
+    ...(useScore && scoreThreshold !== null
+      ? { score_threshold: scoreThreshold }
+      : {}),
+    ...(assumeLabel && !labelColumn && !useScore
+      ? { assume_label: assumeLabel }
+      : {}),
   };
 }
