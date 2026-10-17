@@ -1,5 +1,7 @@
 import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { type AuditEventVariant } from '@/src/app/audit/domain/audit_event_variant';
+import { collectDecisionControls } from '@/src/framework/decisions/control_frameworks';
+import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // Actor/user filtering has no server-side query param -- pact-gateway's
 // QueryAuditEventsParams only exposes topic/requestId/sinceUnix/untilUnix
@@ -60,3 +62,30 @@ export const localDateTimeToUnixSeconds = (
 
   return Number.isNaN(ms) ? undefined : Math.floor(ms / 1000);
 };
+
+// The gateway only filters on a control when BOTH halves are given (it
+// answers 400 "controlFramework and controlId must be set together"
+// otherwise), so a half-set pair sends neither param. Returns undefined for
+// both-empty and half-set so callers can spread the result into the params
+// object without an extra guard.
+export const controlFilterParams = (
+  framework: string,
+  id: string
+): { controlFramework: string; controlId: string } | undefined => {
+  const controlId = id.trim();
+
+  return framework && controlId
+    ? { controlFramework: framework, controlId }
+    : undefined;
+};
+
+// Mirrors the gateway's control filter for the MSW handler: true when any
+// stage sub-object of the payload carries the framework+id control.
+export const matchesControlFilter = (
+  payload: DecisionPayload,
+  framework: string,
+  id: string
+): boolean =>
+  collectDecisionControls(payload).some(
+    (control) => control.framework === framework && control.id === id
+  );

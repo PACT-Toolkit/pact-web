@@ -9,6 +9,7 @@ import {
   decodeAuditEventVariant,
 } from '@/src/app/audit/domain/audit_event_variant';
 import {
+  controlFilterParams,
   localDateTimeToUnixSeconds,
   matchesActorFilter,
 } from '@/src/app/audit/domain/audit_filters';
@@ -23,6 +24,7 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
+import { KNOWN_CONTROL_FRAMEWORKS } from '@/src/framework/decisions/control_frameworks';
 import { type Pagination } from '@/src/lib/use_local_pagination';
 
 // Page size for the activity log. Server-side clamp is 200 (see
@@ -43,7 +45,24 @@ export const AuditWorkbench = () => {
   const [actor, setActor] = useState<string>('');
   const [since, setSince] = useState<string>('');
   const [until, setUntil] = useState<string>('');
+  const [controlFramework, setControlFramework] = useState<string>('');
+  const [controlId, setControlId] = useState<string>('');
   const [page, setPage] = useState(0);
+
+  // The control filter only exists for pact.decisions (the only topic whose
+  // payloads carry controls) and is sent only as a complete pair.
+  const showControlFilter = topic === 'pact.decisions';
+  const controlParams = useMemo(
+    () =>
+      showControlFilter
+        ? controlFilterParams(controlFramework, controlId)
+        : undefined,
+    [showControlFilter, controlFramework, controlId]
+  );
+  const controlHalfSet =
+    showControlFilter &&
+    !controlParams &&
+    (controlFramework !== '' || controlId.trim() !== '');
 
   // Build the query params from the current UI state. SWR re-keys on any
   // change, so flipping a filter fetches the first page with the new
@@ -62,9 +81,10 @@ export const AuditWorkbench = () => {
     if (sinceUnix !== undefined) out.sinceUnix = sinceUnix;
     const untilUnix = localDateTimeToUnixSeconds(until);
     if (untilUnix !== undefined) out.untilUnix = untilUnix;
+    if (controlParams) Object.assign(out, controlParams);
 
     return out;
-  }, [topic, requestId, since, until, page]);
+  }, [topic, requestId, since, until, page, controlParams]);
 
   const { data, error, isLoading, isValidating, mutate } = useGetAuditEvents(
     params,
@@ -180,6 +200,48 @@ export const AuditWorkbench = () => {
             className="w-56"
             aria-label="Actor or user"
           />
+          {showControlFilter && (
+            <div className="relative">
+              <div className="flex items-center gap-2">
+                <select
+                  aria-label="Control framework"
+                  value={controlFramework}
+                  onChange={(event) =>
+                    handleFilterChange(() =>
+                      setControlFramework(event.target.value)
+                    )
+                  }
+                  className="h-9 rounded-md border bg-background px-3 text-sm"
+                  data-testid="audit-control-framework-select"
+                >
+                  <option value="">Any framework</option>
+                  {KNOWN_CONTROL_FRAMEWORKS.map((framework) => (
+                    <option key={framework.value} value={framework.value}>
+                      {framework.label}
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  value={controlId}
+                  onChange={(event) =>
+                    handleFilterChange(() => setControlId(event.target.value))
+                  }
+                  placeholder="LLM01"
+                  className="w-32"
+                  aria-label="Control id"
+                  data-testid="audit-control-id-input"
+                />
+              </div>
+              {controlHalfSet && (
+                <p
+                  className="absolute left-0 top-full mt-1 whitespace-nowrap text-xs text-muted-foreground"
+                  data-testid="audit-control-filter-hint"
+                >
+                  Set both framework and control id
+                </p>
+              )}
+            </div>
+          )}
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
             Since
             <Input

@@ -12,21 +12,22 @@ import {
 // interactive run, applied to an audit row that only ever renders once.
 // Callers resolve `stages` from whichever wire type they hold (audit's
 // DecisionPayload today; see audit_decision_stage_strip.ts) -- this
-// component only knows the closed stage-id vocabulary and a blocked flag,
+// component only knows the closed stage-id vocabulary, a blocked flag and an
+// optional per-stage duration (the Test Lab omits it),
 // mirroring CausalSpanList's loosely-typed-prop precedent so it never needs
 // to import either wire contract.
 export const StageStrip = ({
   stages,
   testId,
 }: {
-  stages: { id: PipelineStageId; blocked: boolean }[];
+  stages: { id: PipelineStageId; blocked: boolean; durationMs?: number }[];
   testId?: string;
 }) => {
   if (stages.length === 0) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-1.5" data-testid={testId}>
-      {stages.map(({ id, blocked }) => {
+      {stages.map(({ id, blocked, durationMs }) => {
         const Icon = PIPELINE_STAGE_ICON[id] ?? Brain;
 
         return (
@@ -40,6 +41,14 @@ export const StageStrip = ({
           >
             <Icon className="h-3 w-3" aria-hidden />
             {PIPELINE_STAGE_LABEL[id]}
+            {durationMs !== undefined && (
+              <span
+                className="font-normal opacity-70"
+                data-testid={`stage-duration-${id}`}
+              >
+                {Math.round(durationMs)} ms
+              </span>
+            )}
           </span>
         );
       })}

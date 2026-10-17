@@ -93,6 +93,79 @@ test.describe('Audit activity log', () => {
     );
   });
 
+  test('an expanded blocked pact.decisions row shows controls, stages, per-layer timings and the rule pack', async ({
+    page,
+  }) => {
+    await page.getByTestId('audit-topic-select').selectOption('pact.decisions');
+
+    const blockedRow = page
+      .getByTestId('audit-row')
+      .filter({ has: page.getByTestId('audit-decision-stage-strip') })
+      .first();
+    await expect(blockedRow).toBeVisible();
+
+    await expect(
+      blockedRow.getByTestId('audit-decision-stage-strip')
+    ).toContainText(/\d+ ms/);
+
+    await blockedRow.getByTestId('audit-row-toggle').click();
+
+    await expect(
+      blockedRow.getByTestId('audit-decision-controls')
+    ).toContainText('OWASP LLM0');
+    await expect(blockedRow.getByTestId('audit-decision-stages')).toContainText(
+      'policy'
+    );
+    await expect(blockedRow.getByTestId('audit-decision-pack')).toContainText(
+      'pact-core@1.4.0'
+    );
+  });
+
+  test('an expanded allow pact.decisions row shows per-layer timings', async ({
+    page,
+  }) => {
+    await page.getByTestId('audit-topic-select').selectOption('pact.decisions');
+
+    const allowRow = page
+      .getByTestId('audit-row')
+      .filter({ hasText: 'req-classifier-00' })
+      .first();
+    await expect(allowRow).toContainText('ALLOW');
+    await allowRow.getByTestId('audit-row-toggle').click();
+
+    await expect(
+      allowRow.getByTestId('audit-decision-layer-timings')
+    ).toContainText(/Classifier \d+ ms/);
+  });
+
+  test('the control filter narrows the list and asks for both halves', async ({
+    page,
+  }) => {
+    await page.getByTestId('audit-topic-select').selectOption('pact.decisions');
+    const rows = page.getByTestId('audit-row');
+    await expect(rows.first()).toBeVisible();
+    const unfiltered = await rows.count();
+
+    await page
+      .getByTestId('audit-control-framework-select')
+      .selectOption('owasp_llm_top10');
+    await expect(page.getByTestId('audit-control-filter-hint')).toHaveText(
+      'Set both framework and control id'
+    );
+    // Half-set sends neither param, so the list is unchanged.
+    await expect(rows).toHaveCount(unfiltered);
+
+    await page.getByTestId('audit-control-id-input').fill('LLM02');
+    await expect(page.getByTestId('audit-control-filter-hint')).toHaveCount(0);
+    await expect.poll(async () => rows.count()).toBeLessThan(unfiltered);
+
+    const first = rows.first();
+    await first.getByTestId('audit-row-toggle').click();
+    await expect(first.getByTestId('audit-decision-controls')).toContainText(
+      'OWASP LLM02'
+    );
+  });
+
   test('has no accessibility violations', async ({ page }) => {
     const results = await makeAxeBuilder(page).analyze();
     // The duplicate <main> landmark (landmark-no-duplicate-main /

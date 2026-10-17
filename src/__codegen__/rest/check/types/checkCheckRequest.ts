@@ -30,10 +30,26 @@ export interface CheckCheckRequest {
   /** "input" | "output" */
   kind: string;
   /**
+   * Scope is the scope the caller declares for this request. Optional,
+   * opaque, at most 256 bytes. Only meaningful with an
+   * X-Pact-Capability-Token: when present it must be one of the token's
+   * scopes (exact, case-sensitive), otherwise the request is blocked with
+   * policy_token_scope_denied. Ignored without a token.
+   */
+  scope?: string;
+  /**
    * SpotlightChunks is an optional list of third-party content chunks the host
    * wants spotlight-wrapped before LLM injection. Populated on allow path only.
    */
   spotlight_chunks?: CheckSpotlightChunk[];
+  /**
+   * ToolID is the tool the caller declares this request is for. Optional,
+   * opaque, at most 256 bytes. Only meaningful with an
+   * X-Pact-Capability-Token: when present it must equal the token's tool_id,
+   * otherwise the request is blocked with policy_token_scope_denied.
+   * Ignored without a token.
+   */
+  tool_id?: string;
   /**
    * TrafficSource is the caller's own declaration of synthetic vs real
    * traffic (e.g. "benchmark"), mirrored verbatim onto the pact.decisions

@@ -33,6 +33,14 @@ definitions:
             kind:
                 description: '"input" | "output"'
                 type: string
+            scope:
+                description: |-
+                    Scope is the scope the caller declares for this request. Optional,
+                    opaque, at most 256 bytes. Only meaningful with an
+                    X-Pact-Capability-Token: when present it must be one of the token's
+                    scopes (exact, case-sensitive), otherwise the request is blocked with
+                    policy_token_scope_denied. Ignored without a token.
+                type: string
             spotlight_chunks:
                 description: |-
                     SpotlightChunks is an optional list of third-party content chunks the host
@@ -40,6 +48,14 @@ definitions:
                 items:
                     $ref: '#/definitions/check.SpotlightChunk'
                 type: array
+            tool_id:
+                description: |-
+                    ToolID is the tool the caller declares this request is for. Optional,
+                    opaque, at most 256 bytes. Only meaningful with an
+                    X-Pact-Capability-Token: when present it must equal the token's tool_id,
+                    otherwise the request is blocked with policy_token_scope_denied.
+                    Ignored without a token.
+                type: string
             traffic_source:
                 description: |-
                     TrafficSource is the caller's own declaration of synthetic vs real
@@ -292,7 +308,7 @@ paths:
                 - application/json
             operationId: checkContent
             parameters:
-                - description: Content and kind (input|output); optional conversation_id, traffic_source
+                - description: Content and kind (input|output); optional conversation_id, traffic_source, tool_id, scope
                   in: body
                   name: body
                   required: true
@@ -301,6 +317,10 @@ paths:
                 - description: Client chat/thread correlation id for the audit trail (body conversation_id wins when both supplied)
                   in: header
                   name: X-Pact-Conversation-Id
+                  type: string
+                - description: Capability token; when present, body tool_id and scope (if declared) must be covered by it, else the request is blocked with policy_token_scope_denied
+                  in: header
+                  name: X-Pact-Capability-Token
                   type: string
             produces:
                 - application/json

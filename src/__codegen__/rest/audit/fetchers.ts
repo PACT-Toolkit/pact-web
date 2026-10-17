@@ -14,10 +14,14 @@ import type {
   AuditListDecisionAnnotationsRequest,
   AuditListDecisionAnnotationsResponse,
   AuditQueryAuditResponse,
+  AuditQueryComplianceReportResponse,
+  AuditQueryControlStatsResponse,
   AuditQueryDecisionStatsResponse,
   AuditQueryPolicyEventsResponse,
   AuditRemoveDecisionAnnotationResponse,
   BoundaryErrorResponse,
+  GetAuditComplianceReportParams,
+  GetAuditControlStatsParams,
   GetAuditEventsParams,
   GetAuditPolicyEventsParams,
   GetAuditStatsParams,
@@ -250,6 +254,163 @@ export const getListDecisionAnnotationsMutationFetcher = (
 
 export const getListDecisionAnnotationsMutationKey = () =>
   [`/api/pact/gateway/v1/audit/annotations/query`] as const;
+
+export type getAuditComplianceReportResponse200 = {
+  data: AuditQueryComplianceReportResponse;
+  status: 200;
+};
+
+export type getAuditComplianceReportResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type getAuditComplianceReportResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type getAuditComplianceReportResponse403 = {
+  data: string;
+  status: 403;
+};
+
+export type getAuditComplianceReportResponseSuccess =
+  getAuditComplianceReportResponse200 & {
+    headers: Headers;
+  };
+
+export type getAuditComplianceReportResponseError = (
+  | getAuditComplianceReportResponse400
+  | getAuditComplianceReportResponse401
+  | getAuditComplianceReportResponse403
+) & {
+  headers: Headers;
+};
+
+export type getAuditComplianceReportResponse =
+  | getAuditComplianceReportResponseSuccess
+  | getAuditComplianceReportResponseError;
+
+export const getGetAuditComplianceReportUrl = (
+  params?: GetAuditComplianceReportParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/pact/gateway/v1/audit/compliance-report?${stringifiedParams}`
+    : `/api/pact/gateway/v1/audit/compliance-report`;
+};
+
+/**
+ * @summary Export the per-decision compliance report
+ */
+export const getAuditComplianceReport = async (
+  params?: GetAuditComplianceReportParams,
+  options?: Parameters<typeof customFetch>[1]
+): Promise<getAuditComplianceReportResponse> => {
+  return customFetch<getAuditComplianceReportResponse>(
+    getGetAuditComplianceReportUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
+};
+
+export const getGetAuditComplianceReportKey = (
+  params?: GetAuditComplianceReportParams
+) =>
+  [
+    `/api/pact/gateway/v1/audit/compliance-report`,
+    ...(params ? [params] : []),
+  ] as const;
+
+export type getAuditControlStatsResponse200 = {
+  data: AuditQueryControlStatsResponse;
+  status: 200;
+};
+
+export type getAuditControlStatsResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type getAuditControlStatsResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type getAuditControlStatsResponse403 = {
+  data: string;
+  status: 403;
+};
+
+export type getAuditControlStatsResponseSuccess =
+  getAuditControlStatsResponse200 & {
+    headers: Headers;
+  };
+
+export type getAuditControlStatsResponseError = (
+  | getAuditControlStatsResponse400
+  | getAuditControlStatsResponse401
+  | getAuditControlStatsResponse403
+) & {
+  headers: Headers;
+};
+
+export type getAuditControlStatsResponse =
+  getAuditControlStatsResponseSuccess | getAuditControlStatsResponseError;
+
+export const getGetAuditControlStatsUrl = (
+  params?: GetAuditControlStatsParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/pact/gateway/v1/audit/control-stats?${stringifiedParams}`
+    : `/api/pact/gateway/v1/audit/control-stats`;
+};
+
+/**
+ * @summary Read decision counts per compliance control
+ */
+export const getAuditControlStats = async (
+  params?: GetAuditControlStatsParams,
+  options?: Parameters<typeof customFetch>[1]
+): Promise<getAuditControlStatsResponse> => {
+  return customFetch<getAuditControlStatsResponse>(
+    getGetAuditControlStatsUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
+};
+
+export const getGetAuditControlStatsKey = (
+  params?: GetAuditControlStatsParams
+) =>
+  [
+    `/api/pact/gateway/v1/audit/control-stats`,
+    ...(params ? [params] : []),
+  ] as const;
 
 export type getAuditEventsResponse200 = {
   data: AuditQueryAuditResponse;

@@ -23,9 +23,29 @@ const STAGE_PRESENT: Record<
   redactor: (payload) => payload.redactor !== undefined,
 };
 
+// Wall-clock milliseconds the gateway spent in each visualised stage, read
+// from the stage sub-object's `duration_ms`. Only a finite number above zero
+// counts: absent (older events) and zero both mean "no timing to show".
+const STAGE_DURATION_MS: Record<
+  PipelineStageId,
+  (payload: DecisionPayload) => number | undefined
+> = {
+  filter: (payload) => payload.filter?.duration_ms,
+  classifier: (payload) => payload.classifier?.duration_ms,
+  sandbox: (payload) => payload.external_refs?.duration_ms,
+  consensus: (payload) => payload.consensus?.duration_ms,
+  redactor: (payload) => payload.redactor?.duration_ms,
+};
+
+const usableDuration = (value: unknown): number | undefined =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? value
+    : undefined;
+
 // Derives the audit stage strip's entries from a decisions payload: every
 // visualised stage with a present sub-object, in pipeline order, the one
-// named by `engine` marked as the blocker. `engine` stays the
+// named by `engine` marked as the blocker and each carrying the stage's own
+// duration when the gateway reported one. `engine` stays the
 // single stage-attribution authority the blocked-by badge already uses -- no
 // parallel mapping is introduced here.
 //
@@ -36,8 +56,13 @@ const STAGE_PRESENT: Record<
 // belt-and-suspenders, not the only guard.
 export const derivePipelineStages = (
   payload: DecisionPayload
-): { id: PipelineStageId; blocked: boolean }[] =>
-  PIPELINE_STAGE_ORDER.filter((id) => STAGE_PRESENT[id](payload)).map((id) => ({
-    id,
-    blocked: payload.decision === 'block' && payload.engine === id,
-  }));
+): { id: PipelineStageId; blocked: boolean; durationMs?: number }[] =>
+  PIPELINE_STAGE_ORDER.filter((id) => STAGE_PRESENT[id](payload)).map((id) => {
+    const durationMs = usableDuration(STAGE_DURATION_MS[id](payload));
+
+    return {
+      id,
+      blocked: payload.decision === 'block' && payload.engine === id,
+      ...(durationMs !== undefined && { durationMs }),
+    };
+  });

@@ -26,6 +26,7 @@ import {
   mockAuditEvent,
   mockDecisionAnnotation,
 } from '@/src/app/audit/mock/data/audit';
+import { createDecisionEnrichmentMockData } from '@/src/app/audit/mock/data/audit_decision_enrichment';
 import {
   type AuthRecoveryCodesState,
   createAuthMockData,
@@ -122,6 +123,9 @@ createRedactorMockData(db);
 // Fourth seeder appending to the shared db.decisions repository;
 // see classifier.ts's header comment for its distinct offset scheme.
 createClassifierMockData(db);
+// Must run after every decisions seeder above: stamps the gateway-added
+// stages / durations / controls / rule pack onto each seeded payload.
+createDecisionEnrichmentMockData(db);
 createFilesMockData(db);
 // No ordering dependency -- gatewayConfig is its own singleton entity, not
 // part of the shared db.decisions repository the seeders above append to.

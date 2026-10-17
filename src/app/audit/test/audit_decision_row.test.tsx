@@ -433,3 +433,124 @@ describe('AuditDecisionInsights - compliance section', () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe('AuditDecisionRow expanded detail - controls, stages and rule pack', () => {
+  const FULL: DecisionPayload = {
+    decision: 'block',
+    engine: 'filter',
+    reason: 'filter_hostile',
+    stages: ['policy', 'filter'],
+    filter: {
+      verdict: 'hostile',
+      rule_id: 'inject-003',
+      pack_name: 'pact-core',
+      pack_version: '1.4.0',
+      duration_ms: 3,
+      controls: [
+        { framework: 'owasp_llm_top10', id: 'LLM01' },
+        { framework: 'eu_ai_act_art15', id: 'cybersecurity' },
+      ],
+    },
+    classifier: {
+      label: 'jailbreak',
+      controls: [
+        { framework: 'owasp_llm_top10', id: 'LLM01' },
+        { framework: 'eu_ai_act_art15', id: 'accuracy' },
+      ],
+    },
+    latency_ms: 9,
+  };
+
+  it('renders each distinct control once, the executed stages in order, and name@version', () => {
+    renderRow(FULL);
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    const controls = screen.getByTestId('audit-decision-controls');
+    expect(controls).toHaveTextContent('Controls');
+    expect(controls.querySelectorAll('code')).toHaveLength(3);
+    expect(controls).toHaveTextContent('OWASP LLM01');
+    expect(controls).toHaveTextContent('AI Act Art. 15 cybersecurity');
+    expect(controls).toHaveTextContent('AI Act Art. 15 accuracy');
+
+    const stages = screen.getByTestId('audit-decision-stages');
+    expect(
+      [...stages.querySelectorAll('code')].map((c) => c.textContent)
+    ).toEqual(['policy', 'filter']);
+
+    expect(screen.getByTestId('audit-decision-pack')).toHaveTextContent(
+      'pact-core@1.4.0'
+    );
+  });
+
+  it('shows the rule pack on an allow row, and the bare name when the version is empty', () => {
+    renderRow({
+      decision: 'allow',
+      filter: { verdict: 'safe', pack_name: 'pact-core', pack_version: '' },
+      latency_ms: 2,
+    });
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    const pack = screen.getByTestId('audit-decision-pack');
+    expect(pack).toHaveTextContent('pact-core');
+    expect(pack).not.toHaveTextContent('@');
+  });
+
+  it('renders none of the three rows on an older payload without the fields', () => {
+    renderRow({
+      decision: 'allow',
+      filter: { verdict: 'safe' },
+      latency_ms: 2,
+    });
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(
+      screen.queryByTestId('audit-decision-controls')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId('audit-decision-stages')
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId('audit-decision-pack')).not.toBeInTheDocument();
+  });
+
+  it('shows layer timings on an ALLOW row, in pipeline order, with rounded ms', () => {
+    renderRow({
+      decision: 'allow',
+      filter: { verdict: 'safe', duration_ms: 2.4 },
+      classifier: { label: 'benign', duration_ms: 41.6 },
+      redactor: { verdict: 'pass_through', duration_ms: 1 },
+      latency_ms: 50,
+    });
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    const timings = screen.getByTestId('audit-decision-layer-timings');
+    expect(timings).toHaveTextContent('Layer timings');
+    expect(
+      [...timings.querySelectorAll('code')].map((c) => c.textContent)
+    ).toEqual(['Filter 2 ms', 'Classifier 42 ms', 'Redactor 1 ms']);
+    expect(
+      screen.queryByTestId('stage-duration-filter')
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders no layer-timings row when no stage reports a duration', () => {
+    renderRow({
+      decision: 'allow',
+      filter: { verdict: 'safe' },
+      classifier: { label: 'benign', duration_ms: 0 },
+      latency_ms: 2,
+    });
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(
+      screen.queryByTestId('audit-decision-layer-timings')
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows a per-layer ms label on the collapsed stage strip of a blocked row', () => {
+    renderRow(FULL);
+
+    expect(screen.getByTestId('stage-duration-filter')).toHaveTextContent(
+      '3 ms'
+    );
+  });
+});
