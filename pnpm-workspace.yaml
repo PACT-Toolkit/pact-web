@@ -1,3 +1,10 @@
+# The dev stack starts this app headless (process-compose, no TTY). pnpm 11
+# runs an install before `next dev` when node_modules is out of date, and
+# that install may need to purge node_modules (store moved, layout changed).
+# Without a TTY the purge confirmation aborts and the process dies, so skip
+# the prompt; node_modules is always regenerable from the lockfile.
+confirmModulesPurge: false
+
 allowBuilds:
   '@bufbuild/buf': true
   esbuild: true
