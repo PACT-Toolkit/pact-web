@@ -31,4 +31,12 @@ export type InspectBenchmarkImportParams = {
    * Rows to sample for column detection (default: server-chosen)
    */
   sample_rows?: number;
+  /**
+   * Numeric score column name (default: alias-detected, only when no label column resolves)
+   */
+  score_column?: string;
+  /**
+   * Block threshold for score_column (default: the server's suggested threshold)
+   */
+  score_threshold?: number;
 };

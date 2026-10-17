@@ -338,7 +338,7 @@ paths:
                     schema:
                         type: string
                 "429":
-                    description: per-IP rate limit exceeded, or benchmark replay traffic throttled
+                    description: 'per-IP rate limit exceeded, benchmark replay traffic throttled, or the safety classifier is saturated: retryable, with Retry-After and code classifier_saturated'
                     schema:
                         type: string
                 "503":

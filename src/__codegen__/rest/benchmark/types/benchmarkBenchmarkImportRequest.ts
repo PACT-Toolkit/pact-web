@@ -29,6 +29,16 @@ export interface BenchmarkBenchmarkImportRequest {
   max_rows?: number;
   /** Revision is the hub git revision; empty -> the default branch. */
   revision?: string;
+  /**
+   * ScoreColumn names the numeric score column; empty -> detection as in
+   * the preview.
+   */
+  score_column?: string;
+  /**
+   * ScoreThreshold is the block threshold for ScoreColumn; nil -> the
+   * suggested threshold.
+   */
+  score_threshold?: number;
   slug: string;
   split?: string;
   text_column?: string;

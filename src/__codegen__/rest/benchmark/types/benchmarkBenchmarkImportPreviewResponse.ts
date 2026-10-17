@@ -37,6 +37,22 @@ export interface BenchmarkBenchmarkImportPreviewResponse {
   /** SampledRows is the number of records actually peeked. */
   sampled_rows: number;
   /**
+   * ScoreColumn is the numeric score column the preview resolved (the
+   * requested one, or alias-detected when no label column resolves); empty
+   * when the dataset has none. The three fields below are 0 in that case.
+   */
+  score_column: string;
+  /**
+   * ScoreSampleAllowRows is the number of sampled rows below the effective
+   * threshold, which the import labels "allow".
+   */
+  score_sample_allow_rows: number;
+  /**
+   * ScoreSampleBlockRows is the number of sampled rows at or above the
+   * effective threshold, which the import labels "block".
+   */
+  score_sample_block_rows: number;
+  /**
    * SuggestedAssumeLabel is "allow" or "block" when the dataset has no
    * label column and its name implies one, otherwise empty; the client
    * should pre-select it as the assume-label.
@@ -48,4 +64,10 @@ export interface BenchmarkBenchmarkImportPreviewResponse {
    * column).
    */
   suggested_label_values: BenchmarkBenchmarkImportPreviewResponseSuggestedLabelValues;
+  /**
+   * SuggestedThreshold is 0.5 when every sampled score is in [0, 1],
+   * otherwise the midpoint of the observed minimum and maximum. Meaningful
+   * only when ScoreColumn is non-empty.
+   */
+  suggested_threshold: number;
 }
