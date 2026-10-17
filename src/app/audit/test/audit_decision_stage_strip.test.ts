@@ -92,3 +92,41 @@ describe('derivePipelineStages', () => {
     ]);
   });
 });
+
+describe('derivePipelineStages durations', () => {
+  it('reads each stage duration_ms, with sandbox taking external_refs', () => {
+    const payload: DecisionPayload = {
+      decision: 'allow',
+      filter: { verdict: 'safe', duration_ms: 3 },
+      classifier: { label: 'safe', duration_ms: 41.6 },
+      external_refs: {
+        source: 'external_ref',
+        scanned: 1,
+        blocked: 0,
+        duration_ms: 120,
+      },
+      consensus: { quorum_reached: true, duration_ms: 410 },
+      redactor: { verdict: 'pass_through', duration_ms: 6 },
+      latency_ms: 700,
+    };
+
+    expect(derivePipelineStages(payload).map((s) => s.durationMs)).toEqual([
+      3, 41.6, 120, 410, 6,
+    ]);
+  });
+
+  it('leaves durationMs unset when absent, zero, negative, or not a finite number', () => {
+    const payload = {
+      decision: 'allow',
+      filter: { verdict: 'safe' },
+      classifier: { label: 'safe', duration_ms: 0 },
+      consensus: { quorum_reached: true, duration_ms: -2 },
+      redactor: { verdict: 'pass_through', duration_ms: '6' },
+      latency_ms: 1,
+    } as unknown as DecisionPayload;
+
+    for (const stage of derivePipelineStages(payload)) {
+      expect(stage).not.toHaveProperty('durationMs');
+    }
+  });
+});

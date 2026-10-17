@@ -3,9 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { decodeAuditEventVariant } from '@/src/app/audit/domain/audit_event_variant';
 import {
+  controlFilterParams,
   localDateTimeToUnixSeconds,
   matchesActorFilter,
+  matchesControlFilter,
 } from '@/src/app/audit/domain/audit_filters';
+import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 const baseEvent = (
   overrides: Partial<AuditAuditEventResponse> = {}
@@ -84,5 +87,46 @@ describe('localDateTimeToUnixSeconds', () => {
     expect(seconds).toBe(
       Math.floor(new Date('2026-06-12T14:00').getTime() / 1000)
     );
+  });
+});
+
+describe('controlFilterParams', () => {
+  it('returns both params when framework and id are set, trimming the id', () => {
+    expect(controlFilterParams('owasp_llm_top10', ' LLM01 ')).toEqual({
+      controlFramework: 'owasp_llm_top10',
+      controlId: 'LLM01',
+    });
+  });
+
+  it('returns undefined when only one half or neither is set', () => {
+    expect(controlFilterParams('owasp_llm_top10', '')).toBeUndefined();
+    expect(controlFilterParams('', 'LLM01')).toBeUndefined();
+    expect(controlFilterParams('', '  ')).toBeUndefined();
+  });
+});
+
+describe('matchesControlFilter', () => {
+  const payload: DecisionPayload = {
+    filter: { controls: [{ framework: 'owasp_llm_top10', id: 'LLM01' }] },
+    redactor: { controls: [{ framework: 'owasp_llm_top10', id: 'LLM02' }] },
+  };
+
+  it('matches a control carried by any stage sub-object', () => {
+    expect(matchesControlFilter(payload, 'owasp_llm_top10', 'LLM01')).toBe(
+      true
+    );
+    expect(matchesControlFilter(payload, 'owasp_llm_top10', 'LLM02')).toBe(
+      true
+    );
+  });
+
+  it('requires framework and id to match together', () => {
+    expect(matchesControlFilter(payload, 'eu_ai_act_art15', 'LLM01')).toBe(
+      false
+    );
+    expect(matchesControlFilter(payload, 'owasp_llm_top10', 'LLM06')).toBe(
+      false
+    );
+    expect(matchesControlFilter({}, 'owasp_llm_top10', 'LLM01')).toBe(false);
   });
 });
