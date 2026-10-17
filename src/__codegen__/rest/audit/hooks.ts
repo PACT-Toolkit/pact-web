@@ -18,10 +18,14 @@ import type {
   AuditListDecisionAnnotationsRequest,
   AuditListDecisionAnnotationsResponse,
   AuditQueryAuditResponse,
+  AuditQueryComplianceReportResponse,
+  AuditQueryControlStatsResponse,
   AuditQueryDecisionStatsResponse,
   AuditQueryPolicyEventsResponse,
   AuditRemoveDecisionAnnotationResponse,
   BoundaryErrorResponse,
+  GetAuditComplianceReportParams,
+  GetAuditControlStatsParams,
   GetAuditEventsParams,
   GetAuditPolicyEventsParams,
   GetAuditStatsParams,
@@ -59,6 +63,26 @@ import {
   listDecisionAnnotations,
   getListDecisionAnnotationsMutationFetcher,
   getListDecisionAnnotationsMutationKey,
+  getAuditComplianceReportResponse200,
+  getAuditComplianceReportResponse400,
+  getAuditComplianceReportResponse401,
+  getAuditComplianceReportResponse403,
+  getAuditComplianceReportResponseSuccess,
+  getAuditComplianceReportResponseError,
+  getGetAuditComplianceReportUrl,
+  getAuditComplianceReportResponse,
+  getAuditComplianceReport,
+  getGetAuditComplianceReportKey,
+  getAuditControlStatsResponse200,
+  getAuditControlStatsResponse400,
+  getAuditControlStatsResponse401,
+  getAuditControlStatsResponse403,
+  getAuditControlStatsResponseSuccess,
+  getAuditControlStatsResponseError,
+  getGetAuditControlStatsUrl,
+  getAuditControlStatsResponse,
+  getAuditControlStats,
+  getGetAuditControlStatsKey,
   getAuditEventsResponse200,
   getAuditEventsResponse400,
   getAuditEventsResponse401,
@@ -187,6 +211,80 @@ export const useListDecisionAnnotations = <
   const swrFn = getListDecisionAnnotationsMutationFetcher(requestOptions);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type GetAuditComplianceReportQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAuditComplianceReport>>
+>;
+
+/**
+ * @summary Export the per-decision compliance report
+ */
+export const useGetAuditComplianceReport = <TError = string>(
+  params?: GetAuditComplianceReportParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof getAuditComplianceReport>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+    request?: SecondParameter<typeof customFetch>;
+  }
+) => {
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getGetAuditComplianceReportKey(params) : null));
+  const swrFn = () => getAuditComplianceReport(params, requestOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type GetAuditControlStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAuditControlStats>>
+>;
+
+/**
+ * @summary Read decision counts per compliance control
+ */
+export const useGetAuditControlStats = <TError = string>(
+  params?: GetAuditControlStatsParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof getAuditControlStats>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+    request?: SecondParameter<typeof customFetch>;
+  }
+) => {
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getGetAuditControlStatsKey(params) : null));
+  const swrFn = () => getAuditControlStats(params, requestOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions
+  );
 
   return {
     swrKey,

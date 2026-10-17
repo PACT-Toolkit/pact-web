@@ -16,6 +16,14 @@ export type GetAuditEventsParams = {
    */
   requestId?: string;
   /**
+   * Compliance framework of the control filter (set together with controlId)
+   */
+  controlFramework?: string;
+  /**
+   * Compliance control id of the control filter (set together with controlFramework)
+   */
+  controlId?: string;
+  /**
    * Inclusive lower bound on createdAt (unix seconds UTC)
    */
   sinceUnix?: number;

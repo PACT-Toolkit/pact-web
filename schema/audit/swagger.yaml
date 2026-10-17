@@ -42,6 +42,47 @@ definitions:
             userId:
                 type: string
         type: object
+    audit.ComplianceReportEntryResponse:
+        properties:
+            controls:
+                items:
+                    $ref: '#/definitions/audit.ControlRefResponse'
+                type: array
+            createdAt:
+                type: string
+            decision:
+                type: string
+            engine:
+                type: string
+            eventUuid:
+                type: string
+            requestId:
+                type: string
+        type: object
+    audit.ControlRefResponse:
+        properties:
+            controlId:
+                type: string
+            framework:
+                type: string
+        type: object
+    audit.ControlStatResponse:
+        properties:
+            allow:
+                type: integer
+            block:
+                type: integer
+            controlId:
+                type: string
+            exampleEventUuids:
+                items:
+                    type: string
+                type: array
+            framework:
+                type: string
+            total:
+                type: integer
+        type: object
     audit.DecisionAnnotationResponse:
         properties:
             actor:
@@ -155,6 +196,28 @@ definitions:
                 type: array
             total:
                 type: integer
+        type: object
+    audit.QueryComplianceReportResponse:
+        properties:
+            entries:
+                items:
+                    $ref: '#/definitions/audit.ComplianceReportEntryResponse'
+                type: array
+            sinceUnix:
+                type: integer
+            total:
+                type: integer
+            untilUnix:
+                type: integer
+        type: object
+    audit.QueryControlStatsResponse:
+        properties:
+            stats:
+                items:
+                    $ref: '#/definitions/audit.ControlStatResponse'
+                type: array
+            unmapped:
+                $ref: '#/definitions/audit.ControlStatResponse'
         type: object
     audit.QueryDecisionStatsResponse:
         properties:
@@ -296,6 +359,84 @@ paths:
             summary: Batch-read operator annotations for a set of decisions
             tags:
                 - audit
+    /v1/audit/compliance-report:
+        get:
+            parameters:
+                - description: Inclusive lower bound on createdAt (unix seconds UTC)
+                  in: query
+                  name: sinceUnix
+                  type: integer
+                - description: Exclusive upper bound on createdAt (unix seconds UTC)
+                  in: query
+                  name: untilUnix
+                  type: integer
+                - description: Page size (clamped by pact-audit)
+                  in: query
+                  name: limit
+                  type: integer
+                - description: Page offset >= 0 (default 0)
+                  in: query
+                  name: offset
+                  type: integer
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/audit.QueryComplianceReportResponse'
+                "400":
+                    description: invalid query parameter
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "403":
+                    description: missing required permission
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Export the per-decision compliance report
+            tags:
+                - audit
+    /v1/audit/control-stats:
+        get:
+            parameters:
+                - description: Inclusive lower bound on createdAt (unix seconds UTC)
+                  in: query
+                  name: sinceUnix
+                  type: integer
+                - description: Exclusive upper bound on createdAt (unix seconds UTC)
+                  in: query
+                  name: untilUnix
+                  type: integer
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/audit.QueryControlStatsResponse'
+                "400":
+                    description: invalid query parameter
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "403":
+                    description: missing required permission
+                    schema:
+                        type: string
+            security:
+                - Bearer: []
+            summary: Read decision counts per compliance control
+            tags:
+                - audit
     /v1/audit/events:
         get:
             parameters:
@@ -306,6 +447,14 @@ paths:
                 - description: Exact match on gateway request-id
                   in: query
                   name: requestId
+                  type: string
+                - description: Compliance framework of the control filter (set together with controlId)
+                  in: query
+                  name: controlFramework
+                  type: string
+                - description: Compliance control id of the control filter (set together with controlFramework)
+                  in: query
+                  name: controlId
                   type: string
                 - description: Inclusive lower bound on createdAt (unix seconds UTC)
                   in: query
@@ -331,7 +480,7 @@ paths:
                     schema:
                         $ref: '#/definitions/audit.QueryAuditResponse'
                 "400":
-                    description: invalid query parameter
+                    description: invalid query parameter, or only one of controlFramework/controlId set
                     schema:
                         type: string
                 "401":

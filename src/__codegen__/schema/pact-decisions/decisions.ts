@@ -34,6 +34,10 @@ export interface PactDecisions {
    * Closed set derived from the reason-prefix switches in check.emitDecisionEvent, proxy.emitProxyDecisionEvent, and middleware.auditCheckRejections: filter, classifier, consensus, redactor, policy, sandbox (check-path indirect-injection block), gateway (pre-pipeline rejection, e.g. body-too-large, decode failure) and cel (tier-3 CEL rule escalated allow to block).
    */
   engine?: "filter" | "classifier" | "consensus" | "redactor" | "policy" | "sandbox" | "gateway" | "cel";
+  /**
+   * Ordered names of the pipeline stages whose run was invoked for this request, including stages that wrote no sub-object (a pass-through stage, a consensus skipped by threshold). Open set by design - the gateway pipeline owns the stage vocabulary (today: policy, filter, classifier, compliance, sandbox, consensus, redactor, cel), so a new stage needs no schema change. Additive - absent on events produced before the field existed.
+   */
+  stages?: string[];
   filter?: FilterDecision;
   classifier?: ClassifierDecision;
   consensus?: ConsensusDecision;
@@ -82,6 +86,18 @@ export interface FilterDecision {
    */
   controls?: ControlRef[];
   matched_span?: MatchedSpan;
+  /**
+   * Name of the loaded rule pack the verdict was produced under. Open set - the rule-pack publisher owns the vocabulary. Additive - absent on events produced before the field existed.
+   */
+  pack_name?: string;
+  /**
+   * Version of the loaded rule pack the verdict was produced under. Open set - the rule-pack publisher owns the vocabulary. Additive - absent on events produced before the field existed.
+   */
+  pack_version?: string;
+  /**
+   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   */
+  duration_ms?: number;
 }
 /**
  * One compliance control a stage verdict enforces. Open set by design - new frameworks or control IDs are added without a schema change.
@@ -125,6 +141,10 @@ export interface ClassifierDecision {
    * Compliance controls this stage verdict enforces, stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed.
    */
   controls?: ControlRef[];
+  /**
+   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   */
+  duration_ms?: number;
 }
 /**
  * Present only when classifier_score < PACT_CONSENSUS_THRESHOLD (stage 2.5 ran).
@@ -157,6 +177,10 @@ export interface ConsensusDecision {
    * Compliance controls this stage verdict enforces, stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed.
    */
   controls?: ControlRef[];
+  /**
+   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   */
+  duration_ms?: number;
 }
 export interface ModelVote {
   backend_id: string;
@@ -190,6 +214,10 @@ export interface ComplianceDecision {
    * True on a transport-error or timeout fail-open: the CheckCompliance RPC failed or did not return in time, so the request proceeded with no compliance verdict recorded.
    */
   skipped?: boolean;
+  /**
+   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   */
+  duration_ms?: number;
 }
 export interface RedactorDecision {
   /**
@@ -201,6 +229,10 @@ export interface RedactorDecision {
    * Compliance controls this stage verdict enforces, stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed.
    */
   controls?: ControlRef[];
+  /**
+   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   */
+  duration_ms?: number;
 }
 export interface RedactedSpan {
   start: number;
@@ -224,9 +256,21 @@ export interface PolicyDecision {
    */
   tool_mitigation_mode?: "observe" | "block" | "redact" | "block_only";
   /**
+   * The tool id the /v1/check caller declared the request was for. Compared with the validated token's tool_id; a mismatch blocks with reason policy_token_scope_denied. Open-set plain string. Additive - absent on events produced before the field existed and when the caller declared nothing.
+   */
+  requested_tool_id?: string;
+  /**
+   * The scope the /v1/check caller declared the request needed. Compared with the validated token's scopes; a scope the token does not carry blocks with reason policy_token_scope_denied. Open-set plain string. Additive - absent on events produced before the field existed and when the caller declared nothing.
+   */
+  requested_scope?: string;
+  /**
    * Compliance controls this stage verdict enforces, stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed.
    */
   controls?: ControlRef[];
+  /**
+   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   */
+  duration_ms?: number;
 }
 /**
  * Present when spotlight_chunks were wrapped, or when stripping was detected in an output check.
@@ -254,6 +298,14 @@ export interface ExternalRefDecision {
   blocked: number;
   mitigated?: number;
   verdicts?: ExternalRefVerdict[];
+  /**
+   * Compliance controls this stage verdict enforces, stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed.
+   */
+  controls?: ControlRef[];
+  /**
+   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   */
+  duration_ms?: number;
 }
 export interface ExternalRefVerdict {
   /**
@@ -304,6 +356,10 @@ export interface CelDecision {
    * Closed set - celeval.SkipReason* constants. Present only when the stage could not fully evaluate every active rule (fail-open): cel_stage_timeout/cel_rule_timeout are budget exhaustion, cel_rule_error covers both a CEL runtime error and an expression that evaluated cleanly to a non-boolean value. Absent when every active rule was attempted regardless of outcome.
    */
   skipped_reason?: "cel_stage_timeout" | "cel_rule_timeout" | "cel_rule_error";
+  /**
+   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   */
+  duration_ms?: number;
 }
 /**
  * Causal-replay diagnostics. Present only on block decisions when the gateway's M12 causal replay ran (PACT_DIAGNOSTICS_ENABLED) and span capture is enabled.

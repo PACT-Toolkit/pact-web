@@ -47,6 +47,14 @@
       "enum": ["filter", "classifier", "consensus", "redactor", "policy", "sandbox", "gateway", "cel"],
       "description": "Closed set derived from the reason-prefix switches in check.emitDecisionEvent, proxy.emitProxyDecisionEvent, and middleware.auditCheckRejections: filter, classifier, consensus, redactor, policy, sandbox (check-path indirect-injection block), gateway (pre-pipeline rejection, e.g. body-too-large, decode failure) and cel (tier-3 CEL rule escalated allow to block)."
     },
+    "stages": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "description": "Ordered names of the pipeline stages whose run was invoked for this request, including stages that wrote no sub-object (a pass-through stage, a consensus skipped by threshold). Open set by design - the gateway pipeline owns the stage vocabulary (today: policy, filter, classifier, compliance, sandbox, consensus, redactor, cel), so a new stage needs no schema change. Additive - absent on events produced before the field existed."
+    },
     "filter": {
       "$ref": "#/$defs/filterDecision"
     },
@@ -202,6 +210,19 @@
         },
         "matched_span": {
           "$ref": "#/$defs/matchedSpan"
+        },
+        "pack_name": {
+          "type": "string",
+          "description": "Name of the loaded rule pack the verdict was produced under. Open set - the rule-pack publisher owns the vocabulary. Additive - absent on events produced before the field existed."
+        },
+        "pack_version": {
+          "type": "string",
+          "description": "Version of the loaded rule pack the verdict was produced under. Open set - the rule-pack publisher owns the vocabulary. Additive - absent on events produced before the field existed."
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
         }
       }
     },
@@ -231,6 +252,11 @@
             "$ref": "#/$defs/controlRef"
           },
           "description": "Compliance controls this stage verdict enforces, stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
         }
       }
     },
@@ -296,6 +322,11 @@
             "$ref": "#/$defs/controlRef"
           },
           "description": "Compliance controls this stage verdict enforces, stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
         }
       }
     },
@@ -324,6 +355,11 @@
         "skipped": {
           "type": "boolean",
           "description": "True on a transport-error or timeout fail-open: the CheckCompliance RPC failed or did not return in time, so the request proceeded with no compliance verdict recorded."
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
         }
       }
     },
@@ -365,6 +401,11 @@
             "$ref": "#/$defs/controlRef"
           },
           "description": "Compliance controls this stage verdict enforces, stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
         }
       }
     },
@@ -397,12 +438,25 @@
           "enum": ["observe", "block", "redact", "block_only"],
           "description": "Closed set per pipeline.Decision.ToolMitigationMode doc comment. The empty string is also valid but is dropped by omitempty, so it never appears on the wire."
         },
+        "requested_tool_id": {
+          "type": "string",
+          "description": "The tool id the /v1/check caller declared the request was for. Compared with the validated token's tool_id; a mismatch blocks with reason policy_token_scope_denied. Open-set plain string. Additive - absent on events produced before the field existed and when the caller declared nothing."
+        },
+        "requested_scope": {
+          "type": "string",
+          "description": "The scope the /v1/check caller declared the request needed. Compared with the validated token's scopes; a scope the token does not carry blocks with reason policy_token_scope_denied. Open-set plain string. Additive - absent on events produced before the field existed and when the caller declared nothing."
+        },
         "controls": {
           "type": "array",
           "items": {
             "$ref": "#/$defs/controlRef"
           },
           "description": "Compliance controls this stage verdict enforces, stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
         }
       }
     },
@@ -476,6 +530,18 @@
           "items": {
             "$ref": "#/$defs/externalRefVerdict"
           }
+        },
+        "controls": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/controlRef"
+          },
+          "description": "Compliance controls this stage verdict enforces, stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
         }
       }
     },
@@ -525,6 +591,11 @@
           "type": "string",
           "enum": ["cel_stage_timeout", "cel_rule_timeout", "cel_rule_error"],
           "description": "Closed set - celeval.SkipReason* constants. Present only when the stage could not fully evaluate every active rule (fail-open): cel_stage_timeout/cel_rule_timeout are budget exhaustion, cel_rule_error covers both a CEL runtime error and an expression that evaluated cleanly to a non-boolean value. Absent when every active rule was attempted regardless of outcome."
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
         }
       }
     },
