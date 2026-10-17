@@ -7,6 +7,10 @@ import {
 } from '@/src/__codegen__/rest/audit';
 import { type FilterLoadedPackResponse } from '@/src/__codegen__/rest/filter';
 import {
+  eventsInUnixWindow,
+  type UnixWindow,
+} from '@/src/app/audit/mock/data/audit_compliance_aggregate';
+import {
   parseDecisionPayload,
   type DecisionPayload,
 } from '@/src/lib/decisions/decision_payload';
@@ -80,18 +84,9 @@ const topRuleCounts = (
  */
 export const computeDecisionStats = (
   events: AuditAuditEventResponse[],
-  window: { sinceUnix?: number; untilUnix?: number } = {}
+  window: UnixWindow = {}
 ): AuditQueryDecisionStatsResponse => {
-  const { sinceUnix, untilUnix } = window;
-  const matched = events.filter((event) => {
-    const createdUnix = Math.floor(
-      new Date(event.createdAt ?? 0).getTime() / 1000
-    );
-    if (sinceUnix !== undefined && createdUnix < sinceUnix) return false;
-    if (untilUnix !== undefined && createdUnix >= untilUnix) return false;
-
-    return true;
-  });
+  const matched = eventsInUnixWindow(events, window);
 
   let blocked = 0;
   const ruleCounts: Record<string, number> = {};

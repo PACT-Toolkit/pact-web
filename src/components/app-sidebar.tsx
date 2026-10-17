@@ -2,6 +2,7 @@
 
 import {
   BrainCircuit,
+  ClipboardCheck,
   Eraser,
   Files,
   FlaskConical,
@@ -61,7 +62,16 @@ const buildNavSections = (pathname: string): NavSectionData[] => [
         title: 'Activity',
         url: '/audit',
         icon: ScrollText,
-        isActive: isRouteActive(pathname, '/audit'),
+        // /audit/compliance is its own item, so it must not light this one.
+        isActive:
+          isRouteActive(pathname, '/audit') &&
+          !isRouteActive(pathname, '/audit/compliance'),
+      },
+      {
+        title: 'Compliance',
+        url: '/audit/compliance',
+        icon: ClipboardCheck,
+        isActive: isRouteActive(pathname, '/audit/compliance'),
       },
     ],
   },
