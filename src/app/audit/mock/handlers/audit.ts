@@ -14,13 +14,25 @@ import {
   persistDecisionAnnotationRequestId,
   removeDecisionAnnotationRequestId,
 } from '@/src/app/audit/mock/data/audit';
+import {
+  computeComplianceReport,
+  computeControlStats,
+} from '@/src/app/audit/mock/data/audit_compliance_aggregate';
 import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
+import { operatorOnlyForbiddenResponse } from '@/src/framework/msw/operator_gate';
 import { parseDecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // The maxAnnotationRequestIDs cap, mirrored from pact-gateway's
 // internal/features/audit/handler.go so the mock 400s the same input the
 // real gateway does.
 const MAX_ANNOTATION_REQUEST_IDS = 200;
+
+// Page-size bounds for the compliance report, mirroring pact-audit's clamp.
+const DEFAULT_REPORT_LIMIT = 50;
+const MAX_REPORT_LIMIT = 200;
+
+const optionalNumber = (value: string | null): number | undefined =>
+  value === null ? undefined : Number(value);
 
 // Answers GET /v1/audit/events for every topic, pact.decisions included (the
 // four decision seeders append to db.decisions). "All topics" (topic omitted)
@@ -77,6 +89,43 @@ export const handlers: RequestHandler[] = [
     const page = all.slice(offset, offset + limit);
 
     return HttpResponse.json({ events: page, total: all.length });
+  }),
+
+  // Answers GET /v1/audit/control-stats. Same audit:stats gate as
+  // GET /v1/audit/stats (403 for the non-operator personas).
+  http.get('*/v1/audit/control-stats', ({ request }) => {
+    const forbidden = operatorOnlyForbiddenResponse();
+    if (forbidden) return forbidden;
+
+    const { searchParams } = new URL(request.url);
+
+    return HttpResponse.json(
+      computeControlStats(db.decisions.getAll(), {
+        sinceUnix: optionalNumber(searchParams.get('sinceUnix')),
+        untilUnix: optionalNumber(searchParams.get('untilUnix')),
+      })
+    );
+  }),
+
+  // Answers GET /v1/audit/compliance-report: one entry per decision, newest
+  // first, offset-paged. Same audit:stats gate as control-stats.
+  http.get('*/v1/audit/compliance-report', ({ request }) => {
+    const forbidden = operatorOnlyForbiddenResponse();
+    if (forbidden) return forbidden;
+
+    const { searchParams } = new URL(request.url);
+
+    return HttpResponse.json(
+      computeComplianceReport(db.decisions.getAll(), {
+        sinceUnix: optionalNumber(searchParams.get('sinceUnix')),
+        untilUnix: optionalNumber(searchParams.get('untilUnix')),
+        limit: Math.min(
+          Number(searchParams.get('limit') ?? DEFAULT_REPORT_LIMIT),
+          MAX_REPORT_LIMIT
+        ),
+        offset: Number(searchParams.get('offset') ?? '0'),
+      })
+    );
   }),
 
   // Answers POST /v1/audit/annotations. Error bodies use
