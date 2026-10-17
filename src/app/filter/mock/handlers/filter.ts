@@ -6,8 +6,8 @@ import {
   computeDecisionStats,
   MOCK_LOADED_PACKS,
 } from '@/src/app/filter/mock/data/filter';
-import { getMockUserType } from '@/src/framework/helpers/mock_user_type';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
+import { operatorOnlyForbiddenResponse } from '@/src/framework/msw/operator_gate';
 
 // Mirrors pact-gateway internal/features/filter/handler.go's
 // validateTestRuleRequest so dev:mock and Playwright catch the same
@@ -82,17 +82,8 @@ export const handlers: RequestHandler[] = [
   // GET /v1/audit/events (every topic, pact.decisions included) is answered
   // by the audit feature handler; only the decision-derived stats live here.
   http.get('*/v1/audit/stats', ({ request }) => {
-    // Mirrors pact-gateway's audit:stats permission gate:
-    // operator/admin only. The 'admin' mock persona is the operator stand-in
-    // -- 'auditor' and 'developer' exercise the 403 path so the
-    // permission-aware empty state is reachable in dev:mock without a real
-    // gateway. Switch personas via the sidebar's mock-user-type dropdown.
-    if (getMockUserType() !== 'admin') {
-      return HttpResponse.json(
-        { error: 'insufficient permissions' },
-        { status: 403 }
-      );
-    }
+    const forbidden = operatorOnlyForbiddenResponse();
+    if (forbidden) return forbidden;
 
     const url = new URL(request.url);
     const sinceUnixParam = url.searchParams.get('sinceUnix');
