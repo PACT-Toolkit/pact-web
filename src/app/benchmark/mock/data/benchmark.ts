@@ -573,7 +573,11 @@ export const MOCK_CORPUS_LIBRARY_TOTAL_ROWS = MOCK_CORPUS_DATASETS.reduce(
  * `defaultLabelColumn` is `''` for `fka/awesome-chatgpt-prompts`, exercising
  * the "no label column detected" assume-label fallback. `textColumn` is `''`
  * for `Abirate/english_quotes`, exercising the "no text column detected"
- * path - Run must stay disabled until a text column is chosen by hand. */
+ * path - Run must stay disabled until a text column is chosen by hand.
+ * `rubend18/ChatGPT-Jailbreak-Prompts` carries `scoreColumn` + `scores`,
+ * exercising the score-threshold path (it also keeps a
+ * `suggestedAssumeLabel`, which the card must ignore while a score column is
+ * in effect). */
 interface MockHubDataset {
   columns: string[];
   rowCount: number;
@@ -590,6 +594,10 @@ interface MockHubDataset {
    * whose slug/split implies one, `''` otherwise. */
   suggestedAssumeLabel: 'allow' | 'block' | '';
   defaultLabelColumn: string;
+  /** Numeric score column and its sampled values; the preview reports them
+   * only while no label column is in effect. */
+  scoreColumn?: string;
+  scores?: number[];
   rowsSkipped: number;
   attackRows: number;
   benignRows: number;
@@ -629,6 +637,31 @@ export const MOCK_RATE_LIMITED_JOB_POLLS = [3, 4];
  * describeJobError) in dev:mock without depending on a real expired session.
  */
 export const MOCK_AUTH_EXPIRED_JOB_MARKER = '__pact_mock_auth_expired_job__';
+
+/** 79 deterministic scores spread evenly over 5..90 (one decimal), so the
+ * suggested threshold is 47.5 and moving it visibly shifts the split. */
+const MOCK_JAILBREAK_SCORES = Array.from(
+  { length: 79 },
+  (_, i) => Math.round((5 + (i * 85) / 78) * 10) / 10
+);
+
+/** The gateway's `suggested_threshold`: 0.5 when every score is in [0, 1],
+ * else the midpoint of the observed minimum and maximum. */
+export function mockSuggestedThreshold(scores: number[]): number {
+  if (scores.every((score) => score >= 0 && score <= 1)) return 0.5;
+
+  return (Math.min(...scores) + Math.max(...scores)) / 2;
+}
+
+/** Rows at or above / below `threshold`, as the gateway counts them. */
+export function mockScoreSplit(
+  scores: number[],
+  threshold: number
+): { block: number; allow: number } {
+  const block = scores.filter((score) => score >= threshold).length;
+
+  return { block, allow: scores.length - block };
+}
 
 export const MOCK_HUB_DATASETS: Record<string, MockHubDataset> = {
   // Has a detected label column already: exercises the plain inspect -> run
@@ -674,9 +707,27 @@ export const MOCK_HUB_DATASETS: Record<string, MockHubDataset> = {
     rowsExcludedTrainedOn: 1993,
     screened: true,
   },
-  // Unlabeled jailbreak collection: the gateway infers "block" from the
-  // slug, so the assume-label arrives pre-selected and Run is enabled with
-  // no manual step.
+  // Unlabeled attack collection without a score column: the gateway infers
+  // "block" from the slug, so the assume-label arrives pre-selected and Run
+  // is enabled with no manual step.
+  'walledai/AdvBench': {
+    columns: ['prompt', 'target'],
+    rowCount: 520,
+    sampledRows: 200,
+    textColumn: 'prompt',
+    labelColumns: {},
+    suggestedLabelValues: {},
+    suggestedAssumeLabel: 'block',
+    defaultLabelColumn: '',
+    rowsSkipped: 0,
+    attackRows: 0,
+    benignRows: 0,
+    rowsExcludedTrainedOn: 0,
+    screened: false,
+  },
+  // Unlabeled jailbreak collection with a numeric score column: the score
+  // path (threshold input, sampled split) replaces the assume-label control
+  // even though a `block` assume-label is also suggested.
   'rubend18/ChatGPT-Jailbreak-Prompts': {
     columns: ['Name', 'Prompt', 'Votes', 'Jailbreak Score', 'GPT-4'],
     rowCount: 79,
@@ -686,6 +737,8 @@ export const MOCK_HUB_DATASETS: Record<string, MockHubDataset> = {
     suggestedLabelValues: {},
     suggestedAssumeLabel: 'block',
     defaultLabelColumn: '',
+    scoreColumn: 'Jailbreak Score',
+    scores: MOCK_JAILBREAK_SCORES,
     rowsSkipped: 0,
     attackRows: 0,
     benignRows: 0,

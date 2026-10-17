@@ -12,8 +12,10 @@ import {
   MOCK_JOB_RUN_ID,
   MOCK_RATE_LIMITED_JOB_MARKER,
   MOCK_RATE_LIMITED_JOB_POLLS,
+  mockScoreSplit,
   MOCK_ROWS,
   MOCK_RUNS,
+  mockSuggestedThreshold,
   MOCK_UNSCORED_ROW_COUNT,
   TOTAL_ROWS,
 } from '@/src/app/benchmark/mock/data/benchmark';
@@ -271,6 +273,20 @@ export const handlers: RequestHandler[] = [
           ? labelColumnParam
           : dataset.defaultLabelColumn;
 
+      const scores = !labelColumn && dataset.scores ? dataset.scores : null;
+      const scoreThresholdParam = url.searchParams.get('score_threshold');
+      const requestedThreshold =
+        scoreThresholdParam === null ? Number.NaN : Number(scoreThresholdParam);
+      const suggestedThreshold = scores ? mockSuggestedThreshold(scores) : 0;
+      const split = scores
+        ? mockScoreSplit(
+            scores,
+            Number.isFinite(requestedThreshold)
+              ? requestedThreshold
+              : suggestedThreshold
+          )
+        : { block: 0, allow: 0 };
+
       return HttpResponse.json({
         columns: dataset.columns,
         row_count: dataset.rowCount,
@@ -283,6 +299,10 @@ export const handlers: RequestHandler[] = [
           ? (dataset.suggestedLabelValues[labelColumn] ?? {})
           : {},
         suggested_assume_label: labelColumn ? '' : dataset.suggestedAssumeLabel,
+        score_column: scores ? (dataset.scoreColumn ?? '') : '',
+        suggested_threshold: suggestedThreshold,
+        score_sample_block_rows: split.block,
+        score_sample_allow_rows: split.allow,
       });
     }
   ),
@@ -295,6 +315,8 @@ export const handlers: RequestHandler[] = [
         split?: string;
         config?: string;
         assume_label?: string;
+        score_column?: string;
+        score_threshold?: number;
       };
       const slug = body.slug ?? '';
 
@@ -319,6 +341,13 @@ export const handlers: RequestHandler[] = [
         dataset.rowCount - dataset.rowsSkipped - dataset.rowsExcludedTrainedOn;
       const assumedBlock = body.assume_label === 'block';
       const assumedAllow = body.assume_label === 'allow';
+      const scored =
+        body.score_column && dataset.scores
+          ? mockScoreSplit(
+              dataset.scores,
+              body.score_threshold ?? mockSuggestedThreshold(dataset.scores)
+            )
+          : null;
 
       jobs.set(jobId, {
         status: 'queued',
@@ -333,16 +362,20 @@ export const handlers: RequestHandler[] = [
           config: body.config ?? '',
           rows_read: dataset.rowCount,
           rows_skipped: dataset.rowsSkipped,
-          attack_rows: dataset.defaultLabelColumn
-            ? dataset.attackRows
-            : assumedBlock
-              ? includedRows
-              : 0,
-          benign_rows: dataset.defaultLabelColumn
-            ? dataset.benignRows
-            : assumedAllow
-              ? includedRows
-              : 0,
+          attack_rows: scored
+            ? scored.block
+            : dataset.defaultLabelColumn
+              ? dataset.attackRows
+              : assumedBlock
+                ? includedRows
+                : 0,
+          benign_rows: scored
+            ? scored.allow
+            : dataset.defaultLabelColumn
+              ? dataset.benignRows
+              : assumedAllow
+                ? includedRows
+                : 0,
           screened: dataset.screened,
           rows_excluded_trained_on: dataset.rowsExcludedTrainedOn,
           truncated: false,

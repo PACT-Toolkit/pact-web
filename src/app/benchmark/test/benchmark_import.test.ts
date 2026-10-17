@@ -30,6 +30,10 @@ const PREVIEW: HubDatasetPreview = {
   label_values_truncated: false,
   suggested_label_values: { '0': 'allow', '1': 'block' },
   suggested_assume_label: '',
+  score_column: '',
+  suggested_threshold: 0,
+  score_sample_block_rows: 0,
+  score_sample_allow_rows: 0,
 };
 
 const UNLABELED_PREVIEW: HubDatasetPreview = {
@@ -42,17 +46,32 @@ const UNLABELED_PREVIEW: HubDatasetPreview = {
   label_values_truncated: false,
   suggested_label_values: {},
   suggested_assume_label: 'block',
+  score_column: '',
+  suggested_threshold: 0,
+  score_sample_block_rows: 0,
+  score_sample_allow_rows: 0,
+};
+
+// Mirrors the real jailbreak collection: a score column AND a suggested
+// assume-label, with no label column.
+const SCORED_PREVIEW: HubDatasetPreview = {
+  ...UNLABELED_PREVIEW,
+  score_column: 'Jailbreak Score',
+  suggested_threshold: 47.5,
+  score_sample_block_rows: 57,
+  score_sample_allow_rows: 22,
 };
 
 const NO_SELECTIONS = {
   textColumn: null,
   labelColumn: null,
   assumeLabel: null,
+  scoreThreshold: null,
 };
 
 describe('buildPreviewParams', () => {
   it('sends only the slug when every other field is blank', () => {
-    expect(buildPreviewParams(IDENTITY, null)).toEqual({
+    expect(buildPreviewParams(IDENTITY, null, null)).toEqual({
       slug: 'deepset/prompt-injections',
     });
   });
@@ -65,7 +84,7 @@ describe('buildPreviewParams', () => {
       revision: ' main ',
     };
 
-    expect(buildPreviewParams(identity, null)).toEqual({
+    expect(buildPreviewParams(identity, null, null)).toEqual({
       slug: 'deepset/prompt-injections',
       split: 'train',
       config: 'default',
@@ -74,16 +93,29 @@ describe('buildPreviewParams', () => {
   });
 
   it('omits label_column for the no-label-column sentinel', () => {
-    expect(buildPreviewParams(IDENTITY, NO_LABEL_COLUMN)).toEqual({
+    expect(buildPreviewParams(IDENTITY, NO_LABEL_COLUMN, null)).toEqual({
       slug: 'deepset/prompt-injections',
     });
   });
 
   it('includes label_column only when an override is given', () => {
-    expect(buildPreviewParams(IDENTITY, 'label_alt')).toEqual({
+    expect(buildPreviewParams(IDENTITY, 'label_alt', null)).toEqual({
       slug: 'deepset/prompt-injections',
       label_column: 'label_alt',
     });
+  });
+});
+
+describe('buildPreviewParams score threshold', () => {
+  it('omits score_threshold while untouched', () => {
+    expect(buildPreviewParams(IDENTITY, null, null)).not.toHaveProperty(
+      'score_threshold'
+    );
+  });
+
+  it('includes score_threshold when 0 or 50', () => {
+    expect(buildPreviewParams(IDENTITY, null, 0).score_threshold).toBe(0);
+    expect(buildPreviewParams(IDENTITY, null, 50).score_threshold).toBe(50);
   });
 });
 
@@ -152,10 +184,13 @@ describe('resolveHubImportMapping', () => {
     expect(resolveHubImportMapping(PREVIEW, NO_SELECTIONS)).toEqual({
       textColumn: 'text',
       labelColumn: 'label',
+      scoreColumn: null,
+      scoreThreshold: null,
       assumeLabel: null,
       textColumnAutoDetected: true,
       labelColumnAutoDetected: true,
       assumeLabelAutoDetected: false,
+      scoreThresholdAutoDetected: false,
     });
   });
 
@@ -222,11 +257,58 @@ describe('resolveHubImportMapping', () => {
     expect(resolveHubImportMapping(undefined, NO_SELECTIONS)).toEqual({
       textColumn: null,
       labelColumn: null,
+      scoreColumn: null,
+      scoreThreshold: null,
       assumeLabel: null,
       textColumnAutoDetected: false,
       labelColumnAutoDetected: false,
       assumeLabelAutoDetected: false,
+      scoreThresholdAutoDetected: false,
     });
+  });
+
+  it('takes the score path from the preview with the suggested threshold', () => {
+    const resolved = resolveHubImportMapping(SCORED_PREVIEW, NO_SELECTIONS);
+
+    expect(resolved.labelColumn).toBeNull();
+    expect(resolved.scoreColumn).toBe('Jailbreak Score');
+    expect(resolved.scoreThreshold).toBe(47.5);
+    expect(resolved.scoreThresholdAutoDetected).toBe(true);
+    // The preview still suggests an assume-label; the score path wins.
+    expect(resolved.assumeLabel).toBeNull();
+    expect(resolved.assumeLabelAutoDetected).toBe(false);
+  });
+
+  it('prefers the user threshold over the suggestion, including 0', () => {
+    const resolved = resolveHubImportMapping(SCORED_PREVIEW, {
+      ...NO_SELECTIONS,
+      scoreThreshold: 0,
+    });
+
+    expect(resolved.scoreThreshold).toBe(0);
+    expect(resolved.scoreThresholdAutoDetected).toBe(false);
+  });
+
+  it('lets a label column win over a score column', () => {
+    const resolved = resolveHubImportMapping(
+      { ...SCORED_PREVIEW, detected_label_column: 'label' },
+      NO_SELECTIONS
+    );
+
+    expect(resolved.labelColumn).toBe('label');
+    expect(resolved.scoreColumn).toBeNull();
+    expect(resolved.scoreThreshold).toBeNull();
+    expect(resolved.scoreThresholdAutoDetected).toBe(false);
+  });
+
+  it('returns to the score path when the label column is cleared', () => {
+    const resolved = resolveHubImportMapping(
+      { ...SCORED_PREVIEW, detected_label_column: 'label' },
+      { ...NO_SELECTIONS, labelColumn: NO_LABEL_COLUMN }
+    );
+
+    expect(resolved.scoreColumn).toBe('Jailbreak Score');
+    expect(resolved.assumeLabel).toBeNull();
   });
 });
 
@@ -243,6 +325,8 @@ describe('buildImportRequest', () => {
         identity: IDENTITY,
         textColumn: null,
         labelColumn: null,
+        scoreColumn: null,
+        scoreThreshold: null,
         valueDecisions: {},
         assumeLabel: null,
       })
@@ -262,6 +346,8 @@ describe('buildImportRequest', () => {
         identity,
         textColumn: 'text',
         labelColumn: 'label',
+        scoreColumn: null,
+        scoreThreshold: null,
         valueDecisions: { block: 'block', allow: 'allow' },
         assumeLabel: null,
       })
@@ -281,6 +367,8 @@ describe('buildImportRequest', () => {
       identity: IDENTITY,
       textColumn: 'text',
       labelColumn: 'label',
+      scoreColumn: null,
+      scoreThreshold: null,
       // "Block" and "block" collapse to the same normalized key; insertion
       // order means the second entry (allow) wins - documents the
       // last-write-wins contract described on buildImportRequest.
@@ -296,6 +384,8 @@ describe('buildImportRequest', () => {
       identity: IDENTITY,
       textColumn: 'text',
       labelColumn: 'label',
+      scoreColumn: null,
+      scoreThreshold: null,
       valueDecisions: { '0': 'allow', '1': 'block' },
       assumeLabel: 'block',
     });
@@ -309,12 +399,55 @@ describe('buildImportRequest', () => {
       identity: IDENTITY,
       textColumn: 'prompt',
       labelColumn: null,
+      scoreColumn: null,
+      scoreThreshold: null,
       valueDecisions: {},
       assumeLabel: 'allow',
     });
 
     expect(result.assume_label).toBe('allow');
     expect(result.label_column).toBeUndefined();
+  });
+});
+
+describe('buildImportRequest score path', () => {
+  const scoreArgs = {
+    identity: IDENTITY,
+    textColumn: 'Prompt',
+    labelColumn: null,
+    scoreColumn: 'Jailbreak Score',
+    scoreThreshold: 80,
+    valueDecisions: {},
+  } as const;
+
+  it('emits the score fields and omits assume_label', () => {
+    const result = buildImportRequest({ ...scoreArgs, assumeLabel: 'block' });
+
+    expect(result.score_column).toBe('Jailbreak Score');
+    expect(result.score_threshold).toBe(80);
+    expect(result.assume_label).toBeUndefined();
+  });
+
+  it('keeps a zero threshold', () => {
+    const result = buildImportRequest({
+      ...scoreArgs,
+      scoreThreshold: 0,
+      assumeLabel: null,
+    });
+
+    expect(result.score_threshold).toBe(0);
+  });
+
+  it('omits the score fields when a label column is set', () => {
+    const result = buildImportRequest({
+      ...scoreArgs,
+      labelColumn: 'label',
+      assumeLabel: null,
+    });
+
+    expect(result.label_column).toBe('label');
+    expect(result.score_column).toBeUndefined();
+    expect(result.score_threshold).toBeUndefined();
   });
 });
 

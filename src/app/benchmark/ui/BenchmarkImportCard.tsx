@@ -13,6 +13,7 @@ import {
   type HubDatasetIdentity,
   type HubImportRequestDraft,
 } from '@/src/app/benchmark/domain/benchmark_import';
+import { BenchmarkImportScoreThreshold } from '@/src/app/benchmark/ui/BenchmarkImportScoreThreshold';
 import { BenchmarkUploadMapping } from '@/src/app/benchmark/ui/BenchmarkUploadMapping';
 import { Button } from '@/src/components/ui/button';
 import {
@@ -71,17 +72,33 @@ export const BenchmarkImportCard = ({
   const [assumeLabelOverride, setAssumeLabelOverride] = useState<
     'allow' | 'block' | null
   >(null);
+  const [scoreThresholdOverride, setScoreThresholdOverride] = useState<
+    number | null
+  >(null);
 
   const previewParams = useMemo(
     () =>
-      identity ? buildPreviewParams(identity, labelColumnSelection) : null,
-    [identity, labelColumnSelection]
+      identity
+        ? buildPreviewParams(
+            identity,
+            labelColumnSelection,
+            scoreThresholdOverride
+          )
+        : null,
+    [identity, labelColumnSelection, scoreThresholdOverride]
   );
 
-  const { data, isLoading } = useInspectBenchmarkImport(
+  // keepPreviousData keeps the preview (and the focused threshold input)
+  // mounted while a changed threshold refetches; `isValidating` marks that
+  // window so Run stays locked until the shown split matches the threshold.
+  const { data, isLoading, isValidating } = useInspectBenchmarkImport(
     previewParams ?? { slug: '' },
     {
-      swr: { enabled: previewParams !== null, revalidateOnFocus: false },
+      swr: {
+        enabled: previewParams !== null,
+        revalidateOnFocus: false,
+        keepPreviousData: true,
+      },
     }
   );
 
@@ -95,6 +112,7 @@ export const BenchmarkImportCard = ({
     textColumn: textColumnOverride,
     labelColumn: labelColumnSelection,
     assumeLabel: assumeLabelOverride,
+    scoreThreshold: scoreThresholdOverride,
   });
   const mapping = {
     textColumn: resolved.textColumn,
@@ -120,6 +138,7 @@ export const BenchmarkImportCard = ({
     setTextColumnOverride(null);
     setValueDecisionOverrides({});
     setAssumeLabelOverride(null);
+    setScoreThresholdOverride(null);
   };
 
   const handleInspect = (e: React.FormEvent) => {
@@ -134,6 +153,7 @@ export const BenchmarkImportCard = ({
     setLabelColumnSelection(column);
     setValueDecisionOverrides({});
     setAssumeLabelOverride(null);
+    setScoreThresholdOverride(null);
   };
 
   const handleValueDecisionChange = (
@@ -151,6 +171,8 @@ export const BenchmarkImportCard = ({
         identity,
         textColumn: mapping.textColumn,
         labelColumn: mapping.labelColumn,
+        scoreColumn: resolved.scoreColumn,
+        scoreThreshold: resolved.scoreThreshold,
         valueDecisions,
         assumeLabel: resolved.assumeLabel,
       })
@@ -159,8 +181,11 @@ export const BenchmarkImportCard = ({
 
   const canRun =
     preview !== undefined &&
+    !isValidating &&
     mapping.textColumn !== null &&
-    (mapping.labelColumn !== null || resolved.assumeLabel !== null);
+    (mapping.labelColumn !== null ||
+      resolved.scoreColumn !== null ||
+      resolved.assumeLabel !== null);
 
   return (
     <Card data-testid="benchmark-import-card">
@@ -225,11 +250,11 @@ export const BenchmarkImportCard = ({
           <Button
             type="submit"
             variant="secondary"
-            disabled={!slug.trim() || isLoading}
+            disabled={!slug.trim() || isValidating}
             className="w-fit"
             data-testid="benchmark-import-inspect"
           >
-            {isLoading ? 'Inspecting…' : 'Inspect'}
+            {isValidating ? 'Inspecting…' : 'Inspect'}
           </Button>
         </form>
 
@@ -288,7 +313,21 @@ export const BenchmarkImportCard = ({
               </p>
             )}
 
-            {mapping.labelColumn === null && (
+            {resolved.scoreColumn !== null &&
+              resolved.scoreThreshold !== null && (
+                <BenchmarkImportScoreThreshold
+                  scoreColumn={resolved.scoreColumn}
+                  threshold={resolved.scoreThreshold}
+                  autoDetected={resolved.scoreThresholdAutoDetected}
+                  blockRows={preview.score_sample_block_rows}
+                  allowRows={preview.score_sample_allow_rows}
+                  sampledRows={preview.sampled_rows}
+                  busy={isValidating}
+                  onCommit={setScoreThresholdOverride}
+                />
+              )}
+
+            {mapping.labelColumn === null && resolved.scoreColumn === null && (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="benchmark-import-assume-label">
                   No label column - assume every row is{' '}
