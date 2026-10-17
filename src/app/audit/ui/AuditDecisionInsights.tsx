@@ -4,6 +4,8 @@ import {
   complianceVerdictLabel,
 } from '@/src/app/audit/domain/audit_decision_compliance';
 import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
+import { DecisionControlBadges } from '@/src/framework/decisions/control_badges';
+import { collectDecisionControls } from '@/src/framework/decisions/control_frameworks';
 import { formatPercent } from '@/src/framework/format/format_percent';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import { isStageAttributed } from '@/src/lib/decisions/decision_stage_attribution';
@@ -27,6 +29,16 @@ const hasForensics = (dp: DecisionPayload): boolean =>
     dp.content?.sha256
   );
 
+// Rule pack identity as `name@version`, or just the name when the producer
+// sent no version. Empty when the filter stage reported no pack at all.
+const rulePackLabel = (dp: DecisionPayload): string => {
+  const name = dp.filter?.pack_name;
+  if (!name) return '';
+  const version = dp.filter?.pack_version;
+
+  return version ? `${name}@${version}` : name;
+};
+
 export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
   <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-md border bg-muted/20 px-3 py-2 text-xs">
     {typeof dp.latency_ms === 'number' && dp.latency_ms > 0 && (
@@ -38,6 +50,42 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         <code className="rounded bg-muted px-1.5 py-0.5">
           {dp.latency_ms} ms
         </code>
+      </div>
+    )}
+    {dp.stages && dp.stages.length > 0 && (
+      <div
+        className="flex flex-wrap items-center gap-1.5"
+        data-testid="audit-decision-stages"
+      >
+        <span className="text-muted-foreground">Stages</span>
+        {dp.stages.map((stage, index) => (
+          <code
+            key={`${stage}-${index}`}
+            className="rounded bg-muted px-1.5 py-0.5"
+          >
+            {stage}
+          </code>
+        ))}
+      </div>
+    )}
+    {rulePackLabel(dp) && (
+      <div
+        className="flex items-center gap-1.5"
+        data-testid="audit-decision-pack"
+      >
+        <span className="text-muted-foreground">Rule pack</span>
+        <code className="rounded bg-muted px-1.5 py-0.5">
+          {rulePackLabel(dp)}
+        </code>
+      </div>
+    )}
+    {collectDecisionControls(dp).length > 0 && (
+      <div
+        className="flex flex-wrap items-center gap-1.5"
+        data-testid="audit-decision-controls"
+      >
+        <span className="text-muted-foreground">Controls</span>
+        <DecisionControlBadges controls={collectDecisionControls(dp)} />
       </div>
     )}
     {dp.engine && (

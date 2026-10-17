@@ -9,28 +9,25 @@ import {
   type AuditListDecisionAnnotationsResponse,
   type AuditRemoveDecisionAnnotationResponse,
 } from '@/src/__codegen__/rest/audit';
+import { matchesControlFilter } from '@/src/app/audit/domain/audit_filters';
 import {
   persistDecisionAnnotationRequestId,
   removeDecisionAnnotationRequestId,
 } from '@/src/app/audit/mock/data/audit';
 import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
+import { parseDecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // The maxAnnotationRequestIDs cap, mirrored from pact-gateway's
 // internal/features/audit/handler.go so the mock 400s the same input the
 // real gateway does.
 const MAX_ANNOTATION_REQUEST_IDS = 200;
 
-// Answers GET /v1/audit/events for every topic other than pact.decisions
-// (filter.ts's handler owns that one, since pact.decisions is seeded there
-// alongside consensus.ts). "All topics" (topic omitted) merges every pool
-// including pact.decisions, matching pact-audit's real QueryEvents
+// Answers GET /v1/audit/events for every topic, pact.decisions included (the
+// four decision seeders append to db.decisions). "All topics" (topic omitted)
+// merges every pool, matching pact-audit's real QueryEvents
 // behaviour (buildWhere only applies a topic predicate `if f.Topic != ""`).
 // pact.policy has no pool -- it always resolves to an empty page, matching
 // AuditWorkbench's documented "not yet available" copy for that topic.
-//
-// Built from pools rather than an early "topic === pact.decisions ->
-// undefined" guard so this handler is correct regardless of registration
-// order relative to filter.ts's handler in mocks/handlers.ts.
 export const handlers: RequestHandler[] = [
   http.get('*/v1/audit/events', ({ request }) => {
     const url = new URL(request.url);
@@ -38,6 +35,17 @@ export const handlers: RequestHandler[] = [
     const requestId = url.searchParams.get('requestId');
     const limit = Math.min(Number(url.searchParams.get('limit') ?? '50'), 200);
     const offset = Number(url.searchParams.get('offset') ?? '0');
+
+    const controlFramework = url.searchParams.get('controlFramework');
+    const controlId = url.searchParams.get('controlId');
+
+    // Mirrors the gateway: the control filter needs both halves or neither.
+    if (Boolean(controlFramework) !== Boolean(controlId)) {
+      return HttpResponse.json(
+        'controlFramework and controlId must be set together',
+        { status: 400 }
+      );
+    }
 
     const pools: Record<string, AuditAuditEventResponse[]> = {
       'pact.auth': db.auditAuthEvents.getAll(),
@@ -51,6 +59,15 @@ export const handlers: RequestHandler[] = [
 
     const all = pool
       .filter((event) => !requestId || event.requestId === requestId)
+      .filter((event) => {
+        if (!controlFramework || !controlId) return true;
+        const payload = parseDecisionPayload(event.payloadJson ?? '');
+
+        return (
+          payload !== null &&
+          matchesControlFilter(payload, controlFramework, controlId)
+        );
+      })
       .sort(
         (a, b) =>
           new Date(b.createdAt ?? 0).getTime() -
