@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/src/components/ui/select';
+import { cn } from '@/src/lib/utils';
 
 interface BenchmarkImportCardProps {
   onSubmit: (request: HubImportRequestDraft) => Promise<void>;
@@ -274,7 +275,14 @@ export const BenchmarkImportCard = ({
         )}
 
         {preview && (
-          <div className="mt-4 flex flex-col gap-4">
+          <div
+            className={cn(
+              'mt-4 flex flex-col gap-4 transition-opacity',
+              isValidating && 'pointer-events-none opacity-50'
+            )}
+            aria-busy={isValidating}
+            data-testid="benchmark-import-preview"
+          >
             <p
               className="text-xs text-muted-foreground"
               data-testid="benchmark-import-preview-summary"

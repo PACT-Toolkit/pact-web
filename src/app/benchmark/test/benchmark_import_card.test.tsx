@@ -165,6 +165,26 @@ describe('BenchmarkImportCard', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('marks the preview busy until the refetched split arrives', async () => {
+    renderCard();
+    await inspect('rubend18/ChatGPT-Jailbreak-Prompts');
+
+    const preview = screen.getByTestId('benchmark-import-preview');
+    expect(preview).toHaveAttribute('aria-busy', 'false');
+
+    const input = screen.getByTestId('benchmark-import-score-threshold');
+    fireEvent.change(input, { target: { value: '80' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(preview).toHaveAttribute('aria-busy', 'true'));
+    await waitFor(() =>
+      expect(
+        screen.getByTestId('benchmark-import-score-split')
+      ).toHaveTextContent('10 rows at or above')
+    );
+    await waitFor(() => expect(preview).toHaveAttribute('aria-busy', 'false'));
+  });
+
   it('reverts an empty threshold draft on blur', async () => {
     renderCard();
     await inspect('rubend18/ChatGPT-Jailbreak-Prompts');

@@ -658,6 +658,8 @@ test.describe('Benchmark Hugging Face import', () => {
     await expect(
       page.getByTestId('benchmark-import-score-split')
     ).toContainText('10 rows at or above');
+    // The refetch dims the preview but must not blur the input.
+    await expect(threshold).toBeFocused();
   });
 
   test('shows a friendly error for a gated dataset', async ({ page }) => {
