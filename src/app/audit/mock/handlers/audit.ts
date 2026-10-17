@@ -28,8 +28,8 @@ import { parseDecisionPayload } from '@/src/lib/decisions/decision_payload';
 const MAX_ANNOTATION_REQUEST_IDS = 200;
 
 // Page-size bounds for the compliance report, mirroring pact-audit's clamp.
-const DEFAULT_REPORT_LIMIT = 100;
-const MAX_REPORT_LIMIT = 500;
+const DEFAULT_REPORT_LIMIT = 50;
+const MAX_REPORT_LIMIT = 200;
 
 const optionalNumber = (value: string | null): number | undefined =>
   value === null ? undefined : Number(value);

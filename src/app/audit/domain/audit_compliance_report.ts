@@ -7,10 +7,10 @@ import {
 // gateway endpoint to completion, mapping wire entries to the document shape
 // and naming the file.
 
-// Requested page size. pact-audit clamps it (200 at the time of writing), so
-// the paging loop never assumes a full page: it advances the offset by the
-// number of entries actually received.
-export const COMPLIANCE_REPORT_PAGE_SIZE = 500;
+// Requested page size: the audit service's own maximum. The paging loop still
+// never assumes a full page and advances the offset by the number of entries
+// actually received.
+export const COMPLIANCE_REPORT_PAGE_SIZE = 200;
 
 // Hard stop for the paging loop so a misbehaving total can never spin
 // forever. A window needing more pages than this is reported as truncated.

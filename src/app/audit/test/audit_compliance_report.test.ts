@@ -213,7 +213,7 @@ describe('defaultComplianceWindow', () => {
 
 describe('withRateLimitRetry', () => {
   const page = { entries: [wireEntry(1)], total: 1 };
-  const params = { sinceUnix: 1, untilUnix: 2, limit: 500, offset: 0 };
+  const params = { sinceUnix: 1, untilUnix: 2, limit: 200, offset: 0 };
 
   it('retries a 429 with a growing delay and then succeeds', async () => {
     const fetchPage = vi
