@@ -121,6 +121,23 @@ test.describe('Audit activity log', () => {
     );
   });
 
+  test('an expanded allow pact.decisions row shows per-layer timings', async ({
+    page,
+  }) => {
+    await page.getByTestId('audit-topic-select').selectOption('pact.decisions');
+
+    const allowRow = page
+      .getByTestId('audit-row')
+      .filter({ hasText: 'req-classifier-00' })
+      .first();
+    await expect(allowRow).toContainText('ALLOW');
+    await allowRow.getByTestId('audit-row-toggle').click();
+
+    await expect(
+      allowRow.getByTestId('audit-decision-layer-timings')
+    ).toContainText(/Classifier \d+ ms/);
+  });
+
   test('the control filter narrows the list and asks for both halves', async ({
     page,
   }) => {

@@ -512,6 +512,40 @@ describe('AuditDecisionRow expanded detail - controls, stages and rule pack', ()
     expect(screen.queryByTestId('audit-decision-pack')).not.toBeInTheDocument();
   });
 
+  it('shows layer timings on an ALLOW row, in pipeline order, with rounded ms', () => {
+    renderRow({
+      decision: 'allow',
+      filter: { verdict: 'safe', duration_ms: 2.4 },
+      classifier: { label: 'benign', duration_ms: 41.6 },
+      redactor: { verdict: 'pass_through', duration_ms: 1 },
+      latency_ms: 50,
+    });
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    const timings = screen.getByTestId('audit-decision-layer-timings');
+    expect(timings).toHaveTextContent('Layer timings');
+    expect(
+      [...timings.querySelectorAll('code')].map((c) => c.textContent)
+    ).toEqual(['Filter 2 ms', 'Classifier 42 ms', 'Redactor 1 ms']);
+    expect(
+      screen.queryByTestId('stage-duration-filter')
+    ).not.toBeInTheDocument();
+  });
+
+  it('renders no layer-timings row when no stage reports a duration', () => {
+    renderRow({
+      decision: 'allow',
+      filter: { verdict: 'safe' },
+      classifier: { label: 'benign', duration_ms: 0 },
+      latency_ms: 2,
+    });
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(
+      screen.queryByTestId('audit-decision-layer-timings')
+    ).not.toBeInTheDocument();
+  });
+
   it('shows a per-layer ms label on the collapsed stage strip of a blocked row', () => {
     renderRow(FULL);
 

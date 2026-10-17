@@ -3,9 +3,11 @@ import {
   complianceBadgeTone,
   complianceVerdictLabel,
 } from '@/src/app/audit/domain/audit_decision_compliance';
+import { derivePipelineStages } from '@/src/app/audit/domain/audit_decision_stage_strip';
 import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
 import { DecisionControlBadges } from '@/src/framework/decisions/control_badges';
 import { collectDecisionControls } from '@/src/framework/decisions/control_frameworks';
+import { PIPELINE_STAGE_LABEL } from '@/src/framework/decisions/pipeline_stage';
 import { formatPercent } from '@/src/framework/format/format_percent';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import { isStageAttributed } from '@/src/lib/decisions/decision_stage_attribution';
@@ -39,143 +41,161 @@ const rulePackLabel = (dp: DecisionPayload): string => {
   return version ? `${name}@${version}` : name;
 };
 
-export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
-  <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-md border bg-muted/20 px-3 py-2 text-xs">
-    {typeof dp.latency_ms === 'number' && dp.latency_ms > 0 && (
-      <div
-        className="flex items-center gap-1.5"
-        data-testid="audit-decision-latency"
-      >
-        <span className="text-muted-foreground">Request latency</span>
-        <code className="rounded bg-muted px-1.5 py-0.5">
-          {dp.latency_ms} ms
-        </code>
-      </div>
-    )}
-    {dp.stages && dp.stages.length > 0 && (
-      <div
-        className="flex flex-wrap items-center gap-1.5"
-        data-testid="audit-decision-stages"
-      >
-        <span className="text-muted-foreground">Stages</span>
-        {dp.stages.map((stage, index) => (
-          <code
-            key={`${stage}-${index}`}
-            className="rounded bg-muted px-1.5 py-0.5"
-          >
-            {stage}
+export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => {
+  const controls = collectDecisionControls(dp);
+  const rulePack = rulePackLabel(dp);
+  const layerTimings = derivePipelineStages(dp).flatMap(({ id, durationMs }) =>
+    durationMs === undefined ? [] : [{ id, durationMs }]
+  );
+
+  return (
+    <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-md border bg-muted/20 px-3 py-2 text-xs">
+      {typeof dp.latency_ms === 'number' && dp.latency_ms > 0 && (
+        <div
+          className="flex items-center gap-1.5"
+          data-testid="audit-decision-latency"
+        >
+          <span className="text-muted-foreground">Request latency</span>
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            {dp.latency_ms} ms
           </code>
-        ))}
-      </div>
-    )}
-    {rulePackLabel(dp) && (
-      <div
-        className="flex items-center gap-1.5"
-        data-testid="audit-decision-pack"
-      >
-        <span className="text-muted-foreground">Rule pack</span>
-        <code className="rounded bg-muted px-1.5 py-0.5">
-          {rulePackLabel(dp)}
-        </code>
-      </div>
-    )}
-    {collectDecisionControls(dp).length > 0 && (
-      <div
-        className="flex flex-wrap items-center gap-1.5"
-        data-testid="audit-decision-controls"
-      >
-        <span className="text-muted-foreground">Controls</span>
-        <DecisionControlBadges controls={collectDecisionControls(dp)} />
-      </div>
-    )}
-    {dp.engine && (
-      <div className="flex items-center gap-1.5">
-        <span className="text-muted-foreground">Engine</span>
-        <code className="rounded bg-muted px-1.5 py-0.5">{dp.engine}</code>
-      </div>
-    )}
-    {dp.classifier?.label && (
-      <div className="flex items-center gap-1.5">
-        <span className="text-muted-foreground">Classifier</span>
-        <code className="rounded bg-muted px-1.5 py-0.5">
-          {dp.classifier.label}
-        </code>
-        {dp.classifier.score !== undefined && dp.classifier.score > 0 && (
-          <span className="font-medium">
-            {formatPercent(dp.classifier.score)}
-          </span>
-        )}
-      </div>
-    )}
-    {dp.filter?.verdict && dp.filter.verdict !== 'safe' && (
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-muted-foreground">Filter</span>
-        <code className="rounded bg-muted px-1.5 py-0.5">
-          {dp.filter.verdict}
-        </code>
-        {dp.filter.rule_id && (
-          <code className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
-            {dp.filter.rule_id}
+        </div>
+      )}
+      {layerTimings.length > 0 && (
+        <div
+          className="flex flex-wrap items-center gap-1.5"
+          data-testid="audit-decision-layer-timings"
+        >
+          <span className="text-muted-foreground">Layer timings</span>
+          {layerTimings.map(({ id, durationMs }) => (
+            <code key={id} className="rounded bg-muted px-1.5 py-0.5">
+              {PIPELINE_STAGE_LABEL[id]} {Math.round(durationMs)} ms
+            </code>
+          ))}
+        </div>
+      )}
+      {dp.stages && dp.stages.length > 0 && (
+        <div
+          className="flex flex-wrap items-center gap-1.5"
+          data-testid="audit-decision-stages"
+        >
+          <span className="text-muted-foreground">Stages</span>
+          {dp.stages.map((stage, index) => (
+            <code
+              key={`${stage}-${index}`}
+              className="rounded bg-muted px-1.5 py-0.5"
+            >
+              {stage}
+            </code>
+          ))}
+        </div>
+      )}
+      {rulePack && (
+        <div
+          className="flex items-center gap-1.5"
+          data-testid="audit-decision-pack"
+        >
+          <span className="text-muted-foreground">Rule pack</span>
+          <code className="rounded bg-muted px-1.5 py-0.5">{rulePack}</code>
+        </div>
+      )}
+      {controls.length > 0 && (
+        <div
+          className="flex flex-wrap items-center gap-1.5"
+          data-testid="audit-decision-controls"
+        >
+          <span className="text-muted-foreground">Controls</span>
+          <DecisionControlBadges controls={controls} />
+        </div>
+      )}
+      {dp.engine && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">Engine</span>
+          <code className="rounded bg-muted px-1.5 py-0.5">{dp.engine}</code>
+        </div>
+      )}
+      {dp.classifier?.label && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">Classifier</span>
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            {dp.classifier.label}
           </code>
-        )}
-        {dp.filter.shadow && (
-          <span className="italic text-amber-500">shadow</span>
-        )}
-      </div>
-    )}
-    {/* Matched span is gated on its own presence only, independent of filter.verdict -- both fields are independently
+          {dp.classifier.score !== undefined && dp.classifier.score > 0 && (
+            <span className="font-medium">
+              {formatPercent(dp.classifier.score)}
+            </span>
+          )}
+        </div>
+      )}
+      {dp.filter?.verdict && dp.filter.verdict !== 'safe' && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-muted-foreground">Filter</span>
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            {dp.filter.verdict}
+          </code>
+          {dp.filter.rule_id && (
+            <code className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+              {dp.filter.rule_id}
+            </code>
+          )}
+          {dp.filter.shadow && (
+            <span className="italic text-amber-500">shadow</span>
+          )}
+        </div>
+      )}
+      {/* Matched span is gated on its own presence only, independent of filter.verdict -- both fields are independently
         optional in the wire schema, so coupling this to the verdict block
         above would silently drop a masked excerpt whenever a producer sends
         matched_span without a non-safe verdict. */}
-    {dp.filter?.matched_span && (
-      <div
-        className="flex flex-wrap items-center gap-1.5"
-        data-testid="audit-decision-matched-span"
-      >
-        <span className="text-muted-foreground">matched</span>
-        {dp.filter.matched_span.excerpt && (
-          // Rendered verbatim -- the excerpt is already redactor-masked
-          // server-side, so no client-side truncation or
-          // cleanup here that could hide the masking.
-          <code className="whitespace-pre-wrap break-words rounded bg-muted px-1.5 py-0.5">
-            {dp.filter.matched_span.excerpt}
-          </code>
-        )}
-        <span className="text-muted-foreground">
-          chars {dp.filter.matched_span.start}-{dp.filter.matched_span.end}
-        </span>
-      </div>
-    )}
-    {dp.redactor?.verdict && dp.redactor.verdict !== 'pass_through' && (
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-muted-foreground">Redactor</span>
-        <code className="rounded bg-muted px-1.5 py-0.5">
-          {dp.redactor.verdict}
-        </code>
-        {dp.redactor.spans?.map((s, i) => {
-          const offsets =
-            typeof s.start === 'number' && typeof s.end === 'number'
-              ? `${s.start}\u2013${s.end}`
-              : null;
-
-          return (
-            <code
-              key={`${s.label ?? 'span'}-${s.start ?? i}-${s.end ?? i}`}
-              className="rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-300"
-              title={offsets ? `bytes ${offsets}` : undefined}
-            >
-              {s.label || 'SPAN'}
-              {offsets && (
-                <span className="ml-1 font-normal text-muted-foreground">
-                  {offsets}
-                </span>
-              )}
+      {dp.filter?.matched_span && (
+        <div
+          className="flex flex-wrap items-center gap-1.5"
+          data-testid="audit-decision-matched-span"
+        >
+          <span className="text-muted-foreground">matched</span>
+          {dp.filter.matched_span.excerpt && (
+            // Rendered verbatim -- the excerpt is already redactor-masked
+            // server-side, so no client-side truncation or
+            // cleanup here that could hide the masking.
+            <code className="whitespace-pre-wrap break-words rounded bg-muted px-1.5 py-0.5">
+              {dp.filter.matched_span.excerpt}
             </code>
-          );
-        })}
-      </div>
-    )}
-    {/* Compliance (shadow stage): the gateway's deferred, advisory-only
+          )}
+          <span className="text-muted-foreground">
+            chars {dp.filter.matched_span.start}-{dp.filter.matched_span.end}
+          </span>
+        </div>
+      )}
+      {dp.redactor?.verdict && dp.redactor.verdict !== 'pass_through' && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-muted-foreground">Redactor</span>
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            {dp.redactor.verdict}
+          </code>
+          {dp.redactor.spans?.map((s, i) => {
+            const offsets =
+              typeof s.start === 'number' && typeof s.end === 'number'
+                ? `${s.start}\u2013${s.end}`
+                : null;
+
+            return (
+              <code
+                key={`${s.label ?? 'span'}-${s.start ?? i}-${s.end ?? i}`}
+                className="rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-300"
+                title={offsets ? `bytes ${offsets}` : undefined}
+              >
+                {s.label || 'SPAN'}
+                {offsets && (
+                  <span className="ml-1 font-normal text-muted-foreground">
+                    {offsets}
+                  </span>
+                )}
+              </code>
+            );
+          })}
+        </div>
+      )}
+      {/* Compliance (shadow stage): the gateway's deferred, advisory-only
         check of whether the user message deviates from the system prompt --
         see decisions.ts's ComplianceDecision doc comment. shadow is always
         true today, so the pill below is effectively unconditional, but it's
@@ -184,208 +204,210 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => (
         strip/badge above: `engine`'s closed set excludes "compliance" by
         design (decision_stage_attribution.ts), so a shadow verdict can never
         read as the cause of a block. */}
-    {dp.compliance && (dp.compliance.verdict || dp.compliance.skipped) && (
-      <div
-        className="flex flex-wrap items-center gap-1.5"
-        data-testid="audit-decision-compliance"
-      >
-        <span className="text-muted-foreground">Compliance</span>
-        {dp.compliance.skipped ? (
-          <span
-            className="italic text-muted-foreground"
-            title="CheckCompliance RPC failed or timed out - fail-open, no verdict recorded"
-          >
-            skipped
-          </span>
-        ) : (
-          dp.compliance.verdict && (
-            <code
-              className={`rounded px-1.5 py-0.5 ${
-                complianceBadgeTone(dp.compliance.verdict) === 'amber'
-                  ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                  : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-              }`}
+      {dp.compliance && (dp.compliance.verdict || dp.compliance.skipped) && (
+        <div
+          className="flex flex-wrap items-center gap-1.5"
+          data-testid="audit-decision-compliance"
+        >
+          <span className="text-muted-foreground">Compliance</span>
+          {dp.compliance.skipped ? (
+            <span
+              className="italic text-muted-foreground"
+              title="CheckCompliance RPC failed or timed out - fail-open, no verdict recorded"
             >
-              {complianceVerdictLabel(dp.compliance.verdict)}
-            </code>
-          )
-        )}
-        {typeof dp.compliance.score === 'number' && (
-          <span className="font-medium">
-            {formatPercent(dp.compliance.score)}
-          </span>
-        )}
-        {dp.compliance.model_version && (
-          <code
-            className="max-w-[12rem] truncate rounded bg-muted px-1.5 py-0.5 text-muted-foreground"
-            title={dp.compliance.model_version}
-          >
-            {dp.compliance.model_version}
-          </code>
-        )}
-        {dp.compliance.shadow && (
-          <span className="italic text-amber-500">shadow</span>
-        )}
-      </div>
-    )}
-    {dp.consensus && (dp.consensus.label || dp.consensus.skipped) && (
-      <div className="flex items-center gap-1.5">
-        <span className="text-muted-foreground">Consensus</span>
-        {dp.consensus.label && (
-          <code className="rounded bg-muted px-1.5 py-0.5">
-            {dp.consensus.label}
-          </code>
-        )}
-        {dp.consensus.skipped ? (
-          <span
-            className="italic text-muted-foreground"
-            title="Consensus backend unreachable - classifier result preserved (fail-open)"
-          >
-            skipped
-          </span>
-        ) : dp.consensus.quorum_reached === true ? (
-          <code
-            className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300"
-            title="Consensus quorum reached"
-          >
-            {'\u2713 quorum'}
-          </code>
-        ) : dp.consensus.quorum_reached === false ? (
-          <code
-            className="rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-300"
-            title="Consensus quorum not reached"
-          >
-            {'\u26a0 no quorum'}
-          </code>
-        ) : null}
-        {typeof dp.consensus.backend_count === 'number' &&
-          dp.consensus.backend_count > 0 && (
-            <span className="text-muted-foreground">
-              {dp.consensus.backend_count} backend
-              {dp.consensus.backend_count === 1 ? '' : 's'}
+              skipped
+            </span>
+          ) : (
+            dp.compliance.verdict && (
+              <code
+                className={`rounded px-1.5 py-0.5 ${
+                  complianceBadgeTone(dp.compliance.verdict) === 'amber'
+                    ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                    : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                }`}
+              >
+                {complianceVerdictLabel(dp.compliance.verdict)}
+              </code>
+            )
+          )}
+          {typeof dp.compliance.score === 'number' && (
+            <span className="font-medium">
+              {formatPercent(dp.compliance.score)}
             </span>
           )}
-      </div>
-    )}
-    {dp.policy?.verdict && (
-      <div className="flex items-center gap-1.5">
-        <span className="text-muted-foreground">Policy</span>
-        <code className="rounded bg-muted px-1.5 py-0.5">
-          {dp.policy.verdict}
-        </code>
-        {dp.policy.agent_id && (
-          <span className="text-muted-foreground">
-            agent {dp.policy.agent_id}
-          </span>
-        )}
-      </div>
-    )}
-    {/* CEL: the tier-3 CEL rule engine, evaluated after
+          {dp.compliance.model_version && (
+            <code
+              className="max-w-[12rem] truncate rounded bg-muted px-1.5 py-0.5 text-muted-foreground"
+              title={dp.compliance.model_version}
+            >
+              {dp.compliance.model_version}
+            </code>
+          )}
+          {dp.compliance.shadow && (
+            <span className="italic text-amber-500">shadow</span>
+          )}
+        </div>
+      )}
+      {dp.consensus && (dp.consensus.label || dp.consensus.skipped) && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">Consensus</span>
+          {dp.consensus.label && (
+            <code className="rounded bg-muted px-1.5 py-0.5">
+              {dp.consensus.label}
+            </code>
+          )}
+          {dp.consensus.skipped ? (
+            <span
+              className="italic text-muted-foreground"
+              title="Consensus backend unreachable - classifier result preserved (fail-open)"
+            >
+              skipped
+            </span>
+          ) : dp.consensus.quorum_reached === true ? (
+            <code
+              className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300"
+              title="Consensus quorum reached"
+            >
+              {'\u2713 quorum'}
+            </code>
+          ) : dp.consensus.quorum_reached === false ? (
+            <code
+              className="rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-300"
+              title="Consensus quorum not reached"
+            >
+              {'\u26a0 no quorum'}
+            </code>
+          ) : null}
+          {typeof dp.consensus.backend_count === 'number' &&
+            dp.consensus.backend_count > 0 && (
+              <span className="text-muted-foreground">
+                {dp.consensus.backend_count} backend
+                {dp.consensus.backend_count === 1 ? '' : 's'}
+              </span>
+            )}
+        </div>
+      )}
+      {dp.policy?.verdict && (
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground">Policy</span>
+          <code className="rounded bg-muted px-1.5 py-0.5">
+            {dp.policy.verdict}
+          </code>
+          {dp.policy.agent_id && (
+            <span className="text-muted-foreground">
+              agent {dp.policy.agent_id}
+            </span>
+          )}
+        </div>
+      )}
+      {/* CEL: the tier-3 CEL rule engine, evaluated after
         every visualised stage -- see decisions.ts's CelDecision doc comment.
         Gated on dp.cel presence alone, independent of dp.decision, matching
         every other stage section above: older payloads with no `cel`
         sub-object render this section not at all. */}
-    {dp.cel && (
-      <div
-        className="flex flex-wrap items-center gap-1.5"
-        data-testid="audit-decision-cel"
-      >
-        <span className="text-muted-foreground">CEL</span>
-        {dp.cel.rule_name && (
-          <code className="rounded bg-muted px-1.5 py-0.5">
-            {dp.cel.rule_name}
-          </code>
-        )}
-        {dp.cel.rule_id && (
-          <code className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
-            {dp.cel.rule_id}
-          </code>
-        )}
-        {dp.cel.outcome && (
-          <code className="rounded bg-muted px-1.5 py-0.5">
-            {dp.cel.outcome}
-          </code>
-        )}
-        {typeof dp.cel.fired_count === 'number' && dp.cel.fired_count > 0 && (
-          <span className="text-muted-foreground">
-            {dp.cel.fired_count} rule{dp.cel.fired_count === 1 ? '' : 's'} fired
-          </span>
-        )}
-        {dp.cel.skipped_reason && (
-          <span
-            className="italic text-amber-500"
-            title="CEL stage fail-open -- not every active rule was evaluated"
-          >
-            skipped ({celSkippedReasonLabel(dp.cel.skipped_reason)})
-          </span>
-        )}
-      </div>
-    )}
-    {dp.diagnostics?.causal_spans && (
-      <CausalSpanList
-        spans={dp.diagnostics.causal_spans}
-        testId="audit-decision-causal-spans"
-        attributed={isStageAttributed(dp)}
-      />
-    )}
-    {hasForensics(dp) && (
-      <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1.5 border-t pt-2">
-        <span className="text-muted-foreground">Trace</span>
-        {dp.conversation_id && (
-          <span className="flex items-center gap-1.5">
-            <span className="text-muted-foreground">conversation</span>
+      {dp.cel && (
+        <div
+          className="flex flex-wrap items-center gap-1.5"
+          data-testid="audit-decision-cel"
+        >
+          <span className="text-muted-foreground">CEL</span>
+          {dp.cel.rule_name && (
             <code className="rounded bg-muted px-1.5 py-0.5">
-              {dp.conversation_id}
+              {dp.cel.rule_name}
             </code>
-          </span>
-        )}
-        {dp.session_id && (
-          <span className="flex items-center gap-1.5">
-            <span className="text-muted-foreground">session</span>
-            <code
-              className="rounded bg-muted px-1.5 py-0.5"
-              title={`session fingerprint (sha256 of bearer): ${dp.session_id}`}
-            >
-              {shortHash(dp.session_id)}
+          )}
+          {dp.cel.rule_id && (
+            <code className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
+              {dp.cel.rule_id}
             </code>
-          </span>
-        )}
-        {dp.client_ip && (
-          <span className="flex items-center gap-1.5">
-            <span className="text-muted-foreground">ip</span>
+          )}
+          {dp.cel.outcome && (
             <code className="rounded bg-muted px-1.5 py-0.5">
-              {dp.client_ip}
+              {dp.cel.outcome}
             </code>
-          </span>
-        )}
-        {dp.user_agent && (
-          <span className="flex min-w-0 items-center gap-1.5">
-            <span className="text-muted-foreground">ua</span>
-            <code
-              className="max-w-[16rem] truncate rounded bg-muted px-1.5 py-0.5"
-              title={dp.user_agent}
+          )}
+          {typeof dp.cel.fired_count === 'number' && dp.cel.fired_count > 0 && (
+            <span className="text-muted-foreground">
+              {dp.cel.fired_count} rule{dp.cel.fired_count === 1 ? '' : 's'}{' '}
+              fired
+            </span>
+          )}
+          {dp.cel.skipped_reason && (
+            <span
+              className="italic text-amber-500"
+              title="CEL stage fail-open -- not every active rule was evaluated"
             >
-              {dp.user_agent}
-            </code>
-          </span>
-        )}
-        {dp.content?.sha256 && (
-          <span className="flex items-center gap-1.5">
-            <span className="text-muted-foreground">content</span>
-            <code
-              className="rounded bg-muted px-1.5 py-0.5"
-              title={`sha256: ${dp.content.sha256}`}
-            >
-              {shortHash(dp.content.sha256)}
-            </code>
-            {typeof dp.content.bytes === 'number' && dp.content.bytes > 0 && (
-              <span className="text-muted-foreground">
-                {dp.content.bytes} B
-              </span>
-            )}
-          </span>
-        )}
-      </div>
-    )}
-  </div>
-);
+              skipped ({celSkippedReasonLabel(dp.cel.skipped_reason)})
+            </span>
+          )}
+        </div>
+      )}
+      {dp.diagnostics?.causal_spans && (
+        <CausalSpanList
+          spans={dp.diagnostics.causal_spans}
+          testId="audit-decision-causal-spans"
+          attributed={isStageAttributed(dp)}
+        />
+      )}
+      {hasForensics(dp) && (
+        <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1.5 border-t pt-2">
+          <span className="text-muted-foreground">Trace</span>
+          {dp.conversation_id && (
+            <span className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">conversation</span>
+              <code className="rounded bg-muted px-1.5 py-0.5">
+                {dp.conversation_id}
+              </code>
+            </span>
+          )}
+          {dp.session_id && (
+            <span className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">session</span>
+              <code
+                className="rounded bg-muted px-1.5 py-0.5"
+                title={`session fingerprint (sha256 of bearer): ${dp.session_id}`}
+              >
+                {shortHash(dp.session_id)}
+              </code>
+            </span>
+          )}
+          {dp.client_ip && (
+            <span className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">ip</span>
+              <code className="rounded bg-muted px-1.5 py-0.5">
+                {dp.client_ip}
+              </code>
+            </span>
+          )}
+          {dp.user_agent && (
+            <span className="flex min-w-0 items-center gap-1.5">
+              <span className="text-muted-foreground">ua</span>
+              <code
+                className="max-w-[16rem] truncate rounded bg-muted px-1.5 py-0.5"
+                title={dp.user_agent}
+              >
+                {dp.user_agent}
+              </code>
+            </span>
+          )}
+          {dp.content?.sha256 && (
+            <span className="flex items-center gap-1.5">
+              <span className="text-muted-foreground">content</span>
+              <code
+                className="rounded bg-muted px-1.5 py-0.5"
+                title={`sha256: ${dp.content.sha256}`}
+              >
+                {shortHash(dp.content.sha256)}
+              </code>
+              {typeof dp.content.bytes === 'number' && dp.content.bytes > 0 && (
+                <span className="text-muted-foreground">
+                  {dp.content.bytes} B
+                </span>
+              )}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
