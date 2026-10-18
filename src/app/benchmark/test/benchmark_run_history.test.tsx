@@ -46,9 +46,21 @@ describe('BenchmarkRunHistory', () => {
     expect(within(rows[0]).getByText('103')).toBeVisible();
     expect(within(rows[2]).getByText('101')).toBeVisible();
     expect(
-      within(rows[0]).getByRole('link', { name: /rows/i })
+      within(rows[0]).getByRole('link', { name: /^Rows of the deberta run/ })
     ).toHaveAttribute('href', '/benchmark/runs/history-3');
     expect(screen.queryByText(/Showing 20 of/)).not.toBeInTheDocument();
+  });
+
+  it('names every run rows link by its run so none collides with the job View rows link', async () => {
+    serveRuns([makeRun(1), makeRun(2), makeRun(3)]);
+    renderHistory();
+
+    const links = await screen.findAllByRole('link', { name: /^Rows of the/ });
+    const names = links.map((link) => link.getAttribute('aria-label'));
+    expect(new Set(names).size).toBe(3);
+    expect(
+      screen.queryByRole('link', { name: 'View rows' })
+    ).not.toBeInTheDocument();
   });
 
   it('caps the list at 20 runs and says how many exist', async () => {

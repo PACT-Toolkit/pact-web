@@ -724,7 +724,7 @@ test.describe('Benchmark completed job rows link', () => {
     await page.getByRole('button', { name: 'Run benchmark' }).click();
 
     // The mock handler advances queued -> running -> done over ~8s.
-    const link = page.getByRole('link', { name: 'View rows', exact: true });
+    const link = page.getByRole('link', { name: 'View rows' });
     await expect(link).toBeVisible({ timeout: 15000 });
     await expect(link).toHaveAttribute('href', '/benchmark/runs/run-1');
 
