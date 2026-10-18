@@ -1,19 +1,24 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { delay, http } from 'msw';
 import { type ReactNode } from 'react';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
+import { server } from '@/mocks/server';
 import { SWRTestProvider } from '@/mocks/swr_test_provider';
 import { BenchmarkImportCard } from '@/src/app/benchmark/ui/BenchmarkImportCard';
+import { MSW_PACT_BASE } from '@/src/framework/msw';
 
-// jsdom has no layout engine, so Radix Select's pointer-capture and
-// scroll-into-view calls (used to manage its open/positioned state) throw
-// without these - a standard shim for testing Radix's Select in jsdom, not
-// specific to this component.
-beforeAll(() => {
-  window.HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
-  window.HTMLElement.prototype.releasePointerCapture = vi.fn();
-  window.HTMLElement.prototype.scrollIntoView = vi.fn();
-});
+const PREVIEW_URL = `${MSW_PACT_BASE}/gateway/v1/benchmark/imports/preview`;
+
+/** Makes every preview request for which `hangs` is true never answer, so a
+ * test can look at the card while a refetch is in flight. Requests it does
+ * not match fall through to the default mock handler. */
+const hangPreviewWhen = (hangs: (url: URL) => boolean) =>
+  server.use(
+    http.get(PREVIEW_URL, async ({ request }) => {
+      if (hangs(new URL(request.url))) await delay('infinite');
+    })
+  );
 
 const renderCard = () =>
   render(
@@ -183,6 +188,75 @@ describe('BenchmarkImportCard', () => {
       ).toHaveTextContent('10 rows at or above')
     );
     await waitFor(() => expect(preview).toHaveAttribute('aria-busy', 'false'));
+  });
+
+  it('keeps the previous split visible and busy while a new threshold refetches', async () => {
+    renderCard();
+    await inspect('rubend18/ChatGPT-Jailbreak-Prompts');
+    hangPreviewWhen((url) => url.searchParams.has('score_threshold'));
+
+    const input = screen.getByTestId('benchmark-import-score-threshold');
+    fireEvent.change(input, { target: { value: '80' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    const preview = screen.getByTestId('benchmark-import-preview');
+    await waitFor(() => expect(preview).toHaveAttribute('aria-busy', 'true'));
+    expect(
+      screen.getByTestId('benchmark-import-score-split')
+    ).toHaveTextContent(
+      '40 rows at or above -> attack, 39 below -> benign (of 79 sampled)'
+    );
+    expect(screen.getByTestId('benchmark-import-run')).toBeDisabled();
+    expect(
+      screen.queryByText('Fetching dataset schema…')
+    ).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['slug', 'benchmark-import-slug', 'deepset/prompt-injections'],
+    ['split', 'benchmark-import-split', 'test'],
+    ['config', 'benchmark-import-config', 'default'],
+  ])(
+    'drops the previous preview while a different %s loads',
+    async (_field, testId, value) => {
+      renderCard();
+      await inspect('rubend18/ChatGPT-Jailbreak-Prompts');
+      hangPreviewWhen(() => true);
+
+      fireEvent.change(screen.getByTestId(testId), { target: { value } });
+      fireEvent.click(screen.getByTestId('benchmark-import-inspect'));
+
+      expect(
+        await screen.findByText('Fetching dataset schema…')
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByTestId('benchmark-import-preview')
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByTestId('benchmark-import-run')
+      ).not.toBeInTheDocument();
+    }
+  );
+
+  it('shows the new dataset once its own preview arrives', async () => {
+    renderCard();
+    await inspect('rubend18/ChatGPT-Jailbreak-Prompts');
+    expect(
+      screen.getByTestId('benchmark-import-score-threshold')
+    ).toBeInTheDocument();
+
+    await inspect('deepset/prompt-injections');
+
+    expect(
+      screen.queryByTestId('benchmark-import-score-threshold')
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByTestId('benchmark-upload-mapping-label-column')
+    ).toHaveTextContent('label');
+    expect(screen.getByTestId('benchmark-import-preview')).toHaveAttribute(
+      'aria-busy',
+      'false'
+    );
   });
 
   it('reverts an empty threshold draft on blur', async () => {

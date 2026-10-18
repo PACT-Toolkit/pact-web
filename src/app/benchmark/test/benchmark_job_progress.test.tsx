@@ -49,6 +49,44 @@ describe('BenchmarkJobProgress', () => {
     expect(notice).not.toHaveTextContent('Still in progress');
   });
 
+  it('renders the done summary inside the card only once the job is done with a result', () => {
+    const result = {
+      detection_rate: 0.9,
+      fp_rate: 0.1,
+      p50_latency_ms: 10,
+      p99_latency_ms: 50,
+      rows: [],
+      total_rows: 10,
+    };
+    const { rerender } = render(
+      (
+        <BenchmarkJobProgress
+          jobId="job-123"
+          state={{ status: 'running', progress_pct: 40, result }}
+          isLoading={false}
+          poll={POLLING}
+        />
+      ) as ReactNode
+    );
+    expect(
+      screen.queryByTestId('benchmark-job-done-summary')
+    ).not.toBeInTheDocument();
+
+    rerender(
+      (
+        <BenchmarkJobProgress
+          jobId="job-123"
+          state={{ status: 'done', progress_pct: 100, result }}
+          isLoading={false}
+          poll={POLLING}
+        />
+      ) as ReactNode
+    );
+    expect(screen.getByTestId('benchmark-job-done-summary')).toHaveTextContent(
+      'Detection rate90.0%'
+    );
+  });
+
   it('renders no waiting notice while polling normally', () => {
     render(
       (

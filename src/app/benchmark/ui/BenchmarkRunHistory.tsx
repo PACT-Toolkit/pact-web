@@ -131,7 +131,7 @@ export const BenchmarkRunHistory = ({
                         <Link
                           href={benchmarkRunRowsHref(run.id)}
                           className="text-sm font-medium underline-offset-4 hover:underline"
-                          aria-label={`View rows of the ${run.engine} run from ${formatRunTimestamp(run.ran_at)}`}
+                          aria-label={`Rows of the ${run.engine} run from ${formatRunTimestamp(run.ran_at)}`}
                         >
                           Rows
                         </Link>

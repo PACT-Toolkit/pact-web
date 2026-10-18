@@ -14,6 +14,20 @@ const renderComparison = () =>
     ) as ReactNode
   );
 
+describe('BenchmarkComparison run pickers', () => {
+  it('names each picker by its label and shows the selected run', async () => {
+    renderComparison();
+    const candidate = await screen.findByRole('combobox', {
+      name: 'Candidate',
+    });
+    const baseline = screen.getByRole('combobox', { name: 'Baseline' });
+
+    // Defaults: newest run is the candidate, the one before it the baseline.
+    expect(candidate).toHaveTextContent('deberta');
+    expect(baseline).toHaveTextContent('stub');
+  });
+});
+
 describe('BenchmarkComparison unscored flag', () => {
   it('shows no unscored flag for the default pair', async () => {
     renderComparison();
@@ -33,9 +47,8 @@ describe('BenchmarkComparison unscored flag', () => {
     );
 
     // The seeded run-11 has 300 of its 2,000 rows unscored (15.0%).
-    fireEvent.change(screen.getByTestId('benchmark-compare-candidate'), {
-      target: { value: 'run-11' },
-    });
+    fireEvent.click(screen.getByTestId('benchmark-compare-candidate'));
+    fireEvent.click(await screen.findByRole('option', { name: /2000 rows/ }));
 
     const flag = await screen.findByTestId('benchmark-comparison-unscored');
     expect(flag).toHaveTextContent('Candidate: 15.0% of rows unscored');

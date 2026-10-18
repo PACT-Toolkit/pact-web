@@ -5,13 +5,13 @@ import { CheckCircle, Loader2, XCircle } from 'lucide-react';
 import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
 import { describeJobError } from '@/src/app/benchmark/domain/benchmark_job_error';
 import { type BenchmarkJobPollDescription } from '@/src/app/benchmark/domain/benchmark_job_poll';
+import { BenchmarkJobDoneSummary } from '@/src/app/benchmark/ui/BenchmarkJobDoneSummary';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
-import { formatPercent } from '@/src/framework/format/format_percent';
 
 interface BenchmarkJobProgressProps {
   jobId: string;
@@ -170,37 +170,10 @@ export const BenchmarkJobProgress = ({
           </p>
         )}
 
-        {/* Results summary */}
         {status === 'done' && state?.result && (
-          <div className="grid grid-cols-2 gap-3 rounded-md border p-4 sm:grid-cols-4">
-            <Stat
-              label="Detection rate"
-              value={formatPercent(state.result.detection_rate, {
-                digits: 1,
-              })}
-            />
-            <Stat
-              label="False-positive rate"
-              value={formatPercent(state.result.fp_rate, { digits: 1 })}
-            />
-            <Stat
-              label="p50 latency"
-              value={`${state.result.p50_latency_ms.toFixed(1)} ms`}
-            />
-            <Stat
-              label="p99 latency"
-              value={`${state.result.p99_latency_ms.toFixed(1)} ms`}
-            />
-          </div>
+          <BenchmarkJobDoneSummary result={state.result} />
         )}
       </CardContent>
     </Card>
   );
 };
-
-const Stat = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex flex-col gap-0.5">
-    <span className="text-xs text-muted-foreground">{label}</span>
-    <span className="text-lg font-semibold tabular-nums">{value}</span>
-  </div>
-);

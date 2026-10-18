@@ -23,6 +23,13 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/src/components/ui/select';
 import { formatDelta } from '@/src/framework/format/metric_format';
 import { cn } from '@/src/lib/utils';
 
@@ -52,24 +59,33 @@ const RunSelect = ({
   value: string;
   options: { id: string; label: string }[];
   onChange: (value: string) => void;
-}) => (
-  <label htmlFor={id} className="flex min-w-0 flex-1 flex-col gap-1">
-    <span className="text-xs font-medium text-muted-foreground">{label}</span>
-    <select
-      id={id}
-      data-testid={id}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-9 max-w-full truncate rounded-md border border-input bg-background px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-    >
-      {options.map((o) => (
-        <option key={o.id} value={o.id}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  </label>
-);
+}) => {
+  const labelId = `${id}-label`;
+
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <span id={labelId} className="text-xs font-medium text-muted-foreground">
+        {label}
+      </span>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger
+          data-testid={id}
+          aria-labelledby={labelId}
+          className="w-full min-w-0 *:data-[slot=select-value]:block *:data-[slot=select-value]:truncate"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((o) => (
+            <SelectItem key={o.id} value={o.id}>
+              {o.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+};
 
 const BenchmarkComparisonPanel = () => {
   const { runs, isLoading } = useBenchmarkRuns('all');

@@ -4,6 +4,7 @@ import {
   buildImportRequest,
   buildPreviewParams,
   describeHubImportError,
+  hubDatasetIdentityKey,
   normalizeDetectedColumn,
   NO_LABEL_COLUMN,
   normalizeLabelValueKey,
@@ -480,5 +481,33 @@ describe('describeHubImportError', () => {
     expect(describeHubImportError(500, undefined)).toBe(
       'The gateway returned an error.'
     );
+  });
+});
+
+describe('hubDatasetIdentityKey', () => {
+  it('is the same for identities that send the same preview request', () => {
+    expect(
+      hubDatasetIdentityKey({
+        ...IDENTITY,
+        slug: ' deepset/prompt-injections ',
+      })
+    ).toBe(hubDatasetIdentityKey(IDENTITY));
+  });
+
+  it.each([
+    ['slug', { slug: 'other/dataset' }],
+    ['split', { split: 'test' }],
+    ['config', { config: 'default' }],
+    ['revision', { revision: 'main' }],
+  ])('differs when the %s differs', (_field, change) => {
+    expect(hubDatasetIdentityKey({ ...IDENTITY, ...change })).not.toBe(
+      hubDatasetIdentityKey(IDENTITY)
+    );
+  });
+
+  it('does not let one field spill into its neighbour', () => {
+    expect(
+      hubDatasetIdentityKey({ ...IDENTITY, split: 'a', config: '' })
+    ).not.toBe(hubDatasetIdentityKey({ ...IDENTITY, split: '', config: 'a' }));
   });
 });
