@@ -1,6 +1,6 @@
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import { afterAll, afterEach, beforeAll } from 'vitest';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
 import { server } from '@/mocks/server';
 
@@ -15,3 +15,14 @@ afterEach(() => server.resetHandlers());
 // TestLabRunHistory rows do).
 afterEach(() => cleanup());
 afterAll(() => server.close());
+
+// jsdom has no layout engine, so Radix Select's pointer-capture and
+// scroll-into-view calls (used to manage its open/positioned state) throw
+// without these - a standard shim for testing Radix's Select in jsdom. Node
+// environment test files have no `window`, so guard on it.
+beforeAll(() => {
+  if (typeof window === 'undefined') return;
+  window.HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
+  window.HTMLElement.prototype.releasePointerCapture = vi.fn();
+  window.HTMLElement.prototype.scrollIntoView = vi.fn();
+});

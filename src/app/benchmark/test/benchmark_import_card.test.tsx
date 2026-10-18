@@ -1,19 +1,9 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { type ReactNode } from 'react';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { SWRTestProvider } from '@/mocks/swr_test_provider';
 import { BenchmarkImportCard } from '@/src/app/benchmark/ui/BenchmarkImportCard';
-
-// jsdom has no layout engine, so Radix Select's pointer-capture and
-// scroll-into-view calls (used to manage its open/positioned state) throw
-// without these - a standard shim for testing Radix's Select in jsdom, not
-// specific to this component.
-beforeAll(() => {
-  window.HTMLElement.prototype.hasPointerCapture = vi.fn(() => false);
-  window.HTMLElement.prototype.releasePointerCapture = vi.fn();
-  window.HTMLElement.prototype.scrollIntoView = vi.fn();
-});
 
 const renderCard = () =>
   render(

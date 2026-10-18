@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { MOCK_CORPUS_DATASETS } from '@/src/app/benchmark/mock/data/benchmark';
 
@@ -31,6 +31,17 @@ async function expectPaintedLegendSwatches(
     expect(background).not.toBe('rgba(0, 0, 0, 0)');
     expect(background).not.toBe('transparent');
   }
+}
+
+// Opens one of the comparison run pickers (a shadcn Select, named by its
+// "Baseline" / "Candidate" label) and picks the run whose option text matches.
+async function pickComparisonRun(
+  page: Page,
+  picker: 'Baseline' | 'Candidate',
+  optionName: RegExp
+) {
+  await page.getByRole('combobox', { name: picker }).click();
+  await page.getByRole('option', { name: optionName }).click();
 }
 
 // Coverage: the trend chart's two lines never painted (chart.tsx
@@ -152,9 +163,7 @@ test.describe('Benchmark latency, corpus composition, and comparison charts', ()
       page.getByTestId('benchmark-comparison-unscored')
     ).not.toBeVisible();
 
-    await page
-      .getByTestId('benchmark-compare-candidate')
-      .selectOption('run-11');
+    await pickComparisonRun(page, 'Candidate', /2000 rows/);
 
     await expect(
       page.getByTestId('benchmark-comparison-unscored')
@@ -177,7 +186,7 @@ test.describe('Benchmark latency, corpus composition, and comparison charts', ()
   test('warns on mismatched corpora and shows n/a rates for a zero-denominator run', async ({
     page,
   }) => {
-    await page.getByTestId('benchmark-compare-candidate').selectOption('run-9');
+    await pickComparisonRun(page, 'Candidate', /2508 rows/);
 
     const warning = page.getByTestId('benchmark-comparison-corpus-mismatch');
     await expect(warning).toBeVisible();
