@@ -95,20 +95,6 @@ export function formatConfidenceBand(
   return `${band[0]}%-${band[1]}%`;
 }
 
-/**
- * Full date + time label for a trend/latency chart tooltip, e.g.
- * "5 Aug 2026, 14:32".
- */
-export function formatRunTimestamp(unixSeconds: number): string {
-  return new Date(unixSeconds * 1000).toLocaleString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
 /** One plotted point on the p50/p99 latency chart. */
 export interface LatencyChartPoint {
   ran_at: number;

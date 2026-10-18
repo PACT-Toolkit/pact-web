@@ -13,7 +13,6 @@ import {
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
 import {
   formatConfidenceBand,
-  formatRunTimestamp,
   trendChartData,
   TREND_SERIES,
   type TrendChartPoint,
@@ -38,6 +37,7 @@ import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
 import { buildLabel } from '@/src/framework/format/build_label';
 import { formatDayTick } from '@/src/framework/format/day_tick_format';
 import { formatMetric } from '@/src/framework/format/metric_format';
+import { formatRunTimestamp } from '@/src/framework/format/run_timestamp';
 
 interface BenchmarkTrendChartProps {
   dateRange: TrendDateRange;

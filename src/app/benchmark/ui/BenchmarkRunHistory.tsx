@@ -4,7 +4,6 @@ import Link from 'next/link';
 
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
 import { benchmarkRunRowsHref } from '@/src/app/benchmark/domain/benchmark_run_rows';
-import { formatRunTimestamp } from '@/src/app/benchmark/domain/benchmark_trend';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
 import {
   Card,
@@ -14,6 +13,7 @@ import {
 } from '@/src/components/ui/card';
 import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
 import { formatPercent } from '@/src/framework/format/format_percent';
+import { formatRunTimestamp } from '@/src/framework/format/run_timestamp';
 
 /** Most recent runs listed; the range toggle narrows or widens the pool. */
 const RUN_HISTORY_LIMIT = 20;

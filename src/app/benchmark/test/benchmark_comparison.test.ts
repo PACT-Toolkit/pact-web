@@ -368,7 +368,7 @@ describe('runOptionLabel', () => {
     });
 
     expect(runOptionLabel(run)).toBe(
-      'deberta · a1b2c3d4 · v1.2.3 · 14 Nov 2023 · 100 rows'
+      'deberta · a1b2c3d4 · v1.2.3 · 14 Nov 2023, 23:13 · 100 rows'
     );
   });
 
@@ -391,7 +391,7 @@ describe('runOptionLabel', () => {
     });
 
     expect(runOptionLabel(run)).toBe(
-      'stub · seed-v1.jsonl · v0.3.0 · 14 Nov 2023 · 60 rows · 40 attacks / 20 benign'
+      'stub · seed-v1.jsonl · v0.3.0 · 14 Nov 2023, 23:13 · 60 rows · 40 attacks / 20 benign'
     );
   });
 });
