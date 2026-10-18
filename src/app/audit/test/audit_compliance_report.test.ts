@@ -9,8 +9,8 @@ import {
   ComplianceReportHttpError,
   defaultComplianceWindow,
   toComplianceReportEntry,
-  withRateLimitRetry,
 } from '@/src/app/audit/domain/audit_compliance_report';
+import { retryOnRateLimit } from '@/src/framework/http';
 
 const wireEntry = (n: number) => ({
   eventUuid: `evt-${n}`,
@@ -211,48 +211,27 @@ describe('defaultComplianceWindow', () => {
   });
 });
 
-describe('withRateLimitRetry', () => {
-  const page = { entries: [wireEntry(1)], total: 1 };
+describe('ComplianceReportHttpError', () => {
   const params = { sinceUnix: 1, untilUnix: 2, limit: 200, offset: 0 };
 
-  it('retries a 429 with a growing delay and then succeeds', async () => {
+  it('carries the status and the Retry-After header value', () => {
+    const error = new ComplianceReportHttpError(429, '7');
+
+    expect(error).toMatchObject({ status: 429, retryAfter: '7' });
+    expect(new ComplianceReportHttpError(500).retryAfter).toBeNull();
+  });
+
+  it('is retried by the shared 429 policy, honouring its Retry-After', async () => {
+    const page = { entries: [wireEntry(1)], total: 1 };
     const fetchPage = vi
       .fn()
-      .mockRejectedValueOnce(new ComplianceReportHttpError(429))
-      .mockRejectedValueOnce(new ComplianceReportHttpError(429))
+      .mockRejectedValueOnce(new ComplianceReportHttpError(429, '3'))
       .mockResolvedValueOnce(page);
     const sleep = vi.fn().mockResolvedValue(undefined);
 
-    const result = await withRateLimitRetry(fetchPage, sleep)(params);
+    const result = await retryOnRateLimit(() => fetchPage(params), { sleep });
 
     expect(result).toEqual(page);
-    expect(fetchPage).toHaveBeenCalledTimes(3);
-    expect(sleep.mock.calls).toEqual([[500], [1000]]);
-  });
-
-  it('rethrows a non-429 failure without retrying', async () => {
-    const fetchPage = vi
-      .fn()
-      .mockRejectedValue(new ComplianceReportHttpError(500));
-    const sleep = vi.fn().mockResolvedValue(undefined);
-
-    await expect(withRateLimitRetry(fetchPage, sleep)(params)).rejects.toThrow(
-      ComplianceReportHttpError
-    );
-    expect(fetchPage).toHaveBeenCalledTimes(1);
-    expect(sleep).not.toHaveBeenCalled();
-  });
-
-  it('gives up with the 429 error once the retries run out', async () => {
-    const fetchPage = vi
-      .fn()
-      .mockRejectedValue(new ComplianceReportHttpError(429));
-    const sleep = vi.fn().mockResolvedValue(undefined);
-
-    await expect(
-      withRateLimitRetry(fetchPage, sleep)(params)
-    ).rejects.toMatchObject({ status: 429 });
-    expect(fetchPage.mock.calls.length).toBeGreaterThan(1);
-    expect(sleep).toHaveBeenCalledTimes(fetchPage.mock.calls.length - 1);
+    expect(sleep.mock.calls).toEqual([[3000]]);
   });
 });

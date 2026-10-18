@@ -2,6 +2,7 @@ import {
   type AuditComplianceReportEntryResponse,
   type GetAuditComplianceReportParams,
 } from '@/src/__codegen__/rest/audit';
+import { type RateLimitedError } from '@/src/framework/http';
 
 // The downloadable per-decision compliance report. Pure helpers: paging the
 // gateway endpoint to completion, mapping wire entries to the document shape
@@ -46,14 +47,20 @@ export type CollectedComplianceReport = ComplianceReportPage & {
 };
 
 // Thrown by a page fetcher on any non-200 response. Carries the status so
-// callers can tell the 403 permission gate from other failures.
-export class ComplianceReportHttpError extends Error {
+// callers can tell the 403 permission gate from other failures, and the
+// response's Retry-After header so retryOnRateLimit can honour it on a 429.
+export class ComplianceReportHttpError
+  extends Error
+  implements RateLimitedError
+{
   readonly status: number;
+  readonly retryAfter: string | null;
 
-  constructor(status: number) {
+  constructor(status: number, retryAfter: string | null = null) {
     super(`compliance report request failed with status ${status}`);
     this.name = 'ComplianceReportHttpError';
     this.status = status;
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -109,33 +116,6 @@ export const collectComplianceReportPages = async (
 
   return { entries, total, truncated: entries.length < total };
 };
-
-const RATE_LIMIT_MAX_RETRIES = 8;
-const RATE_LIMIT_BASE_DELAY_MS = 500;
-
-const sleepMs = (ms: number): Promise<void> =>
-  new Promise((resolve) => setTimeout(resolve, ms));
-
-// The gateway rate-limits bursts (HTTP 429), and a long report needs many
-// back-to-back pages. Retries a page on 429 with a linearly growing delay and
-// rethrows once the retries run out or on any other failure.
-export const withRateLimitRetry =
-  (
-    fetchPage: ComplianceReportPageFetcher,
-    sleep: (ms: number) => Promise<void> = sleepMs
-  ): ComplianceReportPageFetcher =>
-  async (params) => {
-    for (let attempt = 0; ; attempt++) {
-      try {
-        return await fetchPage(params);
-      } catch (error) {
-        const rateLimited =
-          error instanceof ComplianceReportHttpError && error.status === 429;
-        if (!rateLimited || attempt >= RATE_LIMIT_MAX_RETRIES) throw error;
-        await sleep(RATE_LIMIT_BASE_DELAY_MS * (attempt + 1));
-      }
-    }
-  };
 
 export const buildComplianceReport = ({
   generatedAtUnix,
