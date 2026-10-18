@@ -4,10 +4,6 @@ import { useMemo, useState } from 'react';
 
 import { useGetAuditControlStats } from '@/src/__codegen__/rest/audit';
 import { defaultComplianceWindow } from '@/src/app/audit/domain/audit_compliance_report';
-import {
-  isDecisionStatsFailure,
-  isDecisionStatsForbidden,
-} from '@/src/app/audit/domain/audit_decision_stats_access';
 import { localDateTimeToUnixSeconds } from '@/src/app/audit/domain/audit_filters';
 import { AuditComplianceControlStatsTable } from '@/src/app/audit/ui/AuditComplianceControlStatsTable';
 import {
@@ -22,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { isForbiddenError, isNonForbiddenFailure } from '@/src/framework/http';
 
 export const AuditComplianceView = () => {
   const [range, setRange] = useState(() => defaultComplianceWindow(Date.now()));
@@ -45,9 +42,8 @@ export const AuditComplianceView = () => {
     },
   });
 
-  const forbidden =
-    isDecisionStatsForbidden(data) || isDecisionStatsForbidden(error);
-  const failed = Boolean(error) || isDecisionStatsFailure(data);
+  const forbidden = isForbiddenError(data) || isForbiddenError(error);
+  const failed = Boolean(error) || isNonForbiddenFailure(data);
   const stats = data?.status === 200 ? data.data : undefined;
 
   return (

@@ -12,9 +12,9 @@ import {
   type ComplianceReportPageFetcher,
   withRateLimitRetry,
 } from '@/src/app/audit/domain/audit_compliance_report';
-import { isDecisionStatsForbidden } from '@/src/app/audit/domain/audit_decision_stats_access';
 import { Button } from '@/src/components/ui/button';
 import { triggerDownload } from '@/src/framework/helpers/download';
+import { isForbiddenError } from '@/src/framework/http';
 
 export const COMPLIANCE_FORBIDDEN_MESSAGE =
   'Compliance aggregates need the audit:stats permission';
@@ -78,7 +78,7 @@ export const AuditComplianceReportDownload = ({
       }
     } catch (error) {
       setErrorMessage(
-        isDecisionStatsForbidden(error)
+        isForbiddenError(error)
           ? COMPLIANCE_FORBIDDEN_MESSAGE
           : 'Failed to collect the compliance report. Try again in a moment.'
       );

@@ -13,10 +13,9 @@ import {
   type DecisionStatsRedactor,
   type DecisionStatsSummary,
   decisionStatsPollingConfig,
-  isDecisionStatsFailure,
-  isDecisionStatsForbidden,
   normalizeDecisionStats,
 } from '@/src/app/audit/domain/audit_decision_stats_access';
+import { isForbiddenError, isNonForbiddenFailure } from '@/src/framework/http';
 import {
   type DecisionPayload,
   parseDecisionPayload,
@@ -177,15 +176,15 @@ export const useDashboardPipelineStats = (live: boolean) => {
   // stable, expected outcome for non-operator users -- not a transient
   // error. The Filter/Classifier/Redactor widgets render a permission-aware
   // empty state for this instead of the generic error banner.
-  const statsForbidden = isDecisionStatsForbidden(statsQuery.data);
+  const statsForbidden = isForbiddenError(statsQuery.data);
 
   // Same non-403 resolved-failure gap as useFilterDecisionStats
   // (see filter_decision_stats.ts) -- a stale bearer racing a session
   // rotation can come back 401 on /v1/audit/stats without ever throwing,
   // silently normalizing to an all-zero PipelineStats with no error flag
-  // set. isDecisionStatsFailure catches that so the Filter/Classifier/
+  // set. isNonForbiddenFailure catches that so the Filter/Classifier/
   // Redactor widgets' existing error state renders instead.
-  const statsFailed = isDecisionStatsFailure(statsQuery.data);
+  const statsFailed = isNonForbiddenFailure(statsQuery.data);
 
   const mutate = () => {
     void eventsQuery.mutate();

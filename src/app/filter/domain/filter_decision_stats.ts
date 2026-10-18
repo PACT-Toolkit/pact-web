@@ -4,10 +4,9 @@ import { useGetAuditStats } from '@/src/__codegen__/rest/audit';
 import {
   type DecisionStatsFilter,
   decisionStatsPollingConfig,
-  isDecisionStatsFailure,
-  isDecisionStatsForbidden,
   normalizeDecisionStats,
 } from '@/src/app/audit/domain/audit_decision_stats_access';
+import { isForbiddenError, isNonForbiddenFailure } from '@/src/framework/http';
 
 // How often the server-side aggregate re-polls. Matches the app's standard
 // background refresh cadence (see dashboard_pipeline_stats.ts, AuditWorkbench,
@@ -57,17 +56,17 @@ export const useFilterDecisionStats = () => {
   // outcome for non-operator users -- not a transient error. The workbench
   // renders a permission-aware empty state for this instead of the "try
   // refreshing" copy that fits a real transient failure.
-  const forbidden = isDecisionStatsForbidden(data);
+  const forbidden = isForbiddenError(data);
 
   // The fetcher never throws on a non-2xx (see
   // audit_decision_stats_access.ts's docblock), so a resolved-but-failed
   // response (e.g. a stale bearer racing a session rotation coming back 401)
   // previously slipped past both `error` (SWR's thrown error, which never
   // fires here) and `forbidden` (403-only) and rendered as a convincing
-  // all-zero stat block. isDecisionStatsFailure catches every other non-200,
+  // all-zero stat block. isNonForbiddenFailure catches every other non-200,
   // non-403 status so the workbench's existing "try refreshing" error state
   // renders instead of silent zeros.
-  const failed = isDecisionStatsFailure(data);
+  const failed = isNonForbiddenFailure(data);
 
   return {
     total,

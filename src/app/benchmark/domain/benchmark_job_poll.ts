@@ -10,8 +10,8 @@ import { type getBenchmarkJobResponse } from '@/src/__codegen__/rest/benchmark';
 // (429 from its per-IP rate limiter, other 5xx codes, 504 from an upstream
 // timeout) - the fallback branch below treats every status this union
 // doesn't name as a transient failure worth retrying, the same way
-// audit_decision_stats_access.ts's isDecisionStatsFailure widens past its
-// declared literals.
+// isNonForbiddenFailure (src/framework/http) widens past declared status
+// literals.
 export type BenchmarkJobPollDescription =
   | { kind: 'polling' }
   | { kind: 'waiting'; httpStatus: number }
