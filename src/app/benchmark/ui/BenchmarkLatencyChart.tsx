@@ -5,7 +5,6 @@ import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
 import {
-  formatRunTimestamp,
   latencyChartData,
   LATENCY_SERIES,
   type LatencyChartPoint,
@@ -31,6 +30,7 @@ import { buildLabel } from '@/src/framework/format/build_label';
 import { formatDayTick } from '@/src/framework/format/day_tick_format';
 import { formatLatencyTick } from '@/src/framework/format/latency_tick_format';
 import { formatMetric } from '@/src/framework/format/metric_format';
+import { formatRunTimestamp } from '@/src/framework/format/run_timestamp';
 
 interface BenchmarkLatencyChartProps {
   dateRange: TrendDateRange;

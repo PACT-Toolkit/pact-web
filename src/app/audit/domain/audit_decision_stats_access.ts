@@ -5,55 +5,7 @@ import {
   type AuditQueryDecisionStatsResponse,
   type GetAuditStatsQueryResult,
 } from '@/src/__codegen__/rest/audit';
-
-// Classifies GET /v1/audit/stats outcomes as a permission error (HTTP 403)
-// versus every other outcome. Shared by the two consumers of the decision
-// stats aggregate -- useDashboardPipelineStats (dashboard) and
-// useFilterDecisionStats (filter workbench) -- so both react identically to
-// the audit:stats permission gate: stop polling a permanently
-// forbidden endpoint and render a permission-aware empty state instead of a
-// raw error banner.
-//
-// The generated fetcher (see __codegen__/rest/audit/fetchers.ts) never
-// throws on a non-2xx response -- every status, including 403, resolves
-// normally as `{ data, status, headers }` -- so the primary signal is the
-// resolved `status`, not SWR's `error`. The `response?.status` branch is
-// defensive: it covers a thrown Axios-shaped error, in case a caller passes
-// this to onErrorRetry (which receives whatever the fetcher throws) or the
-// fetcher's throw-on-error behaviour ever changes.
-export const isDecisionStatsForbidden = (value: unknown): boolean => {
-  if (!value || typeof value !== 'object') return false;
-
-  const status = (value as { status?: unknown }).status;
-  if (status === 403) return true;
-
-  const response = (value as { response?: { status?: unknown } }).response;
-
-  return response?.status === 403;
-};
-
-// Classifies a resolved GET /v1/audit/stats response as a failure that is
-// neither a success (any 2xx) nor the already-handled permission gate (403)
-// -- e.g. a stale bearer racing a session rotation coming back 401,
-// or a 5xx. Before this, only exactly 200 counted as success:
-// any other 2xx (e.g. a 204 on an empty aggregate) was misclassified as a
-// failure. And before that, only the 403 case was special-cased at all: any
-// other non-200 status silently normalized to EMPTY_DECISION_STATS with no
-// `error` flag set, so the stat cards rendered a convincing "0 / 0 / 0 /
-// 0.0%" with no indication anything had gone wrong. `value` is the same
-// resolved fetcher shape isDecisionStatsForbidden reads (`{ data, status,
-// headers }`), not SWR's thrown `error` -- callers OR this with
-// `Boolean(error)` to also catch a genuinely thrown/rejected fetch.
-export const isDecisionStatsFailure = (value: unknown): boolean => {
-  if (!value || typeof value !== 'object') return false;
-
-  const status = (value as { status?: unknown }).status;
-  if (typeof status !== 'number') return false;
-
-  const ok = status >= 200 && status < 300;
-
-  return !ok && status !== 403;
-};
+import { isForbiddenError } from '@/src/framework/http';
 
 /**
  * SWR polling config for GET /v1/audit/stats, shared by both consumers so
@@ -62,7 +14,7 @@ export const isDecisionStatsFailure = (value: unknown): boolean => {
  * - `refreshInterval` is conditional on the latest resolved response -- once
  *   a 403 is seen, it returns 0 (disabled) instead of `intervalMs`. This is
  *   the mechanism that actually stops polling here, since the fetcher never
- *   throws on a 403 (see isDecisionStatsForbidden above).
+ *   throws on a 403 (see isForbiddenError in src/framework/http).
  * - `onErrorRetry` bails out on a 403 too, replicating SWR's default
  *   config-driven backoff (see swr's internal onErrorRetry) for every other
  *   thrown error. This is defensive: it only matters if the fetcher's
@@ -76,9 +28,9 @@ export const decisionStatsPollingConfig = (
   'refreshInterval' | 'onErrorRetry'
 > => ({
   refreshInterval: (latestData) =>
-    isDecisionStatsForbidden(latestData) ? 0 : intervalMs,
+    isForbiddenError(latestData) ? 0 : intervalMs,
   onErrorRetry: (error, _key, config, revalidate, revalidateOpts) => {
-    if (isDecisionStatsForbidden(error)) return;
+    if (isForbiddenError(error)) return;
 
     const { retryCount } = revalidateOpts;
     if (

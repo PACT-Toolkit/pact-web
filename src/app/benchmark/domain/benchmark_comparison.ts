@@ -5,6 +5,7 @@ import {
   formatMetric,
   type MetricFormat,
 } from '@/src/framework/format/metric_format';
+import { formatRunTimestamp } from '@/src/framework/format/run_timestamp';
 
 /** Whether a larger value is better (detection) or worse (FP, latency). */
 export type MetricGoal = 'higher-better' | 'lower-better';
@@ -280,13 +281,7 @@ export function runRowCountLabel(run: BenchmarkRun): string {
   return `${run.row_count} rows · ${run.counts.attacks} attacks / ${run.counts.benign} benign`;
 }
 
-/** Human label for a run in a selector: engine · corpus · gateway · date · rows. */
+/** Human label for a run in a selector: engine · corpus · gateway · date and time · rows. */
 export function runOptionLabel(run: BenchmarkRun): string {
-  const date = new Date(run.ran_at * 1000).toLocaleDateString('en-GB', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
-  return `${run.engine} · ${abbreviateHash(run.corpus_version)} · ${run.gateway_version} · ${date} · ${runRowCountLabel(run)}`;
+  return `${run.engine} · ${abbreviateHash(run.corpus_version)} · ${run.gateway_version} · ${formatRunTimestamp(run.ran_at)} · ${runRowCountLabel(run)}`;
 }

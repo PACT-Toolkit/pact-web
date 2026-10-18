@@ -17,10 +17,10 @@ const runningResponse = (overrides: { status?: string } = {}) => ({
   headers: new Headers(),
 });
 
-const httpError = (status: number) => ({
+const httpError = (status: number, headers: Record<string, string> = {}) => ({
   status,
   data: 'error body',
-  headers: new Headers(),
+  headers: new Headers(headers),
 });
 
 describe('describeBenchmarkJobPoll', () => {
@@ -123,6 +123,46 @@ describe('nextBenchmarkJobPollDelayMs', () => {
 
   it('backs off to 5s on HTTP 429 to respect the gateway rate limiter', () => {
     expect(nextBenchmarkJobPollDelayMs(httpError(429) as never)).toBe(5000);
+  });
+
+  it('honours a Retry-After in seconds on HTTP 429', () => {
+    expect(
+      nextBenchmarkJobPollDelayMs(
+        httpError(429, { 'retry-after': '12' }) as never
+      )
+    ).toBe(12_000);
+  });
+
+  it('never polls faster than 2s even when Retry-After asks for less', () => {
+    expect(
+      nextBenchmarkJobPollDelayMs(
+        httpError(429, { 'retry-after': '1' }) as never
+      )
+    ).toBe(2000);
+  });
+
+  it('clamps an absurd Retry-After on HTTP 429 to the shared maximum', () => {
+    expect(
+      nextBenchmarkJobPollDelayMs(
+        httpError(429, { 'retry-after': '86400' }) as never
+      )
+    ).toBe(30_000);
+  });
+
+  it('falls back to 5s on HTTP 429 with an unparsable Retry-After', () => {
+    expect(
+      nextBenchmarkJobPollDelayMs(
+        httpError(429, { 'retry-after': 'soon' }) as never
+      )
+    ).toBe(5000);
+  });
+
+  it('ignores Retry-After on a non-429 failure', () => {
+    expect(
+      nextBenchmarkJobPollDelayMs(
+        httpError(503, { 'retry-after': '20' }) as never
+      )
+    ).toBe(2000);
   });
 
   it('keeps polling every 2s on HTTP 401', () => {

@@ -8,7 +8,6 @@ import {
   RUN_ROWS_PAGE_SIZE,
   type BenchmarkRunRow,
 } from '@/src/app/benchmark/domain/benchmark_run_rows';
-import { formatRunTimestamp } from '@/src/app/benchmark/domain/benchmark_trend';
 import { useBenchmarkRunRows } from '@/src/app/benchmark/domain/use_benchmark_run_rows';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
 import { BenchmarkTablePagination } from '@/src/app/benchmark/ui/BenchmarkTablePagination';
@@ -29,6 +28,7 @@ import {
   SelectValue,
 } from '@/src/components/ui/select';
 import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
+import { formatRunTimestamp } from '@/src/framework/format/run_timestamp';
 import { cn } from '@/src/lib/utils';
 
 const COLUMN_COUNT = 8;

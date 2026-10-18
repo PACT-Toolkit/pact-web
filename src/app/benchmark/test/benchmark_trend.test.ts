@@ -7,7 +7,6 @@ import {
 } from '@/src/app/benchmark/domain/benchmark_run';
 import {
   formatConfidenceBand,
-  formatRunTimestamp,
   latencyChartData,
   LATENCY_SERIES,
   trendChartData,
@@ -221,18 +220,5 @@ describe('latencyChartData', () => {
     expect(point.corpus_version).toBe('seed-v9.jsonl');
     expect(point.engine).toBe('stub');
     expect(point.gateway_version).toBe('v2.1.0');
-  });
-});
-
-describe('formatRunTimestamp', () => {
-  it('formats a Unix timestamp as a full date and time', () => {
-    // 5 Aug 2026, 14:32 CET (TZ pinned in vitest.config.ts).
-    const unixSeconds = Date.UTC(2026, 7, 5, 12, 32, 0) / 1000;
-
-    const label = formatRunTimestamp(unixSeconds);
-
-    expect(label).toContain('2026');
-    expect(label).toContain('Aug');
-    expect(label).toContain('14:32');
   });
 });

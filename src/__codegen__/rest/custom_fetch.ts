@@ -10,7 +10,7 @@
  * response declares a JSON media type. The real gateway returns text/plain
  * authz errors ("missing required permission"), which an unconditional
  * JSON.parse turns into a thrown SyntaxError, masking the resolved 403
- * from permission gates like isDecisionStatsForbidden.
+ * from permission gates like isForbiddenError.
  * A declared-JSON body that fails to parse still resolves as raw text
  * instead of throwing, so proxy-injected error pages cannot crash a
  * query either.
@@ -26,7 +26,7 @@ const parseBody = (contentType: string | null, body: string): unknown => {
 
 /**
  * Behavior contract, relied on by consumers such as
- * src/app/audit/domain/audit_decision_stats_access.ts:
+ * isForbiddenError in src/framework/http/response_status.ts:
  * customFetch never throws on HTTP status - every response, non-2xx
  * included, resolves as `{ data, status, headers }`.
  */
