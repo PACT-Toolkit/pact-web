@@ -2,17 +2,15 @@
 
 import { useMemo, useState } from 'react';
 
-import { useInspectBenchmarkImport } from '@/src/__codegen__/rest/benchmark';
 import { type LabelDecision } from '@/src/app/benchmark/domain/benchmark_corpus_mapping';
 import {
   buildImportRequest,
-  buildPreviewParams,
-  describeHubImportError,
   previewToDistinctValues,
   resolveHubImportMapping,
   type HubDatasetIdentity,
   type HubImportRequestDraft,
 } from '@/src/app/benchmark/domain/benchmark_import';
+import { useHubImportPreview } from '@/src/app/benchmark/domain/use_hub_import_preview';
 import { BenchmarkImportScoreThreshold } from '@/src/app/benchmark/ui/BenchmarkImportScoreThreshold';
 import { BenchmarkUploadMapping } from '@/src/app/benchmark/ui/BenchmarkUploadMapping';
 import { Button } from '@/src/components/ui/button';
@@ -77,37 +75,12 @@ export const BenchmarkImportCard = ({
     number | null
   >(null);
 
-  const previewParams = useMemo(
-    () =>
-      identity
-        ? buildPreviewParams(
-            identity,
-            labelColumnSelection,
-            scoreThresholdOverride
-          )
-        : null,
-    [identity, labelColumnSelection, scoreThresholdOverride]
-  );
-
-  // keepPreviousData keeps the preview (and the focused threshold input)
-  // mounted while a changed threshold refetches; `isValidating` marks that
-  // window so Run stays locked until the shown split matches the threshold.
-  const { data, isLoading, isValidating } = useInspectBenchmarkImport(
-    previewParams ?? { slug: '' },
-    {
-      swr: {
-        enabled: previewParams !== null,
-        revalidateOnFocus: false,
-        keepPreviousData: true,
-      },
-    }
-  );
-
-  const preview = data?.status === 200 ? data.data : undefined;
-  const errorMessage =
-    data && data.status !== 200
-      ? describeHubImportError(data.status, data.data)
-      : undefined;
+  // The preview stays mounted (dimmed, `isValidating`) while a changed
+  // threshold or label column refetches the same dataset, so the focused
+  // threshold input survives; Run stays locked until the shown split matches.
+  // A different dataset shows no preview until its own response arrives.
+  const { preview, errorMessage, isLoading, isValidating } =
+    useHubImportPreview(identity, labelColumnSelection, scoreThresholdOverride);
 
   const resolved = resolveHubImportMapping(preview, {
     textColumn: textColumnOverride,

@@ -41,6 +41,22 @@ export interface HubDatasetIdentity {
 }
 
 /**
+ * A stable string for "which dataset is this": the trimmed slug, split,
+ * config and revision, normalized exactly as `buildPreviewParams` sends them,
+ * so two identities that produce the same preview request share a key. The
+ * column mapping and score threshold are deliberately not part of it - they
+ * re-slice the same dataset, while a different key means different data.
+ */
+export function hubDatasetIdentityKey(identity: HubDatasetIdentity): string {
+  return JSON.stringify([
+    identity.slug.trim(),
+    identity.split.trim(),
+    identity.config.trim(),
+    identity.revision.trim(),
+  ]);
+}
+
+/**
  * Renders a non-2xx response from either import endpoint into a display
  * string. 403, 404, and 504 get a fixed, friendlier message than the
  * gateway's own `boundary.ErrorResponse` text (the three meanings shared by

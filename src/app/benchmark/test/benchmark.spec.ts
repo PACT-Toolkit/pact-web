@@ -671,6 +671,62 @@ test.describe('Benchmark Hugging Face import', () => {
     await expect(threshold).toBeFocused();
   });
 
+  // The preview of one dataset must never stay on screen (dimmed) while a
+  // different dataset loads. The mock answers within a frame, so a
+  // MutationObserver on the import card records whether the first dataset's
+  // threshold input is still in the DOM at any change after Inspect is clicked
+  // for the second.
+  test('never shows the previous dataset while a different slug loads', async ({
+    page,
+  }) => {
+    await page
+      .getByTestId('benchmark-import-slug')
+      .fill('rubend18/ChatGPT-Jailbreak-Prompts');
+    await page.getByTestId('benchmark-import-inspect').click();
+    await expect(
+      page.getByTestId('benchmark-import-score-threshold')
+    ).toBeVisible();
+
+    await page
+      .getByTestId('benchmark-import-slug')
+      .fill('deepset/prompt-injections');
+    await page.evaluate(() => {
+      const w = window as unknown as { staleDatasetSeen: boolean };
+      w.staleDatasetSeen = false;
+      new MutationObserver(() => {
+        if (
+          document.querySelector(
+            '[data-testid="benchmark-import-score-threshold"]'
+          )
+        ) {
+          w.staleDatasetSeen = true;
+        }
+      }).observe(
+        document.querySelector('[data-testid="benchmark-import-card"]')!,
+        {
+          subtree: true,
+          childList: true,
+          attributes: true,
+          characterData: true,
+        }
+      );
+    });
+    await page.getByTestId('benchmark-import-inspect').click();
+
+    await expect(
+      page.getByTestId('benchmark-upload-mapping-label-column')
+    ).toContainText('label');
+    await expect(
+      page.getByTestId('benchmark-import-score-threshold')
+    ).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () =>
+          (window as unknown as { staleDatasetSeen: boolean }).staleDatasetSeen
+      )
+    ).toBe(false);
+  });
+
   test('shows a friendly error for a gated dataset', async ({ page }) => {
     await page
       .getByTestId('benchmark-import-slug')
