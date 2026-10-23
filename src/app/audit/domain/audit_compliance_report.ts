@@ -13,9 +13,12 @@ import { type RateLimitedError } from '@/src/framework/http';
 // actually received.
 export const COMPLIANCE_REPORT_PAGE_SIZE = 200;
 
-// Hard stop for the paging loop so a misbehaving total can never spin
-// forever. A window needing more pages than this is reported as truncated.
-export const COMPLIANCE_REPORT_MAX_PAGES = 200;
+// Hard ceiling on the rows one download collects. A serialized entry with one
+// control is about 330 bytes (2-space indented JSON, measured), so 250_000
+// rows is roughly 80 MB of string chunks plus an equal Blob copy: well inside
+// browser memory limits. There is no page cap; reaching this ceiling stops the
+// walk and the operator narrows the window instead of getting a partial file.
+export const COMPLIANCE_REPORT_ROW_CEILING = 250_000;
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -40,10 +43,34 @@ export type ComplianceReportPage = {
   total: number;
 };
 
-export type CollectedComplianceReport = ComplianceReportPage & {
-  // True when paging stopped before every entry the gateway reported was
-  // received (page cap reached or an empty page arrived early).
-  truncated: boolean;
+export type ComplianceReportWalkProgress = {
+  pages: number;
+  rows: number;
+  total: number;
+};
+
+// Outcome of a walk. `completed` carries the serialized file as string chunks
+// (Blob parts). `ceiling` carries no file, only the exact cut-off: rows
+// fetched and the createdAt of the last row fetched (the report is newest
+// first, so the rows not fetched are older than it). `failed` carries the page
+// number whose fetch threw.
+export type ComplianceReportWalkResult =
+  | { status: 'completed'; chunks: string[]; rows: number; total: number }
+  | {
+      status: 'ceiling';
+      rows: number;
+      total: number;
+      lastCreatedAt: string;
+    }
+  | { status: 'failed'; page: number; error: unknown };
+
+export type ComplianceReportWalkOptions = {
+  sinceUnix: number;
+  untilUnix: number;
+  generatedAtUnix: number;
+  pageSize?: number;
+  rowCeiling?: number;
+  onProgress?: (progress: ComplianceReportWalkProgress) => void;
 };
 
 // Thrown by a page fetcher on any non-200 response. Carries the status so
@@ -88,51 +115,119 @@ export const toComplianceReportEntry = (
   };
 };
 
-// Pages the report until every entry is collected. Stops early on an empty
-// page (an inconsistent total must not loop) and after
-// COMPLIANCE_REPORT_MAX_PAGES pages; either way `truncated` tells the caller
-// the result is incomplete.
+// The report file is JSON.stringify(document, null, 2) assembled piecewise:
+// head, one chunk per page of entries, footer. Each page is serialized once
+// when it arrives so no growing string and no re-serialization of earlier
+// pages. An entry's pretty-printed text never contains a raw newline inside a
+// string value, so indenting by line is exact.
+const indentEntry = (entry: ComplianceReportEntry): string =>
+  `    ${JSON.stringify(entry, null, 2).replaceAll('\n', '\n    ')}`;
+
+const serializeReportHead = ({
+  generatedAtUnix,
+  sinceUnix,
+  untilUnix,
+}: Pick<
+  ComplianceReportDocument,
+  'generatedAtUnix' | 'sinceUnix' | 'untilUnix'
+>): string =>
+  [
+    '{',
+    `  "generatedAtUnix": ${JSON.stringify(generatedAtUnix)},`,
+    `  "sinceUnix": ${JSON.stringify(sinceUnix)},`,
+    `  "untilUnix": ${JSON.stringify(untilUnix)},`,
+    '  "entries": [',
+  ].join('\n');
+
+const serializeEntriesChunk = (
+  entries: ComplianceReportEntry[],
+  isFirstChunk: boolean
+): string =>
+  `${isFirstChunk ? '\n' : ',\n'}${entries.map(indentEntry).join(',\n')}`;
+
+const serializeReportFooter = (hasEntries: boolean): string =>
+  hasEntries ? '\n  ]\n}' : ']\n}';
+
+// Pages the report until the gateway's total is reached or an empty page
+// arrives (an inconsistent total must not loop). There is no page cap; the
+// walk stops with `ceiling` once rowCeiling rows are fetched and more remain.
+// A fetch failure resolves as `failed` with the 1-based page number.
 export const collectComplianceReportPages = async (
   fetchPage: ComplianceReportPageFetcher,
-  range: { sinceUnix: number; untilUnix: number },
-  onProgress?: (collected: number, total: number) => void
-): Promise<CollectedComplianceReport> => {
-  const entries: AuditComplianceReportEntryResponse[] = [];
+  {
+    sinceUnix,
+    untilUnix,
+    generatedAtUnix,
+    pageSize = COMPLIANCE_REPORT_PAGE_SIZE,
+    rowCeiling = COMPLIANCE_REPORT_ROW_CEILING,
+    onProgress,
+  }: ComplianceReportWalkOptions
+): Promise<ComplianceReportWalkResult> => {
+  const chunks = [
+    serializeReportHead({ generatedAtUnix, sinceUnix, untilUnix }),
+  ];
+  let rows = 0;
+  let pages = 0;
   let total = 0;
+  let lastCreatedAt = '';
 
-  for (let page = 0; page < COMPLIANCE_REPORT_MAX_PAGES; page++) {
-    const result = await fetchPage({
-      ...range,
-      limit: COMPLIANCE_REPORT_PAGE_SIZE,
-      offset: entries.length,
-    });
+  for (;;) {
+    let result: ComplianceReportPage;
+    try {
+      result = await fetchPage({
+        sinceUnix,
+        untilUnix,
+        limit: pageSize,
+        offset: rows,
+      });
+    } catch (error) {
+      return { status: 'failed', page: pages + 1, error };
+    }
     total = result.total;
     if (result.entries.length === 0) break;
 
-    entries.push(...result.entries);
-    onProgress?.(entries.length, total);
-    if (entries.length >= total) break;
+    chunks.push(
+      serializeEntriesChunk(
+        result.entries.map(toComplianceReportEntry),
+        rows === 0
+      )
+    );
+    rows += result.entries.length;
+    pages += 1;
+    lastCreatedAt = result.entries.at(-1)?.createdAt ?? '';
+    onProgress?.({ pages, rows, total });
+
+    if (rows >= total) break;
+    if (rows >= rowCeiling) {
+      return { status: 'ceiling', rows, total, lastCreatedAt };
+    }
   }
 
-  return { entries, total, truncated: entries.length < total };
+  chunks.push(serializeReportFooter(rows > 0));
+
+  return { status: 'completed', chunks, rows, total };
 };
 
-export const buildComplianceReport = ({
-  generatedAtUnix,
-  sinceUnix,
-  untilUnix,
-  entries,
-}: {
-  generatedAtUnix: number;
-  sinceUnix: number;
-  untilUnix: number;
-  entries: AuditComplianceReportEntryResponse[];
-}): ComplianceReportDocument => ({
-  generatedAtUnix,
-  sinceUnix,
-  untilUnix,
-  entries: entries.map(toComplianceReportEntry),
-});
+export const formatCount = (value: number): string =>
+  value.toLocaleString('en-US');
+
+// 2026-10-20 15:00:20 UTC: spaces let the sentence wrap between date and time.
+const formatCutoff = (createdAt: string): string => {
+  const ms = Date.parse(createdAt);
+
+  return Number.isNaN(ms)
+    ? createdAt || 'an unknown time'
+    : `${new Date(ms).toISOString().slice(0, 19).replace('T', ' ')} UTC`;
+};
+
+// Plain statement of where a walk stopped at the row ceiling. `lastCreatedAt`
+// is the RFC3339 timestamp of the last (oldest) row fetched.
+export const complianceCeilingMessage = (
+  rows: number,
+  lastCreatedAt: string,
+  rowCeiling: number
+): string =>
+  `No file produced: the ${formatCount(rowCeiling)}-row limit was reached after ${formatCount(rows)} rows. The last row fetched was recorded at ${formatCutoff(lastCreatedAt)}. Narrow the window so Until is before that time, then download again.`;
 
 export const complianceReportFilename = (
   sinceUnix: number,

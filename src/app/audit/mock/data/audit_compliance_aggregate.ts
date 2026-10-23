@@ -131,3 +131,43 @@ export const computeComplianceReport = (
     untilUnix: bounds.untilUnix ?? 0,
   };
 };
+
+// Dev-mock scenarios for the compliance report download, selected by the
+// window's Since value (type it into the picker): a Since before
+// 2000-01-01 UTC serves LARGE_REPORT_TOTAL synthetic rows, which is above the
+// download's row ceiling; a Since before 1990-01-01 UTC serves the same rows
+// but answers 500 from FAILING_REPORT_OFFSET on. Rows are generated per
+// requested page, newest first, one second apart ending at Until. Every other
+// window uses the small seeded dataset.
+export const LARGE_REPORT_SINCE_BEFORE_UNIX = 946_684_800;
+export const FAILING_REPORT_SINCE_BEFORE_UNIX = 631_152_000;
+export const LARGE_REPORT_TOTAL = 300_000;
+export const FAILING_REPORT_OFFSET = 600;
+
+const SYNTHETIC_CONTROL_IDS = ['LLM01', 'LLM02', 'LLM06'];
+
+export const computeLargeComplianceReport = (
+  window: { sinceUnix: number; untilUnix: number },
+  { limit, offset }: { limit: number; offset: number }
+): AuditQueryComplianceReportResponse => {
+  const entries: AuditComplianceReportEntryResponse[] = [];
+  const end = Math.min(offset + limit, LARGE_REPORT_TOTAL);
+  for (let index = offset; index < end; index++) {
+    entries.push({
+      eventUuid: `synthetic-evt-${index}`,
+      requestId: `synthetic-req-${index}`,
+      decision: index % 3 === 0 ? 'block' : 'allow',
+      engine: 'filter',
+      createdAt: new Date((window.untilUnix - 1 - index) * 1000).toISOString(),
+      controls: [
+        {
+          framework: 'owasp_llm_top10',
+          controlId:
+            SYNTHETIC_CONTROL_IDS[index % SYNTHETIC_CONTROL_IDS.length],
+        },
+      ],
+    });
+  }
+
+  return { entries, total: LARGE_REPORT_TOTAL, ...window };
+};

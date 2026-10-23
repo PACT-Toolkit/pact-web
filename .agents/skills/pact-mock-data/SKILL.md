@@ -170,6 +170,10 @@ import { MOCK_ROWS, TOTAL_ROWS } from '../data/benchmark';
 
 Only add to `dbFactory.ts` when the data needs CRUD (create/update/delete) operations during a session.
 
+## Scenario datasets selected by request parameters
+
+Keep the seeded dataset small. When a flow needs a large or failing dataset (a row ceiling, a mid-walk error), generate it per requested page inside the handler and pick it from a request parameter the UI can already send, documented in the data file. Example: the audit compliance report serves 300_000 synthetic rows when `sinceUnix` is before 2000-01-01 UTC and answers 500 from offset 600 when it is before 1990-01-01 UTC (see `src/app/audit/mock/data/audit_compliance_aggregate.ts`). Type the date into the Since picker to exercise it in `dev:mock`.
+
 ## What NOT to do
 
 - **Don't invent per-feature stores.** If you find yourself writing `const widgetStore: Widget[] = [...]` at module scope in a handler file, you're working against the pattern - put it in `mock/data/{feature}.ts` or `db.widgets` instead.
