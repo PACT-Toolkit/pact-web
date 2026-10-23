@@ -56,7 +56,10 @@ describe('decision mock enrichment', () => {
     expect(out.stages).toEqual(['policy', 'filter']);
     expect(out.filter?.pack_name).toBe('pact-core');
     expect(out.filter?.pack_version).toBe('1.4.0');
-    expect(out.filter?.duration_ms).toBeGreaterThan(0);
+    expect(out.filter?.duration_us).toBeGreaterThan(0);
+    expect(out.filter?.duration_ms).toBe(
+      Math.floor((out.filter?.duration_us ?? 0) / 1000)
+    );
     expect(out.filter?.controls).toContainEqual({
       framework: 'owasp_llm_top10',
       id: 'LLM01',

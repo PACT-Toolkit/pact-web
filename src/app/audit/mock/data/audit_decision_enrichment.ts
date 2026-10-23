@@ -106,13 +106,20 @@ const withStageFields = <
   seed: string,
   controls?: ControlRef[]
 ): T & { controls?: ControlRef[] } => {
-  const durationMs = sub.duration_ms ?? base * jitterFactor(seed);
+  // Mirror the gateway: `duration_us` is the primary value, `duration_ms` is
+  // its whole-millisecond floor and is omitted when that floor is 0.
+  const durationUs =
+    sub.duration_us ??
+    Math.round(
+      (sub.duration_ms ?? base * jitterFactor(seed)) *
+        MICROSECONDS_PER_MILLISECOND
+    );
+  const durationMs = Math.floor(durationUs / MICROSECONDS_PER_MILLISECOND);
 
   return {
     ...sub,
-    duration_ms: durationMs,
-    duration_us:
-      sub.duration_us ?? Math.round(durationMs * MICROSECONDS_PER_MILLISECOND),
+    duration_us: durationUs,
+    ...(durationMs > 0 ? { duration_ms: durationMs } : {}),
     ...(controls && {
       controls: sub.controls ?? controls.map((c) => ({ ...c })),
     }),
