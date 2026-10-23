@@ -4,7 +4,8 @@ import { formatDurationMs } from '@/src/framework/format/format_duration_ms';
 
 describe('formatDurationMs', () => {
   it.each([
-    [0.04, '0.0 ms'],
+    [0.04, '<0.1 ms'],
+    [0.05, '0.1 ms'],
     [0.4, '0.4 ms'],
     [6.1, '6.1 ms'],
     [9.94, '9.9 ms'],
