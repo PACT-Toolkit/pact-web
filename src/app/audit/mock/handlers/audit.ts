@@ -17,6 +17,10 @@ import {
 import {
   computeComplianceReport,
   computeControlStats,
+  computeLargeComplianceReport,
+  FAILING_REPORT_OFFSET,
+  FAILING_REPORT_SINCE_BEFORE_UNIX,
+  LARGE_REPORT_SINCE_BEFORE_UNIX,
 } from '@/src/app/audit/mock/data/audit_compliance_aggregate';
 import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
 import { operatorOnlyForbiddenResponse } from '@/src/framework/msw/operator_gate';
@@ -114,16 +118,42 @@ export const handlers: RequestHandler[] = [
     if (forbidden) return forbidden;
 
     const { searchParams } = new URL(request.url);
+    const sinceUnix = optionalNumber(searchParams.get('sinceUnix'));
+    const untilUnix = optionalNumber(searchParams.get('untilUnix'));
+    const limit = Math.min(
+      Number(searchParams.get('limit') ?? DEFAULT_REPORT_LIMIT),
+      MAX_REPORT_LIMIT
+    );
+    const offset = Number(searchParams.get('offset') ?? '0');
+
+    // Large-dataset and mid-walk-failure scenarios, picked by a far-past
+    // Since (see audit_compliance_aggregate.ts).
+    if (
+      sinceUnix !== undefined &&
+      untilUnix !== undefined &&
+      sinceUnix < LARGE_REPORT_SINCE_BEFORE_UNIX
+    ) {
+      if (
+        sinceUnix < FAILING_REPORT_SINCE_BEFORE_UNIX &&
+        offset >= FAILING_REPORT_OFFSET
+      ) {
+        return HttpResponse.json({ error: 'boom' }, { status: 500 });
+      }
+
+      return HttpResponse.json(
+        computeLargeComplianceReport(
+          { sinceUnix, untilUnix },
+          { limit, offset }
+        )
+      );
+    }
 
     return HttpResponse.json(
       computeComplianceReport(db.decisions.getAll(), {
-        sinceUnix: optionalNumber(searchParams.get('sinceUnix')),
-        untilUnix: optionalNumber(searchParams.get('untilUnix')),
-        limit: Math.min(
-          Number(searchParams.get('limit') ?? DEFAULT_REPORT_LIMIT),
-          MAX_REPORT_LIMIT
-        ),
-        offset: Number(searchParams.get('offset') ?? '0'),
+        sinceUnix,
+        untilUnix,
+        limit,
+        offset,
       })
     );
   }),

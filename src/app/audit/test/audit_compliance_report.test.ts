@@ -1,14 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
-  buildComplianceReport,
   collectComplianceReportPages,
-  COMPLIANCE_REPORT_MAX_PAGES,
+  complianceCeilingMessage,
+  type ComplianceReportDocument,
   COMPLIANCE_REPORT_PAGE_SIZE,
   complianceReportFilename,
   ComplianceReportHttpError,
   defaultComplianceWindow,
   toComplianceReportEntry,
+  type ComplianceReportWalkResult,
 } from '@/src/app/audit/domain/audit_compliance_report';
 import { retryOnRateLimit } from '@/src/framework/http';
 
@@ -60,6 +61,28 @@ describe('toComplianceReportEntry', () => {
   });
 });
 
+const walkOptions = { ...reportWindow, generatedAtUnix: 300 };
+
+const completedChunks = (result: ComplianceReportWalkResult): string[] => {
+  if (result.status !== 'completed') {
+    throw new Error(`expected completed, got ${result.status}`);
+  }
+
+  return result.chunks;
+};
+
+const referenceFile = (wire: ReturnType<typeof wireEntry>[]): string =>
+  JSON.stringify(
+    {
+      generatedAtUnix: 300,
+      sinceUnix: 100,
+      untilUnix: 200,
+      entries: wire.map(toComplianceReportEntry),
+    } satisfies ComplianceReportDocument,
+    null,
+    2
+  );
+
 describe('collectComplianceReportPages', () => {
   it('returns a single page when it already holds every entry', async () => {
     const fetchPage = vi
@@ -67,21 +90,22 @@ describe('collectComplianceReportPages', () => {
       .mockResolvedValue({ entries: [wireEntry(1), wireEntry(2)], total: 2 });
     const onProgress = vi.fn();
 
-    const result = await collectComplianceReportPages(
-      fetchPage,
-      reportWindow,
-      onProgress
-    );
+    const result = await collectComplianceReportPages(fetchPage, {
+      ...walkOptions,
+      onProgress,
+    });
 
-    expect(result.entries).toHaveLength(2);
-    expect(result.total).toBe(2);
-    expect(fetchPage).toHaveBeenCalledTimes(1);
-    expect(fetchPage).toHaveBeenCalledWith({
+    expect(result).toMatchObject({ status: 'completed', rows: 2, total: 2 });
+    expect(fetchPage).toHaveBeenCalledExactlyOnceWith({
       ...reportWindow,
       limit: COMPLIANCE_REPORT_PAGE_SIZE,
       offset: 0,
     });
-    expect(onProgress).toHaveBeenCalledExactlyOnceWith(2, 2);
+    expect(onProgress).toHaveBeenCalledExactlyOnceWith({
+      pages: 1,
+      rows: 2,
+      total: 2,
+    });
   });
 
   it('advances the offset across pages and reports progress after each', async () => {
@@ -98,27 +122,37 @@ describe('collectComplianceReportPages', () => {
       .mockResolvedValueOnce({ entries: [wireEntry(5)], total: 5 });
     const onProgress = vi.fn();
 
-    const result = await collectComplianceReportPages(
-      fetchPage,
-      reportWindow,
-      onProgress
-    );
+    const result = await collectComplianceReportPages(fetchPage, {
+      ...walkOptions,
+      onProgress,
+    });
 
-    expect(result.entries.map((entry) => entry.eventUuid)).toEqual([
-      'evt-1',
-      'evt-2',
-      'evt-3',
-      'evt-4',
-      'evt-5',
-    ]);
+    expect(result).toMatchObject({ status: 'completed', rows: 5, total: 5 });
     expect(fetchPage.mock.calls.map(([params]) => params.offset)).toEqual([
       0, 2, 4,
     ]);
-    expect(onProgress.mock.calls).toEqual([
-      [2, 5],
-      [4, 5],
-      [5, 5],
+    expect(onProgress.mock.calls.map(([progress]) => progress)).toEqual([
+      { pages: 1, rows: 2, total: 5 },
+      { pages: 2, rows: 4, total: 5 },
+      { pages: 3, rows: 5, total: 5 },
     ]);
+  });
+
+  it('walks 500 pages with no page cap', async () => {
+    const pageSize = 2;
+    const total = 500 * pageSize;
+    const fetchPage = vi.fn(async ({ offset }: { offset: number }) => ({
+      entries: [wireEntry(offset), wireEntry(offset + 1)],
+      total,
+    }));
+
+    const result = await collectComplianceReportPages(fetchPage, {
+      ...walkOptions,
+      pageSize,
+    });
+
+    expect(fetchPage).toHaveBeenCalledTimes(500);
+    expect(result).toMatchObject({ status: 'completed', rows: total });
   });
 
   it('stops on an empty page even when total promises more', async () => {
@@ -127,68 +161,115 @@ describe('collectComplianceReportPages', () => {
       .mockResolvedValueOnce({ entries: [wireEntry(1)], total: 10 })
       .mockResolvedValueOnce({ entries: [], total: 10 });
 
-    const result = await collectComplianceReportPages(fetchPage, reportWindow);
+    const result = await collectComplianceReportPages(fetchPage, walkOptions);
 
-    expect(result.entries).toHaveLength(1);
+    expect(result).toMatchObject({ status: 'completed', rows: 1, total: 10 });
     expect(fetchPage).toHaveBeenCalledTimes(2);
   });
 
-  it('returns an empty result for an empty window', async () => {
+  it('completes an empty window as a valid empty report', async () => {
     const fetchPage = vi.fn().mockResolvedValue({ entries: [], total: 0 });
 
-    expect(await collectComplianceReportPages(fetchPage, reportWindow)).toEqual(
-      { entries: [], total: 0, truncated: false }
-    );
+    const result = await collectComplianceReportPages(fetchPage, walkOptions);
+
+    expect(completedChunks(result).join('')).toBe(referenceFile([]));
   });
 
-  it('stops after the page cap when total never converges', async () => {
+  it('reports the ceiling with the exact rows and the last row timestamp', async () => {
+    const pageSize = 2;
+    const fetchPage = vi.fn(async ({ offset }: { offset: number }) => ({
+      entries: [
+        { ...wireEntry(offset), createdAt: `2026-10-17T10:00:0${offset}Z` },
+        {
+          ...wireEntry(offset + 1),
+          createdAt: `2026-10-17T10:00:0${offset + 1}Z`,
+        },
+      ],
+      total: 1_000,
+    }));
+
+    const result = await collectComplianceReportPages(fetchPage, {
+      ...walkOptions,
+      pageSize,
+      rowCeiling: 6,
+    });
+
+    expect(result).toEqual({
+      status: 'ceiling',
+      rows: 6,
+      total: 1_000,
+      lastCreatedAt: '2026-10-17T10:00:05Z',
+    });
+    expect(fetchPage).toHaveBeenCalledTimes(3);
+  });
+
+  it('completes, not ceiling, when the last page lands exactly on the ceiling', async () => {
     const fetchPage = vi
       .fn()
-      .mockResolvedValue({ entries: [wireEntry(1)], total: 1_000_000 });
+      .mockResolvedValue({ entries: [wireEntry(1), wireEntry(2)], total: 2 });
 
-    const result = await collectComplianceReportPages(fetchPage, reportWindow);
+    const result = await collectComplianceReportPages(fetchPage, {
+      ...walkOptions,
+      rowCeiling: 2,
+    });
 
-    expect(fetchPage).toHaveBeenCalledTimes(COMPLIANCE_REPORT_MAX_PAGES);
-    expect(result.entries).toHaveLength(COMPLIANCE_REPORT_MAX_PAGES);
-    expect(result.truncated).toBe(true);
+    expect(result.status).toBe('completed');
   });
 
-  it('is not truncated when every entry arrived', async () => {
+  it('serializes byte-identically to JSON.stringify of the document', async () => {
+    const wire = [wireEntry(1), wireEntry(2), wireEntry(3)];
     const fetchPage = vi
       .fn()
-      .mockResolvedValue({ entries: [wireEntry(1)], total: 1 });
+      .mockResolvedValueOnce({ entries: wire.slice(0, 2), total: 3 })
+      .mockResolvedValueOnce({ entries: wire.slice(2), total: 3 });
 
-    const result = await collectComplianceReportPages(fetchPage, reportWindow);
+    const result = await collectComplianceReportPages(fetchPage, walkOptions);
 
-    expect(result.truncated).toBe(false);
+    const chunks = completedChunks(result);
+    expect(chunks).toHaveLength(4);
+    expect(chunks.join('')).toBe(referenceFile(wire));
   });
 
-  it('propagates a fetch failure', async () => {
+  it('reports the 1-based page whose fetch failed', async () => {
+    const boom = new Error('boom');
+    const fetchPage = vi
+      .fn()
+      .mockResolvedValueOnce({ entries: [wireEntry(1)], total: 5 })
+      .mockResolvedValueOnce({ entries: [wireEntry(2)], total: 5 })
+      .mockRejectedValueOnce(boom);
+
+    const result = await collectComplianceReportPages(fetchPage, walkOptions);
+
+    expect(result).toEqual({ status: 'failed', page: 3, error: boom });
+  });
+
+  it('reports page 1 when the first fetch fails', async () => {
     const fetchPage = vi.fn().mockRejectedValue(new Error('boom'));
 
-    await expect(
-      collectComplianceReportPages(fetchPage, reportWindow)
-    ).rejects.toThrow('boom');
+    expect(
+      await collectComplianceReportPages(fetchPage, walkOptions)
+    ).toMatchObject({ status: 'failed', page: 1 });
   });
 });
 
-describe('buildComplianceReport', () => {
-  it('assembles the document with mapped entries', () => {
-    const report = buildComplianceReport({
-      generatedAtUnix: 300,
-      sinceUnix: 100,
-      untilUnix: 200,
-      entries: [wireEntry(1)],
-    });
+describe('complianceCeilingMessage', () => {
+  it('states the row count, the last timestamp and the narrow-window prompt', () => {
+    expect(
+      complianceCeilingMessage(250_000, '2026-10-17T10:00:00Z', 250_000)
+    ).toBe(
+      'No file produced: the 250,000-row limit was reached after 250,000 rows. The last row fetched was recorded at 2026-10-17 10:00:00 UTC. Narrow the window so Until is before that time, then download again.'
+    );
+  });
+});
 
-    expect(Object.keys(report)).toEqual([
-      'generatedAtUnix',
-      'sinceUnix',
-      'untilUnix',
-      'entries',
-    ]);
-    expect(report.generatedAtUnix).toBe(300);
-    expect(report.entries).toEqual([toComplianceReportEntry(wireEntry(1))]);
+describe('complianceCeilingMessage cut-off fallback', () => {
+  it('prints an unparsable timestamp as received and an empty one as unknown', () => {
+    expect(complianceCeilingMessage(5, 'garbage', 5)).toContain(
+      'recorded at garbage.'
+    );
+    expect(complianceCeilingMessage(5, '', 5)).toContain(
+      'recorded at an unknown time.'
+    );
   });
 });
 

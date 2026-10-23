@@ -5,11 +5,14 @@ import { useState } from 'react';
 
 import { getAuditComplianceReport } from '@/src/__codegen__/rest/audit';
 import {
-  buildComplianceReport,
   collectComplianceReportPages,
+  complianceCeilingMessage,
+  formatCount,
+  COMPLIANCE_REPORT_ROW_CEILING,
   complianceReportFilename,
   ComplianceReportHttpError,
   type ComplianceReportPageFetcher,
+  type ComplianceReportWalkProgress,
 } from '@/src/app/audit/domain/audit_compliance_report';
 import { Button } from '@/src/components/ui/button';
 import { triggerDownload } from '@/src/framework/helpers/download';
@@ -39,51 +42,65 @@ const fetchReportPage: ComplianceReportPageFetcher = (params) =>
 export const AuditComplianceReportDownload = ({
   sinceUnix,
   untilUnix,
+  rowCeiling = COMPLIANCE_REPORT_ROW_CEILING,
 }: {
   sinceUnix: number | undefined;
   untilUnix: number | undefined;
+  // Test seam; production always uses the domain ceiling.
+  rowCeiling?: number;
 }) => {
-  const [progress, setProgress] = useState<{
-    collected: number;
-    total: number;
-  } | null>(null);
+  const [progress, setProgress] = useState<ComplianceReportWalkProgress | null>(
+    null
+  );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [truncatedNotice, setTruncatedNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const handleDownload = async () => {
     if (sinceUnix === undefined || untilUnix === undefined) return;
 
     setErrorMessage(null);
-    setTruncatedNotice(null);
-    setProgress({ collected: 0, total: 0 });
+    setNotice(null);
+    setProgress({ pages: 0, rows: 0, total: 0 });
     try {
-      const { entries, total, truncated } = await collectComplianceReportPages(
-        fetchReportPage,
-        { sinceUnix, untilUnix },
-        (collected, total) => setProgress({ collected, total })
-      );
-      const report = buildComplianceReport({
-        generatedAtUnix: Math.floor(Date.now() / 1000),
+      const result = await collectComplianceReportPages(fetchReportPage, {
         sinceUnix,
         untilUnix,
-        entries,
+        generatedAtUnix: Math.floor(Date.now() / 1000),
+        rowCeiling,
+        onProgress: setProgress,
       });
+      if (result.status === 'failed') {
+        setErrorMessage(
+          isForbiddenError(result.error)
+            ? COMPLIANCE_FORBIDDEN_MESSAGE
+            : `Failed to collect the compliance report at page ${result.page}. No file was produced. Try again in a moment.`
+        );
+
+        return;
+      }
+      if (result.status === 'ceiling') {
+        setNotice(
+          complianceCeilingMessage(
+            result.rows,
+            result.lastCreatedAt,
+            rowCeiling
+          )
+        );
+
+        return;
+      }
       triggerDownload(
-        new Blob([JSON.stringify(report, null, 2)], {
-          type: 'application/json',
-        }),
+        new Blob(result.chunks, { type: 'application/json' }),
         complianceReportFilename(sinceUnix, untilUnix)
       );
-      if (truncated) {
-        setTruncatedNotice(
-          `Report is incomplete: ${entries.length} of ${total} decisions collected. Narrow the window and download again.`
+      if (result.rows < result.total) {
+        setNotice(
+          `Report is incomplete: ${formatCount(result.rows)} of ${formatCount(result.total)} decisions collected. Narrow the window and download again.`
         );
       }
-    } catch (error) {
+    } catch {
       setErrorMessage(
-        isForbiddenError(error)
-          ? COMPLIANCE_FORBIDDEN_MESSAGE
-          : 'Failed to collect the compliance report. Try again in a moment.'
+        'Failed to build the compliance report file. No file was produced.'
       );
     } finally {
       setProgress(null);
@@ -105,16 +122,16 @@ export const AuditComplianceReportDownload = ({
       >
         <Download aria-hidden />
         {progress
-          ? `Collecting ${progress.collected} of ${progress.total}`
+          ? `Collecting page ${formatCount(progress.pages)}: ${formatCount(progress.rows)} of ${formatCount(progress.total)} rows`
           : 'Download report'}
       </Button>
-      {truncatedNotice && (
+      {notice && (
         <p
-          className="text-sm text-muted-foreground"
+          className="max-w-prose text-sm text-muted-foreground"
           role="status"
-          data-testid="audit-compliance-download-truncated"
+          data-testid="audit-compliance-download-notice"
         >
-          {truncatedNotice}
+          {notice}
         </p>
       )}
       {errorMessage && (
