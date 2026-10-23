@@ -540,15 +540,24 @@ const filterReason = (
   return data.reason || 'Filter matched';
 };
 
+// The gateway sends `classifier_unknown_label` when the classifier declines to
+// score a request. `classifier_unknown` is the earlier spelling, still
+// accepted so older recorded responses and mocks render the same way.
+export const isClassifierUnknownReason = (
+  reason: string | undefined
+): boolean =>
+  reason === 'classifier_unknown_label' || reason === 'classifier_unknown';
+
 const classifierReason = (
   data: CheckResponse,
   blocked: boolean
 ): string | undefined => {
+  if (isClassifierUnknownReason(data.reason)) {
+    return 'Classifier declined to score - fail open';
+  }
   switch (data.reason) {
     case 'classifier_unreachable':
       return 'Classifier unreachable - fail open';
-    case 'classifier_unknown':
-      return 'Classifier declined to score - fail open';
     case 'classifier_protocol_error':
       return 'Classifier returned an unrecognised label - fail closed';
     default:
@@ -589,7 +598,7 @@ const consensusReason = (
 ): string | undefined => {
   if (decision === 'block') return 'Consensus vote confirmed malicious content';
   if (decision === 'skip') {
-    if (data.reason === 'classifier_unknown') {
+    if (isClassifierUnknownReason(data.reason)) {
       return 'Skipped - classifier declined to score';
     }
 

@@ -6,6 +6,7 @@ import {
   type CheckResponse,
   CheckResponseParseError,
   deriveLayerDefinitions,
+  isClassifierUnknownReason,
   parseCheckResponse,
   resultCausalSpans,
   type TestLabRunRecord,
@@ -454,16 +455,35 @@ describe('applyLiveLayers - consensus/redactor/sandbox layer states', () => {
     expect(out.sandbox.refsMitigated).toBe(1);
   });
 
-  it('consensus skip reason distinguishes classifier_unknown from an ordinary above-threshold/unconfigured skip', () => {
-    const out = byId(
-      applyLiveLayers(
-        startingLayers(),
-        baseResponse({ reason: 'classifier_unknown' }),
-        []
-      )
-    );
-    expect(out.consensus.decision).toBe('skip');
-    expect(out.consensus.reason).toMatch(/classifier declined to score/i);
+  describe.each(['classifier_unknown_label', 'classifier_unknown'])(
+    'reason %s',
+    (reason) => {
+      it('is recognised by the predicate', () => {
+        expect(isClassifierUnknownReason(reason)).toBe(true);
+      });
+
+      it('reads as a fail-open classifier layer', () => {
+        const out = byId(
+          applyLiveLayers(startingLayers(), baseResponse({ reason }), [])
+        );
+        expect(out.classifier.reason).toBe(
+          'Classifier declined to score - fail open'
+        );
+      });
+
+      it('marks the consensus skip as caused by the classifier declining', () => {
+        const out = byId(
+          applyLiveLayers(startingLayers(), baseResponse({ reason }), [])
+        );
+        expect(out.consensus.decision).toBe('skip');
+        expect(out.consensus.reason).toMatch(/classifier declined to score/i);
+      });
+    }
+  );
+
+  it('does not treat other reasons or an absent reason as classifier-unknown', () => {
+    expect(isClassifierUnknownReason('classifier_unreachable')).toBe(false);
+    expect(isClassifierUnknownReason(undefined)).toBe(false);
   });
 
   it('redactor.verdict=redacted surfaces span count and labels; never reads as a block', () => {
