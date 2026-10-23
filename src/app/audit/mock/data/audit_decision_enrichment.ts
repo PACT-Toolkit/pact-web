@@ -1,5 +1,6 @@
 import { type DB } from '@/mocks/data/dbFactory';
 import { type ControlRef } from '@/src/__codegen__/schema/pact-decisions';
+import { MICROSECONDS_PER_MILLISECOND } from '@/src/framework/decisions/stage_duration';
 import {
   parseDecisionPayload,
   type DecisionPayload,
@@ -84,7 +85,6 @@ const BASE_DURATION_MS = {
 
 const JITTER_STEPS = 7;
 const MAX_RELATIVE_JITTER = 0.5;
-const MICROSECONDS_PER_MILLISECOND = 1000;
 
 // Stable per-request multiplier in [1, 1 + MAX_RELATIVE_JITTER).
 const jitterFactor = (seed: string): number =>

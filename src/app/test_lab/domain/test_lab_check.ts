@@ -18,6 +18,7 @@ import {
   type LayerDecision,
   type LayerState,
 } from '@/src/app/test_lab/ui/types';
+import { stageDurationMs } from '@/src/framework/decisions/stage_duration';
 
 // ─── API payload types ────────────────────────────────────────────────────────
 
@@ -502,9 +503,6 @@ const skipReason = (
   return `Skipped - ${STAGE_LABEL[haltedAt] ?? haltedAt} blocked`;
 };
 
-const roundMs = (ms: number | undefined): number | undefined =>
-  ms === undefined ? undefined : Math.round(ms);
-
 const filterRuleId = (data: CheckResponse): string | undefined =>
   data.filter?.rule_id || data.filter_rule_id || undefined;
 
@@ -668,7 +666,7 @@ const deriveStageState = (
         decision: blocked ? 'block' : 'allow',
         ruleId: filterRuleId(data),
         reason: filterReason(data, blocked),
-        latencyMs: roundMs(data.filter?.duration_ms),
+        latencyMs: stageDurationMs(data.filter),
         causalSpans: stageCausalSpans(data, id, blockingStage),
       };
     case 'classifier':
@@ -678,7 +676,7 @@ const deriveStageState = (
         reason: classifierReason(data, blocked),
         confidence: data.classifier?.score,
         classifierLabel: data.classifier?.label,
-        latencyMs: roundMs(data.classifier?.duration_ms),
+        latencyMs: stageDurationMs(data.classifier),
         causalSpans: stageCausalSpans(data, id, blockingStage),
       };
     case 'sandbox':
@@ -702,7 +700,7 @@ const deriveStageState = (
         ...blankDetail,
         decision,
         reason: consensusReason(data, decision),
-        latencyMs: roundMs(data.consensus?.duration_ms),
+        latencyMs: stageDurationMs(data.consensus),
         causalSpans: stageCausalSpans(data, id, blockingStage),
       };
     }
@@ -727,7 +725,7 @@ const deriveStageState = (
         redactedSpanLabels: (data.redactor.spans ?? [])
           .map((s) => s.label)
           .filter((l): l is string => Boolean(l)),
-        latencyMs: roundMs(data.redactor.duration_ms),
+        latencyMs: stageDurationMs(data.redactor),
       };
     }
   }

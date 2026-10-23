@@ -2,6 +2,10 @@ import {
   PIPELINE_STAGE_ORDER,
   type PipelineStageId,
 } from '@/src/framework/decisions/pipeline_stage';
+import {
+  stageDurationMs,
+  type StageTiming,
+} from '@/src/framework/decisions/stage_duration';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // Whether each pipeline stage's sub-object is present on this payload --
@@ -23,14 +27,8 @@ const STAGE_PRESENT: Record<
   redactor: (payload) => payload.redactor !== undefined,
 };
 
-// Wall-clock milliseconds the gateway spent in each visualised stage. The
-// stage sub-object's `duration_us` (integer microseconds, so a sub-millisecond
-// stage survives) is the source, converted to milliseconds; the deprecated
-// `duration_ms` is read only when `duration_us` is absent, i.e. on events
-// stored before the microsecond field existed. Only a finite number above
-// zero counts: absent and zero both mean "no timing to show".
-type StageTiming = { duration_ms?: number; duration_us?: number };
-
+// Wall-clock milliseconds the gateway spent in each visualised stage; the
+// duration_us-over-duration_ms precedence lives in stageDurationMs.
 const STAGE_TIMING: Record<
   PipelineStageId,
   (payload: DecisionPayload) => StageTiming | undefined
@@ -40,25 +38,6 @@ const STAGE_TIMING: Record<
   sandbox: (payload) => payload.external_refs,
   consensus: (payload) => payload.consensus,
   redactor: (payload) => payload.redactor,
-};
-
-const MICROSECONDS_PER_MILLISECOND = 1000;
-
-const usableDuration = (value: unknown): number | undefined =>
-  typeof value === 'number' && Number.isFinite(value) && value > 0
-    ? value
-    : undefined;
-
-const stageDurationMs = (
-  timing: StageTiming | undefined
-): number | undefined => {
-  if (timing?.duration_us !== undefined) {
-    const us = usableDuration(timing.duration_us);
-
-    return us === undefined ? undefined : us / MICROSECONDS_PER_MILLISECOND;
-  }
-
-  return usableDuration(timing?.duration_ms);
 };
 
 // Derives the audit stage strip's entries from a decisions payload: every

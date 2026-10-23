@@ -3,6 +3,7 @@ import { Brain, ChevronDown, ChevronUp } from 'lucide-react';
 import { TestLabDecisionBadge } from '@/src/app/test_lab/ui/TestLabDecisionBadge';
 import { type LayerState } from '@/src/app/test_lab/ui/types';
 import { PIPELINE_STAGE_ICON } from '@/src/framework/decisions/pipeline_stage';
+import { formatDurationMs } from '@/src/framework/format/format_duration_ms';
 
 export const TestLabLayerNode = ({
   layer,
@@ -43,7 +44,7 @@ export const TestLabLayerNode = ({
       <span className="text-xs font-medium text-foreground">{layer.label}</span>
       {layer.latencyMs !== undefined && (
         <span className="text-xs text-muted-foreground">
-          {layer.latencyMs}ms
+          {formatDurationMs(layer.latencyMs)}
         </span>
       )}
       {layer.bypassed && (

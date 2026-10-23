@@ -59,3 +59,15 @@ describe('TestLabLayerDetail causal spans', () => {
     ).not.toBeInTheDocument();
   });
 });
+
+describe('TestLabLayerDetail latency', () => {
+  it.each([
+    [0.4, '0.4 ms'],
+    [2.2586, '2.3 ms'],
+    [401.2812, '401 ms'],
+  ])('prints %s as %s', (latencyMs, text) => {
+    renderDetail(baseLayer({ latencyMs }));
+
+    expect(screen.getByText(text)).toBeInTheDocument();
+  });
+});

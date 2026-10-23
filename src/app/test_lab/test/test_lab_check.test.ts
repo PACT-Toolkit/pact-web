@@ -520,7 +520,7 @@ describe('applyLiveLayers - consensus/redactor/sandbox layer states', () => {
     expect(out.redactor.reason).toMatch(/fail open/i);
   });
 
-  it('duration_ms fields round to whole milliseconds for display', () => {
+  it('duration_ms fields keep their fractional milliseconds', () => {
     const out = byId(
       applyLiveLayers(
         startingLayers(),
@@ -531,8 +531,23 @@ describe('applyLiveLayers - consensus/redactor/sandbox layer states', () => {
         []
       )
     );
-    expect(out.filter.latencyMs).toBe(3);
-    expect(out.classifier.latencyMs).toBe(15);
+    expect(out.filter.latencyMs).toBe(3.482);
+    expect(out.classifier.latencyMs).toBe(14.9);
+  });
+
+  it('keeps a sub-millisecond stage and omits a zero duration', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          classifier: { label: 'benign', score: 0.9, duration_ms: 0 },
+          redactor: { verdict: 'pass_through', duration_ms: 0.4 },
+        }),
+        []
+      )
+    );
+    expect(out.redactor.latencyMs).toBe(0.4);
+    expect(out.classifier.latencyMs).toBeUndefined();
   });
 
   it('diagnostics.causal_spans attaches to the stage that blocked, not to any other stage', () => {
