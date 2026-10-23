@@ -22,7 +22,11 @@ const renderView = () =>
     </SWRTestProvider>
   );
 
-describe('AuditComplianceControlStatsTable', () => {
+// The first render in a worker pays the cold start of React DOM, the table
+// components and getAllByRole (about one second on an idle machine), so the
+// 5 s default fails on a CPU-starved one. The timeout is scoped to the
+// table suite; the global default stays at 5 s.
+describe('AuditComplianceControlStatsTable', { timeout: 20_000 }, () => {
   it('sorts rows by total descending', () => {
     render(
       <AuditComplianceControlStatsTable
