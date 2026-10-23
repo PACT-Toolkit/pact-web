@@ -222,7 +222,13 @@
         "duration_ms": {
           "type": "integer",
           "minimum": 0,
-          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
+          "deprecated": true,
+          "description": "Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed."
+        },
+        "duration_us": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run."
         }
       }
     },
@@ -253,10 +259,21 @@
           },
           "description": "Compliance controls this stage verdict enforces, stamped by the gateway from its static per-stage control table. Additive - empty or absent on events produced before the mapping existed."
         },
+        "windows": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of token windows the classifier inspected, copied from ClassifyResponse.windows. Input longer than the model window is scanned as overlapping windows. Additive - absent when the engine did not report a count."
+        },
         "duration_ms": {
           "type": "integer",
           "minimum": 0,
-          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
+          "deprecated": true,
+          "description": "Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed."
+        },
+        "duration_us": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run."
         }
       }
     },
@@ -314,7 +331,7 @@
         },
         "skipped_reason": {
           "type": "string",
-          "description": "Machine-readable cause of skipped=true: consensus_timeout, consensus_error (shadow-mode vote failures), or shadow_saturated (completion pool full). Open set by design, and not populated on the pre-existing inline-mode transport-error fail-open (skipped=true with no reason) to keep that path's wire output unchanged."
+          "description": "Machine-readable cause of skipped=true: consensus_timeout, consensus_error (shadow-mode vote failures), consensus_saturated (pact-consensus shed the vote with RESOURCE_EXHAUSTED), or shadow_saturated (shadow-mode completion pool full). Open set by design, and not populated on the pre-existing inline-mode transport-error fail-open (skipped=true with no reason) to keep that path's wire output unchanged."
         },
         "controls": {
           "type": "array",
@@ -326,7 +343,13 @@
         "duration_ms": {
           "type": "integer",
           "minimum": 0,
-          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
+          "deprecated": true,
+          "description": "Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed."
+        },
+        "duration_us": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run."
         }
       }
     },
@@ -354,12 +377,27 @@
         },
         "skipped": {
           "type": "boolean",
-          "description": "True on a transport-error or timeout fail-open: the CheckCompliance RPC failed or did not return in time, so the request proceeded with no compliance verdict recorded."
+          "description": "True on a transport-error, timeout or load-shed fail-open: the CheckCompliance RPC failed, did not return in time or was refused by the saturated classifier, so the request proceeded with no compliance verdict recorded. skipped_reason names the cause when it is known."
+        },
+        "skipped_reason": {
+          "type": "string",
+          "description": "Machine-readable cause of skipped=true: classifier_saturated (pact-classifier shed the call with RESOURCE_EXHAUSTED) and oversize_tokens (the pair exceeded the model input budget; pact-classifier rejected it with INVALID_ARGUMENT and an ErrorInfo reason of oversize or oversize_tokens). Open set by design, and not populated on the transport-error or timeout fail-open (skipped=true with no reason) or on events produced before the field existed."
+        },
+        "windows": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Number of token windows the classifier inspected, copied from CheckComplianceResponse.windows. Input longer than the model window is scanned as overlapping windows. Additive - absent when the engine did not report a count."
         },
         "duration_ms": {
           "type": "integer",
           "minimum": 0,
-          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
+          "deprecated": true,
+          "description": "Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed."
+        },
+        "duration_us": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run."
         }
       }
     },
@@ -405,7 +443,13 @@
         "duration_ms": {
           "type": "integer",
           "minimum": 0,
-          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
+          "deprecated": true,
+          "description": "Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed."
+        },
+        "duration_us": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run."
         }
       }
     },
@@ -456,7 +500,13 @@
         "duration_ms": {
           "type": "integer",
           "minimum": 0,
-          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
+          "deprecated": true,
+          "description": "Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed."
+        },
+        "duration_us": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run."
         }
       }
     },
@@ -541,7 +591,13 @@
         "duration_ms": {
           "type": "integer",
           "minimum": 0,
-          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
+          "deprecated": true,
+          "description": "Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed."
+        },
+        "duration_us": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run."
         }
       }
     },
@@ -595,7 +651,13 @@
         "duration_ms": {
           "type": "integer",
           "minimum": 0,
-          "description": "Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed."
+          "deprecated": true,
+          "description": "Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed."
+        },
+        "duration_us": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run."
         }
       }
     },
