@@ -14,7 +14,11 @@ const renderView = (runId: string) =>
     </SWRTestProvider>
   );
 
-describe('BenchmarkRunRowsView', () => {
+// Each test renders 50-row tables from the mock handlers and several tests
+// page or filter, which re-renders them. That takes one to three seconds on an
+// idle machine, so the 5 s default fails on a CPU-starved one. The timeout
+// is scoped to this view; the global default stays at 5 s.
+describe('BenchmarkRunRowsView', { timeout: 20_000 }, () => {
   it('renders the first page with the run metadata and a range caption', async () => {
     renderView('run-11');
 

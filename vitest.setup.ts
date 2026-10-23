@@ -1,8 +1,15 @@
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 
 import { server } from '@/mocks/server';
+
+// findBy*/waitFor give up after 1 s by default, which a CPU-starved machine
+// can exceed while a fetch, an SWR revalidation and a React commit all run
+// late. 4 s stays below the 5 s test timeout, so a genuinely missing element
+// still fails with Testing Library's diagnostic message instead of a bare
+// test timeout.
+configure({ asyncUtilTimeout: 4000 });
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));
 afterEach(() => server.resetHandlers());

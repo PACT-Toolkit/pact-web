@@ -87,15 +87,14 @@ describe('ESLint import-x/no-cycle TypeScript bridge', () => {
 
     cycleMessages = cycleResults.flatMap((result) => result.messages);
     brokenCycleMessages = brokenResults.flatMap((result) => result.messages);
-    // Loading eslint-config-next + typescript-eslint + the typescript
-    // resolver's tsconfig program is the dominant cost here, not the
-    // two-file lint itself - hence the generous hook timeout below rather
-    // than a per-test one. Measured ~9-10s in isolation, but the full
-    // `pnpm test` run executes every test file's worker/thread concurrently,
-    // and under that contention this hook has been observed to exceed 60s -
-    // so the timeout carries large headroom over the isolated measurement,
-    // not just over CI-vs-local variance.
-  }, 120_000);
+    // Loading eslint-config-next, typescript-eslint, the boundaries plugin and
+    // the typescript resolver's tsconfig program is the dominant cost here,
+    // not the two-file lint itself (the rules take well under a second).
+    // That load is disk- and CPU-bound: 20 s to 90 s measured on an idle-ish
+    // Windows machine and far more under a starved CPU. This is a
+    // known-slow-by-design guard, so the hook carries its own 5-minute
+    // budget instead of the default; the tests below are plain assertions.
+  }, 300_000);
 
   afterAll(() => {
     fs.rmSync(scratchDir, { recursive: true, force: true });

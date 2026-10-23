@@ -16,7 +16,11 @@ const renderCard = () =>
     ) as ReactNode
   );
 
-describe('BenchmarkCorpusLibraryCard', () => {
+// The first test renders nine composition rows and queries them by role,
+// which costs one to three seconds cold on an idle machine, so the 5 s
+// default fails on a CPU-starved one. The timeout is scoped to this card;
+// the global default stays at 5 s.
+describe('BenchmarkCorpusLibraryCard', { timeout: 20_000 }, () => {
   it('renders the datasets as composition rows in the server-given order with formatted totals', async () => {
     renderCard();
 
