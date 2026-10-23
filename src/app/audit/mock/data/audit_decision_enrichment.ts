@@ -68,8 +68,9 @@ const SANDBOX_CONTROLS: ControlRef[] = [
   { framework: AI_ACT, id: 'cybersecurity' },
 ];
 
-// Typical stage cost in ms; a small request-id derived jitter keeps rows
-// from all showing identical timings.
+// Typical stage cost in ms; a small request-id derived relative jitter keeps
+// rows from all showing identical timings. The redactor sits under 1 ms so
+// the sub-millisecond path (`duration_us` below 1000) shows up in dev:mock.
 const BASE_DURATION_MS = {
   policy: 1,
   filter: 3,
@@ -77,27 +78,46 @@ const BASE_DURATION_MS = {
   compliance: 45,
   sandbox: 120,
   consensus: 410,
-  redactor: 6,
+  redactor: 0.35,
   cel: 2,
 };
 
-const jitter = (seed: string): number =>
-  [...seed].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 7;
+const JITTER_STEPS = 7;
+const MAX_RELATIVE_JITTER = 0.5;
+const MICROSECONDS_PER_MILLISECOND = 1000;
+
+// Stable per-request multiplier in [1, 1 + MAX_RELATIVE_JITTER).
+const jitterFactor = (seed: string): number =>
+  1 +
+  (([...seed].reduce((sum, char) => sum + char.charCodeAt(0), 0) %
+    JITTER_STEPS) /
+    JITTER_STEPS) *
+    MAX_RELATIVE_JITTER;
 
 const withStageFields = <
-  T extends { duration_ms?: number; controls?: ControlRef[] },
+  T extends {
+    duration_ms?: number;
+    duration_us?: number;
+    controls?: ControlRef[];
+  },
 >(
   sub: T,
   base: number,
   seed: string,
   controls?: ControlRef[]
-): T & { controls?: ControlRef[] } => ({
-  ...sub,
-  duration_ms: sub.duration_ms ?? base + jitter(seed),
-  ...(controls && {
-    controls: sub.controls ?? controls.map((c) => ({ ...c })),
-  }),
-});
+): T & { controls?: ControlRef[] } => {
+  const durationMs = sub.duration_ms ?? base * jitterFactor(seed);
+
+  return {
+    ...sub,
+    duration_ms: durationMs,
+    duration_us:
+      sub.duration_us ?? Math.round(durationMs * MICROSECONDS_PER_MILLISECOND),
+    ...(controls && {
+      controls: sub.controls ?? controls.map((c) => ({ ...c })),
+    }),
+  };
+};
 
 const executedStages = (payload: DecisionPayload): StageName[] | undefined => {
   const engineStage =

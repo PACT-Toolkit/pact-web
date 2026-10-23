@@ -5,6 +5,7 @@ import {
   PIPELINE_STAGE_LABEL,
   type PipelineStageId,
 } from '@/src/framework/decisions/pipeline_stage';
+import { formatDurationMs } from '@/src/framework/format/format_duration_ms';
 
 // Compact, read-only per-stage strip: one chip per pipeline stage
 // that fired on this request, the blocking stage picked out in red -- the
@@ -46,7 +47,7 @@ export const StageStrip = ({
                 className="font-normal opacity-70"
                 data-testid={`stage-duration-${id}`}
               >
-                {Math.round(durationMs)} ms
+                {formatDurationMs(durationMs)}
               </span>
             )}
           </span>

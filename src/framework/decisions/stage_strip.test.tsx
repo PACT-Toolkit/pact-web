@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { StageStrip } from '@/src/framework/decisions/stage_strip';
 
 describe('StageStrip durations', () => {
-  it('renders a rounded whole-ms label only for entries that carry a duration', () => {
+  it('renders a formatted ms label only for entries that carry a duration', () => {
     render(
       <StageStrip
         testId="strip"
@@ -16,7 +16,7 @@ describe('StageStrip durations', () => {
     );
 
     expect(screen.getByTestId('stage-duration-filter')).toHaveTextContent(
-      '3 ms'
+      '3.4 ms'
     );
     expect(
       screen.queryByTestId('stage-duration-classifier')
