@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { formatDayTick } from '@/src/framework/format/day_tick_format';
 
-// TZ is pinned to CET in vitest.config.ts (see vitest.config.ts's comment).
+// TZ is pinned to CET in vitest.config.mts (see vitest.config.mts's comment).
 describe('formatDayTick', () => {
   it('formats a Unix timestamp as "<day> <short month>"', () => {
     const aug5NoonUtc = Date.UTC(2026, 7, 5, 12, 0, 0) / 1000;

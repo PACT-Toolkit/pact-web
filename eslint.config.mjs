@@ -107,7 +107,7 @@ const config = [
         'playwright.e2e.config.ts',
         'postcss.config.mjs',
         'proxy.ts',
-        'vitest.config.ts',
+        'vitest.config.mts',
         'vitest.setup.ts',
         // Playwright E2E suite and its fixtures - runs standalone against
         // real services, outside the app's layer hierarchy.
