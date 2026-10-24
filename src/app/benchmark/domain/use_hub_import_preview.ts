@@ -8,6 +8,8 @@ import {
   buildPreviewParams,
   describeHubImportError,
   hubDatasetIdentityKey,
+  NO_LABEL_COLUMN,
+  normalizeDetectedColumn,
   type HubDatasetIdentity,
   type HubDatasetPreview,
 } from '@/src/app/benchmark/domain/benchmark_import';
@@ -45,18 +47,34 @@ export function useHubImportPreview(
   labelColumnSelection: string | null,
   scoreThresholdOverride: number | null
 ): HubImportPreviewState {
+  const datasetKey = identity ? hubDatasetIdentityKey(identity) : null;
+  const [held, setHeld] = useState<HeldResponse | null>(null);
+
+  // The score column the threshold applies to is the one the same dataset's
+  // last preview resolved; it is sent back with the committed threshold so the
+  // refetch slices the column the user saw. An explicit label column wins
+  // server-side, so no score column is in play then.
+  const heldPreview =
+    held?.datasetKey === datasetKey && held.response.status === 200
+      ? held.response.data
+      : undefined;
+  const scoreColumn =
+    labelColumnSelection !== null && labelColumnSelection !== NO_LABEL_COLUMN
+      ? null
+      : normalizeDetectedColumn(heldPreview?.score_column);
+
   const params = useMemo(
     () =>
       identity
         ? buildPreviewParams(
             identity,
             labelColumnSelection,
+            scoreColumn,
             scoreThresholdOverride
           )
         : null,
-    [identity, labelColumnSelection, scoreThresholdOverride]
+    [identity, labelColumnSelection, scoreColumn, scoreThresholdOverride]
   );
-  const datasetKey = identity ? hubDatasetIdentityKey(identity) : null;
 
   const { data, isLoading, isValidating } = useInspectBenchmarkImport(
     params ?? { slug: '' },
@@ -65,7 +83,6 @@ export function useHubImportPreview(
 
   // Adjusting state while rendering (not in an effect) is React's pattern for
   // remembering the previous render's value; the re-render is immediate.
-  const [held, setHeld] = useState<HeldResponse | null>(null);
   if (
     datasetKey !== null &&
     data !== undefined &&

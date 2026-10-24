@@ -72,7 +72,7 @@ const NO_SELECTIONS = {
 
 describe('buildPreviewParams', () => {
   it('sends only the slug when every other field is blank', () => {
-    expect(buildPreviewParams(IDENTITY, null, null)).toEqual({
+    expect(buildPreviewParams(IDENTITY, null, null, null)).toEqual({
       slug: 'deepset/prompt-injections',
     });
   });
@@ -85,7 +85,7 @@ describe('buildPreviewParams', () => {
       revision: ' main ',
     };
 
-    expect(buildPreviewParams(identity, null, null)).toEqual({
+    expect(buildPreviewParams(identity, null, null, null)).toEqual({
       slug: 'deepset/prompt-injections',
       split: 'train',
       config: 'default',
@@ -94,29 +94,49 @@ describe('buildPreviewParams', () => {
   });
 
   it('omits label_column for the no-label-column sentinel', () => {
-    expect(buildPreviewParams(IDENTITY, NO_LABEL_COLUMN, null)).toEqual({
+    expect(buildPreviewParams(IDENTITY, NO_LABEL_COLUMN, null, null)).toEqual({
       slug: 'deepset/prompt-injections',
     });
   });
 
   it('includes label_column only when an override is given', () => {
-    expect(buildPreviewParams(IDENTITY, 'label_alt', null)).toEqual({
+    expect(buildPreviewParams(IDENTITY, 'label_alt', null, null)).toEqual({
       slug: 'deepset/prompt-injections',
       label_column: 'label_alt',
     });
   });
 });
 
-describe('buildPreviewParams score threshold', () => {
-  it('omits score_threshold while untouched', () => {
-    expect(buildPreviewParams(IDENTITY, null, null)).not.toHaveProperty(
-      'score_threshold'
+describe('buildPreviewParams score column and threshold', () => {
+  it('sends neither while the threshold is untouched', () => {
+    const params = buildPreviewParams(IDENTITY, null, 'Jailbreak Score', null);
+
+    expect(params).not.toHaveProperty('score_column');
+    expect(params).not.toHaveProperty('score_threshold');
+  });
+
+  it('sends both when a score column and a threshold are present', () => {
+    expect(buildPreviewParams(IDENTITY, null, 'Jailbreak Score', 47.5)).toEqual(
+      {
+        slug: 'deepset/prompt-injections',
+        score_column: 'Jailbreak Score',
+        score_threshold: 47.5,
+      }
     );
   });
 
-  it('includes score_threshold when 0 or 50', () => {
-    expect(buildPreviewParams(IDENTITY, null, 0).score_threshold).toBe(0);
-    expect(buildPreviewParams(IDENTITY, null, 50).score_threshold).toBe(50);
+  it('treats 0 as a real threshold', () => {
+    const params = buildPreviewParams(IDENTITY, null, 'Jailbreak Score', 0);
+
+    expect(params.score_column).toBe('Jailbreak Score');
+    expect(params.score_threshold).toBe(0);
+  });
+
+  it('sends neither for a threshold without a score column', () => {
+    const params = buildPreviewParams(IDENTITY, null, null, 50);
+
+    expect(params).not.toHaveProperty('score_column');
+    expect(params).not.toHaveProperty('score_threshold');
   });
 });
 
