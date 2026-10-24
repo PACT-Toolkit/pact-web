@@ -5,8 +5,9 @@ import { useState } from 'react';
 
 import { Button } from '@/src/components/ui/button';
 import { Input } from '@/src/components/ui/input';
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
-import { dateFormatter, formatLastUsed } from './format';
+import { formatLastUsed } from './format';
 import { type Passkey } from './types';
 
 type Props = {
@@ -69,7 +70,7 @@ export const AuthSettingsPasskeyRow = ({
               {passkey.label || 'Passkey'}
             </span>
             <span className="text-xs text-muted-foreground">
-              Added {dateFormatter.format(passkey.createdAt)} ·{' '}
+              Added {formatTimestamp(passkey.createdAt, 'date')} ·{' '}
               {formatLastUsed(passkey.lastUsedAt)}
             </span>
           </div>

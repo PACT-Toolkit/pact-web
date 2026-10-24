@@ -15,3 +15,16 @@ export function formatRunTimestamp(unixSeconds: number): string {
     minute: '2-digit',
   });
 }
+
+/**
+ * The date-only counterpart of `formatRunTimestamp`, e.g. "5 Aug 2026", for
+ * widgets that show when a run happened without the time of day. Same en-GB
+ * locale and local time zone.
+ */
+export function formatRunDate(unixSeconds: number): string {
+  return new Date(unixSeconds * 1000).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}

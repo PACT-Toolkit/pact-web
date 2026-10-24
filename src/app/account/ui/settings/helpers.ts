@@ -18,22 +18,6 @@ export const titleCase = (slug: string): string =>
     .map((p) => (p ? p[0].toUpperCase() + p.slice(1) : p))
     .join(' ');
 
-// formatRecordedAt renders an RFC 3339 UTC string in the user's
-// locale/timezone via Intl. Returns "" for unparseable input so the
-// caller can omit the timestamp rather than showing "Invalid Date".
-export const formatRecordedAt = (raw: string): string => {
-  const d = new Date(raw);
-  if (Number.isNaN(d.valueOf())) return '';
-
-  return d.toLocaleString(undefined, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
 // ── Erasure ───────────────────────────────────────────────────────────────
 
 // The literal string the user must type to arm the erasure button.

@@ -3,9 +3,9 @@
 import { Loader2, Smartphone } from 'lucide-react';
 
 import { Button } from '@/src/components/ui/button';
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 import { cn } from '@/src/lib/utils';
 
-import { dateFormatter } from './format';
 import { type MfaFactor } from './types';
 
 type Props = {
@@ -33,7 +33,7 @@ export const AuthSettingsTotpFactorRow = ({
           {factor.label ? ` · ${factor.label}` : ''}
         </span>
         <span className="text-xs text-muted-foreground">
-          Added {dateFormatter.format(factor.createdAt)}
+          Added {formatTimestamp(factor.createdAt, 'date')}
           {!factor.verified ? ' · pending verification' : ''}
         </span>
       </div>

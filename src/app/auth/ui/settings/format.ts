@@ -1,12 +1,6 @@
-// Date / "last used" formatters shared across the settings cards. Kept as
-// module-level constants so we pay the Intl construction cost once per
-// page load instead of per render.
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
-export const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-});
+// "Last used" formatter shared across the settings cards.
 
 const relativeTimeFormatter = new Intl.RelativeTimeFormat(undefined, {
   numeric: 'auto',
@@ -23,5 +17,5 @@ export const formatLastUsed = (when: Date | null): string => {
     return `Last used ${relativeTimeFormatter.format(diffDays, 'day')}`;
   }
 
-  return `Last used ${dateFormatter.format(when)}`;
+  return `Last used ${formatTimestamp(when, 'date')}`;
 };

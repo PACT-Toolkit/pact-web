@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatRunTimestamp } from '@/src/framework/format/run_timestamp';
+import {
+  formatRunDate,
+  formatRunTimestamp,
+} from '@/src/framework/format/run_timestamp';
 
 // TZ is pinned to CET in vitest.config.ts, so the local-time output is fixed.
 describe('formatRunTimestamp', () => {
@@ -28,5 +31,19 @@ describe('formatRunTimestamp', () => {
 
   it('renders the epoch start as a valid label', () => {
     expect(formatRunTimestamp(0)).toBe('1 Jan 1970, 01:00');
+  });
+});
+
+describe('formatRunDate', () => {
+  it('formats the local date without a time of day', () => {
+    expect(formatRunDate(Date.UTC(2026, 7, 5, 12, 32, 0) / 1000)).toBe(
+      '5 Aug 2026'
+    );
+  });
+
+  it('rolls over to the next local day past midnight CET', () => {
+    expect(formatRunDate(Date.UTC(2026, 0, 31, 23, 30, 0) / 1000)).toBe(
+      '1 Feb 2026'
+    );
   });
 });

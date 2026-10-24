@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 // How long the copy button shows its confirmed (check) state before
 // reverting to the copy icon.
@@ -103,7 +104,7 @@ const TestLabRunRow = ({ run }: { run: TestRun }) => {
           {run.latencyMs}ms
         </span>
         <span className="shrink-0 text-muted-foreground">
-          {new Date(run.timestamp).toLocaleTimeString()}
+          {formatTimestamp(new Date(run.timestamp), 'time')}
         </span>
       </div>
       {open && (

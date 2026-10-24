@@ -9,9 +9,10 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { Skeleton } from '@/src/components/ui/skeleton';
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 import { AccountSettingsConsentBadge } from './AccountSettingsConsentBadge';
-import { DOCUMENT_LABELS, formatRecordedAt, titleCase } from './helpers';
+import { DOCUMENT_LABELS, titleCase } from './helpers';
 
 export const AccountSettingsConsentsList = () => {
   const query = useGetAccountConsents();
@@ -58,7 +59,7 @@ export const AccountSettingsConsentsList = () => {
               const documentSlug = c.document ?? '';
               const label =
                 DOCUMENT_LABELS[documentSlug] ?? titleCase(documentSlug);
-              const recorded = formatRecordedAt(c.recordedAt ?? '');
+              const recorded = formatTimestamp(c.recordedAt ?? '', 'dateTime');
 
               return (
                 <li
