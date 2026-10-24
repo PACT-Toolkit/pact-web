@@ -843,3 +843,20 @@ stateDiagram-v2
 ```
 
 The run machine lives in the test-lab feature's domain layer (extraction in progress) so the dashboard quick-probe and the full workbench share one implementation instead of drifting copies.
+
+## Compliance report download - row ceiling
+
+The audit compliance report download (`/audit/compliance`) walks the audit service's report endpoint page by page and builds the file in the browser.
+Until 2026-10-23 the walk stopped after a fixed number of pages and produced a partial file.
+That page cap is gone.
+The walk now continues until the audit service has returned every row of the chosen window, and the page shows live progress (pages, rows fetched, total).
+
+One cap remains, and it is a row count, not a page count: `COMPLIANCE_REPORT_ROW_CEILING` in `src/app/audit/domain/audit_compliance_report.ts`, currently 250,000 rows.
+The ceiling exists because the whole report is held in browser memory.
+A serialized entry with one control is about 330 bytes, so 250,000 rows is roughly 80 MB of string chunks plus an equal Blob copy, which fits inside browser memory limits.
+A download that would exceed the ceiling produces no file.
+The page states how many rows were fetched and the timestamp of the last (oldest) row, and asks the operator to narrow the window so Until is before that time.
+
+To raise the ceiling, change `COMPLIANCE_REPORT_ROW_CEILING` and re-measure memory in a real browser with a window of that size first.
+The walk function takes the ceiling as a parameter (`rowCeiling`), so tests and callers can use a smaller value without touching the constant.
+In `dev:mock`, typing a Since date before 2000-01-01 UTC serves 300,000 synthetic rows, which exercises the ceiling.
