@@ -1,4 +1,5 @@
-type TimestampVariant = 'full' | 'compact' | 'short';
+type TimestampVariant =
+  'full' | 'compact' | 'short' | 'dateTime' | 'date' | 'time';
 
 const VARIANT_OPTIONS: Record<TimestampVariant, Intl.DateTimeFormatOptions> = {
   // e.g. "Nov 03, 2026, 14:07:33" -- audit rows and the decisions console
@@ -26,18 +27,39 @@ const VARIANT_OPTIONS: Record<TimestampVariant, Intl.DateTimeFormatOptions> = {
     hour: '2-digit',
     minute: '2-digit',
   },
+  // e.g. "Nov 3, 2026, 14:07" -- consent and audit-style records that need the
+  // year but not the seconds.
+  dateTime: {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  },
+  // e.g. "Nov 3, 2026" -- "added on" / "connected on" labels.
+  date: {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  },
+  // e.g. "2:07:33 PM" -- same-day activity lists.
+  time: {
+    hour: 'numeric',
+    minute: '2-digit',
+    second: '2-digit',
+  },
 };
 
-// Renders an ISO timestamp in the viewer's locale, falling back to the raw
-// string when it does not parse. The one timestamp formatter for every PACT
-// list and card -- pick a variant instead of hand-rolling toLocaleString
-// options per component.
+// Renders an ISO string or a Date in the viewer's locale and time zone. An
+// unparseable input falls back to the raw string ('' for an invalid Date). The
+// one timestamp formatter for every PACT list and card -- pick a variant
+// instead of hand-rolling toLocaleString options per component.
 export const formatTimestamp = (
-  iso: string,
+  input: string | Date,
   variant: TimestampVariant = 'full'
 ): string => {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
+  const d = typeof input === 'string' ? new Date(input) : input;
+  if (Number.isNaN(d.getTime())) return typeof input === 'string' ? input : '';
 
   return d.toLocaleString(undefined, VARIANT_OPTIONS[variant]);
 };

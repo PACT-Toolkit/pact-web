@@ -18,4 +18,39 @@ describe('formatTimestamp', () => {
     expect(result).toMatch(/\b11:00:00\b/);
     expect(result).not.toMatch(/\b10:00:00\b/);
   });
+
+  it('formats a Date like the equivalent ISO string', () => {
+    const iso = '2026-01-15T10:00:00.000Z';
+
+    expect(formatTimestamp(new Date(iso), 'compact')).toBe(
+      formatTimestamp(iso, 'compact')
+    );
+  });
+
+  it('falls back to the raw string for an unparseable string', () => {
+    expect(formatTimestamp('not a date')).toBe('not a date');
+  });
+
+  it('returns an empty string for an invalid Date', () => {
+    expect(formatTimestamp(new Date(Number.NaN))).toBe('');
+  });
+
+  it('the date variant renders the day without a time', () => {
+    const result = formatTimestamp('2026-01-15T10:00:00.000Z', 'date');
+
+    expect(result).toContain('2026');
+    expect(result).not.toMatch(/\d:\d/);
+  });
+
+  it('the dateTime variant renders the CET wall clock without seconds', () => {
+    expect(formatTimestamp('2026-01-15T10:00:00.000Z', 'dateTime')).toMatch(
+      /\b11:00\b(?!:)/
+    );
+  });
+
+  it('the time variant renders the CET wall clock with seconds', () => {
+    expect(formatTimestamp('2026-01-15T10:00:00.000Z', 'time')).toMatch(
+      /\b11:00:00\b/
+    );
+  });
 });

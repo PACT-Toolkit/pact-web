@@ -32,7 +32,12 @@ export const BenchmarkWorkbench = () => {
   const [isImportSubmitting, setIsImportSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const { isLoading, jobState, poll: jobPoll } = useBenchmarkJobState(jobId);
+  const {
+    isLoading,
+    jobState,
+    poll: jobPoll,
+    rateLimitRetries,
+  } = useBenchmarkJobState(jobId);
 
   const handleSubmit = async (corpusText: string) => {
     setIsUploadSubmitting(true);
@@ -121,6 +126,7 @@ export const BenchmarkWorkbench = () => {
           state={jobState}
           isLoading={isLoading}
           poll={jobPoll}
+          rateLimitRetries={rateLimitRetries}
         />
       )}
 

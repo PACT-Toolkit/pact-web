@@ -8,6 +8,7 @@ import { DashboardStatTile } from '@/src/app/dashboard/ui/DashboardStatTile';
 import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
 import { buildLabel } from '@/src/framework/format/build_label';
 import { formatMetric } from '@/src/framework/format/metric_format';
+import { formatRunDate } from '@/src/framework/format/run_timestamp';
 
 export const DashboardBenchmarkWidget = () => {
   const { runs, isLoading, error } = useBenchmarkRuns('all');
@@ -65,13 +66,7 @@ export const DashboardBenchmarkWidget = () => {
             </div>
             <div className="flex items-center justify-between gap-2">
               <span>Ran</span>
-              <span>
-                {new Date(latest.ran_at * 1000).toLocaleDateString('en-GB', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </span>
+              <span>{formatRunDate(latest.ran_at)}</span>
             </div>
           </div>
         </div>

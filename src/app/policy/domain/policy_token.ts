@@ -6,6 +6,7 @@ import {
   type PolicyIssueTokenRequest,
   type PolicyIssueTokenResponse,
 } from '@/src/__codegen__/rest/policy';
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 export type IssueTokenInput = PolicyIssueTokenRequest;
 export type IssuedToken = PolicyIssueTokenResponse;
@@ -56,11 +57,5 @@ export const formatExpiry = (expiresAtUnix: number): string => {
   const d = new Date(expiresAtUnix * 1000);
   if (Number.isNaN(d.getTime())) return String(expiresAtUnix);
 
-  return d.toLocaleString(undefined, {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
+  return formatTimestamp(d, 'compact');
 };

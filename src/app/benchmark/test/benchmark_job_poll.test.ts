@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   describeBenchmarkJobPoll,
   nextBenchmarkJobPollDelayMs,
+  nextRateLimitRetryCount,
 } from '@/src/app/benchmark/domain/benchmark_job_poll';
 
 // Minimal fixtures matching the resolved shape customFetch always returns:
@@ -175,5 +176,22 @@ describe('nextBenchmarkJobPollDelayMs', () => {
 
   it('keeps polling every 2s on a 504 upstream timeout', () => {
     expect(nextBenchmarkJobPollDelayMs(httpError(504) as never)).toBe(2000);
+  });
+});
+
+describe('nextRateLimitRetryCount', () => {
+  it('counts each consecutive 429 response', () => {
+    const first = nextRateLimitRetryCount(0, httpError(429) as never);
+
+    expect(first).toBe(1);
+    expect(nextRateLimitRetryCount(first, httpError(429) as never)).toBe(2);
+  });
+
+  it.each([
+    ['a successful poll', runningResponse()],
+    ['a different transient failure', httpError(503)],
+    ['no response', undefined],
+  ])('resets to 0 on %s', (_label, latest) => {
+    expect(nextRateLimitRetryCount(3, latest as never)).toBe(0);
   });
 });

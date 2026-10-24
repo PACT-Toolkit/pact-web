@@ -47,6 +47,22 @@ export const describeBenchmarkJobPoll = (
   return { kind: 'waiting', httpStatus: latest.status };
 };
 
+/**
+ * The number of consecutive HTTP 429 poll responses after seeing `latest`:
+ * one more than `current` for a 429, back to 0 for any other response (a
+ * successful or differently-failing poll ends the rate-limited streak).
+ */
+export const nextRateLimitRetryCount = (
+  current: number,
+  latest: getBenchmarkJobResponse | undefined
+): number => {
+  const poll = describeBenchmarkJobPoll(latest);
+
+  return poll.kind === 'waiting' && poll.httpStatus === RATE_LIMITED_STATUS
+    ? current + 1
+    : 0;
+};
+
 const JOB_POLL_INTERVAL_MS = 2000;
 // Back-off base for HTTP 429 from the gateway's per-IP /v1/benchmark limiter
 // (5 rps / burst 10) when the response carries no usable Retry-After.

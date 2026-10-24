@@ -3,8 +3,8 @@
 import { Loader2, Unlink } from 'lucide-react';
 
 import { Button } from '@/src/components/ui/button';
+import { formatTimestamp } from '@/src/lib/format_timestamp';
 
-import { dateFormatter } from './format';
 import { providerMeta } from './providers';
 import { type OAuthIdentitySummary } from './types';
 
@@ -37,7 +37,7 @@ export const AuthSettingsConnectedIdentityRow = ({
         <div className="flex min-w-0 flex-col">
           <span className="truncate text-sm font-medium">{meta.name}</span>
           <span className="text-xs text-muted-foreground">
-            Connected {dateFormatter.format(identity.connectedAt)}
+            Connected {formatTimestamp(identity.connectedAt, 'date')}
           </span>
         </div>
       </div>
