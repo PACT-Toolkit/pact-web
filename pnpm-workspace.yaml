@@ -15,28 +15,33 @@ allowBuilds:
 # Every override below is kept only because its parent still pins a vulnerable
 # version in its own manifest (checked by regenerating the lockfile without
 # overrides: the parent resolved the vulnerable version again). When a parent
-# bumps, drop the override; `pnpm why <pkg>` names the parent. Overrides whose
-# parents have bumped on their own were removed.
+# bumps, drop the override; `pnpm why <pkg>` names the parent.
 overrides:
-  # @vercel/fun pins tar 7.5.7: GHSA-23hp-3jrh-7fpw, GHSA-r292-9mhp-454m and
-  # others. 7.5.21 is the first release that clears all of them.
+  # @vercel/container pins tar 7.5.11 (critical GHSA-ids in 7.5.11 up to 7.5.20).
   tar: '^7.5.21'
-  # @vercel/fun pins @tootallnate/once 2.0.0: GHSA-vpq2-c234-7xj6.
-  '@tootallnate/once': '^2.0.1'
-  # @vercel/node pins undici 5.28.4 (many advisories, e.g. GHSA-vrm6-8vpv-qv8q).
-  # Chain-scoped on purpose: the major jump is only safe for this one parent.
-  '@vercel/node>undici': '^6.28.1'
-  # @vercel/python-analysis pins js-yaml 4.1.1 (GHSA-52cp-r559-cp3m,
-  # GHSA-2883-xcg3-v3hh); orval resolves 4.3.1 without the floor.
-  js-yaml: '^4.3.0'
-  # @vercel/python-analysis pins minimatch 10.1.1 (GHSA-3ppc-4f35-3m26,
-  # GHSA-7r86-cg39-jmmj, GHSA-23c5-xmqv-rm74).
+  # @vercel/python-analysis pins js-yaml 4.1.1; orval resolves 4.3.1.
+  js-yaml: '^4.3.2'
+  # @vercel/python-analysis pins minimatch 10.1.1.
   '@vercel/python-analysis>minimatch': '^10.2.3'
-  # @vercel/backends pins srvx 0.8.9: GHSA-p36q-q72m-gchr.
-  '@vercel/backends>srvx': '^0.11.13'
-  # eslint-plugin-boundaries (via @boundaries/elements) resolves handlebars
-  # 4.7.9: GHSA-8r5x-fm3f-whwj, GHSA-p8wg-vrv2-v86f, GHSA-xw65-4hp5-5hc7.
+  # @vercel/container pins smol-toml 1.5.2.
+  smol-toml: '^1.8.1'
+  # eslint-plugin-boundaries (via @boundaries/elements) resolves handlebars 4.7.9.
   handlebars: '^4.7.10'
-  # @vercel/python-analysis, @vercel/rust and vercel pin smol-toml 1.5.2:
-  # GHSA-7w5x-hrqm-74c2, GHSA-v3rj-xjv7-4jmq, GHSA-r4xh-jqrq-34v2.
-  smol-toml: '1.9.0'
+  # @vercel/backends (via @vercel/static-config) pins ajv 8.6.3.
+  '@vercel/static-config>ajv': '^8.18.0'
+  # @vercel/node and @vercel/remix-builder pin path-to-regexp 6.1.0; @vercel/backends,
+  # @vercel/express and @vercel/hono pin 8.3.0. Version selectors cover every
+  # vercel sub-package that resolves a vulnerable range.
+  'path-to-regexp@<6.3.0': '^6.3.0'
+  'path-to-regexp@>=8.0.0 <8.4.0': '^8.4.0'
+  # vercel, @vercel/node and @vercel/blob pin undici 5.x / 6.29.0. Chain-scoped
+  # on purpose: the major jump is only safe for these dev-tool parents.
+  'vercel>undici': '^6.29.1'
+  '@vercel/node>undici': '^6.29.1'
+  '@vercel/blob>undici': '^6.29.1'
+  # jsdom (test environment) resolves undici 7.30.0.
+  'jsdom>undici': '^7.30.1'
+  # eslint-plugin-react-hooks, @vercel/cli-config and @vercel/cli-auth resolve zod below 4.6.6.
+  'eslint-plugin-react-hooks>zod': '^4.6.6'
+  '@vercel/cli-config>zod': '^4.6.6'
+  '@vercel/cli-auth>zod': '^4.6.6'

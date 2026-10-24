@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { computeTimeAxisScale } from '@/src/framework/charts/time_axis';
 
-// TZ is pinned to CET in vitest.config.ts, and January dates keep every
+// TZ is pinned to CET in vitest.config.mts, and January dates keep every
 // case outside CEST (UTC+2) so the day-boundary math below is exercised
 // against a single, predictable UTC+1 offset.
 const JAN_5_NOON = Date.UTC(2026, 0, 5, 11, 0, 0) / 1000; // 12:00 CET

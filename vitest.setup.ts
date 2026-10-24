@@ -14,7 +14,7 @@ configure({ asyncUtilTimeout: 4000 });
 beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));
 afterEach(() => server.resetHandlers());
 // Testing Library's auto-cleanup only registers itself when it detects a
-// global `afterEach` (vitest.config.ts does not set `test.globals: true`, so
+// global `afterEach` (vitest.config.mts does not set `test.globals: true`, so
 // afterEach here is an explicit import, not a global). Without this, every
 // `render()` across a test file accumulates in the same jsdom document --
 // harmless for tests asserting on unique text, but a latent collision for

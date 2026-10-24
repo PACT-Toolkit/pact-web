@@ -5,7 +5,7 @@ import {
   formatRunTimestamp,
 } from '@/src/framework/format/run_timestamp';
 
-// TZ is pinned to CET in vitest.config.ts, so the local-time output is fixed.
+// TZ is pinned to CET in vitest.config.mts, so the local-time output is fixed.
 describe('formatRunTimestamp', () => {
   it('formats a summer instant as day, short month, year and CEST time', () => {
     const unixSeconds = Date.UTC(2026, 7, 5, 12, 32, 0) / 1000;
