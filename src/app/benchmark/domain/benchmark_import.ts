@@ -101,13 +101,17 @@ export const NO_LABEL_COLUMN = '__none__';
  * own defaults (split "train", detected label column) when the param is
  * absent entirely. The sentinel is omitted too: the preview then matches the
  * untouched one (same cache entry), and `resolveHubImportMapping` ignores the
- * detected label column for it. The score threshold is sent only once the
- * user committed one (`null` = untouched, the server uses its suggestion);
- * `0` is a real threshold, so the check is `!== null`, not truthiness.
+ * detected label column for it. The score column and threshold are sent
+ * together or not at all, as `buildImportRequest` does: only once the user
+ * committed a threshold (`null` = untouched, the server uses its suggestion)
+ * and a score column is in effect (`null` = none resolved, so a threshold has
+ * nothing to apply to). `0` is a real threshold, so the check is `!== null`,
+ * not truthiness.
  */
 export function buildPreviewParams(
   identity: HubDatasetIdentity,
   labelColumnSelection: string | null,
+  scoreColumn: string | null,
   scoreThreshold: number | null
 ): HubImportPreviewParams {
   const params: HubImportPreviewParams = { slug: identity.slug.trim() };
@@ -117,7 +121,10 @@ export function buildPreviewParams(
   if (labelColumnSelection && labelColumnSelection !== NO_LABEL_COLUMN) {
     params.label_column = labelColumnSelection;
   }
-  if (scoreThreshold !== null) params.score_threshold = scoreThreshold;
+  if (scoreColumn !== null && scoreThreshold !== null) {
+    params.score_column = scoreColumn;
+    params.score_threshold = scoreThreshold;
+  }
 
   return params;
 }

@@ -170,6 +170,27 @@ describe('BenchmarkImportCard', () => {
     ).not.toBeInTheDocument();
   });
 
+  it('sends the detected score column with the committed threshold', async () => {
+    renderCard();
+    await inspect('rubend18/ChatGPT-Jailbreak-Prompts');
+    const requests: URL[] = [];
+    server.use(
+      http.get(PREVIEW_URL, ({ request }) => {
+        requests.push(new URL(request.url));
+      })
+    );
+
+    const input = screen.getByTestId('benchmark-import-score-threshold');
+    fireEvent.change(input, { target: { value: '80' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(requests).toHaveLength(1));
+    expect(requests[0].searchParams.get('score_threshold')).toBe('80');
+    expect(requests[0].searchParams.get('score_column')).toBe(
+      'Jailbreak Score'
+    );
+  });
+
   it('marks the preview busy until the refetched split arrives', async () => {
     renderCard();
     await inspect('rubend18/ChatGPT-Jailbreak-Prompts');
