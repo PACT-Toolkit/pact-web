@@ -8,8 +8,14 @@ import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job
 import {
   describeBenchmarkJobPoll,
   nextBenchmarkJobPollDelayMs,
+  nextRateLimitRetryCount,
   type BenchmarkJobPollDescription,
 } from '@/src/app/benchmark/domain/benchmark_job_poll';
+
+interface RateLimitStreak {
+  jobId: string | null;
+  retries: number;
+}
 
 interface Retained {
   jobId: string | null;
@@ -32,13 +38,31 @@ interface Retained {
  * `setRetained` is called directly in the render body, guarded by a
  * condition (`jobId` or `data` changed) that the call itself makes false,
  * so React re-renders once with the new value and never loops.
+ *
+ * `rateLimitRetries` counts the consecutive 429 poll responses of the
+ * current job. It is fed by SWR's per-response `onSuccess` (a resolved
+ * response, 429 included, since `customFetch` never throws on status):
+ * `data` cannot count them, because SWR keeps the same reference for
+ * consecutive deep-equal 429 bodies, so a repeat would go unseen.
  */
 export function useBenchmarkJobState(jobId: string | null) {
+  const [streak, setStreak] = useState<RateLimitStreak>({
+    jobId,
+    retries: 0,
+  });
   const { data, isLoading } = useGetBenchmarkJob(jobId ?? '', undefined, {
     swr: {
       enabled: jobId !== null,
       refreshInterval: nextBenchmarkJobPollDelayMs,
       revalidateOnFocus: false,
+      onSuccess: (latest) =>
+        setStreak((prev) => ({
+          jobId,
+          retries: nextRateLimitRetryCount(
+            prev.jobId === jobId ? prev.retries : 0,
+            latest
+          ),
+        })),
     },
   });
 
@@ -69,5 +93,7 @@ export function useBenchmarkJobState(jobId: string | null) {
   const jobState = retained.jobId === jobId ? retained.state : undefined;
   const poll: BenchmarkJobPollDescription = describeBenchmarkJobPoll(data);
 
-  return { data, isLoading, jobState, poll };
+  const rateLimitRetries = streak.jobId === jobId ? streak.retries : 0;
+
+  return { data, isLoading, jobState, poll, rateLimitRetries };
 }

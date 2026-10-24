@@ -112,4 +112,32 @@ describe('useBenchmarkJobState', () => {
     );
     expect(result.current.jobState).toBeUndefined();
   });
+
+  it('counts consecutive 429 polls and resets once a poll succeeds', async () => {
+    const jobId = 'job-streak-1';
+    let pollCount = 0;
+
+    server.use(
+      http.get(`${MSW_PACT_BASE}/gateway/v1/benchmark/jobs/:jobId`, () => {
+        pollCount += 1;
+
+        return pollCount <= 2
+          ? HttpResponse.json({ error: 'rate limit exceeded' }, { status: 429 })
+          : HttpResponse.json({ status: 'running', progress_pct: 40 });
+      })
+    );
+
+    const { result } = renderHook(() => useHarness(jobId), {
+      wrapper: SWRTestProvider,
+    });
+
+    await waitFor(() => expect(result.current.rateLimitRetries).toBe(1));
+
+    await revalidate(result.current.mutate, jobId);
+    await waitFor(() => expect(result.current.rateLimitRetries).toBe(2));
+
+    await revalidate(result.current.mutate, jobId);
+    await waitFor(() => expect(result.current.rateLimitRetries).toBe(0));
+    expect(result.current.poll).toEqual({ kind: 'polling' });
+  });
 });

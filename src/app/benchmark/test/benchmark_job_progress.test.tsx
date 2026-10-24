@@ -87,6 +87,42 @@ describe('BenchmarkJobProgress', () => {
     );
   });
 
+  it('shows the rate-limit retry count on a 429 notice', () => {
+    render(
+      (
+        <BenchmarkJobProgress
+          jobId="job-123"
+          state={{ status: 'running', progress_pct: 40 }}
+          isLoading={false}
+          poll={{ kind: 'waiting', httpStatus: 429 }}
+          rateLimitRetries={3}
+        />
+      ) as ReactNode
+    );
+
+    expect(screen.getByTestId('benchmark-job-poll-notice')).toHaveTextContent(
+      'Rate limited, retry 3.'
+    );
+  });
+
+  it('omits the retry count for a non-429 failure', () => {
+    render(
+      (
+        <BenchmarkJobProgress
+          jobId="job-123"
+          state={{ status: 'running', progress_pct: 40 }}
+          isLoading={false}
+          poll={{ kind: 'waiting', httpStatus: 503 }}
+          rateLimitRetries={0}
+        />
+      ) as ReactNode
+    );
+
+    expect(
+      screen.queryByTestId('benchmark-job-poll-retry-count')
+    ).not.toBeInTheDocument();
+  });
+
   it('renders no waiting notice while polling normally', () => {
     render(
       (

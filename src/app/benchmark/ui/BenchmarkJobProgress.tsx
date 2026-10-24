@@ -12,12 +12,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { RATE_LIMITED_STATUS } from '@/src/framework/http';
 
 interface BenchmarkJobProgressProps {
   jobId: string;
   state: BenchmarkJobState | undefined;
   isLoading: boolean;
   poll: BenchmarkJobPollDescription;
+  /** Consecutive HTTP 429 poll responses so far; 0 outside a rate-limited streak. */
+  rateLimitRetries?: number;
 }
 
 const JobIdLabel = ({ jobId }: { jobId: string }) => (
@@ -31,6 +34,7 @@ export const BenchmarkJobProgress = ({
   state,
   isLoading,
   poll,
+  rateLimitRetries = 0,
 }: BenchmarkJobProgressProps) => {
   const status = state?.status ?? 'queued';
   const errorDescription =
@@ -167,6 +171,17 @@ export const BenchmarkJobProgress = ({
                 {poll.httpStatus}; retrying.
               </>
             )}
+            {poll.httpStatus === RATE_LIMITED_STATUS &&
+              rateLimitRetries > 0 && (
+                <>
+                  {' '}
+                  Rate limited, retry{' '}
+                  <span data-testid="benchmark-job-poll-retry-count">
+                    {rateLimitRetries}
+                  </span>
+                  .
+                </>
+              )}
           </p>
         )}
 
