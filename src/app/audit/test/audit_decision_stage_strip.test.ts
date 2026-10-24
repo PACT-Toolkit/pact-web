@@ -115,6 +115,32 @@ describe('derivePipelineStages durations', () => {
     ]);
   });
 
+  it('prefers duration_us (as milliseconds) over duration_ms', () => {
+    const payload: DecisionPayload = {
+      decision: 'allow',
+      filter: { verdict: 'safe', duration_ms: 0, duration_us: 400 },
+      classifier: { label: 'safe', duration_ms: 1, duration_us: 1_309_387 },
+      latency_ms: 1310,
+    };
+
+    expect(derivePipelineStages(payload).map((s) => s.durationMs)).toEqual([
+      0.4, 1309.387,
+    ]);
+  });
+
+  it('falls back to duration_ms only when duration_us is absent', () => {
+    const payload: DecisionPayload = {
+      decision: 'allow',
+      filter: { verdict: 'safe', duration_ms: 3 },
+      classifier: { label: 'safe', duration_ms: 9, duration_us: 0 },
+      latency_ms: 12,
+    };
+    const [filter, classifier] = derivePipelineStages(payload);
+
+    expect(filter.durationMs).toBe(3);
+    expect(classifier).not.toHaveProperty('durationMs');
+  });
+
   it('leaves durationMs unset when absent, zero, negative, or not a finite number', () => {
     const payload = {
       decision: 'allow',

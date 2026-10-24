@@ -95,9 +95,14 @@ export interface FilterDecision {
    */
   pack_version?: string;
   /**
-   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   * @deprecated
+   * Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed.
    */
   duration_ms?: number;
+  /**
+   * Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run.
+   */
+  duration_us?: number;
 }
 /**
  * One compliance control a stage verdict enforces. Open set by design - new frameworks or control IDs are added without a schema change.
@@ -142,9 +147,18 @@ export interface ClassifierDecision {
    */
   controls?: ControlRef[];
   /**
-   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   * Number of token windows the classifier inspected, copied from ClassifyResponse.windows. Input longer than the model window is scanned as overlapping windows. Additive - absent when the engine did not report a count.
+   */
+  windows?: number;
+  /**
+   * @deprecated
+   * Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed.
    */
   duration_ms?: number;
+  /**
+   * Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run.
+   */
+  duration_us?: number;
 }
 /**
  * Present only when classifier_score < PACT_CONSENSUS_THRESHOLD (stage 2.5 ran).
@@ -170,7 +184,7 @@ export interface ConsensusDecision {
    */
   mode?: "shadow";
   /**
-   * Machine-readable cause of skipped=true: consensus_timeout, consensus_error (shadow-mode vote failures), or shadow_saturated (completion pool full). Open set by design, and not populated on the pre-existing inline-mode transport-error fail-open (skipped=true with no reason) to keep that path's wire output unchanged.
+   * Machine-readable cause of skipped=true: consensus_timeout, consensus_error (shadow-mode vote failures), consensus_saturated (pact-consensus shed the vote with RESOURCE_EXHAUSTED), or shadow_saturated (shadow-mode completion pool full). Open set by design, and not populated on the pre-existing inline-mode transport-error fail-open (skipped=true with no reason) to keep that path's wire output unchanged.
    */
   skipped_reason?: string;
   /**
@@ -178,9 +192,14 @@ export interface ConsensusDecision {
    */
   controls?: ControlRef[];
   /**
-   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   * @deprecated
+   * Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed.
    */
   duration_ms?: number;
+  /**
+   * Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run.
+   */
+  duration_us?: number;
 }
 export interface ModelVote {
   backend_id: string;
@@ -211,13 +230,26 @@ export interface ComplianceDecision {
    */
   model_version?: string;
   /**
-   * True on a transport-error or timeout fail-open: the CheckCompliance RPC failed or did not return in time, so the request proceeded with no compliance verdict recorded.
+   * True on a transport-error, timeout or load-shed fail-open: the CheckCompliance RPC failed, did not return in time or was refused by the saturated classifier, so the request proceeded with no compliance verdict recorded. skipped_reason names the cause when it is known.
    */
   skipped?: boolean;
   /**
-   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   * Machine-readable cause of skipped=true: classifier_saturated (pact-classifier shed the call with RESOURCE_EXHAUSTED) and oversize_tokens (the pair exceeded the model input budget; pact-classifier rejected it with INVALID_ARGUMENT and an ErrorInfo reason of oversize or oversize_tokens). Open set by design, and not populated on the transport-error or timeout fail-open (skipped=true with no reason) or on events produced before the field existed.
+   */
+  skipped_reason?: string;
+  /**
+   * Number of token windows the classifier inspected, copied from CheckComplianceResponse.windows. Input longer than the model window is scanned as overlapping windows. Additive - absent when the engine did not report a count.
+   */
+  windows?: number;
+  /**
+   * @deprecated
+   * Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed.
    */
   duration_ms?: number;
+  /**
+   * Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run.
+   */
+  duration_us?: number;
 }
 export interface RedactorDecision {
   /**
@@ -230,9 +262,14 @@ export interface RedactorDecision {
    */
   controls?: ControlRef[];
   /**
-   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   * @deprecated
+   * Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed.
    */
   duration_ms?: number;
+  /**
+   * Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run.
+   */
+  duration_us?: number;
 }
 export interface RedactedSpan {
   start: number;
@@ -268,9 +305,14 @@ export interface PolicyDecision {
    */
   controls?: ControlRef[];
   /**
-   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   * @deprecated
+   * Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed.
    */
   duration_ms?: number;
+  /**
+   * Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run.
+   */
+  duration_us?: number;
 }
 /**
  * Present when spotlight_chunks were wrapped, or when stripping was detected in an output check.
@@ -303,9 +345,14 @@ export interface ExternalRefDecision {
    */
   controls?: ControlRef[];
   /**
-   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   * @deprecated
+   * Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed.
    */
   duration_ms?: number;
+  /**
+   * Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run.
+   */
+  duration_us?: number;
 }
 export interface ExternalRefVerdict {
   /**
@@ -357,9 +404,14 @@ export interface CelDecision {
    */
   skipped_reason?: "cel_stage_timeout" | "cel_rule_timeout" | "cel_rule_error";
   /**
-   * Wall-clock milliseconds the gateway spent in this stage for this request. Additive - absent on events produced before the field existed.
+   * @deprecated
+   * Deprecated in favour of duration_us. Wall-clock milliseconds the gateway spent in this stage for this request; truncates sub-millisecond stages to 0. Will be removed no earlier than the next minor after consumers move. Additive - absent on events produced before the field existed.
    */
   duration_ms?: number;
+  /**
+   * Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run.
+   */
+  duration_us?: number;
 }
 /**
  * Causal-replay diagnostics. Present only on block decisions when the gateway's M12 causal replay ran (PACT_DIAGNOSTICS_ENABLED) and span capture is enabled.

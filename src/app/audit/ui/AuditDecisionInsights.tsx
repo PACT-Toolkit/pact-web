@@ -8,6 +8,7 @@ import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
 import { DecisionControlBadges } from '@/src/framework/decisions/control_badges';
 import { collectDecisionControls } from '@/src/framework/decisions/control_frameworks';
 import { PIPELINE_STAGE_LABEL } from '@/src/framework/decisions/pipeline_stage';
+import { formatDurationMs } from '@/src/framework/format/format_duration_ms';
 import { formatPercent } from '@/src/framework/format/format_percent';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import { isStageAttributed } from '@/src/lib/decisions/decision_stage_attribution';
@@ -69,7 +70,7 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => {
           <span className="text-muted-foreground">Layer timings</span>
           {layerTimings.map(({ id, durationMs }) => (
             <code key={id} className="rounded bg-muted px-1.5 py-0.5">
-              {PIPELINE_STAGE_LABEL[id]} {Math.round(durationMs)} ms
+              {PIPELINE_STAGE_LABEL[id]} {formatDurationMs(durationMs)}
             </code>
           ))}
         </div>

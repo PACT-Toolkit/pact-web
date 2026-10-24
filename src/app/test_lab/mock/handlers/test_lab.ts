@@ -316,7 +316,10 @@ export const handlers: RequestHandler[] = [
         ? { duration_ms: 30 + Math.random() * 60 }
         : undefined,
       redactor: redactorResult
-        ? { ...redactorResult, duration_ms: 2 + Math.random() * 3 }
+        ? // Sub-millisecond, fractional: the /v1/check response carries a
+          // fractional `duration_ms` (no `duration_us`; that field is on the
+          // stored decision event only).
+          { ...redactorResult, duration_ms: 0.2 + Math.random() * 0.6 }
         : undefined,
       external_refs: externalRefsResult,
       spotlight: spotlightResult,

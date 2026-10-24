@@ -512,12 +512,12 @@ describe('AuditDecisionRow expanded detail - controls, stages and rule pack', ()
     expect(screen.queryByTestId('audit-decision-pack')).not.toBeInTheDocument();
   });
 
-  it('shows layer timings on an ALLOW row, in pipeline order, with rounded ms', () => {
+  it('shows layer timings on an ALLOW row, in pipeline order, with one decimal below 10 ms and whole ms above', () => {
     renderRow({
       decision: 'allow',
-      filter: { verdict: 'safe', duration_ms: 2.4 },
+      filter: { verdict: 'safe', duration_ms: 0, duration_us: 400 },
       classifier: { label: 'benign', duration_ms: 41.6 },
-      redactor: { verdict: 'pass_through', duration_ms: 1 },
+      redactor: { verdict: 'pass_through', duration_ms: 6.1 },
       latency_ms: 50,
     });
     fireEvent.click(screen.getByTestId('audit-row-toggle'));
@@ -526,7 +526,7 @@ describe('AuditDecisionRow expanded detail - controls, stages and rule pack', ()
     expect(timings).toHaveTextContent('Layer timings');
     expect(
       [...timings.querySelectorAll('code')].map((c) => c.textContent)
-    ).toEqual(['Filter 2 ms', 'Classifier 42 ms', 'Redactor 1 ms']);
+    ).toEqual(['Filter 0.4 ms', 'Classifier 42 ms', 'Redactor 6.1 ms']);
     expect(
       screen.queryByTestId('stage-duration-filter')
     ).not.toBeInTheDocument();
@@ -550,7 +550,7 @@ describe('AuditDecisionRow expanded detail - controls, stages and rule pack', ()
     renderRow(FULL);
 
     expect(screen.getByTestId('stage-duration-filter')).toHaveTextContent(
-      '3 ms'
+      '3.0 ms'
     );
   });
 });

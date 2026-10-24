@@ -6,6 +6,7 @@ import {
   type CheckResponse,
   CheckResponseParseError,
   deriveLayerDefinitions,
+  isClassifierUnknownReason,
   parseCheckResponse,
   resultCausalSpans,
   type TestLabRunRecord,
@@ -454,16 +455,35 @@ describe('applyLiveLayers - consensus/redactor/sandbox layer states', () => {
     expect(out.sandbox.refsMitigated).toBe(1);
   });
 
-  it('consensus skip reason distinguishes classifier_unknown from an ordinary above-threshold/unconfigured skip', () => {
-    const out = byId(
-      applyLiveLayers(
-        startingLayers(),
-        baseResponse({ reason: 'classifier_unknown' }),
-        []
-      )
-    );
-    expect(out.consensus.decision).toBe('skip');
-    expect(out.consensus.reason).toMatch(/classifier declined to score/i);
+  describe.each(['classifier_unknown_label', 'classifier_unknown'])(
+    'reason %s',
+    (reason) => {
+      it('is recognised by the predicate', () => {
+        expect(isClassifierUnknownReason(reason)).toBe(true);
+      });
+
+      it('reads as a fail-open classifier layer', () => {
+        const out = byId(
+          applyLiveLayers(startingLayers(), baseResponse({ reason }), [])
+        );
+        expect(out.classifier.reason).toBe(
+          'Classifier declined to score - fail open'
+        );
+      });
+
+      it('marks the consensus skip as caused by the classifier declining', () => {
+        const out = byId(
+          applyLiveLayers(startingLayers(), baseResponse({ reason }), [])
+        );
+        expect(out.consensus.decision).toBe('skip');
+        expect(out.consensus.reason).toMatch(/classifier declined to score/i);
+      });
+    }
+  );
+
+  it('does not treat other reasons or an absent reason as classifier-unknown', () => {
+    expect(isClassifierUnknownReason('classifier_unreachable')).toBe(false);
+    expect(isClassifierUnknownReason(undefined)).toBe(false);
   });
 
   it('redactor.verdict=redacted surfaces span count and labels; never reads as a block', () => {
@@ -500,7 +520,7 @@ describe('applyLiveLayers - consensus/redactor/sandbox layer states', () => {
     expect(out.redactor.reason).toMatch(/fail open/i);
   });
 
-  it('duration_ms fields round to whole milliseconds for display', () => {
+  it('duration_ms fields keep their fractional milliseconds', () => {
     const out = byId(
       applyLiveLayers(
         startingLayers(),
@@ -511,8 +531,23 @@ describe('applyLiveLayers - consensus/redactor/sandbox layer states', () => {
         []
       )
     );
-    expect(out.filter.latencyMs).toBe(3);
-    expect(out.classifier.latencyMs).toBe(15);
+    expect(out.filter.latencyMs).toBe(3.482);
+    expect(out.classifier.latencyMs).toBe(14.9);
+  });
+
+  it('keeps a sub-millisecond stage and omits a zero duration', () => {
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          classifier: { label: 'benign', score: 0.9, duration_ms: 0 },
+          redactor: { verdict: 'pass_through', duration_ms: 0.4 },
+        }),
+        []
+      )
+    );
+    expect(out.redactor.latencyMs).toBe(0.4);
+    expect(out.classifier.latencyMs).toBeUndefined();
   });
 
   it('diagnostics.causal_spans attaches to the stage that blocked, not to any other stage', () => {

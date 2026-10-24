@@ -2,6 +2,10 @@ import {
   PIPELINE_STAGE_ORDER,
   type PipelineStageId,
 } from '@/src/framework/decisions/pipeline_stage';
+import {
+  stageDurationMs,
+  type StageTiming,
+} from '@/src/framework/decisions/stage_duration';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // Whether each pipeline stage's sub-object is present on this payload --
@@ -23,24 +27,18 @@ const STAGE_PRESENT: Record<
   redactor: (payload) => payload.redactor !== undefined,
 };
 
-// Wall-clock milliseconds the gateway spent in each visualised stage, read
-// from the stage sub-object's `duration_ms`. Only a finite number above zero
-// counts: absent (older events) and zero both mean "no timing to show".
-const STAGE_DURATION_MS: Record<
+// Wall-clock milliseconds the gateway spent in each visualised stage; the
+// duration_us-over-duration_ms precedence lives in stageDurationMs.
+const STAGE_TIMING: Record<
   PipelineStageId,
-  (payload: DecisionPayload) => number | undefined
+  (payload: DecisionPayload) => StageTiming | undefined
 > = {
-  filter: (payload) => payload.filter?.duration_ms,
-  classifier: (payload) => payload.classifier?.duration_ms,
-  sandbox: (payload) => payload.external_refs?.duration_ms,
-  consensus: (payload) => payload.consensus?.duration_ms,
-  redactor: (payload) => payload.redactor?.duration_ms,
+  filter: (payload) => payload.filter,
+  classifier: (payload) => payload.classifier,
+  sandbox: (payload) => payload.external_refs,
+  consensus: (payload) => payload.consensus,
+  redactor: (payload) => payload.redactor,
 };
-
-const usableDuration = (value: unknown): number | undefined =>
-  typeof value === 'number' && Number.isFinite(value) && value > 0
-    ? value
-    : undefined;
 
 // Derives the audit stage strip's entries from a decisions payload: every
 // visualised stage with a present sub-object, in pipeline order, the one
@@ -58,7 +56,7 @@ export const derivePipelineStages = (
   payload: DecisionPayload
 ): { id: PipelineStageId; blocked: boolean; durationMs?: number }[] =>
   PIPELINE_STAGE_ORDER.filter((id) => STAGE_PRESENT[id](payload)).map((id) => {
-    const durationMs = usableDuration(STAGE_DURATION_MS[id](payload));
+    const durationMs = stageDurationMs(STAGE_TIMING[id](payload));
 
     return {
       id,

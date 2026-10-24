@@ -1,6 +1,7 @@
 import { type LayerState } from '@/src/app/test_lab/ui/types';
 import { Button } from '@/src/components/ui/button';
 import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
+import { formatDurationMs } from '@/src/framework/format/format_duration_ms';
 import { formatPercent } from '@/src/framework/format/format_percent';
 
 export const TestLabLayerDetail = ({
@@ -47,7 +48,9 @@ export const TestLabLayerDetail = ({
       {layer.latencyMs !== undefined && (
         <div className="flex items-center gap-1.5">
           <span className="text-xs text-muted-foreground">Latency</span>
-          <span className="text-xs font-medium">{layer.latencyMs}ms</span>
+          <span className="text-xs font-medium">
+            {formatDurationMs(layer.latencyMs)}
+          </span>
         </div>
       )}
       {layer.redactedSpanCount !== undefined && layer.redactedSpanCount > 0 && (
