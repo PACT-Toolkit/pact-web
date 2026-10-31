@@ -103,7 +103,7 @@
     "orval": "8.28.1",
     "otpauth": "9.5.1",
     "pg": "8.20.0",
-    "prettier": "3.9.6",
+    "prettier": "3.9.10",
     "swagger2openapi": "7.0.8",
     "tailwindcss": "4.2.4",
     "typescript": "6.0.3",
