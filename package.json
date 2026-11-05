@@ -74,7 +74,7 @@
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
     "@bufbuild/buf": "1.72.0",
-    "@bufbuild/protoc-gen-es": "2.12.1",
+    "@bufbuild/protoc-gen-es": "2.17.0",
     "@faker-js/faker": "10.6.0",
     "@playwright/test": "1.60.0",
     "@svgr/webpack": "8.1.0",
