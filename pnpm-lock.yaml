@@ -38,8 +38,8 @@ importers:
         specifier: 5.2.2
         version: 5.2.2(react-hook-form@7.75.0(react@19.2.8))
       '@paper-design/shaders-react':
-        specifier: ^0.0.80
-        version: 0.0.80(@types/react@19.2.15)(react@19.2.8)
+        specifier: ^0.0.82
+        version: 0.0.82(@types/react@19.2.15)(react@19.2.8)
       '@vercel/analytics':
         specifier: 2.0.1
         version: 2.0.1(next@16.4.3(@babel/core@7.29.7)(@playwright/test@1.60.0)(@types/node@24.12.4)(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react@19.2.8)
@@ -2110,8 +2110,8 @@ packages:
   '@package-json/types@0.0.12':
     resolution: {integrity: sha512-uu43FGU34B5VM9mCNjXCwLaGHYjXdNincqKLaraaCW+7S2+SmiBg1Nv8bPnmschrIfZmfKNY9f3fC376MRrObw==}
 
-  '@paper-design/shaders-react@0.0.80':
-    resolution: {integrity: sha512-Y1oxUeh5D2AECo05O+4UYRbaMfQzKKYH3Q5jcvirOcoX0hTPYbezCLn5g94nvcuzxy5LN/uqwsL3jDUp8r3E+A==}
+  '@paper-design/shaders-react@0.0.82':
+    resolution: {integrity: sha512-DSPvsCgqagN23sYJP4vB9UpKj0IM6Aq9DOulI8c6ByHdDD6mIKRCNN6tqHK1FDdzCEQNz0dstlRtcdImAWcqqQ==}
     peerDependencies:
       '@types/react': ^18 || ^19
       react: ^18 || ^19
@@ -2119,8 +2119,8 @@ packages:
       '@types/react':
         optional: true
 
-  '@paper-design/shaders@0.0.80':
-    resolution: {integrity: sha512-pcabvt5xDlFoEhpjUj4b1tGJMfqb0i5mXifWMNQf6z7FoOJYxYDo7F8R6k0JAh5D/7ouxjX5+N0cIq5WURyQ1Q==}
+  '@paper-design/shaders@0.0.82':
+    resolution: {integrity: sha512-eCxYQrrCxRVc4KG8sLSQecsq8Ymstbaq/FqZjq/fhOa6UiR1ZZfdMO5IJpHmwL0GYmfzvZVQ4l8ZOLux0uLVdg==}
 
   '@playwright/test@1.60.0':
     resolution: {integrity: sha512-O71yZIbAh/PxDMNGns37GHBIfrVkEVyn+AXyIa5dOTfb4/xNvRWV+Vv/NMbNCtODB/pO7vLlF2OTmMVLhmr7Ag==}
@@ -8951,14 +8951,14 @@ snapshots:
 
   '@package-json/types@0.0.12': {}
 
-  '@paper-design/shaders-react@0.0.80(@types/react@19.2.15)(react@19.2.8)':
+  '@paper-design/shaders-react@0.0.82(@types/react@19.2.15)(react@19.2.8)':
     dependencies:
-      '@paper-design/shaders': 0.0.80
+      '@paper-design/shaders': 0.0.82
       react: 19.2.8
     optionalDependencies:
       '@types/react': 19.2.15
 
-  '@paper-design/shaders@0.0.80': {}
+  '@paper-design/shaders@0.0.82': {}
 
   '@playwright/test@1.60.0':
     dependencies:
