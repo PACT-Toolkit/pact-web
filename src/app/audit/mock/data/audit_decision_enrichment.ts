@@ -127,6 +127,12 @@ const withStageFields = <
 };
 
 const executedStages = (payload: DecisionPayload): StageName[] | undefined => {
+  // A canceled request or a pre-pipeline rejection stopped before (or without)
+  // a verdict: the gateway stamps no executed-stage list for it.
+  if (payload.decision === 'canceled' || payload.rejection !== undefined) {
+    return undefined;
+  }
+
   const engineStage =
     payload.engine === undefined ? undefined : ENGINE_STAGE[payload.engine];
   if (payload.decision === 'block' && engineStage === undefined) {

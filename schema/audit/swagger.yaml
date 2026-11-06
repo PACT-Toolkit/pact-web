@@ -221,6 +221,8 @@ definitions:
         type: object
     audit.QueryDecisionStatsResponse:
         properties:
+            canceled:
+                type: integer
             classifier:
                 $ref: '#/definitions/audit.DecisionStatsClassifier'
             filter:
@@ -456,6 +458,14 @@ paths:
                   in: query
                   name: controlId
                   type: string
+                - description: Decision outcome filter; absent means any outcome
+                  enum:
+                    - allow
+                    - block
+                    - canceled
+                  in: query
+                  name: decision
+                  type: string
                 - description: Inclusive lower bound on createdAt (unix seconds UTC)
                   in: query
                   name: sinceUnix
@@ -480,7 +490,7 @@ paths:
                     schema:
                         $ref: '#/definitions/audit.QueryAuditResponse'
                 "400":
-                    description: invalid query parameter, or only one of controlFramework/controlId set
+                    description: invalid query parameter, unknown decision, or only one of controlFramework/controlId set
                     schema:
                         type: string
                 "401":

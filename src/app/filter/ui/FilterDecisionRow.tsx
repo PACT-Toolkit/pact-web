@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { parsePayload } from '@/src/app/filter/domain/filter_decision';
 import { type FlagToggleFailureAction } from '@/src/app/filter/ui/types';
+import { DecisionBadge } from '@/src/framework/decisions/decision_badge';
 import { formatTimestamp } from '@/src/lib/format_timestamp';
 
 export const FilterDecisionRow = ({
@@ -32,15 +33,13 @@ export const FilterDecisionRow = ({
     <div className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span
-            className={`rounded px-1.5 py-0.5 font-mono text-xs font-medium ${
-              isBlock
-                ? 'bg-destructive/10 text-destructive'
-                : 'bg-green-500/10 text-green-600 dark:text-green-400'
-            }`}
-          >
-            {payload?.decision ?? '-'}
-          </span>
+          {payload?.decision ? (
+            <DecisionBadge decision={payload.decision} />
+          ) : (
+            <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs font-medium text-muted-foreground">
+              -
+            </span>
+          )}
           {(payload?.filter?.rule_id ?? payload?.reason) && (
             <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
               {payload?.filter?.rule_id ?? payload?.reason}

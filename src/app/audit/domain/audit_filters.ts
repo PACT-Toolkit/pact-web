@@ -1,6 +1,10 @@
-import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
+import {
+  type AuditAuditEventResponse,
+  GetAuditEventsDecision,
+} from '@/src/__codegen__/rest/audit';
 import { type AuditEventVariant } from '@/src/app/audit/domain/audit_event_variant';
 import { collectDecisionControls } from '@/src/framework/decisions/control_frameworks';
+import { decisionLabel } from '@/src/framework/decisions/decision_outcome';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // Actor/user filtering has no server-side query param -- pact-gateway's
@@ -89,3 +93,27 @@ export const matchesControlFilter = (
   collectDecisionControls(payload).some(
     (control) => control.framework === framework && control.id === id
   );
+
+// Options for the decision-outcome filter, derived from the generated query
+// param enum so a value the gateway adds shows up here without a hand-kept
+// list. The empty value is "any outcome" (param omitted).
+export const DECISION_FILTER_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: 'Any decision' },
+  ...Object.values(GetAuditEventsDecision).map((value) => ({
+    value,
+    label: decisionLabel(value),
+  })),
+];
+
+const isDecisionFilterValue = (
+  value: string
+): value is GetAuditEventsDecision =>
+  Object.values<string>(GetAuditEventsDecision).includes(value);
+
+// The `decision` query param for the selected outcome. Returns undefined for
+// "any" or an unrecognised value (the gateway 400s on anything but a known
+// outcome), so callers can spread the result into the params object.
+export const decisionFilterParams = (
+  value: string
+): { decision: GetAuditEventsDecision } | undefined =>
+  isDecisionFilterValue(value) ? { decision: value } : undefined;

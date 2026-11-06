@@ -10,6 +10,7 @@ import type { AuditDecisionStatsFilter } from './auditDecisionStatsFilter';
 import type { AuditDecisionStatsRedactor } from './auditDecisionStatsRedactor';
 
 export interface AuditQueryDecisionStatsResponse {
+  canceled?: number;
   classifier?: AuditDecisionStatsClassifier;
   filter?: AuditDecisionStatsFilter;
   latest_at_unix?: number;

@@ -65,11 +65,14 @@ export const FilterDecisionsWorkbench = () => {
 
   const {
     total,
+    canceled,
     filter: filterStats,
     error: statsError,
     forbidden: statsForbidden,
   } = useFilterDecisionStats();
-  const allowed = total - filterStats.blocked;
+  // Canceled decisions got no verdict, so they are neither allowed nor
+  // blocked: subtract them or they would inflate the allowed figure.
+  const allowed = total - filterStats.blocked - canceled;
   const maxRuleCount = filterStats.top_rules[0]?.count ?? 1;
 
   const pagination = useLocalPagination(allEvents, PAGE_SIZE);
@@ -211,7 +214,7 @@ export const FilterDecisionsWorkbench = () => {
             </p>
           )}
 
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
             <FilterStatCard label="Total decisions" value={total} />
             <FilterStatCard
               label="Blocked"
@@ -219,6 +222,7 @@ export const FilterDecisionsWorkbench = () => {
               valueClass="text-destructive"
             />
             <FilterStatCard label="Allowed" value={allowed} />
+            <FilterStatCard label="Canceled" value={canceled} />
             <FilterStatCard
               label="Block rate"
               value={formatPercentValue(filterStats.block_rate, {

@@ -171,3 +171,9 @@ describe('BENIGN_CLASSIFIER_LABELS', () => {
     ).toBe('flagged');
   });
 });
+
+describe('decisionSeverity - canceled', () => {
+  it('buckets a canceled decision on its own, never as clean or blocked', () => {
+    expect(decisionSeverity({ decision: 'canceled' })).toBe('canceled');
+  });
+});

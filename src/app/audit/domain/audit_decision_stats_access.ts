@@ -82,6 +82,9 @@ export interface DecisionStatsRedactor {
 
 export interface DecisionStatsSummary {
   total: number;
+  // Decisions the caller abandoned before a verdict: counted in total, but
+  // neither allowed nor blocked.
+  canceled: number;
   latest_at_unix: number;
   filter: DecisionStatsFilter;
   classifier: DecisionStatsClassifier;
@@ -98,6 +101,7 @@ const normalizeLabelCounts = (
 
 export const EMPTY_DECISION_STATS: DecisionStatsSummary = {
   total: 0,
+  canceled: 0,
   latest_at_unix: 0,
   filter: {
     flagged: 0,
@@ -138,6 +142,7 @@ export const normalizeDecisionStats = (
 
   return {
     total: response.total ?? 0,
+    canceled: response.canceled ?? 0,
     latest_at_unix: response.latest_at_unix ?? 0,
     filter: {
       flagged: response.filter?.flagged ?? 0,

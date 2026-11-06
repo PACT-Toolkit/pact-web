@@ -57,7 +57,7 @@ export const AUDIT_TOPIC_REGISTRY = {
   },
   'pact.decisions': {
     kind: 'decisions',
-    label: 'pact.decisions (allow / block calls)',
+    label: 'pact.decisions (allow / block / canceled calls)',
     decode: parseDecisionPayload,
   },
 } as const;

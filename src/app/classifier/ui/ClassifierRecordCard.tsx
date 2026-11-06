@@ -1,6 +1,7 @@
 import { BrainCircuit, SplitSquareHorizontal } from 'lucide-react';
 
 import { type ClassifierRecord } from '@/src/app/classifier/domain/classifier_record';
+import { DecisionBadge } from '@/src/framework/decisions/decision_badge';
 import { formatPercent } from '@/src/framework/format/format_percent';
 import { formatTimestamp } from '@/src/lib/format_timestamp';
 
@@ -24,7 +25,6 @@ export const ClassifierRecordCard = ({
 }) => {
   const { classifier } = record;
   const flagged = isFlaggedLabel(classifier.label);
-  const isBlock = record.decision === 'block';
 
   return (
     <div
@@ -53,17 +53,7 @@ export const ClassifierRecordCard = ({
               {classifier.engine}
             </span>
           )}
-          {record.decision && (
-            <span
-              className={`rounded px-1.5 py-0.5 font-mono text-xs font-medium ${
-                isBlock
-                  ? 'bg-destructive/10 text-destructive'
-                  : 'bg-green-500/10 text-green-600 dark:text-green-400'
-              }`}
-            >
-              {record.decision}
-            </span>
-          )}
+          {record.decision && <DecisionBadge decision={record.decision} />}
           {record.consensusArbitrated && (
             <span
               className="flex items-center gap-1 rounded bg-purple-500/10 px-1.5 py-0.5 text-xs font-semibold text-purple-700 dark:text-purple-300"

@@ -5,6 +5,7 @@ import { derivePipelineStages } from '@/src/app/audit/domain/audit_decision_stag
 import { prettyPayload } from '@/src/app/audit/domain/audit_event_variant';
 import { AuditDecisionInsights } from '@/src/app/audit/ui/AuditDecisionInsights';
 import { AuditRowShell } from '@/src/app/audit/ui/AuditRowShell';
+import { DecisionBadge } from '@/src/framework/decisions/decision_badge';
 import { StageStrip } from '@/src/framework/decisions/stage_strip';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 import {
@@ -24,7 +25,7 @@ const trafficBadgeText = (payload: DecisionPayload): string => {
     : TRAFFIC_BUCKET_LABELS[bucket];
 };
 
-// Row renderer for pact.decisions -- the allow/block engine calls. Badges
+// Row renderer for pact.decisions -- the allow/block/canceled engine calls. Badges
 // surface the decision itself plus the reason and classifier label, since
 // those are what an operator scans for first; everything else lives in
 // AuditDecisionInsights behind the expand toggle. Declared synthetic traffic
@@ -51,15 +52,11 @@ export const AuditDecisionRow = ({
     badges={
       <>
         {payload.decision && (
-          <span
-            className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${
-              payload.decision === 'block'
-                ? 'bg-destructive/10 text-destructive'
-                : 'bg-green-500/10 text-green-600 dark:text-green-400'
-            }`}
-          >
-            {payload.decision.toUpperCase()}
-          </span>
+          <DecisionBadge
+            decision={payload.decision}
+            uppercase
+            className="font-semibold"
+          />
         )}
         {payload.decision === 'block' && payload.engine && (
           <>

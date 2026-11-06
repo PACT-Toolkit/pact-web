@@ -15,6 +15,7 @@ import {
 import { type ConsensusRecord } from '@/src/app/consensus/domain/consensus_record';
 import { ConsensusRawPayloadToggle } from '@/src/app/consensus/ui/ConsensusRawPayloadToggle';
 import { ConsensusVoteChip } from '@/src/app/consensus/ui/ConsensusVoteChip';
+import { ConsensusJudgeQuorum } from '@/src/framework/decisions/consensus_judge_quorum';
 import { formatPercent } from '@/src/framework/format/format_percent';
 import { formatTimestamp } from '@/src/lib/format_timestamp';
 
@@ -56,13 +57,7 @@ export const ConsensusRecordCard = ({
               {formatPercent(consensus.confidence)} confidence
             </span>
           )}
-          {typeof consensus.backend_count === 'number' &&
-            consensus.backend_count > 0 && (
-              <span className="text-xs text-muted-foreground">
-                {consensus.backend_count} backend
-                {consensus.backend_count === 1 ? '' : 's'}
-              </span>
-            )}
+          <ConsensusJudgeQuorum consensus={consensus} />
           {consensus.quorum_reached === true ? (
             <span
               className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-xs text-emerald-700 dark:text-emerald-300"

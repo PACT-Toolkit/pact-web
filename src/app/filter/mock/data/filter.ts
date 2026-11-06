@@ -89,6 +89,7 @@ export const computeDecisionStats = (
   const matched = eventsInUnixWindow(events, window);
 
   let blocked = 0;
+  let canceled = 0;
   const ruleCounts: Record<string, number> = {};
   let latestAtUnix = 0;
 
@@ -100,6 +101,8 @@ export const computeDecisionStats = (
 
     const payload = parseDecisionPayload(event.payloadJson ?? '');
     if (!payload) continue;
+
+    if (payload.decision === 'canceled') canceled++;
 
     if (payload.decision === 'block') {
       blocked++;
@@ -113,6 +116,7 @@ export const computeDecisionStats = (
 
   return {
     total,
+    canceled,
     latest_at_unix: latestAtUnix,
     filter: {
       // The mock payload has no nested filter.verdict; every blocked
@@ -527,6 +531,57 @@ export const createFilterMockData = (db: DB): void => {
       skipped: true,
     },
     latency_ms: 8,
+    created_at: '',
+  });
+
+  // Gateway-level outcomes that carry no pipeline verdict. Seeded here with
+  // the other shared-schema rows that have no console of their own.
+  //
+  // Canceled: the caller disconnected before the pipeline finished, so the
+  // outcome is neither allow nor block (reason client_canceled).
+  seed(2 * min + 30_000, {
+    request_id: 'req-canceled-01',
+    decision: 'canceled',
+    reason: 'client_canceled',
+    engine: 'gateway',
+    latency_ms: 1840,
+    created_at: '',
+  });
+  seed(7 * min + 30_000, {
+    request_id: 'req-canceled-02',
+    decision: 'canceled',
+    reason: 'client_canceled',
+    engine: 'gateway',
+    latency_ms: 2210,
+    created_at: '',
+  });
+  // Pre-pipeline rejections: the gateway refused the request before any stage
+  // ran, so the controls ride on `rejection` instead of a stage sub-object.
+  seed(1 * min + 30_000, {
+    request_id: 'req-rejected-auth',
+    decision: 'block',
+    reason: 'auth_rejected',
+    engine: 'gateway',
+    rejection: {
+      reason: 'auth_rejected',
+      controls: [{ framework: 'eu_ai_act_art15', id: 'cybersecurity' }],
+    },
+    latency_ms: 1,
+    created_at: '',
+  });
+  seed(9 * min + 30_000, {
+    request_id: 'req-rejected-rate',
+    decision: 'block',
+    reason: 'rate_limited',
+    engine: 'gateway',
+    rejection: {
+      reason: 'rate_limited',
+      controls: [
+        { framework: 'owasp_llm_top10', id: 'LLM10' },
+        { framework: 'eu_ai_act_art15', id: 'cybersecurity' },
+      ],
+    },
+    latency_ms: 1,
     created_at: '',
   });
 };

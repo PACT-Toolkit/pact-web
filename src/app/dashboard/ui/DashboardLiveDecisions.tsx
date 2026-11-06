@@ -39,6 +39,7 @@ const SEVERITY_FILTERS: { value: SeverityFilter; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'blocked', label: 'Blocked' },
   { value: 'flagged', label: 'Flagged' },
+  { value: 'canceled', label: 'Canceled' },
 ];
 
 export const DashboardLiveDecisions = ({
@@ -85,7 +86,13 @@ export const DashboardLiveDecisions = ({
   // Severity counts are scoped to the selected tab, so the chips always
   // describe the list under them rather than the whole window.
   const severityCounts = useMemo(() => {
-    const counts = { all: tabRecords.length, blocked: 0, flagged: 0, clean: 0 };
+    const counts = {
+      all: tabRecords.length,
+      blocked: 0,
+      canceled: 0,
+      flagged: 0,
+      clean: 0,
+    };
     for (const { dp } of tabRecords) counts[decisionSeverity(dp)]++;
 
     return counts;

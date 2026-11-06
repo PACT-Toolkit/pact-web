@@ -23,9 +23,9 @@ export interface PactDecisions {
   conversation_id?: string;
   content?: ContentRef;
   /**
-   * Closed set - pipeline.DecisionKind (internal/pipeline/types.go) only ever produces these two values.
+   * Closed set. allow and block are the pipeline's verdicts (pipeline.DecisionKind, internal/pipeline/types.go, only ever produces these two). canceled is produced by the gateway when the caller disconnected before the pipeline finished: no verdict was delivered to the caller, and the reason is client_canceled.
    */
-  decision: "allow" | "block";
+  decision: "allow" | "block" | "canceled";
   /**
    * Free-form diagnostic reason string (e.g. filter_hostile, classifier_tagged, external_ref_blocked). Open set by design - new reason codes are added without a schema change; engine attribution is derived from the reason prefix, not enumerated here.
    */
@@ -48,6 +48,7 @@ export interface PactDecisions {
   external_refs?: ExternalRefDecision;
   routing?: RoutingDecision;
   cel?: CelDecision;
+  rejection?: RejectionDecision;
   diagnostics?: DecisionDiagnostics;
   content_delivery?: ContentDelivery;
   latency_ms: number;
@@ -173,7 +174,18 @@ export interface ConsensusDecision {
    * No omitempty on the Go field - always present within an emitted consensus object, even when false.
    */
   quorum_reached: boolean;
+  /**
+   * Number of judges that answered this vote (the length of votes when votes is present).
+   */
   backend_count?: number;
+  /**
+   * Number of judges configured for this vote, whether or not each answered. Compare with backend_count: configured_count - backend_count judges did not answer. Additive - absent on events produced before the field existed.
+   */
+  configured_count?: number;
+  /**
+   * True when every configured judge answered (backend_count equals configured_count). Distinct from quorum_reached, which is true when a strict majority of backends agreed (consensus.v1 VoteResponse), so a vote can reach quorum while some configured judges did not answer. Additive - absent on events produced before the field existed.
+   */
+  full_quorum?: boolean;
   /**
    * True on a transport-error fail-open.
    */
@@ -234,7 +246,7 @@ export interface ComplianceDecision {
    */
   skipped?: boolean;
   /**
-   * Machine-readable cause of skipped=true: classifier_saturated (pact-classifier shed the call with RESOURCE_EXHAUSTED) and oversize_tokens (the pair exceeded the model input budget; pact-classifier rejected it with INVALID_ARGUMENT and an ErrorInfo reason of oversize or oversize_tokens). Open set by design, and not populated on the transport-error or timeout fail-open (skipped=true with no reason) or on events produced before the field existed.
+   * Machine-readable cause of skipped=true: classifier_saturated (pact-classifier shed the call with RESOURCE_EXHAUSTED), oversize_tokens (the pair exceeded the model input budget; pact-classifier rejected it with INVALID_ARGUMENT and an ErrorInfo reason of oversize or oversize_tokens), or shadow_saturated (shadow-mode completion pool full, the check never started). Open set by design, and not populated on the transport-error or timeout fail-open (skipped=true with no reason) or on events produced before the field existed.
    */
   skipped_reason?: string;
   /**
@@ -412,6 +424,19 @@ export interface CelDecision {
    * Wall-clock microseconds the gateway spent in this stage for this request. A producer stamps a value >= 1 for every stage that executed (a sub-microsecond run rounds up), so presence means measured. Additive - absent on events produced before the field existed and on stages that did not run.
    */
   duration_us?: number;
+}
+/**
+ * Present only on pre-pipeline rejection events (engine=gateway): a request refused by the gateway middleware before any pipeline stage ran, so no stage sub-object exists to carry controls.
+ */
+export interface RejectionDecision {
+  /**
+   * Machine-readable rejection cause, the same value as the event's top-level reason (e.g. auth_rejected, auth_unavailable, auth_timeout, rate_limited). Open set by design.
+   */
+  reason: string;
+  /**
+   * Compliance controls this rejection enforces, stamped by the gateway from its static per-stage control table (today eu_ai_act_art15/cybersecurity and owasp_llm_top10/LLM10). Additive - empty or absent when no mapping exists.
+   */
+  controls?: ControlRef[];
 }
 /**
  * Causal-replay diagnostics. Present only on block decisions when the gateway's M12 causal replay ran (PACT_DIAGNOSTICS_ENABLED) and span capture is enabled.
