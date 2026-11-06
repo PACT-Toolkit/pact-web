@@ -45,10 +45,8 @@ export const useFilterDecisionStats = () => {
   // useDashboardPipelineStats's pattern (dashboard_pipeline_stats.ts), the
   // other consumer of the same normalization helper.
   const total = data?.status === 200 ? (data.data.total ?? 0) : 0;
-  const filter = useMemo(
-    () =>
-      normalizeDecisionStats(data?.status === 200 ? data.data : undefined)
-        .filter,
+  const { canceled, filter } = useMemo(
+    () => normalizeDecisionStats(data?.status === 200 ? data.data : undefined),
     [data]
   );
 
@@ -70,6 +68,7 @@ export const useFilterDecisionStats = () => {
 
   return {
     total,
+    canceled,
     filter,
     error: Boolean(error) || failed,
     forbidden,

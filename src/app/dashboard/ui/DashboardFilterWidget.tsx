@@ -29,13 +29,14 @@ export const DashboardFilterWidget = ({
     emptyText="No filter decisions recorded yet."
   >
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <DashboardStatTile
           label="Blocked"
           value={stats.filter.blocked}
           valueClass={stats.filter.blocked > 0 ? 'text-destructive' : undefined}
         />
         <DashboardStatTile label="Flagged" value={stats.filter.flagged} />
+        <DashboardStatTile label="Canceled" value={stats.canceled} />
         <DashboardStatTile
           label="Block rate"
           value={formatPercentValue(stats.filter.block_rate, { digits: 1 })}

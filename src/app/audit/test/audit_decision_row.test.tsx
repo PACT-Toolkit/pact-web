@@ -554,3 +554,85 @@ describe('AuditDecisionRow expanded detail - controls, stages and rule pack', ()
     );
   });
 });
+
+describe('AuditDecisionRow canceled, rejection and quorum rows', () => {
+  const CANCELED: DecisionPayload = {
+    decision: 'canceled',
+    reason: 'client_canceled',
+    engine: 'gateway',
+    latency_ms: 1800,
+  };
+
+  it('renders a canceled decision as CANCELED, never ALLOW or BLOCK, with no blocked-by badge', () => {
+    renderRow(CANCELED);
+
+    expect(screen.getByText('CANCELED')).toHaveAttribute(
+      'data-decision',
+      'canceled'
+    );
+    expect(screen.queryByText('ALLOW')).not.toBeInTheDocument();
+    expect(screen.queryByText('BLOCK')).not.toBeInTheDocument();
+    expect(screen.queryByText(/blocked by/i)).not.toBeInTheDocument();
+  });
+
+  it('explains client_canceled in plain words in the expanded detail', () => {
+    renderRow(CANCELED);
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(screen.getByTestId('audit-decision-reason')).toHaveTextContent(
+      'Caller disconnected before a verdict'
+    );
+  });
+
+  it('shows the controls of a pre-pipeline rejection like any stage controls', () => {
+    renderRow({
+      decision: 'block',
+      reason: 'auth_rejected',
+      engine: 'gateway',
+      rejection: {
+        reason: 'auth_rejected',
+        controls: [{ framework: 'eu_ai_act_art15', id: 'cybersecurity' }],
+      },
+      latency_ms: 1,
+    });
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(screen.getByTestId('audit-decision-controls')).toHaveTextContent(
+      'AI Act Art. 15 cybersecurity'
+    );
+  });
+
+  it('renders the judge count and partial-quorum marker in the consensus detail', () => {
+    renderRow({
+      decision: 'block',
+      engine: 'consensus',
+      consensus: {
+        label: 'jailbreak',
+        quorum_reached: true,
+        backend_count: 2,
+        configured_count: 3,
+        full_quorum: false,
+      },
+      latency_ms: 300,
+    });
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(screen.getByText('2 of 3 judges')).toBeInTheDocument();
+    expect(screen.getByTestId('consensus-partial-quorum')).toBeInTheDocument();
+  });
+
+  it('falls back to the backend count when configured_count is absent', () => {
+    renderRow({
+      decision: 'allow',
+      engine: 'consensus',
+      consensus: { label: 'safe', quorum_reached: true, backend_count: 3 },
+      latency_ms: 300,
+    });
+    fireEvent.click(screen.getByTestId('audit-row-toggle'));
+
+    expect(screen.getByText('3 backends')).toBeInTheDocument();
+    expect(
+      screen.queryByTestId('consensus-partial-quorum')
+    ).not.toBeInTheDocument();
+  });
+});

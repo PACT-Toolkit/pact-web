@@ -9,7 +9,9 @@ import {
   decodeAuditEventVariant,
 } from '@/src/app/audit/domain/audit_event_variant';
 import {
+  DECISION_FILTER_OPTIONS,
   controlFilterParams,
+  decisionFilterParams,
   localDateTimeToUnixSeconds,
   matchesActorFilter,
 } from '@/src/app/audit/domain/audit_filters';
@@ -47,6 +49,7 @@ export const AuditWorkbench = () => {
   const [until, setUntil] = useState<string>('');
   const [controlFramework, setControlFramework] = useState<string>('');
   const [controlId, setControlId] = useState<string>('');
+  const [decision, setDecision] = useState<string>('');
   const [page, setPage] = useState(0);
 
   // The control filter only exists for pact.decisions (the only topic whose
@@ -58,6 +61,11 @@ export const AuditWorkbench = () => {
         ? controlFilterParams(controlFramework, controlId)
         : undefined,
     [showControlFilter, controlFramework, controlId]
+  );
+  // The outcome filter likewise only applies to pact.decisions rows.
+  const decisionParams = useMemo(
+    () => (showControlFilter ? decisionFilterParams(decision) : undefined),
+    [showControlFilter, decision]
   );
   const controlHalfSet =
     showControlFilter &&
@@ -82,9 +90,10 @@ export const AuditWorkbench = () => {
     const untilUnix = localDateTimeToUnixSeconds(until);
     if (untilUnix !== undefined) out.untilUnix = untilUnix;
     if (controlParams) Object.assign(out, controlParams);
+    if (decisionParams) Object.assign(out, decisionParams);
 
     return out;
-  }, [topic, requestId, since, until, page, controlParams]);
+  }, [topic, requestId, since, until, page, controlParams, decisionParams]);
 
   const { data, error, isLoading, isValidating, mutate } = useGetAuditEvents(
     params,
@@ -200,6 +209,23 @@ export const AuditWorkbench = () => {
             className="w-56"
             aria-label="Actor or user"
           />
+          {showControlFilter && (
+            <select
+              aria-label="Decision"
+              value={decision}
+              onChange={(event) =>
+                handleFilterChange(() => setDecision(event.target.value))
+              }
+              className="h-9 rounded-md border bg-background px-3 text-sm"
+              data-testid="audit-decision-select"
+            >
+              {DECISION_FILTER_OPTIONS.map((opt) => (
+                <option key={opt.value || '__any__'} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          )}
           {showControlFilter && (
             <div className="relative">
               <div className="flex items-center gap-2">

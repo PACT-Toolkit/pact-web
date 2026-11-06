@@ -9,7 +9,10 @@ import {
   type AuditListDecisionAnnotationsResponse,
   type AuditRemoveDecisionAnnotationResponse,
 } from '@/src/__codegen__/rest/audit';
-import { matchesControlFilter } from '@/src/app/audit/domain/audit_filters';
+import {
+  decisionFilterParams,
+  matchesControlFilter,
+} from '@/src/app/audit/domain/audit_filters';
 import {
   persistDecisionAnnotationRequestId,
   removeDecisionAnnotationRequestId,
@@ -63,6 +66,15 @@ export const handlers: RequestHandler[] = [
       );
     }
 
+    // Mirrors the gateway: only allow, block and canceled are valid outcomes.
+    const decision = url.searchParams.get('decision');
+    if (decision !== null && !decisionFilterParams(decision)) {
+      return HttpResponse.json(
+        'decision must be one of allow, block, canceled',
+        { status: 400 }
+      );
+    }
+
     const pools: Record<string, AuditAuditEventResponse[]> = {
       'pact.auth': db.auditAuthEvents.getAll(),
       'pact.account': db.auditAccountEvents.getAll(),
@@ -75,6 +87,11 @@ export const handlers: RequestHandler[] = [
 
     const all = pool
       .filter((event) => !requestId || event.requestId === requestId)
+      .filter(
+        (event) =>
+          !decision ||
+          parseDecisionPayload(event.payloadJson ?? '')?.decision === decision
+      )
       .filter((event) => {
         if (!controlFramework || !controlId) return true;
         const payload = parseDecisionPayload(event.payloadJson ?? '');

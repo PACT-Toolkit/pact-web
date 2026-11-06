@@ -24,6 +24,8 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
       confidence: 0.93,
       quorum_reached: true,
       backend_count: 3,
+      configured_count: 3,
+      full_quorum: true,
       votes: [
         { backend_id: 'claude-haiku', label: 'jailbreak', score: 0.95 },
         { backend_id: 'gpt-4o-mini', label: 'jailbreak', score: 0.91 },
@@ -53,6 +55,8 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
       confidence: 0.61,
       quorum_reached: true,
       backend_count: 3,
+      configured_count: 3,
+      full_quorum: true,
       votes: [
         { backend_id: 'claude-haiku', label: 'jailbreak', score: 0.7 },
         { backend_id: 'gpt-4o-mini', label: 'suspicious', score: 0.55 },
@@ -79,6 +83,8 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
       confidence: 0.48,
       quorum_reached: false,
       backend_count: 2,
+      configured_count: 3,
+      full_quorum: false,
       votes: [
         { backend_id: 'claude-haiku', label: 'suspicious', score: 0.5 },
         { backend_id: 'gpt-4o-mini', label: 'safe', score: 0.4 },
@@ -124,6 +130,8 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
       confidence: 0.42,
       quorum_reached: true,
       backend_count: 3,
+      configured_count: 3,
+      full_quorum: true,
       votes: [
         { backend_id: 'claude-haiku', label: 'jailbreak', score: 0.45 },
         { backend_id: 'gpt-4o-mini', label: 'jailbreak', score: 0.4 },
@@ -151,6 +159,8 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
       confidence: 0.97,
       quorum_reached: true,
       backend_count: 3,
+      configured_count: 3,
+      full_quorum: true,
       votes: [
         { backend_id: 'claude-haiku', label: 'safe', score: 0.98 },
         { backend_id: 'gpt-4o-mini', label: 'safe', score: 0.96 },
@@ -158,6 +168,31 @@ const SCENARIOS: ((index: number) => DecisionPayload)[] = [
       ],
     },
     latency_ms: 300 + index,
+  }),
+  // Partial quorum: one of three configured judges did not answer, but the
+  // two that did still agreed. Quorum is reached, full_quorum is not.
+  (index) => ({
+    decision: 'block',
+    reason: 'consensus_jailbreak',
+    engine: 'consensus',
+    classifier: {
+      label: 'jailbreak',
+      score: 0.57,
+      engine: 'deberta-v3-pact-injection-v1',
+    },
+    consensus: {
+      label: 'jailbreak',
+      confidence: 0.88,
+      quorum_reached: true,
+      backend_count: 2,
+      configured_count: 3,
+      full_quorum: false,
+      votes: [
+        { backend_id: 'claude-haiku', label: 'jailbreak', score: 0.9 },
+        { backend_id: 'gemini-flash', label: 'jailbreak', score: 0.86 },
+      ],
+    },
+    latency_ms: 360 + index,
   }),
 ];
 

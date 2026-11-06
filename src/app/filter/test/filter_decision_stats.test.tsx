@@ -88,3 +88,22 @@ describe('useFilterDecisionStats - non-403 failure surfacing', () => {
     expect(result.current.filter.blocked).toBe(0);
   });
 });
+
+describe('useFilterDecisionStats - canceled figure', () => {
+  it('exposes the canceled count from the stats response', async () => {
+    server.use(
+      http.get('*/v1/audit/stats', () =>
+        HttpResponse.json({ total: 10, canceled: 3, filter: { blocked: 2 } })
+      )
+    );
+
+    const { result } = renderHook(() => useFilterDecisionStats(), {
+      wrapper: SWRTestProvider,
+    });
+
+    await waitFor(() => expect(result.current.canceled).toBe(3));
+
+    expect(result.current.total).toBe(10);
+    expect(result.current.filter.blocked).toBe(2);
+  });
+});

@@ -5,8 +5,10 @@ import {
 } from '@/src/app/audit/domain/audit_decision_compliance';
 import { derivePipelineStages } from '@/src/app/audit/domain/audit_decision_stage_strip';
 import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
+import { ConsensusJudgeQuorum } from '@/src/framework/decisions/consensus_judge_quorum';
 import { DecisionControlBadges } from '@/src/framework/decisions/control_badges';
 import { collectDecisionControls } from '@/src/framework/decisions/control_frameworks';
+import { decisionReasonDescription } from '@/src/framework/decisions/decision_outcome';
 import { PIPELINE_STAGE_LABEL } from '@/src/framework/decisions/pipeline_stage';
 import { formatDurationMs } from '@/src/framework/format/format_duration_ms';
 import { formatPercent } from '@/src/framework/format/format_percent';
@@ -44,6 +46,7 @@ const rulePackLabel = (dp: DecisionPayload): string => {
 
 export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => {
   const controls = collectDecisionControls(dp);
+  const reasonDescription = decisionReasonDescription(dp);
   const rulePack = rulePackLabel(dp);
   const layerTimings = derivePipelineStages(dp).flatMap(({ id, durationMs }) =>
     durationMs === undefined ? [] : [{ id, durationMs }]
@@ -51,6 +54,15 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => {
 
   return (
     <div className="flex flex-wrap gap-x-6 gap-y-2 rounded-md border bg-muted/20 px-3 py-2 text-xs">
+      {reasonDescription && (
+        <div
+          className="flex items-center gap-1.5"
+          data-testid="audit-decision-reason"
+        >
+          <span className="text-muted-foreground">Reason</span>
+          <span>{reasonDescription}</span>
+        </div>
+      )}
       {typeof dp.latency_ms === 'number' && dp.latency_ms > 0 && (
         <div
           className="flex items-center gap-1.5"
@@ -279,13 +291,7 @@ export const AuditDecisionInsights = ({ dp }: { dp: DecisionPayload }) => {
               {'\u26a0 no quorum'}
             </code>
           ) : null}
-          {typeof dp.consensus.backend_count === 'number' &&
-            dp.consensus.backend_count > 0 && (
-              <span className="text-muted-foreground">
-                {dp.consensus.backend_count} backend
-                {dp.consensus.backend_count === 1 ? '' : 's'}
-              </span>
-            )}
+          <ConsensusJudgeQuorum consensus={dp.consensus} />
         </div>
       )}
       {dp.policy?.verdict && (

@@ -115,7 +115,7 @@ describe('AUDIT_TOPIC_OPTIONS', () => {
       { value: 'pact.files', label: 'pact.files (upload lifecycle)' },
       {
         value: 'pact.decisions',
-        label: 'pact.decisions (allow / block calls)',
+        label: 'pact.decisions (allow / block / canceled calls)',
       },
       { value: 'pact.policy', label: 'pact.policy (not yet available)' },
     ]);

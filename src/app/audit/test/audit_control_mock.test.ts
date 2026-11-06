@@ -89,3 +89,45 @@ describe('decision mock enrichment', () => {
     }
   });
 });
+
+describe('GET /v1/audit/events mock - decision filter', () => {
+  it('narrows pact.decisions to canceled rows, which carry no executed stages', async () => {
+    const canceled = await getAuditEvents({
+      topic: 'pact.decisions',
+      limit: 200,
+      decision: 'canceled',
+    });
+
+    if (canceled.status !== 200) throw new Error('expected a 200 response');
+    expect(canceled.data.total).toBeGreaterThan(0);
+    for (const event of canceled.data.events ?? []) {
+      const payload = parseDecisionPayload(event.payloadJson ?? '');
+      expect(payload?.decision).toBe('canceled');
+      expect(payload?.stages).toBeUndefined();
+    }
+  });
+
+  it('answers 400 for a decision outside allow, block and canceled', async () => {
+    const response = await getAuditEvents({
+      topic: 'pact.decisions',
+      decision: 'maybe' as 'allow',
+    });
+
+    expect(response.status).toBe(400);
+  });
+
+  it('keeps a pre-pipeline rejection filterable by its rejection control', async () => {
+    const response = await getAuditEvents({
+      topic: 'pact.decisions',
+      limit: 200,
+      controlFramework: 'owasp_llm_top10',
+      controlId: 'LLM10',
+    });
+
+    if (response.status !== 200) throw new Error('expected a 200 response');
+    const reasons = (response.data.events ?? []).map(
+      (event) => parseDecisionPayload(event.payloadJson ?? '')?.reason
+    );
+    expect(reasons).toContain('rate_limited');
+  });
+});

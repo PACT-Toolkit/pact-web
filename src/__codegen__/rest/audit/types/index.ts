@@ -32,6 +32,7 @@ export * from './auditRemoveDecisionAnnotationResponse';
 export * from './boundaryErrorResponse';
 export * from './getAuditComplianceReportParams';
 export * from './getAuditControlStatsParams';
+export * from './getAuditEventsDecision';
 export * from './getAuditEventsParams';
 export * from './getAuditPolicyEventsParams';
 export * from './getAuditStatsParams';

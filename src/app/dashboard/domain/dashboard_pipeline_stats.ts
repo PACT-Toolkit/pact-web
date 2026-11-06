@@ -73,7 +73,7 @@ export interface DecisionRecord {
   dp: DecisionPayload;
 }
 
-export type DecisionSeverity = 'blocked' | 'flagged' | 'clean';
+export type DecisionSeverity = 'blocked' | 'canceled' | 'flagged' | 'clean';
 
 const isFilterFlagged = (dp: DecisionPayload): boolean => {
   const v = dp.filter?.verdict?.toLowerCase();
@@ -96,11 +96,14 @@ const isRedacted = (dp: DecisionPayload): boolean =>
 /**
  * Severity bucket for the stream filter:
  * - `blocked` - the gateway returned a block decision.
+ * - `canceled` - the caller disconnected before a verdict; neither allowed
+ *   nor blocked, so it is never counted as clean.
  * - `flagged` - allowed, but at least one stage raised a signal.
  * - `clean`   - allowed with no signal.
  */
 export const decisionSeverity = (dp: DecisionPayload): DecisionSeverity => {
   if (dp.decision === 'block') return 'blocked';
+  if (dp.decision === 'canceled') return 'canceled';
   if (isFilterFlagged(dp) || isClassifierTagged(dp) || isRedacted(dp)) {
     return 'flagged';
   }

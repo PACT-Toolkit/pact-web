@@ -22,6 +22,8 @@ export const controlLabel = ({ framework, id }: ControlRef): string => {
 
 // Every sub-object that carries a `controls` array on the wire. Compliance
 // and cel have none by design (the gateway keeps no control table for them).
+// `rejection` is the stand-in for a pre-pipeline refusal (auth, rate limit),
+// where no stage ran and so no stage sub-object exists to carry controls.
 const controlSources = (
   payload: DecisionPayload
 ): (ControlRef[] | undefined)[] => [
@@ -31,6 +33,7 @@ const controlSources = (
   payload.external_refs?.controls,
   payload.consensus?.controls,
   payload.redactor?.controls,
+  payload.rejection?.controls,
 ];
 
 // Distinct framework+id pairs across all stages, in stage order. The same

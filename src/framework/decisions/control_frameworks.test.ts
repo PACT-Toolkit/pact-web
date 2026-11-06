@@ -70,3 +70,27 @@ describe('collectDecisionControls', () => {
     );
   });
 });
+
+describe('collectDecisionControls - rejection', () => {
+  it('includes the controls of a pre-pipeline rejection and de-duplicates them', () => {
+    expect(
+      collectDecisionControls({
+        decision: 'block',
+        engine: 'gateway',
+        rejection: {
+          reason: 'rate_limited',
+          controls: [
+            { framework: 'owasp_llm_top10', id: 'LLM10' },
+            { framework: 'eu_ai_act_art15', id: 'cybersecurity' },
+          ],
+        },
+        filter: {
+          controls: [{ framework: 'owasp_llm_top10', id: 'LLM10' }],
+        },
+      })
+    ).toEqual([
+      { framework: 'owasp_llm_top10', id: 'LLM10' },
+      { framework: 'eu_ai_act_art15', id: 'cybersecurity' },
+    ]);
+  });
+});

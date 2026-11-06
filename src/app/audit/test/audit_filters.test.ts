@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { type AuditAuditEventResponse } from '@/src/__codegen__/rest/audit';
 import { decodeAuditEventVariant } from '@/src/app/audit/domain/audit_event_variant';
 import {
+  DECISION_FILTER_OPTIONS,
   controlFilterParams,
+  decisionFilterParams,
   localDateTimeToUnixSeconds,
   matchesActorFilter,
   matchesControlFilter,
@@ -128,5 +130,29 @@ describe('matchesControlFilter', () => {
       false
     );
     expect(matchesControlFilter({}, 'owasp_llm_top10', 'LLM01')).toBe(false);
+  });
+});
+
+describe('decisionFilterParams', () => {
+  it('sends only the three gateway-accepted outcomes', () => {
+    expect(decisionFilterParams('canceled')).toEqual({ decision: 'canceled' });
+    expect(decisionFilterParams('allow')).toEqual({ decision: 'allow' });
+    expect(decisionFilterParams('block')).toEqual({ decision: 'block' });
+  });
+
+  it('sends nothing for "any" or an unrecognised value', () => {
+    expect(decisionFilterParams('')).toBeUndefined();
+    expect(decisionFilterParams('cancelled')).toBeUndefined();
+  });
+
+  it('offers a Canceled option in the select', () => {
+    expect(DECISION_FILTER_OPTIONS).toContainEqual({
+      value: 'canceled',
+      label: 'Canceled',
+    });
+    expect(DECISION_FILTER_OPTIONS[0]).toEqual({
+      value: '',
+      label: 'Any decision',
+    });
   });
 });

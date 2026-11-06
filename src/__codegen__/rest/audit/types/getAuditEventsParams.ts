@@ -5,6 +5,7 @@
  * Public REST entrypoint for the PACT safety pipeline.
  * OpenAPI spec version: 0.1.0
  */
+import type { GetAuditEventsDecision } from './getAuditEventsDecision';
 
 export type GetAuditEventsParams = {
   /**
@@ -23,6 +24,10 @@ export type GetAuditEventsParams = {
    * Compliance control id of the control filter (set together with controlFramework)
    */
   controlId?: string;
+  /**
+   * Decision outcome filter; absent means any outcome
+   */
+  decision?: GetAuditEventsDecision;
   /**
    * Inclusive lower bound on createdAt (unix seconds UTC)
    */
