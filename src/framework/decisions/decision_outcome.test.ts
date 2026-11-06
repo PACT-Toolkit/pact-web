@@ -44,4 +44,10 @@ describe('decisionReasonDescription', () => {
       decisionReasonDescription({ decision: 'block', reason: 'filter_hostile' })
     ).toBeUndefined();
   });
+
+  it('ignores reasons that collide with object prototype keys', () => {
+    expect(
+      decisionReasonDescription({ decision: 'block', reason: 'constructor' })
+    ).toBeUndefined();
+  });
 });

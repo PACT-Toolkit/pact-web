@@ -33,14 +33,17 @@ export const decisionLabel = (decision: string): string => {
 
 // Plain-words explanation of the machine reasons that need one. Only the
 // canceled outcome has a dedicated reason today; every other reason code is
-// shown verbatim next to the badge.
-const REASON_DESCRIPTION: Record<string, string> = {
-  client_canceled: 'Caller disconnected before a verdict',
-};
+// shown verbatim next to the badge. A Map, not an object literal: reason is
+// wire data, and a plain-object lookup would also match inherited keys such
+// as "constructor".
+const CLIENT_CANCELED_DESCRIPTION = 'Caller disconnected before a verdict';
+const REASON_DESCRIPTION = new Map<string, string>([
+  ['client_canceled', CLIENT_CANCELED_DESCRIPTION],
+]);
 
 export const decisionReasonDescription = (
   payload: DecisionPayload
 ): string | undefined =>
-  payload.decision === 'canceled' || payload.reason === 'client_canceled'
-    ? REASON_DESCRIPTION.client_canceled
-    : REASON_DESCRIPTION[payload.reason ?? ''];
+  payload.decision === 'canceled'
+    ? CLIENT_CANCELED_DESCRIPTION
+    : REASON_DESCRIPTION.get(payload.reason ?? '');
