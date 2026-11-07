@@ -34,6 +34,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from '@/src/components/ui/sidebar';
+import { SETTINGS_PAGES } from '@/src/framework/settings/settings_pages';
 
 type NavSectionData = {
   label: string;
@@ -152,13 +153,10 @@ const buildNavSections = (pathname: string): NavSectionData[] => [
         url: '/settings/account',
         icon: Settings2,
         isActive: isRouteActive(pathname, '/settings'),
-        items: [
-          { title: 'Profile', url: '/settings/account' },
-          { title: 'Notifications', url: '/settings/account/preferences' },
-          { title: 'Consents', url: '/settings/account/consents' },
-          { title: 'Sign-in methods', url: '/settings/security' },
-          { title: 'Danger zone', url: '/settings/account/danger' },
-        ],
+        items: SETTINGS_PAGES.map(({ label, href }) => ({
+          title: label,
+          url: href,
+        })),
       },
     ],
   },

@@ -60,6 +60,9 @@ export const AuthSettingsConnectedAccountsCard = ({
     return enabledProviders.filter((p) => !connected.has(p.id));
   }, [identities, enabledProviders]);
 
+  const hasNoProviders =
+    enabledProviders.length === 0 && identities.length === 0;
+
   const onDisconnect = async (provider: string) => {
     setError(null);
     setBusyProvider(provider);
@@ -80,8 +83,9 @@ export const AuthSettingsConnectedAccountsCard = ({
           Connected accounts
         </CardTitle>
         <CardDescription>
-          Sign in with a federated identity provider. Connected accounts also
-          appear as one-click sign-in options on the login page.
+          {hasNoProviders
+            ? 'No sign-in providers are available on this deployment.'
+            : 'Sign in with a federated identity provider.'}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
