@@ -23,6 +23,15 @@ export const MOCK_SESSION_TOKEN = 'mock-session-token';
 // dev:mock has no per-user password store to check against.
 export const MOCK_LOGIN_WRONG_PASSWORD = 'wrong-password';
 
+// Submitting this as the password on /login simulates something in front of
+// the gateway (a CDN challenge, a proxy error page) answering with an HTML
+// 403, so the generic upstream-error message is exercisable in dev:mock.
+export const MOCK_LOGIN_HTML_BLOCK_PASSWORD = 'html-block-password';
+
+// Markup of the simulated upstream block page. It must never reach the UI.
+export const MOCK_UPSTREAM_BLOCK_PAGE_HTML =
+  '<!DOCTYPE html><html><head><title>Just a moment...</title></head><body><h1>Checking your browser before accessing the site</h1></body></html>';
+
 const nowUnix = (): number => Math.floor(Date.now() / 1000);
 
 // A function (not a fixed constant) so every call recomputes from the

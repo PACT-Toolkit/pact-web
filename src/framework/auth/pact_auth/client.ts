@@ -162,6 +162,26 @@ type AuthRequestOptions = {
   query?: Record<string, string | undefined>;
 };
 
+// Builds the ConnectError for a response that is not a pact-gateway JSON
+// reply, and logs its status and content-type server-side. The body is
+// never logged or put in the message: it can be arbitrary upstream markup.
+const unexpectedUpstreamResponse = (
+  res: Response,
+  opts: AuthRequestOptions,
+  code: Code
+): ConnectError => {
+  // Server-only module and no server logger exists; stdout is the log sink.
+  // eslint-disable-next-line no-console
+  console.warn('pact-auth: unexpected upstream response', {
+    method: opts.method,
+    path: opts.path,
+    status: res.status,
+    contentType: res.headers.get('content-type'),
+  });
+
+  return new ConnectError(`pact-gateway returned HTTP ${res.status}`, code);
+};
+
 // Shared fetch wrapper for every /v1/auth/* call. Throws a ConnectError
 // with a mapped `Code` on any non-2xx response or network failure, so
 // mapPactAuthError() and every route handler's `instanceof ConnectError` /
@@ -221,23 +241,33 @@ const authRequest = async <T>(opts: AuthRequestOptions): Promise<T> => {
     // Prefer the gateway's own body code over the HTTP-status
     // fallback whenever it's present and recognised - see
     // GATEWAY_BODY_CODE_TO_CODE's docstring for why the status alone can't
-    // always tell the right Code apart. Same for the message: a JSON body
-    // carries its human-readable text in `error`, so use that over the raw
-    // (JSON) response text where available.
+    // always tell the right Code apart.
     const errorBody = parseGatewayErrorBody(text);
     const bodyCode =
       typeof errorBody?.code === 'string'
         ? GATEWAY_BODY_CODE_TO_CODE[errorBody.code]
         : undefined;
-    const message =
-      typeof errorBody?.error === 'string' && errorBody.error
-        ? errorBody.error
-        : text || res.statusText;
+    const code = bodyCode ?? httpStatusToCode(res.status);
 
-    throw new ConnectError(message, bodyCode ?? httpStatusToCode(res.status));
+    // The body text is user-visible only when it is the gateway's own JSON
+    // error envelope. Anything else (a CDN challenge page, a proxy 502
+    // page, a plain-text middleware reply) gets a generic status-based
+    // message so raw upstream markup never reaches /login.
+    if (typeof errorBody?.error === 'string' && errorBody.error) {
+      throw new ConnectError(errorBody.error, code);
+    }
+    throw unexpectedUpstreamResponse(res, opts, code);
   }
 
-  return (text ? JSON.parse(text) : undefined) as T;
+  if (!text) return undefined as T;
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    // A 2xx that is not JSON (for example an access-gate login page)
+    // means something other than pact-gateway answered.
+    throw unexpectedUpstreamResponse(res, opts, Code.Unavailable);
+  }
 };
 
 // -- Response shapes ----------------------------------------------------

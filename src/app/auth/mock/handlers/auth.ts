@@ -19,8 +19,10 @@ import {
 import { MOCK_USER_ID } from '@/src/framework/helpers/environment';
 
 import {
+  MOCK_LOGIN_HTML_BLOCK_PASSWORD,
   MOCK_LOGIN_WRONG_PASSWORD,
   MOCK_SESSION_TOKEN,
+  MOCK_UPSTREAM_BLOCK_PAGE_HTML,
   MOCK_WEBAUTHN_CHALLENGE_B64URL,
   MOCK_WEBAUTHN_MFA_FAILING_CREDENTIAL_ID_B64URL,
   MOCK_WEBAUTHN_USER_HANDLE_B64URL,
@@ -89,6 +91,12 @@ const markRecoveryCodesIssued = (): void => {
 export const handlers: RequestHandler[] = [
   http.post('*/v1/auth/login', async ({ request }) => {
     const body = (await request.json()) as AuthLoginRequest;
+    if (body.password === MOCK_LOGIN_HTML_BLOCK_PASSWORD) {
+      return new HttpResponse(MOCK_UPSTREAM_BLOCK_PAGE_HTML, {
+        status: 403,
+        headers: { 'content-type': 'text/html; charset=utf-8' },
+      });
+    }
     if (body.password === MOCK_LOGIN_WRONG_PASSWORD) {
       // Mirrors pact-gateway's error envelope so dev:mock
       // fidelity matches the `code`-slug parsing client.ts does in real
