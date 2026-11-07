@@ -8,7 +8,10 @@ import {
   type DistinctLabelValuesOutcome,
   type LabelDecision,
 } from '@/src/app/benchmark/domain/benchmark_corpus_mapping';
-import { extractServerErrorMessage } from '@/src/framework/http';
+import {
+  describeHttpFailure,
+  extractServerErrorMessage,
+} from '@/src/framework/http';
 
 // Hub import wire types are generated from the gateway's per-tag swagger
 // slice (schema/benchmark, pulled from pact-gateway). The generated names
@@ -62,7 +65,8 @@ export function hubDatasetIdentityKey(identity: HubDatasetIdentity): string {
  * gateway's own `boundary.ErrorResponse` text (the three meanings shared by
  * both endpoints: gated dataset, dataset/config/split not found, and the
  * gateway's global request-timeout middleware aborting a cold Hub read);
- * every other status falls back to `extractServerErrorMessage`. Shared
+ * every other status shows the server's own displayable message, else a
+ * status-based one (never a raw proxy error page). Shared
  * between `BenchmarkImportCard` (preview errors) and `BenchmarkWorkbench`
  * (import submission errors) - same contract, same special cases, one place
  * to keep them in sync if the gateway ever changes what these statuses mean
@@ -82,7 +86,13 @@ export function describeHubImportError(
     return 'The dataset took too long to inspect. Try again - the first read of a dataset can be slow.';
   }
 
-  return extractServerErrorMessage(data) ?? 'The gateway returned an error.';
+  const serverMessage = extractServerErrorMessage(data);
+  if (serverMessage) return serverMessage;
+  if (status === 502 || status === 503) {
+    return `The benchmark service failed to handle the request (HTTP ${status}). Try again.`;
+  }
+
+  return describeHttpFailure(status, data);
 }
 
 /**

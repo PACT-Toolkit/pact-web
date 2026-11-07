@@ -609,6 +609,14 @@ interface MockHubDataset {
  * gated-dataset error path both for preview and for the import submission. */
 export const MOCK_HUB_GATED_SLUG = 'internal-org/gated-dataset';
 
+/** A slug the mock import endpoints answer with an HTML 502, the way the
+ * Cloudflare-proxied site swaps its own error page in for the gateway's JSON.
+ * The page markup must never reach the UI. */
+export const MOCK_HUB_HTML_502_SLUG = 'internal-org/html-502-dataset';
+
+export const MOCK_HUB_HTML_502_PAGE =
+  '<!DOCTYPE html><html><head><title>502: Bad gateway</title></head><body><h1>502: Bad gateway</h1></body></html>';
+
 /**
  * A marker string that, when it appears anywhere in a submitted corpus's
  * row content, makes the mock job-status handler answer HTTP 429 for the

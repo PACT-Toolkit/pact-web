@@ -25,7 +25,7 @@ import {
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
 import { formatPercent } from '@/src/framework/format/format_percent';
-import { extractServerErrorMessage } from '@/src/framework/http';
+import { describeHttpFailure } from '@/src/framework/http';
 
 const selectClassName = 'h-9 rounded-md border bg-background px-3 text-sm';
 const textareaClassName =
@@ -49,7 +49,7 @@ export const FilterTestRuleSandbox = () => {
     Boolean(error) || (data !== undefined && data.status !== 200);
   const serverErrorMessage =
     data !== undefined && data.status !== 200
-      ? extractServerErrorMessage(data.data)
+      ? describeHttpFailure(data.status, data.data)
       : undefined;
 
   const setField = <K extends keyof TestRuleFormState>(

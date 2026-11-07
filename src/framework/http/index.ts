@@ -1,5 +1,6 @@
 export { httpClient } from './axios';
 export {
+  describeHttpFailure,
   extractServerErrorMessage,
   type ServerErrorBody,
 } from './extract_error_message';

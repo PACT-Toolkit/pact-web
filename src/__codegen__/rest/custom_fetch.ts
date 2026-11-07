@@ -25,10 +25,22 @@ const parseBody = (contentType: string | null, body: string): unknown => {
 };
 
 /**
+ * A non-2xx body that is markup (a CDN or proxy error page such as
+ * Cloudflare's "502: Bad gateway" replacing the gateway's JSON) is never
+ * handed to callers: they would render it as an error message. The gateway
+ * never answers with HTML, so a declared text/html type or a body that opens
+ * with a tag marks an upstream page.
+ */
+const isMarkup = (contentType: string | null, body: string): boolean =>
+  Boolean(contentType?.toLowerCase().includes('html')) ||
+  /^\s*<[!a-z]/i.test(body);
+
+/**
  * Behavior contract, relied on by consumers such as
  * isForbiddenError in src/framework/http/response_status.ts:
  * customFetch never throws on HTTP status - every response, non-2xx
- * included, resolves as `{ data, status, headers }`.
+ * included, resolves as `{ data, status, headers }`. The one change to
+ * `data`: it is undefined for a non-2xx markup body (see isMarkup).
  */
 export const customFetch = async <T>(
   url: string,
@@ -37,7 +49,12 @@ export const customFetch = async <T>(
   const res = await fetch(url, options);
 
   const body = [204, 205, 304].includes(res.status) ? null : await res.text();
-  const data = body ? parseBody(res.headers.get('content-type'), body) : {};
+  const contentType = res.headers.get('content-type');
+  const data = !body
+    ? {}
+    : !res.ok && isMarkup(contentType, body)
+      ? undefined
+      : parseBody(contentType, body);
 
   return { data, status: res.status, headers: res.headers } as T;
 };

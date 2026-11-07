@@ -9,6 +9,8 @@ import {
   MOCK_CORPUS_LIBRARY_TOTAL_ROWS,
   MOCK_HUB_DATASETS,
   MOCK_HUB_GATED_SLUG,
+  MOCK_HUB_HTML_502_PAGE,
+  MOCK_HUB_HTML_502_SLUG,
   MOCK_JOB_RUN_ID,
   MOCK_RATE_LIMITED_JOB_MARKER,
   MOCK_RATE_LIMITED_JOB_POLLS,
@@ -253,6 +255,13 @@ export const handlers: RequestHandler[] = [
       const slug = url.searchParams.get('slug') ?? '';
       const labelColumnParam = url.searchParams.get('label_column');
 
+      if (slug === MOCK_HUB_HTML_502_SLUG) {
+        return new HttpResponse(MOCK_HUB_HTML_502_PAGE, {
+          status: 502,
+          headers: { 'content-type': 'text/html; charset=utf-8' },
+        });
+      }
+
       if (slug === MOCK_HUB_GATED_SLUG) {
         return HttpResponse.json(
           { code: 'permission_denied', error: 'This dataset is gated.' },
@@ -319,6 +328,13 @@ export const handlers: RequestHandler[] = [
         score_threshold?: number;
       };
       const slug = body.slug ?? '';
+
+      if (slug === MOCK_HUB_HTML_502_SLUG) {
+        return new HttpResponse(MOCK_HUB_HTML_502_PAGE, {
+          status: 502,
+          headers: { 'content-type': 'text/html; charset=utf-8' },
+        });
+      }
 
       if (slug === MOCK_HUB_GATED_SLUG) {
         return HttpResponse.json(

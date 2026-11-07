@@ -497,9 +497,34 @@ describe('describeHubImportError', () => {
     );
   });
 
-  it('falls back to a generic message when the server body has no text', () => {
+  it('falls back to a status message when the server body has no text', () => {
     expect(describeHubImportError(500, undefined)).toBe(
-      'The gateway returned an error.'
+      'The gateway returned an error (HTTP 500).'
+    );
+  });
+
+  it.each([502, 503])(
+    'names the status when a %i has no displayable body',
+    (status) => {
+      expect(describeHubImportError(status, undefined)).toBe(
+        `The benchmark service failed to handle the request (HTTP ${status}). Try again.`
+      );
+    }
+  );
+
+  it('never shows a proxy error page for a 502', () => {
+    const message = describeHubImportError(
+      502,
+      '<!DOCTYPE html><html><body><h1>502: Bad gateway</h1></body></html>'
+    );
+
+    expect(message).not.toContain('<');
+    expect(message).toContain('HTTP 502');
+  });
+
+  it('still shows a short text/plain body such as a permission error', () => {
+    expect(describeHubImportError(401, 'missing required permission')).toBe(
+      'missing required permission'
     );
   });
 });
