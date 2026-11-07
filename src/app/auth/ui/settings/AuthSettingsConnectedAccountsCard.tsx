@@ -4,7 +4,7 @@ import { ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import useSWRMutation from 'swr/mutation';
 
-import { OAUTH_PROVIDERS } from '@/src/app/auth/ui/login/oauth_providers';
+import { type OAuthProvider } from '@/src/app/auth/domain/oauth_providers';
 import { Button } from '@/src/components/ui/button';
 import {
   Card,
@@ -24,11 +24,16 @@ import { type OAuthIdentitySummary } from './types';
 
 type Props = {
   identities: OAuthIdentitySummary[];
+  // Providers offered for new links. Already-linked identities render
+  // regardless, so an existing link stays visible and removable even when
+  // the deployment stops offering that provider.
+  enabledProviders: OAuthProvider[];
   onChanged: () => void;
 };
 
 export const AuthSettingsConnectedAccountsCard = ({
   identities,
+  enabledProviders,
   onChanged,
 }: Props) => {
   const [busyProvider, setBusyProvider] = useState<string | null>(null);
@@ -52,8 +57,8 @@ export const AuthSettingsConnectedAccountsCard = ({
   const availableProviders = useMemo(() => {
     const connected = new Set(identities.map((i) => i.provider));
 
-    return OAUTH_PROVIDERS.filter((p) => !connected.has(p.id));
-  }, [identities]);
+    return enabledProviders.filter((p) => !connected.has(p.id));
+  }, [identities, enabledProviders]);
 
   const onDisconnect = async (provider: string) => {
     setError(null);

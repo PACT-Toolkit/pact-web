@@ -4,6 +4,7 @@ import { Inter, JetBrains_Mono } from 'next/font/google';
 import localFont from 'next/font/local';
 
 import { SplashOverlay } from '@/src/framework/motion';
+import { isSplashEnabled } from '@/src/framework/motion/splash_enabled';
 
 import { Providers } from './Providers';
 
@@ -76,13 +77,15 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => (
         <div id="page-content">{children}</div>
         {/* Splash sits at the layout level (above the routing layer) so
             the destination route mounts behind it from the start. The
-            overlay self-gates on `?intro=1` - set by `app/page.tsx` on
-            the logged-out-entry redirect - so it renders nothing on
-            direct visits to /login, /dashboard, etc. Lives *inside*
+            overlay renders only when the deployment enables the splash
+            (`PACT_WEB_SPLASH=enabled`, read at build time here) AND the
+            URL carries `?intro=1` - set by `app/page.tsx` on the entry
+            redirect - so it renders nothing on direct visits to /login,
+            /dashboard, etc., and nothing at all by default. Lives *inside*
             <Providers> so any context consumers in the splash subtree
             (e.g. `useTheme()` in the dev-only theme toggle) resolve
             against the same provider tree as the rest of the app. */}
-        <SplashOverlay />
+        <SplashOverlay enabled={isSplashEnabled()} />
       </Providers>
       <Analytics />
     </body>

@@ -1,7 +1,7 @@
 import {
   OAUTH_PROVIDERS,
   type OAuthProvider,
-} from '@/src/app/auth/ui/login/oauth_providers';
+} from '@/src/app/auth/domain/oauth_providers';
 
 // providerMeta resolves a provider id (as returned by pact-auth) to the
 // display metadata used by both the login screen and the settings panel.

@@ -12,6 +12,7 @@ import {
   loginSchema,
   type LoginFormData,
 } from '@/src/app/auth/domain/auth_validation_schema';
+import { type OAuthProvider } from '@/src/app/auth/domain/oauth_providers';
 import { useWebAuthnSupported } from '@/src/app/auth/domain/use_webauthn_supported';
 import {
   PasskeyError,
@@ -21,7 +22,6 @@ import {
   signInWithPasskey,
 } from '@/src/app/auth/domain/webauthn';
 import { AuthErrorNotice } from '@/src/app/auth/ui/AuthErrorNotice';
-import { OAUTH_PROVIDERS } from '@/src/app/auth/ui/login/oauth_providers';
 import { Button } from '@/src/components/ui/button';
 import {
   Field,
@@ -40,6 +40,10 @@ import {
 import { cn } from '@/src/lib/utils';
 
 type LoginFormProps = React.ComponentProps<'div'> & {
+  // Providers this deployment offers (resolved per request on the server,
+  // see app/(auth)/login/page.tsx). Empty hides the provider grid and the
+  // email divider; passkey and password sign-in always remain.
+  oauthProviders: OAuthProvider[];
   initialError?: string | null;
   // Where to send the user after a successful password or passkey sign-in.
   // Defaults to /dashboard when the caller has nothing more specific (see
@@ -52,6 +56,7 @@ type LoginFormProps = React.ComponentProps<'div'> & {
 type ServerError = { code: string | null; message: string };
 
 export const AuthLoginForm = ({
+  oauthProviders,
   initialError,
   returnTo = '/dashboard',
   className,
@@ -196,30 +201,39 @@ export const AuthLoginForm = ({
           </Field>
         )}
 
-        <Field className="grid grid-cols-3 gap-3">
-          {OAUTH_PROVIDERS.map(({ id, name, iconPath }) => (
-            <Button
-              key={id}
-              variant="outline"
-              asChild
-              className="flex h-auto flex-col gap-1.5 py-3"
+        {oauthProviders.length > 0 && (
+          <>
+            <Field
+              className="grid gap-3"
+              style={{
+                gridTemplateColumns: `repeat(${oauthProviders.length}, minmax(0, 1fr))`,
+              }}
             >
-              <a href={`/api/auth/oauth/start?provider=${id}`}>
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  className="size-5"
-                  aria-hidden
+              {oauthProviders.map(({ id, name, iconPath }) => (
+                <Button
+                  key={id}
+                  variant="outline"
+                  asChild
+                  className="flex h-auto flex-col gap-1.5 py-3"
                 >
-                  <path d={iconPath} fill="currentColor" />
-                </svg>
-                <span className="text-sm">{name}</span>
-              </a>
-            </Button>
-          ))}
-        </Field>
+                  <a href={`/api/auth/oauth/start?provider=${id}`}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      className="size-5"
+                      aria-hidden
+                    >
+                      <path d={iconPath} fill="currentColor" />
+                    </svg>
+                    <span className="text-sm">{name}</span>
+                  </a>
+                </Button>
+              ))}
+            </Field>
 
-        <FieldSeparator>Or sign in with email</FieldSeparator>
+            <FieldSeparator>Or sign in with email</FieldSeparator>
+          </>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <FieldGroup>

@@ -1,8 +1,13 @@
 import { redirect } from 'next/navigation';
 
 import { validateSessionFromCookies } from '@/src/framework/auth/pact_auth/session';
+import { isSplashEnabled } from '@/src/framework/motion/splash_enabled';
 
-// Entry point. Both logged-in and logged-out visitors get the splash
+// Entry point. The entry splash is opt-in per deployment
+// (`PACT_WEB_SPLASH=enabled`, see `splash_enabled.ts`); it is off by
+// default, and `/` then redirects straight to `/dashboard` or `/login`.
+//
+// When the splash is on, both logged-in and logged-out visitors get it
 // when entering via `/` - logged-in users land on `/dashboard?intro=1`
 // and logged-out users on `/login?intro=1`. The `?intro=1` flag is
 // what `<SplashOverlay />` (mounted in `app/layout.tsx`) keys on to
@@ -21,7 +26,8 @@ import { validateSessionFromCookies } from '@/src/framework/auth/pact_auth/sessi
 // entry path, not something to interrupt every navigation with.
 const HomePage = async () => {
   const session = await validateSessionFromCookies();
-  redirect(session ? '/dashboard?intro=1' : '/login?intro=1');
+  const intro = isSplashEnabled() ? '?intro=1' : '';
+  redirect(`${session ? '/dashboard' : '/login'}${intro}`);
 };
 
 export default HomePage;

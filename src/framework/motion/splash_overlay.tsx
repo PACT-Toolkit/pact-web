@@ -101,12 +101,16 @@ const SplashOverlayInner = () => {
 };
 
 // Layout-level overlay that mounts the splash on top of whatever route
-// is rendered. The gating logic lives in `SplashOverlayInner`; this
+// is rendered. `enabled` is the deployment-level switch (resolved on the
+// server, see `splash_enabled.ts`): when false the overlay renders nothing
+// even if the URL carries `?intro=1`. The `?intro=1` gating logic lives in
+// `SplashOverlayInner`; this
 // wrapper provides the Suspense boundary that `useSearchParams`
 // requires under Next 14+ app-router (without one, the entire layout
 // would be force-deopted to client rendering).
-export const SplashOverlay = () => (
-  <Suspense fallback={null}>
-    <SplashOverlayInner />
-  </Suspense>
-);
+export const SplashOverlay = ({ enabled }: { enabled: boolean }) =>
+  enabled ? (
+    <Suspense fallback={null}>
+      <SplashOverlayInner />
+    </Suspense>
+  ) : null;

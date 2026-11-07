@@ -3,6 +3,7 @@ import { type ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { SWRTestProvider } from '@/mocks/swr_test_provider';
+import { OAUTH_PROVIDERS } from '@/src/app/auth/domain/oauth_providers';
 import { AuthSettingsSignInMethodsPanel } from '@/src/app/auth/ui/settings/AuthSettingsSignInMethodsPanel';
 import { type MfaFactor, type Passkey } from '@/src/app/auth/ui/settings/types';
 
@@ -42,6 +43,7 @@ const renderPanel = (factors: MfaFactor[], passkeys: Passkey[]) =>
           factors={factors}
           passkeys={passkeys}
           identities={[]}
+          enabledProviders={OAUTH_PROVIDERS}
         />
       </SWRTestProvider>
     ) as ReactNode
