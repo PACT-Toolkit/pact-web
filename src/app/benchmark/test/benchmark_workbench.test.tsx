@@ -119,3 +119,48 @@ describe('BenchmarkWorkbench submitting state', () => {
     );
   });
 });
+
+// The browser must not choose where the gateway sends authenticated
+// benchmark traffic: the gateway uses its own configured address, so neither
+// submission carries a `gateway_url` key.
+describe('BenchmarkWorkbench request bodies', () => {
+  const captureJsonBodies = (path: string): Record<string, unknown>[] => {
+    const bodies: Record<string, unknown>[] = [];
+    server.use(
+      http.post(
+        `${MSW_PACT_BASE}/gateway/v1/benchmark/${path}`,
+        async ({ request }) => {
+          bodies.push((await request.json()) as Record<string, unknown>);
+
+          return HttpResponse.json({ job_id: 'job-1' }, { status: 202 });
+        }
+      )
+    );
+
+    return bodies;
+  };
+
+  it('submits the upload job without gateway_url', async () => {
+    const bodies = captureJsonBodies('jobs');
+    renderWorkbench();
+    await uploadCorpusFile();
+
+    fireEvent.click(screen.getByTestId('benchmark-upload-submit'));
+
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]).toHaveProperty('corpus_jsonl');
+    expect(bodies[0]).not.toHaveProperty('gateway_url');
+  });
+
+  it('submits the dataset import without gateway_url', async () => {
+    const bodies = captureJsonBodies('imports');
+    renderWorkbench();
+    await inspectImportDataset('deepset/prompt-injections');
+
+    fireEvent.click(screen.getByTestId('benchmark-import-run'));
+
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]).toHaveProperty('slug', 'deepset/prompt-injections');
+    expect(bodies[0]).not.toHaveProperty('gateway_url');
+  });
+});

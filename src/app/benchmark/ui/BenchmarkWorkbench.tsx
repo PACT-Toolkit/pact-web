@@ -23,7 +23,6 @@ import { BenchmarkRunHistory } from '@/src/app/benchmark/ui/BenchmarkRunHistory'
 import { BenchmarkTrendChart } from '@/src/app/benchmark/ui/BenchmarkTrendChart';
 import { BenchmarkTrendRangeToggle } from '@/src/app/benchmark/ui/BenchmarkTrendRangeToggle';
 import { BenchmarkUploadForm } from '@/src/app/benchmark/ui/BenchmarkUploadForm';
-import { getPublicGatewayBaseUrl } from '@/src/lib/proxy/gateway_url';
 
 export const BenchmarkWorkbench = () => {
   const [dateRange, setDateRange] = useState<TrendDateRange>('90d');
@@ -47,7 +46,6 @@ export const BenchmarkWorkbench = () => {
     try {
       const response = await submitBenchmarkJob({
         corpus_jsonl: corpusText,
-        gateway_url: getPublicGatewayBaseUrl(),
       });
       if (response.status !== 202) {
         throw new Error('unexpected status');
@@ -68,10 +66,7 @@ export const BenchmarkWorkbench = () => {
     setJobId(null);
 
     try {
-      const response = await importBenchmarkDataset({
-        ...request,
-        gateway_url: getPublicGatewayBaseUrl(),
-      });
+      const response = await importBenchmarkDataset(request);
       if (response.status !== 202) {
         throw new Error(describeHubImportError(response.status, response.data));
       }

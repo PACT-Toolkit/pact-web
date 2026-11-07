@@ -154,6 +154,12 @@ definitions:
             engine:
                 type: string
             gateway_url:
+                description: |-
+                    GatewayURL is deprecated and ignored: the gateway always uses its own
+                    configured URL (PACT_BENCHMARK_GATEWAY_URL). Accepted so existing
+                    clients that still send it keep working.
+
+                    Deprecated: omit this field.
                 type: string
             label_column:
                 type: string
@@ -189,7 +195,6 @@ definitions:
             text_column:
                 type: string
         required:
-            - gateway_url
             - slug
         type: object
     benchmark.BenchmarkRunBody:
@@ -613,10 +618,15 @@ definitions:
             engine:
                 type: string
             gateway_url:
+                description: |-
+                    GatewayURL is deprecated and ignored: the gateway always uses its own
+                    configured URL (PACT_BENCHMARK_GATEWAY_URL). Accepted so existing
+                    clients that still send it keep working.
+
+                    Deprecated: omit this field.
                 type: string
         required:
             - corpus_jsonl
-            - gateway_url
         type: object
     benchmark.SubmitJobResponse:
         properties:
