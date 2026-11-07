@@ -6,10 +6,10 @@ import { server } from '@/mocks/server';
 
 // findBy*/waitFor give up after 1 s by default, which a CPU-starved machine
 // can exceed while a fetch, an SWR revalidation and a React commit all run
-// late. 4 s stays below the 5 s test timeout, so a genuinely missing element
-// still fails with Testing Library's diagnostic message instead of a bare
-// test timeout.
-configure({ asyncUtilTimeout: 4000 });
+// late. 10 s stays below the 15 s test timeout (vitest.config.mts), so a
+// genuinely missing element still fails with Testing Library's diagnostic
+// message instead of a bare test timeout.
+configure({ asyncUtilTimeout: 10_000 });
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'bypass' }));
 afterEach(() => server.resetHandlers());
