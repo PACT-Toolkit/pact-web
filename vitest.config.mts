@@ -24,6 +24,12 @@ export default defineConfig({
     // file's imports before its own top-level statements).
     env: { TZ: 'CET' },
     setupFiles: ['./vitest.setup.ts'],
+    // Most files render real components in jsdom, and the full run spreads
+    // them over every core. A render that takes 1 s alone takes 5-8 s when
+    // the workers contend, so the 5 s default timed out tests that are
+    // correct and passed in isolation. This is headroom for that contention;
+    // a test that is slow when run alone still needs its render narrowed.
+    testTimeout: 15_000,
     include: [
       // Root-level pattern covers proxy.test.ts: Next.js requires proxy.ts
       // itself to live at the repo root (framework convention, not a choice

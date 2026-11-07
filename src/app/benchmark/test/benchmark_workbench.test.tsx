@@ -1,9 +1,12 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { type ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
+import { server } from '@/mocks/server';
 import { SWRTestProvider } from '@/mocks/swr_test_provider';
 import { BenchmarkWorkbench } from '@/src/app/benchmark/ui/BenchmarkWorkbench';
+import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 // The workbench used to hold one shared `isSubmitting` boolean for
 // both the upload form and the hub-import card, so submitting either one
@@ -47,10 +50,20 @@ const uploadCorpusFile = async () => {
   );
 };
 
-// Both tests render the whole workbench and drive it through the mock
-// handlers, which takes about two seconds each on an idle machine and
-// crossed the 5 s default when the full suite ran in parallel workers.
-describe('BenchmarkWorkbench submitting state', { timeout: 15_000 }, () => {
+// The run history, trend and comparison cards are not under test here. With
+// the seeded run history their first render blocks the event loop for about
+// 1.5 s in jsdom (2.9 s per test, 0.9 s without it), so the test passed only
+// while the machine was idle and timed out when it was loaded. An empty
+// history keeps the render small and the test deterministic.
+beforeEach(() => {
+  server.use(
+    http.get(`${MSW_PACT_BASE}/gateway/v1/benchmark/runs`, () =>
+      HttpResponse.json({ runs: [], total: 0 })
+    )
+  );
+});
+
+describe('BenchmarkWorkbench submitting state', () => {
   it('leaves the upload button label unchanged while the import card submits', async () => {
     renderWorkbench();
     await inspectImportDataset('deepset/prompt-injections');

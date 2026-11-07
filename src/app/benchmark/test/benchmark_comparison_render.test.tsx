@@ -1,9 +1,19 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { type ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { SWRTestProvider } from '@/mocks/swr_test_provider';
 import { BenchmarkComparison } from '@/src/app/benchmark/ui/BenchmarkComparison';
+import type * as ChartModule from '@/src/components/ui/chart';
+
+// These tests cover the run pickers and the unscored flag, not the charts.
+// Recharts renders every axis, tick and series synchronously in jsdom, which
+// takes about half of each render and made the tests exceed the default
+// timeout on a loaded machine. The container renders nothing inside.
+vi.mock('@/src/components/ui/chart', async (importOriginal) => ({
+  ...(await importOriginal<typeof ChartModule>()),
+  ChartContainer: () => <div data-slot="chart" />,
+}));
 
 const renderComparison = () =>
   render(
