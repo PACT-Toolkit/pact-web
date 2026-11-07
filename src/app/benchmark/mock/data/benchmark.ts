@@ -610,7 +610,7 @@ interface MockHubDataset {
 export const MOCK_HUB_GATED_SLUG = 'internal-org/gated-dataset';
 
 /** A slug the mock import endpoints answer with an HTML 502, the way the
- * Cloudflare-proxied site swaps its own error page in for the gateway's JSON.
+ * proxy in front of the site swaps its own error page in for the gateway's JSON.
  * The page markup must never reach the UI. */
 export const MOCK_HUB_HTML_502_SLUG = 'internal-org/html-502-dataset';
 

@@ -305,8 +305,8 @@ const parseBody = (contentType: string | null, body: string): unknown => {
 };
 
 /**
- * A non-2xx body that is markup (a CDN or proxy error page such as
- * Cloudflare's "502: Bad gateway" replacing the gateway's JSON) is never
+ * A non-2xx body that is markup (a CDN or proxy error page replacing
+ * the gateway's JSON) is never
  * handed to callers: they would render it as an error message. The gateway
  * never answers with HTML, so a declared text/html type or a body that opens
  * with a tag marks an upstream page.

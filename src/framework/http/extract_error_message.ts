@@ -17,7 +17,7 @@ export type ServerErrorBody = {
 const MAX_MESSAGE_LENGTH = 200;
 
 // An HTML tag or doctype anywhere in the text: a CDN or proxy error page
-// (for example Cloudflare's "502: Bad gateway" document) swapped in for the
+// (for example a proxy's "502: Bad gateway" document) swapped in for the
 // gateway's own body.
 const MARKUP_PATTERN = /<\s*[!/a-z]/i;
 
