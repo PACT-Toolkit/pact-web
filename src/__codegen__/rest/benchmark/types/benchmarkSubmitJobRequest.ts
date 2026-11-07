@@ -9,5 +9,12 @@
 export interface BenchmarkSubmitJobRequest {
   corpus_jsonl: string;
   engine?: string;
-  gateway_url: string;
+  /**
+   * GatewayURL is deprecated and ignored: the gateway always uses its own
+   * configured URL (PACT_BENCHMARK_GATEWAY_URL). Accepted so existing
+   * clients that still send it keep working.
+   *
+   * Deprecated: omit this field.
+   */
+  gateway_url?: string;
 }

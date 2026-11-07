@@ -22,9 +22,9 @@ export type {
   InspectBenchmarkImportParams as HubImportPreviewParams,
 } from '@/src/__codegen__/rest/benchmark';
 
-/** `POST /v1/benchmark/imports`'s body, minus `gateway_url` - the workbench
- * (not this card) owns the gateway address, the same split of
- * responsibility as `submitBenchmarkJob`'s caller in BenchmarkWorkbench. */
+/** `POST /v1/benchmark/imports`'s body, minus the deprecated `gateway_url`:
+ * the gateway ignores it and uses its own configured address, so the browser
+ * never sends it. */
 export type HubImportRequestDraft = Omit<
   BenchmarkBenchmarkImportRequest,
   'gateway_url'
@@ -293,7 +293,7 @@ export interface BuildImportRequestArgs {
 }
 
 /**
- * Builds `POST /v1/benchmark/imports`'s body (minus `gateway_url`) from the
+ * Builds `POST /v1/benchmark/imports`'s body (without the deprecated `gateway_url`) from the
  * import card's form state. `label_values` keys are normalized on the way
  * out even though the mapping grid's keys already come pre-normalized from
  * `previewToDistinctValues` - if two distinct raw keys ever collapsed to the
