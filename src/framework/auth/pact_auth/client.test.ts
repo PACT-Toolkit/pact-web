@@ -225,7 +225,9 @@ describe('getPactAuthClient', () => {
 
       expect(err).toBeInstanceOf(ConnectError);
       expect((err as ConnectError).code).toBe(Code.InvalidArgument);
-      expect((err as ConnectError).rawMessage).toBe('not json at all');
+      expect((err as ConnectError).rawMessage).toBe(
+        'pact-gateway returned HTTP 400'
+      );
     });
 
     it("falls back cleanly on pact-gateway's plain-text middleware bodies", async () => {
@@ -239,7 +241,9 @@ describe('getPactAuthClient', () => {
 
       expect(err).toBeInstanceOf(ConnectError);
       expect((err as ConnectError).code).toBe(Code.Unauthenticated);
-      expect((err as ConnectError).rawMessage).toBe('unauthorized');
+      expect((err as ConnectError).rawMessage).toBe(
+        'pact-gateway returned HTTP 401'
+      );
     });
 
     it("falls back cleanly on the rate limiter's plain-text 429 body", async () => {
@@ -253,6 +257,101 @@ describe('getPactAuthClient', () => {
 
       expect(err).toBeInstanceOf(ConnectError);
       expect((err as ConnectError).code).toBe(Code.ResourceExhausted);
+    });
+  });
+
+  // Something in front of the gateway (CDN challenge, proxy error page,
+  // access gate) can answer with markup. That body must never become the
+  // user-visible message, and must never be logged.
+  describe('unexpected upstream responses', () => {
+    const html = '<html><body>Just a moment... cf-challenge</body></html>';
+    let warnSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+      warnSpy.mockRestore();
+    });
+
+    const loginError = async (): Promise<ConnectError> => {
+      const err = await getPactAuthClient()
+        .login({ email: 'a@example.com', password: 'x' })
+        .catch((caught: unknown) => caught);
+      expect(err).toBeInstanceOf(ConnectError);
+
+      return err as ConnectError;
+    };
+
+    it('replaces an HTML 403 body with a generic status message and logs status and content-type only', async () => {
+      fetchMock.mockResolvedValue(
+        new Response(html, {
+          status: 403,
+          headers: { 'content-type': 'text/html; charset=utf-8' },
+        })
+      );
+
+      const err = await loginError();
+
+      expect(err.code).toBe(Code.PermissionDenied);
+      expect(err.rawMessage).toBe('pact-gateway returned HTTP 403');
+      expect(err.rawMessage).not.toContain('<');
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(warnSpy).toHaveBeenCalledWith(
+        'pact-auth: unexpected upstream response',
+        {
+          method: 'POST',
+          path: '/login',
+          status: 403,
+          contentType: 'text/html; charset=utf-8',
+        }
+      );
+      expect(JSON.stringify(warnSpy.mock.calls)).not.toContain('cf-challenge');
+    });
+
+    it('replaces an empty non-ok body with a generic status message', async () => {
+      fetchMock.mockResolvedValue(emptyResponse(502));
+
+      const err = await loginError();
+
+      expect(err.code).toBe(Code.Unknown);
+      expect(err.rawMessage).toBe('pact-gateway returned HTTP 502');
+    });
+
+    it('keeps the gateway JSON error text and mapped code, without logging', async () => {
+      fetchMock.mockResolvedValue(
+        jsonResponse({ code: 'not_found', error: 'no such user' }, 404)
+      );
+
+      const err = await loginError();
+
+      expect(err.code).toBe(Code.NotFound);
+      expect(err.rawMessage).toBe('no such user');
+      expect(warnSpy).not.toHaveBeenCalled();
+    });
+
+    it('ignores a JSON error body whose error is empty or not a string', async () => {
+      fetchMock.mockResolvedValue(jsonResponse({ error: 42 }, 500));
+
+      const err = await loginError();
+
+      expect(err.rawMessage).toBe('pact-gateway returned HTTP 500');
+    });
+
+    it('throws a ConnectError, not a SyntaxError, on an HTML 200', async () => {
+      fetchMock.mockResolvedValue(
+        new Response(html, {
+          status: 200,
+          headers: { 'content-type': 'text/html' },
+        })
+      );
+
+      const err = await loginError();
+
+      expect(err.code).toBe(Code.Unavailable);
+      expect(err.rawMessage).toBe('pact-gateway returned HTTP 200');
+      expect(JSON.stringify(warnSpy.mock.calls)).not.toContain('cf-challenge');
     });
   });
 
