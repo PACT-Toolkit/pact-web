@@ -14,15 +14,12 @@ const SecuritySettingsPage = async () => {
   ]);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 p-8">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Sign-in methods</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage how you sign in to PACT. We recommend at least one passkey or a
-          connected provider. Passwords on their own are the easiest thing to
-          phish.
-        </p>
-      </header>
+    <div className="flex flex-col gap-6">
+      <p className="text-sm text-muted-foreground">
+        Manage how you sign in to PACT. We recommend at least one passkey or a
+        connected provider. Passwords on their own are the easiest thing to
+        phish.
+      </p>
 
       <AuthSettingsSignInMethodsPanel
         factors={factors}
