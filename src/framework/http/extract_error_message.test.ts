@@ -5,7 +5,7 @@ import {
   extractServerErrorMessage,
 } from '@/src/framework/http/extract_error_message';
 
-const CLOUDFLARE_502 =
+const PROXY_502_PAGE =
   '<!DOCTYPE html>\n<html>\n<head><title>502: Bad gateway</title></head>\n<body><h1>502: Bad gateway</h1></body>\n</html>';
 
 describe('extractServerErrorMessage', () => {
@@ -13,8 +13,8 @@ describe('extractServerErrorMessage', () => {
     ['undefined body', undefined],
     ['empty string', ''],
     ['whitespace only', '   \n '],
-    ['html document', CLOUDFLARE_502],
-    ['html document on one line', CLOUDFLARE_502.replaceAll('\n', '')],
+    ['html document', PROXY_502_PAGE],
+    ['html document on one line', PROXY_502_PAGE.replaceAll('\n', '')],
     ['html fragment', '<h1>Bad gateway</h1>'],
     ['closing tag only', 'oops </div>'],
     ['long single-line text', 'x'.repeat(201)],
@@ -59,7 +59,7 @@ describe('describeHttpFailure', () => {
   });
 
   it('names the status when the body was markup', () => {
-    expect(describeHttpFailure(502, CLOUDFLARE_502)).toBe(
+    expect(describeHttpFailure(502, PROXY_502_PAGE)).toBe(
       'The gateway returned an error (HTTP 502).'
     );
   });

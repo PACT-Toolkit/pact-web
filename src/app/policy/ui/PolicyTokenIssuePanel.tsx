@@ -24,7 +24,7 @@ import {
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
-import { describeHttpFailure } from '@/src/framework/http';
+import { extractServerErrorMessage } from '@/src/framework/http';
 
 // Ad-hoc capability-token issuance panel: mints a token via the
 // real gateway endpoint POST /v1/policy/tokens so an operator can hand a
@@ -75,7 +75,10 @@ export const PolicyTokenIssuePanel = () => {
       if (res.status === 201) {
         setIssuedToken(res.data);
       } else {
-        setSubmitError(describeHttpFailure(res.status, res.data));
+        setSubmitError(
+          extractServerErrorMessage(res.data) ??
+            `Failed to issue token (HTTP ${res.status}). Please try again.`
+        );
       }
     } catch {
       setSubmitError('Failed to issue token. Is the gateway reachable?');
