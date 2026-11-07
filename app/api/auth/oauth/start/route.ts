@@ -1,6 +1,7 @@
 import { Code, ConnectError } from '@connectrpc/connect';
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { isOAuthProviderEnabled } from '@/src/app/auth/domain/enabled_oauth_providers';
 import { getPactAuthClient } from '@/src/framework/auth/pact_auth/client';
 import { OAUTH_STATE_COOKIE } from '@/src/framework/auth/pact_auth/cookies';
 import { defaultReturnTo } from '@/src/framework/auth/pact_auth/return_to';
@@ -26,6 +27,16 @@ export const GET = async (req: NextRequest) => {
   const provider = req.nextUrl.searchParams.get('provider');
   if (!provider || !ALLOWED_PROVIDERS.has(provider)) {
     return NextResponse.json({ error: 'unknown provider' }, { status: 400 });
+  }
+
+  // A provider the deployment does not offer is refused here, not only
+  // hidden in the UI, so a hand-typed URL cannot start that flow. Same
+  // `unknown_provider` login error the callback route uses.
+  if (!isOAuthProviderEnabled(provider)) {
+    const url = new URL('/login', req.url);
+    url.searchParams.set('oauth_error', 'unknown_provider');
+
+    return NextResponse.redirect(url);
   }
 
   const returnToParam = req.nextUrl.searchParams.get('return_to');

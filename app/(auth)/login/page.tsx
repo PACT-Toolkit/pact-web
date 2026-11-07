@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 
 import { AuthLoginForm } from '@/src/app/auth';
+import { getEnabledOAuthProviders } from '@/src/app/auth/domain/enabled_oauth_providers';
 import { safeNextPath } from '@/src/app/auth/domain/safe_next_path';
 import { validateSessionFromCookies } from '@/src/framework/auth/pact_auth/session';
 
@@ -62,7 +63,11 @@ const LoginPage = async ({
             run their own deletion asynchronously.
           </div>
         )}
-        <AuthLoginForm initialError={oauthError} returnTo={returnTo} />
+        <AuthLoginForm
+          oauthProviders={getEnabledOAuthProviders()}
+          initialError={oauthError}
+          returnTo={returnTo}
+        />
       </div>
     </div>
   );

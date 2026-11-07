@@ -1,4 +1,5 @@
 import { AuthSettingsSignInMethodsPanel } from '@/src/app/auth';
+import { getEnabledOAuthProviders } from '@/src/app/auth/domain/enabled_oauth_providers';
 import {
   listIdentities,
   listMfaFactors,
@@ -27,6 +28,7 @@ const SecuritySettingsPage = async () => {
         factors={factors}
         passkeys={passkeys}
         identities={identities}
+        enabledProviders={getEnabledOAuthProviders()}
       />
     </div>
   );

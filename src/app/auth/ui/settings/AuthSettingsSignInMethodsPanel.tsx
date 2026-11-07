@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 
 import { hasVerifiedTotpFactor } from '@/src/app/auth/domain/auth_settings_factors';
+import { type OAuthProvider } from '@/src/app/auth/domain/oauth_providers';
 
 import { AuthSettingsConnectedAccountsCard } from './AuthSettingsConnectedAccountsCard';
 import { AuthSettingsPasskeysCard } from './AuthSettingsPasskeysCard';
@@ -19,12 +20,14 @@ type Props = {
   factors: MfaFactor[];
   passkeys: Passkey[];
   identities: OAuthIdentitySummary[];
+  enabledProviders: OAuthProvider[];
 };
 
 export const AuthSettingsSignInMethodsPanel = ({
   factors,
   passkeys,
   identities,
+  enabledProviders,
 }: Props) => {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -57,6 +60,7 @@ export const AuthSettingsSignInMethodsPanel = ({
       <AuthSettingsPasskeysCard passkeys={passkeys} onChanged={refresh} />
       <AuthSettingsConnectedAccountsCard
         identities={identities}
+        enabledProviders={enabledProviders}
         onChanged={refresh}
       />
       <AuthSettingsTwoFactorCard factors={factors} onChanged={refresh} />

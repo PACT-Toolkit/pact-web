@@ -128,6 +128,18 @@ Values as of this writing:
 `env/local.env`'s `PACT_GATEWAY_URL` value is unused while mocking is enabled (nothing reaches the network) but is left pointed at pact-gateway's default port for parity.
 `env/local-real.env`'s `:8110` matches pact-gateway's canonical dev HTTP port.
 
+Two optional server-side variables control what a deployment shows.
+Neither is a `NEXT_PUBLIC_` variable and neither is set in `env/*.env`, so the defaults apply locally.
+
+| Variable                    | Values                                                                                                                                                                | Default                              |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `PACT_AUTH_OAUTH_PROVIDERS` | Unset or empty: all providers. `none` (any case): no providers. Comma-separated ids such as `github,google`: only those, in canonical order; unknown ids are ignored. | all providers (github, meta, google) |
+| `PACT_WEB_SPLASH`           | `enabled` (any case) shows the entry splash on `/`; any other value, or unset, turns it off.                                                                          | off                                  |
+
+`PACT_AUTH_OAUTH_PROVIDERS` is read per request by the login page, the security settings page, and `/api/auth/oauth/start`, which refuses a disabled provider with the `unknown_provider` login error.
+Already-linked identities stay visible and removable in settings even when their provider is no longer offered.
+`PACT_WEB_SPLASH` is read by `app/page.tsx` (whether `/` redirects with `?intro=1`) and `app/layout.tsx` (at build time, whether the overlay renders at all).
+
 `PACT_AUTH_GRPC_ADDR` (the app-runtime var pact-web used to dial pact-auth directly) was retired once auth moved behind pact-gateway - `client.ts` now talks to pact-auth exclusively through `PACT_GATEWAY_URL`.
 `PACT_AUTH_GRPC_ADDR_E2E` is unrelated and still required: it's a Playwright-only var (see `e2e/lib/seed.ts`) for direct-to-pact-auth test fixture seeding, out of scope for the app runtime.
 
