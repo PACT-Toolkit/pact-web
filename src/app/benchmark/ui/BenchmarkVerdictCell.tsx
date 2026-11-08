@@ -1,5 +1,8 @@
-import { rowVerdictKind } from '@/src/app/benchmark/domain/benchmark_run_rows';
-import { BenchmarkRedactedBadge } from '@/src/app/benchmark/ui/BenchmarkRedactedBadge';
+import {
+  isMitigatedRow,
+  rowVerdictKind,
+} from '@/src/app/benchmark/domain/benchmark_run_rows';
+import { BenchmarkMitigatedBadge } from '@/src/app/benchmark/ui/BenchmarkMitigatedBadge';
 import { BenchmarkVerdictChip } from '@/src/app/benchmark/ui/BenchmarkVerdictChip';
 
 interface BenchmarkVerdictCellProps {
@@ -8,6 +11,7 @@ interface BenchmarkVerdictCellProps {
     error?: string;
     throttled?: boolean;
     unscored?: boolean;
+    reason?: string;
     redacted?: boolean;
   };
 }
@@ -15,7 +19,7 @@ interface BenchmarkVerdictCellProps {
 /**
  * The decision of one benchmark row. An errored, throttled, or unscored row
  * never shows its decision as a verdict: it is empty or the gateway's
- * fail-open allow, not something the classifier decided. A redacted row keeps
+ * fail-open allow, not something the classifier decided. A mitigated row keeps
  * its verdict and gains a badge: the gateway masked content instead of
  * blocking.
  */
@@ -45,7 +49,9 @@ export const BenchmarkVerdictCell = ({ row }: BenchmarkVerdictCellProps) => {
       return (
         <span className="inline-flex items-center gap-1.5">
           <BenchmarkVerdictChip text={row.decision || '-'} />
-          {row.redacted && <BenchmarkRedactedBadge />}
+          {isMitigatedRow(row) && (
+            <BenchmarkMitigatedBadge redacted={Boolean(row.redacted)} />
+          )}
         </span>
       );
   }

@@ -378,8 +378,8 @@ test.describe('Benchmark confusion tiles on a completed job', () => {
       timeout: 15000,
     });
 
-    // Mock job result: attacks=100, benign=100, true_positives=93,
-    // mitigated=4, false_positives=4, errors=0 -> FN=3, TN=96, and an
+    // Mock job result: attacks=100, benign=97, true_positives=93,
+    // mitigated=4, false_positives=4, errors=0 -> FN=3, TN=93, and an
     // effective detection of (93 + 4) / 100.
     await expect(page.getByTestId('benchmark-confusion-tp')).toContainText(
       '93'
@@ -393,16 +393,16 @@ test.describe('Benchmark confusion tiles on a completed job', () => {
     ).toContainText('97.0%');
     await expect(page.getByTestId('benchmark-confusion-fp')).toContainText('4');
     await expect(page.getByTestId('benchmark-confusion-tn')).toContainText(
-      '96'
+      '93'
     );
     await expect(page.getByTestId('benchmark-confusion-errors')).toContainText(
       '0'
     );
-    // throttled: 3, excluded from attacks/benign/errors above.
+    // throttled: 3, the only rows outside attacks/benign.
     await expect(
       page.getByTestId('benchmark-confusion-throttled')
     ).toContainText('3');
-    // unscored: 3, also excluded from attacks/benign/errors above - the same
+    // unscored: 3, a subset of attacks/benign (counted as allowed) - the same
     // three rows the results table marks "unscored" (rows 4, 11 and 38).
     await expect(
       page.getByTestId('benchmark-confusion-unscored')

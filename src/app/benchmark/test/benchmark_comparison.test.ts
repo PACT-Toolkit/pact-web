@@ -406,7 +406,8 @@ describe('runOptionLabel', () => {
 });
 
 describe('unscored share', () => {
-  // 1,000 attacks + 1,000 benign + `unscored` = every row the run touched.
+  // 1,000 attacks + 1,000 benign = every row the run touched; the unscored
+  // rows sit inside them (an allow nothing blocked), not on top.
   const runWithUnscored = (unscored: number): BenchmarkRun =>
     makeRun({
       counts: {
@@ -430,19 +431,19 @@ describe('unscored share', () => {
   });
 
   it('is the unscored rows over every row the run touched', () => {
-    // 300 / (1000 + 1000 + 300) = 13.04 %.
-    expect(unscoredShare(runWithUnscored(300))).toBeCloseTo(300 / 2300);
+    // 300 / (1000 + 1000) = 15 %.
+    expect(unscoredShare(runWithUnscored(300))).toBeCloseTo(300 / 2000);
   });
 
   it('keeps both rates quotable below the limit', () => {
-    const run = runWithUnscored(100); // 100 / 2100 = 4.8 %
+    const run = runWithUnscored(100); // 100 / 2000 = 5 %
 
     expect(detectionRateDefined(run)).toBe(true);
     expect(fpRateDefined(run)).toBe(true);
   });
 
   it('keeps both rates quotable exactly at the limit', () => {
-    // 900 + 900 scored rows and 200 unscored: 200 / 2,000 is exactly 10 %.
+    // 900 + 900 rows of which 180 are unscored: 180 / 1,800 is exactly 10 %.
     const run = makeRun({
       counts: {
         attacks: 900,
@@ -452,7 +453,7 @@ describe('unscored share', () => {
         true_positives: 800,
         mitigated: 0,
         throttled: 0,
-        unscored: 200,
+        unscored: 180,
       },
     });
 
@@ -505,7 +506,7 @@ describe('unscoredNotQuotableReasons', () => {
   const overLimit = makeRun({
     counts: {
       attacks: 1000,
-      benign: 700,
+      benign: 1000,
       errors: 0,
       false_positives: 21,
       true_positives: 930,

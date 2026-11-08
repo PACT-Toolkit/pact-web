@@ -26,6 +26,24 @@ export const RUN_ROW_OUTCOMES: readonly { value: string; label: string }[] = [
   { value: 'mitigated', label: 'Mitigated' },
 ];
 
+/** Reason the classifier reports when it mitigated a row without blocking it. */
+export const CLASSIFIER_MITIGATED_REASON = 'classifier_mitigated';
+
+/**
+ * Whether the gateway answered `allow` after masking content on this row: the
+ * redactor masked it (`redacted`) or the classifier mitigated it (reason
+ * `classifier_mitigated`). The wire `redacted` flag is the redactor verdict
+ * only, so a classifier-mitigated row can carry `redacted: false`. This is the
+ * one definition of a mitigated row; the benchmark service uses the same rule.
+ */
+export const isMitigatedRow = (row: {
+  decision?: string;
+  reason?: string;
+  redacted?: boolean;
+}): boolean =>
+  row.decision === 'allow' &&
+  (Boolean(row.redacted) || row.reason === CLASSIFIER_MITIGATED_REASON);
+
 /** What a row's decision cell must show. */
 export type RowVerdictKind = 'error' | 'throttled' | 'unscored' | 'verdict';
 

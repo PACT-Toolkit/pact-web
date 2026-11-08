@@ -72,6 +72,23 @@ describe('deriveConfusionCounts', () => {
     expect(confusion.throttledRate).toBeCloseTo(0.1);
   });
 
+  it('counts errored and unscored rows inside attacks and benign, not on top, in the rates', () => {
+    // attacks 90 + benign 90 + throttled 20 = 200 rows; the 10 errored and 30
+    // unscored rows are subsets of attacks/benign.
+    const counts = makeCounts({
+      attacks: 90,
+      benign: 90,
+      true_positives: 80,
+      errors: 10,
+      throttled: 20,
+      unscored: 30,
+    });
+
+    const confusion = deriveConfusionCounts(counts);
+    expect(confusion.throttledRate).toBeCloseTo(0.1);
+    expect(confusion.unscoredRate).toBeCloseTo(0.15);
+  });
+
   it('does not fold throttled into errors, attacks, or benign', () => {
     const counts = makeCounts({
       attacks: 100,
@@ -118,7 +135,8 @@ describe('deriveConfusionCounts', () => {
   });
 
   it('carries unscored through and derives its rate against all rows the run touched', () => {
-    // attacks 80 + benign 80 + errors 0 + throttled 0 + unscored 40 = 200 rows.
+    // attacks 80 + benign 80 + throttled 0 = 160 rows; the 40 unscored rows
+    // sit inside attacks/benign.
     const counts = makeCounts({
       attacks: 80,
       benign: 80,
@@ -129,7 +147,7 @@ describe('deriveConfusionCounts', () => {
 
     const confusion = deriveConfusionCounts(counts);
     expect(confusion.unscored).toBe(40);
-    expect(confusion.unscoredRate).toBeCloseTo(0.2);
+    expect(confusion.unscoredRate).toBeCloseTo(0.25);
   });
 
   it('does not fold unscored into the confusion cells or errors', () => {

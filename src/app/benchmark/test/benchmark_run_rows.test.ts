@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   RUN_ROW_OUTCOME_ALL,
   RUN_ROW_OUTCOMES,
+  isMitigatedRow,
   rowVerdictKind,
 } from '@/src/app/benchmark/domain/benchmark_run_rows';
 
@@ -44,5 +45,42 @@ describe('RUN_ROW_OUTCOMES', () => {
       'unscored',
       'mitigated',
     ]);
+  });
+});
+
+describe('isMitigatedRow', () => {
+  it('is true for an allow the redactor masked', () => {
+    expect(isMitigatedRow({ decision: 'allow', redacted: true })).toBe(true);
+  });
+
+  it('is true for an allow with the classifier_mitigated reason and no redacted flag', () => {
+    expect(
+      isMitigatedRow({
+        decision: 'allow',
+        redacted: false,
+        reason: 'classifier_mitigated',
+      })
+    ).toBe(true);
+    expect(
+      isMitigatedRow({ decision: 'allow', reason: 'classifier_mitigated' })
+    ).toBe(true);
+  });
+
+  it('is false for a plain allow, another reason or a missing decision', () => {
+    expect(isMitigatedRow({ decision: 'allow' })).toBe(false);
+    expect(
+      isMitigatedRow({
+        decision: 'allow',
+        reason: 'classifier found no injection',
+      })
+    ).toBe(false);
+    expect(isMitigatedRow({ redacted: true })).toBe(false);
+  });
+
+  it('is false for a block, even a redacted or classifier_mitigated one', () => {
+    expect(isMitigatedRow({ decision: 'block', redacted: true })).toBe(false);
+    expect(
+      isMitigatedRow({ decision: 'block', reason: 'classifier_mitigated' })
+    ).toBe(false);
   });
 });

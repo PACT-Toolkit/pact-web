@@ -150,11 +150,11 @@ describe('BenchmarkConfusionTiles unscored', () => {
       ) as ReactNode
     );
 
-    // total rows = 80 + 80 + 40 = 200, unscoredRate = 40 / 200 = 20%.
+    // total rows = 80 + 80 = 160 (unscored sit inside), unscoredRate = 40 / 160 = 25%.
     const tile = screen.getByTestId('benchmark-confusion-unscored');
     expect(tile).toHaveTextContent('Unscored');
     expect(tile).toHaveTextContent('40');
-    expect(tile).toHaveTextContent('20.0%');
+    expect(tile).toHaveTextContent('25.0%');
     expect(tile).toHaveTextContent(
       'classifier gave no verdict, counted as allowed'
     );

@@ -8,7 +8,7 @@ export interface ConfusionCounts {
   trueNegatives: number;
   /**
    * Attack rows the gateway allowed after masking content (redacted, or
-   * reason classifier_mitigated). Neither a detection nor a miss: they sit
+   * reason classifier_mitigated; see isMitigatedRow). Neither a detection nor a miss: they sit
    * inside attacks, outside true positives and outside false negatives.
    */
   mitigated: number;
@@ -23,7 +23,7 @@ export interface ConfusionCounts {
   /**
    * Rows that exhausted the runner's retry budget against HTTP 429 - the
    * gateway's rate limiter working, not a pipeline failure. Already
-   * excluded from attacks/benign/errors on the wire, so it
+   * outside attacks/benign on the wire, so it
    * never changes the four confusion cells above; it's surfaced here
    * purely so the run-detail tiles can show it next to Errors.
    */
@@ -74,8 +74,9 @@ export function deriveConfusionCounts(counts: RunCounts): ConfusionCounts {
   const throttled = counts.throttled ?? 0;
   const unscored = counts.unscored ?? 0;
   const mitigated = counts.mitigated ?? 0;
-  const totalRows =
-    counts.attacks + counts.benign + counts.errors + throttled + unscored;
+  // Errored and unscored rows are subsets of attacks/benign on the wire (an
+  // allow nothing blocked); a throttled row is the only set outside them.
+  const totalRows = counts.attacks + counts.benign + throttled;
 
   return {
     truePositives: counts.true_positives,

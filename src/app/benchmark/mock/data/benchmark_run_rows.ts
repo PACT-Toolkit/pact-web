@@ -1,5 +1,9 @@
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
-import { type BenchmarkRunRow } from '@/src/app/benchmark/domain/benchmark_run_rows';
+import {
+  CLASSIFIER_MITIGATED_REASON,
+  isMitigatedRow,
+  type BenchmarkRunRow,
+} from '@/src/app/benchmark/domain/benchmark_run_rows';
 import { MOCK_RUNS } from '@/src/app/benchmark/mock/data/benchmark';
 
 type RowKind =
@@ -153,16 +157,29 @@ const buildRow = (
   }
 
   if (kind === 'attack_mitigated') {
-    // Allowed after masking content: redacted, answered by the classifier's
-    // mitigation rather than a block.
+    const score = Math.round((0.5 + rng() * 0.5) * 100) / 100;
+    // Allowed after masking content, in one of the two ways the gateway does
+    // it: the redactor masked the text (redacted), or the classifier flagged
+    // sensitive content and mitigated it (redacted stays false).
+    if (rng() < 0.5) {
+      return {
+        ...base,
+        decision: 'allow',
+        redacted: true,
+        decisive_layer: 'redactor',
+        classifier_label: 'benign',
+        classifier_score: score,
+        reason: 'redactor masked sensitive content',
+      };
+    }
+
     return {
       ...base,
       decision: 'allow',
-      redacted: true,
       decisive_layer: 'classifier',
-      classifier_label: 'injection',
-      classifier_score: Math.round((0.5 + rng() * 0.5) * 100) / 100,
-      reason: 'classifier_mitigated',
+      classifier_label: 'sensitive',
+      classifier_score: score,
+      reason: CLASSIFIER_MITIGATED_REASON,
     };
   }
 
@@ -221,32 +238,37 @@ export const mockRunRows = (runId: string): BenchmarkRunRow[] | undefined => {
   return rows;
 };
 
-/** Whether a row belongs to an API `outcome` class. */
+/**
+ * Whether a row belongs to an API `outcome` class, mirroring the benchmark
+ * service's persisted-row filters: every row except a throttled one is scored,
+ * so an errored or unscored attack row is a false negative (nothing blocked
+ * it), while a mitigated attack row is not.
+ */
 export const rowMatchesOutcome = (
   row: BenchmarkRunRow,
   outcome: string
 ): boolean => {
-  const scored = !row.error && !row.unscored && !row.throttled;
-  const redacted = Boolean(row.redacted);
+  const isAttack = row.expected_label === 'block';
+  const judged = !row.error && !row.unscored;
 
   switch (outcome) {
     case 'false_negative':
       return (
-        scored &&
-        !redacted &&
-        row.expected_label === 'block' &&
-        row.decision === 'allow'
+        isAttack &&
+        !row.throttled &&
+        row.decision !== 'block' &&
+        !isMitigatedRow(row)
       );
     case 'false_positive':
       return (
-        scored && row.expected_label === 'allow' && row.decision === 'block'
+        row.expected_label === 'allow' && row.decision === 'block' && judged
       );
     case 'error':
       return Boolean(row.error);
     case 'unscored':
       return Boolean(row.unscored);
     case 'mitigated':
-      return scored && redacted && row.expected_label === 'block';
+      return isAttack && judged && isMitigatedRow(row);
     default:
       return false;
   }

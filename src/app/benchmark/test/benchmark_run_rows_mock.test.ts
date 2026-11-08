@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { isMitigatedRow } from '@/src/app/benchmark/domain/benchmark_run_rows';
 import { MOCK_RUNS } from '@/src/app/benchmark/mock/data/benchmark';
 import {
   buildMockRunRows,
@@ -40,16 +41,32 @@ describe('mock run rows', () => {
     }
   });
 
-  it('seeds throttled and errored rows, none of which is a false positive or negative', () => {
-    const rows = mockRunRows('run-11')!;
-    const throttled = rows.filter((r) => r.throttled);
-    const errored = rows.filter((r) => r.error);
+  it('seeds throttled rows, which no scored-outcome filter matches', () => {
+    const throttled = mockRunRows('run-11')!.filter((r) => r.throttled);
 
     expect(throttled.length).toBeGreaterThan(0);
+    for (const row of throttled) {
+      for (const outcome of ['false_positive', 'false_negative', 'mitigated']) {
+        expect(rowMatchesOutcome(row, outcome)).toBe(false);
+      }
+    }
+  });
+
+  it('scores errored and unscored attack rows as false negatives and no errored or unscored row as a false positive', () => {
+    const rows = mockRunRows('run-11')!;
+    const errored = rows.filter((r) => r.error);
+    const unscored = rows.filter((r) => r.unscored);
+    const attackMisses = [...errored, ...unscored].filter(
+      (r) => r.expected_label === 'block'
+    );
+
     expect(errored.length).toBeGreaterThan(0);
-    for (const row of [...throttled, ...errored]) {
+    expect(attackMisses.length).toBeGreaterThan(0);
+    for (const row of attackMisses) {
+      expect(rowMatchesOutcome(row, 'false_negative')).toBe(true);
+    }
+    for (const row of [...errored, ...unscored]) {
       expect(rowMatchesOutcome(row, 'false_positive')).toBe(false);
-      expect(rowMatchesOutcome(row, 'false_negative')).toBe(false);
     }
   });
 
@@ -76,7 +93,7 @@ describe('mock run rows', () => {
     }
   });
 
-  it('matches the mitigated count of the run with redacted allowed attacks', () => {
+  it('matches the mitigated count of the run with allowed attacks, redacted or classifier-mitigated', () => {
     const mitigated = mockRunRows('run-11')!.filter((r) =>
       rowMatchesOutcome(r, 'mitigated')
     );
@@ -85,8 +102,23 @@ describe('mock run rows', () => {
     for (const row of mitigated) {
       expect(row.expected_label).toBe('block');
       expect(row.decision).toBe('allow');
-      expect(row.redacted).toBe(true);
+      expect(isMitigatedRow(row)).toBe(true);
       expect(rowMatchesOutcome(row, 'false_negative')).toBe(false);
+    }
+  });
+
+  it('seeds both mitigation variants, only one of them carrying the redacted flag', () => {
+    const mitigated = mockRunRows('run-11')!.filter((r) =>
+      rowMatchesOutcome(r, 'mitigated')
+    );
+    const redactorRows = mitigated.filter((r) => r.redacted);
+    const classifierRows = mitigated.filter((r) => !r.redacted);
+
+    expect(redactorRows.length).toBeGreaterThan(0);
+    expect(classifierRows.length).toBeGreaterThan(0);
+    for (const row of classifierRows) {
+      expect(row.reason).toBe('classifier_mitigated');
+      expect(row.classifier_label).toBe('sensitive');
     }
   });
 });

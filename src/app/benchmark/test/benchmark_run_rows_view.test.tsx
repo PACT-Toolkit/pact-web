@@ -92,7 +92,7 @@ describe('BenchmarkRunRowsView', { timeout: 20_000 }, () => {
     expect(screen.getAllByText('allow')).toHaveLength(1);
   });
 
-  it('badges a redacted row and requests only mitigated rows when that filter is chosen', async () => {
+  it('badges a mitigated row and requests only mitigated rows when that filter is chosen', async () => {
     const outcomes: (string | null)[] = [];
     server.use(
       http.get(
@@ -120,7 +120,7 @@ describe('BenchmarkRunRowsView', { timeout: 20_000 }, () => {
     renderView('run-11');
 
     expect(
-      await screen.findByTestId('benchmark-row-redacted-badge')
+      await screen.findByTestId('benchmark-row-mitigated-badge')
     ).toBeVisible();
 
     fireEvent.keyDown(screen.getByTestId('benchmark-run-rows-outcome'), {
