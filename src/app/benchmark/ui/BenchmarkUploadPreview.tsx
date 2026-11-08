@@ -1,7 +1,9 @@
 import {
   truncateForPreview,
   type CorpusTotals,
+  CONTENT_MAX_BYTES,
   type NormalizedCorpusRow,
+  type OversizedCorpusRow,
 } from '@/src/app/benchmark/domain/benchmark_corpus_mapping';
 import {
   Table,
@@ -14,14 +16,17 @@ import {
 import { StatTile } from '@/src/framework/components/stat_tile';
 
 const PREVIEW_ROW_COUNT = 5;
+const OVERSIZED_LIST_LIMIT = 20;
 
 interface BenchmarkUploadPreviewProps {
   rows: NormalizedCorpusRow[];
+  oversized: OversizedCorpusRow[];
   totals: CorpusTotals;
 }
 
 export const BenchmarkUploadPreview = ({
   rows,
+  oversized,
   totals,
 }: BenchmarkUploadPreviewProps) => (
   <div className="flex flex-col gap-4" data-testid="benchmark-upload-preview">
@@ -51,6 +56,36 @@ export const BenchmarkUploadPreview = ({
         testId="benchmark-upload-preview-skipped"
       />
     </div>
+
+    {oversized.length > 0 && (
+      <div
+        className="flex flex-col gap-1 text-sm"
+        data-testid="benchmark-upload-preview-oversized"
+      >
+        <p className="font-medium">
+          Skipped: content over {CONTENT_MAX_BYTES.toLocaleString('en-US')}{' '}
+          bytes
+        </p>
+        <ul className="flex flex-col gap-1 text-muted-foreground">
+          {oversized.slice(0, OVERSIZED_LIST_LIMIT).map((row, index) => (
+            <li
+              key={index}
+              className="break-words"
+              data-testid="benchmark-upload-preview-oversized-row"
+            >
+              <span className="font-mono text-xs break-all">{row.label}</span>
+              {' - '}
+              {row.bytes.toLocaleString('en-US')} bytes
+            </li>
+          ))}
+          {oversized.length > OVERSIZED_LIST_LIMIT && (
+            <li data-testid="benchmark-upload-preview-oversized-more">
+              and {oversized.length - OVERSIZED_LIST_LIMIT} more
+            </li>
+          )}
+        </ul>
+      </div>
+    )}
 
     {rows.length > 0 && (
       <Table>

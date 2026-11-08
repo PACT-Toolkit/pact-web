@@ -217,6 +217,7 @@ export const BenchmarkUploadForm = ({
           {normalized && (
             <BenchmarkUploadPreview
               rows={normalized.rows}
+              oversized={normalized.oversized}
               totals={normalized.totals}
             />
           )}

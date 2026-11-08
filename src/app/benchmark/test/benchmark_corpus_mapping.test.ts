@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CONTENT_MAX_BYTES,
   computeDistinctLabelValues,
   detectDefaultColumnMapping,
   INVERTED_LABEL_COLUMN_ALIASES,
@@ -408,6 +409,75 @@ describe('normalizeCorpus', () => {
     };
     const result = normalizeCorpus(parsed, mapping({ unsure: 'skip' }));
     expect(result.jsonl).toBe('');
+  });
+});
+
+describe('normalizeCorpus content size cap', () => {
+  const columns = ['id', 'text', 'label'];
+  const decisions = { allow: 'allow' as const };
+  const run = (rows: Record<string, unknown>[]) =>
+    normalizeCorpus(
+      { columns, rows },
+      { textColumn: 'text', labelColumn: 'label', valueDecisions: decisions }
+    );
+
+  it('mirrors the server cap of 65,536 bytes', () => {
+    expect(CONTENT_MAX_BYTES).toBe(65_536);
+  });
+
+  it('keeps content of exactly 65,536 bytes and skips 65,537', () => {
+    const result = run([
+      { id: 'at-cap', text: 'a'.repeat(65_536), label: 'allow' },
+      { id: 'over-cap', text: 'a'.repeat(65_537), label: 'allow' },
+    ]);
+
+    expect(result.rows.map((row) => row.id)).toEqual(['at-cap']);
+    expect(result.oversized).toEqual([{ label: 'over-cap', bytes: 65_537 }]);
+    expect(result.totals).toEqual({
+      total: 2,
+      attacks: 0,
+      benign: 1,
+      skipped: 1,
+    });
+    expect(result.jsonl).not.toContain('over-cap');
+  });
+
+  it('measures multi-byte content in bytes, not characters', () => {
+    // 32,769 two-byte characters: 32,769 characters but 65,538 bytes.
+    const twoByte = 'é'.repeat(32_769);
+    // 32,768 two-byte characters: exactly 65,536 bytes.
+    const twoByteAtCap = 'é'.repeat(32_768);
+    const result = run([
+      { id: 'multi-over', text: twoByte, label: 'allow' },
+      { id: 'multi-at-cap', text: twoByteAtCap, label: 'allow' },
+    ]);
+
+    expect(result.rows.map((row) => row.id)).toEqual(['multi-at-cap']);
+    expect(result.oversized).toEqual([{ label: 'multi-over', bytes: 65_538 }]);
+  });
+
+  it('names an oversized row without an id by its row number', () => {
+    const result = normalizeCorpus(
+      {
+        columns: ['text', 'label'],
+        rows: [
+          { text: 'ok', label: 'allow' },
+          { text: 'a'.repeat(65_537), label: 'allow' },
+        ],
+      },
+      { textColumn: 'text', labelColumn: 'label', valueDecisions: decisions }
+    );
+
+    expect(result.oversized).toEqual([{ label: 'row 2', bytes: 65_537 }]);
+  });
+
+  it('does not list a row that is already skipped by its label', () => {
+    const result = run([
+      { id: 'big-skip', text: 'a'.repeat(70_000), label: 'unsure' },
+    ]);
+
+    expect(result.oversized).toEqual([]);
+    expect(result.totals.skipped).toBe(1);
   });
 });
 

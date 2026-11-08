@@ -762,6 +762,14 @@ export const MOCK_RATE_LIMITED_JOB_POLLS = [3, 4];
  */
 export const MOCK_AUTH_EXPIRED_JOB_MARKER = '__pact_mock_auth_expired_job__';
 
+/**
+ * A marker string that, when it appears anywhere in a submitted corpus, makes
+ * the mock job-submit handler answer HTTP 400 with a corpus validation report
+ * for a rule the browser does not pre-check - exercising the submit error
+ * banner in dev:mock even though oversized rows are filtered out client side.
+ */
+export const MOCK_INVALID_CORPUS_MARKER = '__pact_mock_invalid_corpus__';
+
 /** 79 deterministic scores spread evenly over 5..90 (one decimal), so the
  * suggested threshold is 47.5 and moving it visibly shifts the split. */
 const MOCK_JAILBREAK_SCORES = Array.from(
