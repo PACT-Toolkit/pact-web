@@ -75,7 +75,7 @@ export const BenchmarkUploadPreview = ({
             >
               <span className="font-mono text-xs break-all">{row.label}</span>
               {' - '}
-              {row.bytes.toLocaleString('en-US')} bytes, over the limit
+              {row.bytes.toLocaleString('en-US')} bytes
             </li>
           ))}
           {oversized.length > OVERSIZED_LIST_LIMIT && (

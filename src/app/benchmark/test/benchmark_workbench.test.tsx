@@ -192,6 +192,58 @@ describe('BenchmarkWorkbench upload errors', () => {
     expect(banner.className).toContain('whitespace-pre-line');
   });
 
+  it('places an upload error right under the upload card, above the import card', async () => {
+    server.use(
+      http.post(`${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`, () =>
+        HttpResponse.json({ error: 'bad corpus' }, { status: 400 })
+      )
+    );
+    renderWorkbench();
+    await uploadCorpusFile();
+
+    fireEvent.click(screen.getByTestId('benchmark-upload-submit'));
+
+    const banner = await screen.findByTestId('benchmark-submit-error');
+    expect(screen.getAllByTestId('benchmark-submit-error')).toHaveLength(1);
+    expect(
+      screen
+        .getByTestId('benchmark-upload-submit')
+        .compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+    expect(
+      banner.compareDocumentPosition(
+        screen.getByTestId('benchmark-import-slug')
+      ) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
+  it('places an import error after the import card, and shows only one banner', async () => {
+    server.use(
+      http.post(`${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`, () =>
+        HttpResponse.json({ error: 'bad corpus' }, { status: 400 })
+      ),
+      http.post(`${MSW_PACT_BASE}/gateway/v1/benchmark/imports`, () =>
+        HttpResponse.json({ error: 'bad import' }, { status: 400 })
+      )
+    );
+    renderWorkbench();
+    await uploadCorpusFile();
+    fireEvent.click(screen.getByTestId('benchmark-upload-submit'));
+    await screen.findByText('bad corpus');
+
+    await inspectImportDataset('deepset/prompt-injections');
+    fireEvent.click(screen.getByTestId('benchmark-import-run'));
+
+    const banner = await screen.findByText('bad import');
+    expect(screen.getAllByTestId('benchmark-submit-error')).toHaveLength(1);
+    expect(screen.queryByText('bad corpus')).toBeNull();
+    expect(
+      screen
+        .getByTestId('benchmark-import-run')
+        .compareDocumentPosition(banner) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
   it('shows the reachable message only for a network failure', async () => {
     server.use(
       http.post(`${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`, () =>

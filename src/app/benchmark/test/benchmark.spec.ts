@@ -596,6 +596,20 @@ test.describe('Benchmark upload oversized rows', () => {
       "row 'marker-row' has an unrecognised label"
     );
     await expect(banner).not.toContainText('gateway reachable');
+
+    // The banner sits right under the upload card, above the import card.
+    const bannerBox = await banner.boundingBox();
+    const importBox = await page
+      .locator('#benchmark-import-slug')
+      .boundingBox();
+    const runBox = await page
+      .getByRole('button', { name: 'Run benchmark' })
+      .boundingBox();
+    expect(bannerBox).not.toBeNull();
+    expect(importBox).not.toBeNull();
+    expect(runBox).not.toBeNull();
+    expect(bannerBox!.y).toBeGreaterThan(runBox!.y);
+    expect(bannerBox!.y).toBeLessThan(importBox!.y);
   });
 });
 

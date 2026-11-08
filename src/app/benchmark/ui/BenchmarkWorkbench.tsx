@@ -21,6 +21,7 @@ import { BenchmarkJobProgress } from '@/src/app/benchmark/ui/BenchmarkJobProgres
 import { BenchmarkLatencyChart } from '@/src/app/benchmark/ui/BenchmarkLatencyChart';
 import { BenchmarkResultsTable } from '@/src/app/benchmark/ui/BenchmarkResultsTable';
 import { BenchmarkRunHistory } from '@/src/app/benchmark/ui/BenchmarkRunHistory';
+import { BenchmarkSubmitErrorBanner } from '@/src/app/benchmark/ui/BenchmarkSubmitErrorBanner';
 import { BenchmarkTrendChart } from '@/src/app/benchmark/ui/BenchmarkTrendChart';
 import { BenchmarkTrendRangeToggle } from '@/src/app/benchmark/ui/BenchmarkTrendRangeToggle';
 import { BenchmarkUploadForm } from '@/src/app/benchmark/ui/BenchmarkUploadForm';
@@ -30,7 +31,12 @@ export const BenchmarkWorkbench = () => {
   const [jobId, setJobId] = useState<string | null>(null);
   const [isUploadSubmitting, setIsUploadSubmitting] = useState(false);
   const [isImportSubmitting, setIsImportSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
+  // One state, so only one banner shows at a time; `source` places it under
+  // the card that produced it.
+  const [submitError, setSubmitError] = useState<{
+    source: 'upload' | 'import';
+    message: string;
+  } | null>(null);
 
   const {
     isLoading,
@@ -49,17 +55,19 @@ export const BenchmarkWorkbench = () => {
         corpus_jsonl: corpusText,
       });
       if (response.status !== 202) {
-        setSubmitError(
-          describeBenchmarkSubmitError(response.status, response.data)
-        );
+        setSubmitError({
+          source: 'upload',
+          message: describeBenchmarkSubmitError(response.status, response.data),
+        });
 
         return;
       }
       setJobId(response.data.job_id);
     } catch {
-      setSubmitError(
-        'Failed to submit benchmark job. Is the gateway reachable?'
-      );
+      setSubmitError({
+        source: 'upload',
+        message: 'Failed to submit benchmark job. Is the gateway reachable?',
+      });
     } finally {
       setIsUploadSubmitting(false);
     }
@@ -77,11 +85,13 @@ export const BenchmarkWorkbench = () => {
       }
       setJobId(response.data.job_id);
     } catch (err) {
-      setSubmitError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to queue the import job. Is the gateway reachable?'
-      );
+      setSubmitError({
+        source: 'import',
+        message:
+          err instanceof Error
+            ? err.message
+            : 'Failed to queue the import job. Is the gateway reachable?',
+      });
     } finally {
       setIsImportSubmitting(false);
     }
@@ -108,20 +118,18 @@ export const BenchmarkWorkbench = () => {
         disabled={isImportSubmitting}
       />
 
+      {submitError?.source === 'upload' && (
+        <BenchmarkSubmitErrorBanner message={submitError.message} />
+      )}
+
       <BenchmarkImportCard
         onSubmit={handleImportSubmit}
         isSubmitting={isImportSubmitting}
         disabled={isUploadSubmitting}
       />
 
-      {submitError && (
-        <p
-          role="alert"
-          data-testid="benchmark-submit-error"
-          className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm break-words whitespace-pre-line text-destructive"
-        >
-          {submitError}
-        </p>
+      {submitError?.source === 'import' && (
+        <BenchmarkSubmitErrorBanner message={submitError.message} />
       )}
 
       {jobId && (
