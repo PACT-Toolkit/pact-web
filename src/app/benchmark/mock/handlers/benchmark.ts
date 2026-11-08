@@ -11,6 +11,7 @@ import {
   MOCK_HUB_GATED_SLUG,
   MOCK_HUB_HTML_502_PAGE,
   MOCK_HUB_HTML_502_SLUG,
+  MOCK_JOB_DURATION_MS,
   MOCK_JOB_RUN_ID,
   MOCK_RATE_LIMITED_JOB_MARKER,
   MOCK_RATE_LIMITED_JOB_POLLS,
@@ -64,31 +65,37 @@ const advanceJob = (job: MockJob) => {
 
       return;
     }
-    if (age > 8000) {
+    if (age > MOCK_JOB_DURATION_MS) {
       job.status = 'done';
       job.progress_pct = 100;
       job.result = {
         detection_rate: 0.93,
-        fp_rate: 0.04,
+        fp_rate: 0.041,
         p50_latency_ms: 18.4,
         p99_latency_ms: 112.7,
         total_rows: TOTAL_ROWS,
         rows: [],
         // A seeded run, so the "View rows" link lands on a page with rows.
         run_id: MOCK_JOB_RUN_ID,
-        // 100 attacks / 100 benign so true_positives/false_positives divide
-        // out to exactly the detection/fp rates above (the confusion
-        // tiles on the live job progress card). throttled: 3 exercises the
-        // Throttled tile on this same card - it's additive on
-        // top of attacks/benign/errors, not carved out of them.
+        // 6 of 200 rows (3 %) were lost (3 unscored + 3 throttled), over the
+        // default 1 % threshold, so the job summary shows the degraded badge.
+        degraded: true,
+        // 100 attacks / 97 benign / 3 throttled = TOTAL_ROWS, so the counts
+        // keep the wire invariants: throttled is the only set outside
+        // attacks/benign, and the 3 unscored rows sit inside them. The 100
+        // attacks make true_positives divide out to exactly the detection
+        // rate above (the confusion tiles on the live job progress card);
+        // mitigated: 4 are attacks masked instead of blocked.
         counts: {
           attacks: 100,
-          benign: 100,
+          benign: 97,
           errors: 0,
           false_positives: 4,
           true_positives: 93,
+          mitigated: 4,
           throttled: 3,
           unscored: MOCK_UNSCORED_ROW_COUNT,
+          requeues: 4,
         },
       };
     }

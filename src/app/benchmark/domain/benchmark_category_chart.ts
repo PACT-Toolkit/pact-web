@@ -49,14 +49,16 @@ export interface CategoryChartPoint {
   attacks: number;
   benign: number;
   errors: number;
+  /** Attack rows in this category the gateway masked instead of blocking. See benchmark_confusion.ts. */
+  mitigated: number;
   /** Rows in this category shed by the gateway's rate limiter. See benchmark_confusion.ts. */
   throttled: number;
   /** Rows in this category the classifier gave no verdict on (fail-open allow). See benchmark_confusion.ts. */
   unscored: number;
   /**
-   * Bar-end annotation for the detection bar: the non-zero throttled count
-   * and, for a category with attack rows, the unscored count
-   * ("2 thr · 4 unscored"). Empty when there is nothing to show.
+   * Bar-end annotation for the detection bar: the non-zero throttled count,
+   * the mitigated count and, for a category with attack rows, the unscored
+   * count ("2 thr · 3 mitigated · 4 unscored"). Empty when there is nothing to show.
    */
   detectionNote: string;
   /**
@@ -97,6 +99,8 @@ export function categoryChartData(
 
       const throttled = c.throttled ?? 0;
       const unscored = c.unscored ?? 0;
+      // Coalesced like throttled/unscored: absent on a pre-mitigated run.
+      const mitigated = c.mitigated ?? 0;
 
       return {
         category: c.category,
@@ -113,6 +117,7 @@ export function categoryChartData(
         attacks: c.attacks,
         benign: c.benign,
         errors: c.errors,
+        mitigated,
         // Coalesced to 0 for the same reason deriveConfusionCounts does -
         // a category persisted before the gateway added the field won't carry it on the wire
         // despite the generated type marking it required.
@@ -120,10 +125,11 @@ export function categoryChartData(
         // Coalesced for the same reason: a category persisted before the
         // gateway reported unscored rows won't carry the field.
         unscored,
-        // An unscored row's label is unknown (attacks/benign exclude it), so
-        // the count rides on whichever bar the category actually draws.
+        // An unscored row counts as allowed inside attacks/benign, so the
+        // count rides on whichever bar the category actually draws.
         detectionNote: countNote([
           [throttled, 'thr'],
+          [mitigated, 'mitigated'],
           [c.attacks > 0 ? unscored : 0, 'unscored'],
         ]),
         fpNote: countNote([

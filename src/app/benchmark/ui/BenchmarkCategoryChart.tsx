@@ -143,6 +143,11 @@ export const BenchmarkCategoryChart = ({
                                   Errors: {p.errors}
                                 </span>
                               )}
+                              {p.mitigated > 0 && (
+                                <span className="text-warning">
+                                  Mitigated: {p.mitigated}
+                                </span>
+                              )}
                               {p.throttled > 0 && (
                                 <span className="text-warning">
                                   Throttled: {p.throttled}

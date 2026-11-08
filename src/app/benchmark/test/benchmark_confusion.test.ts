@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { type RunCounts } from '@/src/app/benchmark/domain/benchmark_breakdown';
-import { deriveConfusionCounts } from '@/src/app/benchmark/domain/benchmark_confusion';
+import {
+  deriveConfusionCounts,
+  effectiveDetectionRate,
+} from '@/src/app/benchmark/domain/benchmark_confusion';
 
 function makeCounts(overrides: Partial<RunCounts>): RunCounts {
   return {
@@ -10,8 +13,10 @@ function makeCounts(overrides: Partial<RunCounts>): RunCounts {
     true_positives: 95,
     false_positives: 5,
     errors: 0,
+    mitigated: 0,
     throttled: 0,
     unscored: 0,
+    requeues: 0,
     ...overrides,
   };
 }
@@ -31,11 +36,14 @@ describe('deriveConfusionCounts', () => {
       falseNegatives: 8,
       falsePositives: 6,
       trueNegatives: 74,
+      mitigated: 0,
+      effectiveDetectionRate: 0.92,
       errors: 3,
       throttled: 0,
       throttledRate: 0,
       unscored: 0,
       unscoredRate: 0,
+      requeues: 0,
     });
   });
 
@@ -64,6 +72,23 @@ describe('deriveConfusionCounts', () => {
     const confusion = deriveConfusionCounts(counts);
     expect(confusion.throttled).toBe(20);
     expect(confusion.throttledRate).toBeCloseTo(0.1);
+  });
+
+  it('counts errored and unscored rows inside attacks and benign, not on top, in the rates', () => {
+    // attacks 90 + benign 90 + throttled 20 = 200 rows; the 10 errored and 30
+    // unscored rows are subsets of attacks/benign.
+    const counts = makeCounts({
+      attacks: 90,
+      benign: 90,
+      true_positives: 80,
+      errors: 10,
+      throttled: 20,
+      unscored: 30,
+    });
+
+    const confusion = deriveConfusionCounts(counts);
+    expect(confusion.throttledRate).toBeCloseTo(0.1);
+    expect(confusion.unscoredRate).toBeCloseTo(0.15);
   });
 
   it('does not fold throttled into errors, attacks, or benign', () => {
@@ -112,7 +137,8 @@ describe('deriveConfusionCounts', () => {
   });
 
   it('carries unscored through and derives its rate against all rows the run touched', () => {
-    // attacks 80 + benign 80 + errors 0 + throttled 0 + unscored 40 = 200 rows.
+    // attacks 80 + benign 80 + throttled 0 = 160 rows; the 40 unscored rows
+    // sit inside attacks/benign.
     const counts = makeCounts({
       attacks: 80,
       benign: 80,
@@ -123,7 +149,7 @@ describe('deriveConfusionCounts', () => {
 
     const confusion = deriveConfusionCounts(counts);
     expect(confusion.unscored).toBe(40);
-    expect(confusion.unscoredRate).toBeCloseTo(0.2);
+    expect(confusion.unscoredRate).toBeCloseTo(0.25);
   });
 
   it('does not fold unscored into the confusion cells or errors', () => {
@@ -169,5 +195,81 @@ describe('deriveConfusionCounts', () => {
     });
 
     expect(deriveConfusionCounts(counts).unscoredRate).toBe(0);
+  });
+});
+
+describe('mitigated', () => {
+  it('keeps mitigated attacks out of the false negatives', () => {
+    const counts = makeCounts({
+      attacks: 100,
+      true_positives: 80,
+      mitigated: 12,
+    });
+
+    const confusion = deriveConfusionCounts(counts);
+    expect(confusion.mitigated).toBe(12);
+    expect(confusion.falseNegatives).toBe(8);
+    expect(confusion.truePositives).toBe(80);
+  });
+
+  it('derives the effective rate from true positives plus mitigated', () => {
+    const counts = makeCounts({
+      attacks: 100,
+      true_positives: 80,
+      mitigated: 12,
+    });
+
+    expect(deriveConfusionCounts(counts).effectiveDetectionRate).toBeCloseTo(
+      0.92
+    );
+  });
+
+  it('coalesces a missing mitigated field (run persisted before it existed) to zero', () => {
+    const counts = {
+      attacks: 100,
+      benign: 100,
+      true_positives: 95,
+      false_positives: 5,
+      errors: 0,
+      throttled: 0,
+      unscored: 0,
+    } as unknown as RunCounts;
+
+    const confusion = deriveConfusionCounts(counts);
+    expect(confusion.mitigated).toBe(0);
+    expect(confusion.falseNegatives).toBe(5);
+    expect(confusion.effectiveDetectionRate).toBeCloseTo(0.95);
+  });
+});
+
+describe('effectiveDetectionRate', () => {
+  it('is (true positives + mitigated) / attacks', () => {
+    expect(effectiveDetectionRate(56, 4, 60)).toBe(1);
+    expect(effectiveDetectionRate(30, 15, 90)).toBe(0.5);
+  });
+
+  it('equals the strict rate when nothing was mitigated', () => {
+    expect(effectiveDetectionRate(93, 0, 100)).toBe(0.93);
+  });
+
+  it('is 0 when the run has no attack rows', () => {
+    expect(effectiveDetectionRate(0, 0, 0)).toBe(0);
+  });
+});
+
+describe('deriveConfusionCounts requeues', () => {
+  it('carries the requeue count without touching the confusion cells', () => {
+    const withRequeues = deriveConfusionCounts(makeCounts({ requeues: 7 }));
+    const without = deriveConfusionCounts(makeCounts({ requeues: 0 }));
+
+    expect(withRequeues.requeues).toBe(7);
+    expect({ ...withRequeues, requeues: 0 }).toEqual(without);
+  });
+
+  it('reads a missing requeues field (older run) as zero', () => {
+    const counts = makeCounts({});
+    delete (counts as Partial<RunCounts>).requeues;
+
+    expect(deriveConfusionCounts(counts).requeues).toBe(0);
   });
 });

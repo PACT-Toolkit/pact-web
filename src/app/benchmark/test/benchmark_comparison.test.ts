@@ -11,7 +11,7 @@ import {
   runOptionLabel,
   runRowCountLabel,
   UNSCORED_SHARE_LIMIT,
-  unscoredNotQuotableReasons,
+  notQuotableReasons,
   unscoredShare,
 } from '@/src/app/benchmark/domain/benchmark_comparison';
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
@@ -26,6 +26,7 @@ const makeRun = (overrides: Partial<BenchmarkRun>): BenchmarkRun => ({
   p50_latency: 12,
   p99_latency: 80,
   row_count: 100,
+  degraded: false,
   ran_at: 1_000,
   ...overrides,
 });
@@ -96,11 +97,13 @@ describe('detectionRateDefined', () => {
   it('is true when the run has at least one attack row', () => {
     const run = makeRun({
       counts: {
+        requeues: 0,
         attacks: 1,
         benign: 0,
         errors: 0,
         false_positives: 0,
         true_positives: 1,
+        mitigated: 0,
         throttled: 0,
         unscored: 0,
       },
@@ -111,11 +114,13 @@ describe('detectionRateDefined', () => {
   it('is false for an attack-free run (zero-denominator detection rate)', () => {
     const run = makeRun({
       counts: {
+        requeues: 0,
         attacks: 0,
         benign: 2508,
         errors: 0,
         false_positives: 1698,
         true_positives: 0,
+        mitigated: 0,
         throttled: 0,
         unscored: 0,
       },
@@ -132,11 +137,13 @@ describe('fpRateDefined', () => {
   it('is false for a benign-free run (zero-denominator FP rate)', () => {
     const run = makeRun({
       counts: {
+        requeues: 0,
         attacks: 6,
         benign: 0,
         errors: 0,
         false_positives: 0,
         true_positives: 6,
+        mitigated: 0,
         throttled: 0,
         unscored: 0,
       },
@@ -178,11 +185,13 @@ describe('compareRuns with a zero-denominator run', () => {
       detection_rate: 1,
       fp_rate: 0,
       counts: {
+        requeues: 0,
         attacks: 5,
         benign: 1,
         errors: 0,
         false_positives: 0,
         true_positives: 5,
+        mitigated: 0,
         throttled: 0,
         unscored: 0,
       },
@@ -192,11 +201,13 @@ describe('compareRuns with a zero-denominator run', () => {
       detection_rate: 0,
       fp_rate: 0.677,
       counts: {
+        requeues: 0,
         attacks: 0,
         benign: 2508,
         errors: 0,
         false_positives: 1698,
         true_positives: 0,
+        mitigated: 0,
         throttled: 0,
         unscored: 0,
       },
@@ -271,11 +282,13 @@ describe('comparisonDeltaBars', () => {
       id: 'baseline',
       detection_rate: 1,
       counts: {
+        requeues: 0,
         attacks: 5,
         benign: 1,
         errors: 0,
         false_positives: 0,
         true_positives: 5,
+        mitigated: 0,
         throttled: 0,
         unscored: 0,
       },
@@ -284,11 +297,13 @@ describe('comparisonDeltaBars', () => {
       id: 'candidate',
       detection_rate: 0,
       counts: {
+        requeues: 0,
         attacks: 0,
         benign: 10,
         errors: 0,
         false_positives: 0,
         true_positives: 0,
+        mitigated: 0,
         throttled: 0,
         unscored: 0,
       },
@@ -343,11 +358,13 @@ describe('runRowCountLabel', () => {
     const run = makeRun({
       row_count: 2508,
       counts: {
+        requeues: 0,
         attacks: 0,
         benign: 2508,
         errors: 0,
         false_positives: 1698,
         true_positives: 0,
+        mitigated: 0,
         throttled: 0,
         unscored: 0,
       },
@@ -380,11 +397,13 @@ describe('runOptionLabel', () => {
       ran_at: 1_700_000_000,
       row_count: 60,
       counts: {
+        requeues: 0,
         attacks: 40,
         benign: 20,
         errors: 0,
         false_positives: 1,
         true_positives: 38,
+        mitigated: 0,
         throttled: 0,
         unscored: 0,
       },
@@ -397,15 +416,18 @@ describe('runOptionLabel', () => {
 });
 
 describe('unscored share', () => {
-  // 1,000 attacks + 1,000 benign + `unscored` = every row the run touched.
+  // 1,000 attacks + 1,000 benign = every row the run touched; the unscored
+  // rows sit inside them (an allow nothing blocked), not on top.
   const runWithUnscored = (unscored: number): BenchmarkRun =>
     makeRun({
       counts: {
+        requeues: 0,
         attacks: 1000,
         benign: 1000,
         errors: 0,
         false_positives: 20,
         true_positives: 900,
+        mitigated: 0,
         throttled: 0,
         unscored,
       },
@@ -420,28 +442,30 @@ describe('unscored share', () => {
   });
 
   it('is the unscored rows over every row the run touched', () => {
-    // 300 / (1000 + 1000 + 300) = 13.04 %.
-    expect(unscoredShare(runWithUnscored(300))).toBeCloseTo(300 / 2300);
+    // 300 / (1000 + 1000) = 15 %.
+    expect(unscoredShare(runWithUnscored(300))).toBeCloseTo(300 / 2000);
   });
 
   it('keeps both rates quotable below the limit', () => {
-    const run = runWithUnscored(100); // 100 / 2100 = 4.8 %
+    const run = runWithUnscored(100); // 100 / 2000 = 5 %
 
     expect(detectionRateDefined(run)).toBe(true);
     expect(fpRateDefined(run)).toBe(true);
   });
 
   it('keeps both rates quotable exactly at the limit', () => {
-    // 900 + 900 scored rows and 200 unscored: 200 / 2,000 is exactly 10 %.
+    // 900 + 900 rows of which 180 are unscored: 180 / 1,800 is exactly 10 %.
     const run = makeRun({
       counts: {
+        requeues: 0,
         attacks: 900,
         benign: 900,
         errors: 0,
         false_positives: 10,
         true_positives: 800,
+        mitigated: 0,
         throttled: 0,
-        unscored: 200,
+        unscored: 180,
       },
     });
 
@@ -490,35 +514,96 @@ describe('unscored share', () => {
   });
 });
 
-describe('unscoredNotQuotableReasons', () => {
+describe('notQuotableReasons', () => {
   const overLimit = makeRun({
     counts: {
+      requeues: 0,
       attacks: 1000,
-      benign: 700,
+      benign: 1000,
       errors: 0,
       false_positives: 21,
       true_positives: 930,
+      mitigated: 0,
       throttled: 0,
       unscored: 300,
     },
   });
 
   it('is empty when neither run exceeds the limit', () => {
-    expect(unscoredNotQuotableReasons(makeRun({}), makeRun({}))).toEqual([]);
+    expect(notQuotableReasons(makeRun({}), makeRun({}))).toEqual([]);
   });
 
   it('names the candidate and its unscored share when only it is over the limit', () => {
     // 300 / 2,000 = 15.0 %.
-    expect(unscoredNotQuotableReasons(makeRun({}), overLimit)).toEqual([
+    expect(notQuotableReasons(makeRun({}), overLimit)).toEqual([
       'Candidate: 15.0% of rows unscored (limit 10.0%) - detection and false-positive rates are not quotable.',
     ]);
   });
 
   it('names both runs when both are over the limit', () => {
-    const reasons = unscoredNotQuotableReasons(overLimit, overLimit);
+    const reasons = notQuotableReasons(overLimit, overLimit);
 
     expect(reasons).toHaveLength(2);
     expect(reasons[0]).toMatch(/^Baseline: 15\.0%/);
     expect(reasons[1]).toMatch(/^Candidate: 15\.0%/);
+  });
+
+  it('names a degraded run even when its unscored share is within the limit', () => {
+    expect(
+      notQuotableReasons(makeRun({ degraded: true }), makeRun({}))
+    ).toEqual([
+      'Baseline: run degraded - rows were lost to errors, unscored verdicts or throttling; detection and false-positive rates are not quotable.',
+    ]);
+  });
+
+  it('gives a run over the unscored limit that is also degraded both sentences', () => {
+    const reasons = notQuotableReasons(
+      makeRun({}),
+      makeRun({ ...overLimit, degraded: true })
+    );
+
+    expect(reasons).toHaveLength(2);
+    expect(reasons[0]).toMatch(/^Candidate: run degraded/);
+    expect(reasons[1]).toMatch(/^Candidate: 15\.0% of rows unscored/);
+  });
+});
+
+describe('degraded runs', () => {
+  const degraded = makeRun({
+    degraded: true,
+    counts: {
+      attacks: 70,
+      benign: 30,
+      errors: 0,
+      false_positives: 1,
+      true_positives: 60,
+      mitigated: 0,
+      throttled: 0,
+      unscored: 0,
+      requeues: 0,
+    },
+  });
+
+  it('makes both rates undefined, whatever the unscored share', () => {
+    expect(detectionRateDefined(degraded)).toBe(false);
+    expect(fpRateDefined(degraded)).toBe(false);
+  });
+
+  it('shows no delta against a degraded run', () => {
+    const detection = compareRuns(makeRun({}), degraded).find(
+      (m) => m.key === 'detection_rate'
+    );
+
+    expect(detection?.candidateDefined).toBe(false);
+    expect(detection?.delta).toBeNull();
+  });
+
+  it('keeps the latency metrics quotable', () => {
+    const p50 = compareRuns(makeRun({}), degraded).find(
+      (m) => m.key === 'p50_latency'
+    );
+
+    expect(p50?.candidateDefined).toBe(true);
+    expect(p50?.delta).not.toBeNull();
   });
 });

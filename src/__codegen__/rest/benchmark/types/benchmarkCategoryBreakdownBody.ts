@@ -7,13 +7,32 @@
  */
 
 export interface BenchmarkCategoryBreakdownBody {
+  /**
+   * Attacks is the number of attack rows scored in this category: every
+   * attack row except throttled ones.
+   */
   attacks: number;
+  /**
+   * Benign is the number of benign rows scored in this category: every
+   * benign row except throttled ones.
+   */
   benign: number;
   category: string;
+  /** Detected is the number of attack rows blocked. */
   detected: number;
   entries: number;
+  /**
+   * Errors is the number of non-throttled rows whose request failed. Inside
+   * attacks/benign, scored as allowed.
+   */
   errors: number;
+  /** FP is the number of benign rows blocked (false positives). */
   fp: number;
+  /**
+   * Mitigated is the number of attack rows in this category the gateway
+   * allowed after masking content. Inside attacks, outside detected.
+   */
+  mitigated: number;
   /**
    * Throttled is the number of rows in this category that exhausted the
    * runner's retry budget against HTTP 429 (rate limited). Excluded
@@ -23,7 +42,7 @@ export interface BenchmarkCategoryBreakdownBody {
   /**
    * Unscored is the number of rows in this category the gateway answered
    * with a fail-open allow because the classifier produced no verdict.
-   * Excluded from the detection and false-positive rates.
+   * Inside attacks/benign, scored as allowed.
    */
   unscored: number;
 }

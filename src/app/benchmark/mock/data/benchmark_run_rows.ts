@@ -1,10 +1,15 @@
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
-import { type BenchmarkRunRow } from '@/src/app/benchmark/domain/benchmark_run_rows';
+import {
+  CLASSIFIER_MITIGATED_REASON,
+  isMitigatedRow,
+  type BenchmarkRunRow,
+} from '@/src/app/benchmark/domain/benchmark_run_rows';
 import { MOCK_RUNS } from '@/src/app/benchmark/mock/data/benchmark';
 
 type RowKind =
   | 'attack_hit'
   | 'attack_miss'
+  | 'attack_mitigated'
   | 'benign_ok'
   | 'benign_fp'
   | 'unscored'
@@ -18,6 +23,9 @@ const SEEDED_ERRORS = 2;
 const SEEDED_MIN_ROWS = 50;
 
 const FILTER_RULE_SHARE = 0.3;
+
+/** Attempts a row that went through first time needed. */
+const SINGLE_ATTEMPT = 1;
 
 /** Small deterministic PRNG (LCG) so a run's rows are identical on every request. */
 const makeRng = (seed: number) => {
@@ -56,14 +64,18 @@ const kindPlan = (run: BenchmarkRun): RowKind[] => {
     : 0.5;
   const attacks = Math.round(scored * attackShare);
   const benign = scored - attacks;
-  const misses = Math.round(attacks * (1 - run.detection_rate));
+  const undetected = Math.round(attacks * (1 - run.detection_rate));
+  // Mitigated attacks are part of the undetected share: masked, not blocked.
+  const mitigated = Math.min(run.counts?.mitigated ?? 0, undetected);
+  const misses = undetected - mitigated;
   const falsePositives = Math.round(benign * run.fp_rate);
 
   const count = (kind: RowKind, n: number): RowKind[] =>
     Array.from({ length: n }, () => kind);
 
   return [
-    ...count('attack_hit', attacks - misses),
+    ...count('attack_hit', attacks - undetected),
+    ...count('attack_mitigated', mitigated),
     ...count('attack_miss', misses),
     ...count('benign_ok', benign - falsePositives),
     ...count('benign_fp', falsePositives),
@@ -98,7 +110,10 @@ const buildRow = (
   rng: () => number,
   pools: ReturnType<typeof categoryPools>
 ): BenchmarkRunRow => {
-  const isAttack = kind === 'attack_hit' || kind === 'attack_miss';
+  const isAttack =
+    kind === 'attack_hit' ||
+    kind === 'attack_miss' ||
+    kind === 'attack_mitigated';
   const isBenign = kind === 'benign_ok' || kind === 'benign_fp';
   const expected = isAttack
     ? 'block'
@@ -144,6 +159,33 @@ const buildRow = (
     };
   }
 
+  if (kind === 'attack_mitigated') {
+    const score = Math.round((0.5 + rng() * 0.5) * 100) / 100;
+    // Allowed after masking content, in one of the two ways the gateway does
+    // it: the redactor masked the text (redacted), or the classifier flagged
+    // sensitive content and mitigated it (redacted stays false).
+    if (rng() < 0.5) {
+      return {
+        ...base,
+        decision: 'allow',
+        redacted: true,
+        decisive_layer: 'redactor',
+        classifier_label: 'benign',
+        classifier_score: score,
+        reason: 'redactor masked sensitive content',
+      };
+    }
+
+    return {
+      ...base,
+      decision: 'allow',
+      decisive_layer: 'classifier',
+      classifier_label: 'sensitive',
+      classifier_score: score,
+      reason: CLASSIFIER_MITIGATED_REASON,
+    };
+  }
+
   const blocked = kind === 'attack_hit' || kind === 'benign_fp';
   if (blocked && rng() < FILTER_RULE_SHARE) {
     return {
@@ -174,10 +216,31 @@ export const buildMockRunRows = (
 ): BenchmarkRunRow[] => {
   const rng = makeRng(seed);
   const pools = categoryPools(run);
+  // A run with a count breakdown records attempts (one per row that went
+  // through first time); an older run does not, so its rows carry none (0).
+  const baseAttempts = run.counts ? SINGLE_ATTEMPT : 0;
+  const rows = shuffle(kindPlan(run), rng).map((kind, i): BenchmarkRunRow => ({
+    ...buildRow(run, kind, i + 1, rng, pools),
+    attempts: baseAttempts,
+  }));
 
-  return shuffle(kindPlan(run), rng).map((kind, i) =>
-    buildRow(run, kind, i + 1, rng, pools)
-  );
+  // A throttled row was retried until the budget ran out, so throttled rows
+  // take their extra attempt first; the remaining requeues go to random rows.
+  // The extra attempts across all rows add up to the run's `requeues` count.
+  let requeues = run.counts?.requeues ?? 0;
+  for (const row of rows) {
+    if (requeues === 0) break;
+    if (row.throttled) {
+      row.attempts = (row.attempts ?? baseAttempts) + 1;
+      requeues -= 1;
+    }
+  }
+  for (; requeues > 0 && rows.length > 0; requeues -= 1) {
+    const row = pick(rows, rng);
+    row.attempts = (row.attempts ?? baseAttempts) + 1;
+  }
+
+  return rows;
 };
 
 const rowCache = new Map<string, BenchmarkRunRow[]>();
@@ -199,26 +262,37 @@ export const mockRunRows = (runId: string): BenchmarkRunRow[] | undefined => {
   return rows;
 };
 
-/** Whether a row belongs to an API `outcome` class. */
+/**
+ * Whether a row belongs to an API `outcome` class, mirroring the benchmark
+ * service's persisted-row filters: every row except a throttled one is scored,
+ * so an errored or unscored attack row is a false negative (nothing blocked
+ * it), while a mitigated attack row is not.
+ */
 export const rowMatchesOutcome = (
   row: BenchmarkRunRow,
   outcome: string
 ): boolean => {
-  const scored = !row.error && !row.unscored && !row.throttled;
+  const isAttack = row.expected_label === 'block';
+  const judged = !row.error && !row.unscored;
 
   switch (outcome) {
     case 'false_negative':
       return (
-        scored && row.expected_label === 'block' && row.decision === 'allow'
+        isAttack &&
+        !row.throttled &&
+        row.decision !== 'block' &&
+        !isMitigatedRow(row)
       );
     case 'false_positive':
       return (
-        scored && row.expected_label === 'allow' && row.decision === 'block'
+        row.expected_label === 'allow' && row.decision === 'block' && judged
       );
     case 'error':
       return Boolean(row.error);
     case 'unscored':
       return Boolean(row.unscored);
+    case 'mitigated':
+      return isAttack && judged && isMitigatedRow(row);
     default:
       return false;
   }

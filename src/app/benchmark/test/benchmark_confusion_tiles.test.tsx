@@ -19,11 +19,13 @@ describe('BenchmarkConfusionTiles', () => {
       (
         <BenchmarkConfusionTiles
           counts={{
+            requeues: 0,
             attacks: 100,
             benign: 100,
             errors: 2,
             false_positives: 4,
             true_positives: 93,
+            mitigated: 0,
             throttled: 0,
             unscored: 0,
           }}
@@ -54,11 +56,13 @@ describe('BenchmarkConfusionTiles', () => {
       (
         <BenchmarkConfusionTiles
           counts={{
+            requeues: 0,
             attacks: 50,
             benign: 50,
             errors: 0,
             false_positives: 0,
             true_positives: 50,
+            mitigated: 0,
             throttled: 0,
             unscored: 0,
           }}
@@ -81,11 +85,13 @@ describe('BenchmarkConfusionTiles', () => {
       (
         <BenchmarkConfusionTiles
           counts={{
+            requeues: 0,
             attacks: 90,
             benign: 90,
             errors: 0,
             false_positives: 0,
             true_positives: 90,
+            mitigated: 0,
             throttled: 20,
             unscored: 0,
           }}
@@ -134,11 +140,13 @@ describe('BenchmarkConfusionTiles unscored', () => {
       (
         <BenchmarkConfusionTiles
           counts={{
+            requeues: 0,
             attacks: 80,
             benign: 80,
             errors: 0,
             false_positives: 0,
             true_positives: 80,
+            mitigated: 0,
             throttled: 0,
             unscored: 40,
           }}
@@ -146,13 +154,13 @@ describe('BenchmarkConfusionTiles unscored', () => {
       ) as ReactNode
     );
 
-    // total rows = 80 + 80 + 40 = 200, unscoredRate = 40 / 200 = 20%.
+    // total rows = 80 + 80 = 160 (unscored sit inside), unscoredRate = 40 / 160 = 25%.
     const tile = screen.getByTestId('benchmark-confusion-unscored');
     expect(tile).toHaveTextContent('Unscored');
     expect(tile).toHaveTextContent('40');
-    expect(tile).toHaveTextContent('20.0%');
+    expect(tile).toHaveTextContent('25.0%');
     expect(tile).toHaveTextContent(
-      'classifier gave no verdict, excluded from the rates'
+      'classifier gave no verdict, counted as allowed'
     );
     expect(tile.querySelector('[data-slot="stat-tile-value"]')).toHaveClass(
       'text-warning'
@@ -164,11 +172,13 @@ describe('BenchmarkConfusionTiles unscored', () => {
       (
         <BenchmarkConfusionTiles
           counts={{
+            requeues: 0,
             attacks: 50,
             benign: 50,
             errors: 0,
             false_positives: 0,
             true_positives: 50,
+            mitigated: 0,
             throttled: 0,
             unscored: 0,
           }}
@@ -194,6 +204,7 @@ describe('BenchmarkConfusionTiles unscored', () => {
               errors: 0,
               false_positives: 0,
               true_positives: 50,
+              mitigated: 0,
               throttled: 0,
             } as unknown as RunCounts
           }
@@ -203,6 +214,127 @@ describe('BenchmarkConfusionTiles unscored', () => {
 
     expect(
       screen.getByTestId('benchmark-confusion-unscored')
+    ).toHaveTextContent('0');
+  });
+});
+
+describe('BenchmarkConfusionTiles mitigated', () => {
+  const counts = {
+    attacks: 100,
+    benign: 100,
+    errors: 0,
+    false_positives: 0,
+    mitigated: 10,
+    true_positives: 80,
+    throttled: 0,
+    unscored: 0,
+    requeues: 0,
+  };
+
+  it('shows the mitigated count and leaves it out of the false negatives', () => {
+    render((<BenchmarkConfusionTiles counts={counts} />) as ReactNode);
+
+    const tile = screen.getByTestId('benchmark-confusion-mitigated');
+    expect(tile).toHaveTextContent('Mitigated');
+    expect(tile).toHaveTextContent('10');
+    expect(tile.querySelector('[data-slot="stat-tile-value"]')).toHaveClass(
+      'text-warning'
+    );
+    expect(screen.getByTestId('benchmark-confusion-fn')).toHaveTextContent(
+      '10'
+    );
+  });
+
+  it('shows the effective detection rate labelled as an upper bound', () => {
+    render((<BenchmarkConfusionTiles counts={counts} />) as ReactNode);
+
+    const tile = screen.getByTestId('benchmark-confusion-effective-detection');
+    expect(tile).toHaveTextContent('Effective detection');
+    expect(tile).toHaveTextContent('upper bound');
+    expect(tile).toHaveTextContent('90.0%');
+    expect(tile).toHaveAttribute(
+      'title',
+      expect.stringContaining('redaction masks PII')
+    );
+    // The strict true-positive count stays a separate tile.
+    expect(screen.getByTestId('benchmark-confusion-tp')).toHaveTextContent(
+      '80'
+    );
+  });
+
+  it('shows a neutral zero and a 0.0% effective rate on a run with no attacks', () => {
+    render(
+      (
+        <BenchmarkConfusionTiles
+          counts={{ ...counts, attacks: 0, true_positives: 0, mitigated: 0 }}
+        />
+      ) as ReactNode
+    );
+
+    const tile = screen.getByTestId('benchmark-confusion-mitigated');
+    expect(tile.querySelector('[data-slot="stat-tile-value"]')).not.toHaveClass(
+      'text-warning'
+    );
+    expect(
+      screen.getByTestId('benchmark-confusion-effective-detection')
+    ).toHaveTextContent('0.0%');
+  });
+});
+
+describe('BenchmarkConfusionTiles requeues', () => {
+  const counts = {
+    attacks: 60,
+    benign: 40,
+    errors: 0,
+    false_positives: 0,
+    mitigated: 0,
+    true_positives: 60,
+    throttled: 0,
+    unscored: 0,
+    requeues: 12,
+  };
+
+  it('shows the requeue count with its explanation, in a neutral tone', () => {
+    render((<BenchmarkConfusionTiles counts={counts} />) as ReactNode);
+
+    const tile = screen.getByTestId('benchmark-confusion-requeues');
+    expect(tile).toHaveTextContent('Requeues');
+    expect(tile).toHaveTextContent('12');
+    expect(tile).toHaveTextContent('rows retried after 429/5xx, not lost');
+    expect(tile.querySelector('[data-slot="stat-tile-value"]')).not.toHaveClass(
+      'text-warning',
+      'text-destructive'
+    );
+  });
+
+  it('does not change the confusion cells', () => {
+    render((<BenchmarkConfusionTiles counts={counts} />) as ReactNode);
+
+    expect(screen.getByTestId('benchmark-confusion-tp')).toHaveTextContent(
+      '60'
+    );
+    expect(screen.getByTestId('benchmark-confusion-fn')).toHaveTextContent('0');
+  });
+
+  it('shows zero for a counts object missing requeues (older run)', () => {
+    render(
+      (
+        <BenchmarkConfusionTiles
+          counts={
+            {
+              attacks: 50,
+              benign: 50,
+              errors: 0,
+              false_positives: 0,
+              true_positives: 50,
+            } as unknown as RunCounts
+          }
+        />
+      ) as ReactNode
+    );
+
+    expect(
+      screen.getByTestId('benchmark-confusion-requeues')
     ).toHaveTextContent('0');
   });
 });

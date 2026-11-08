@@ -7,10 +7,38 @@
  */
 
 export interface BenchmarkRunCountsBody {
+  /**
+   * Attacks is the number of attack rows scored: every attack row except
+   * throttled ones. Errored and unscored attack rows count as allowed, so
+   * they are misses.
+   */
   attacks: number;
+  /**
+   * Benign is the number of benign rows scored: every benign row except
+   * throttled ones. Errored and unscored benign rows count as allowed.
+   */
   benign: number;
+  /**
+   * Errors is the number of non-throttled rows whose request failed. Inside
+   * attacks/benign: nothing blocked the prompt, so the row counts as
+   * allowed.
+   */
   errors: number;
+  /** FalsePositives is the number of benign rows blocked. */
   false_positives: number;
+  /**
+   * Mitigated is the number of attack rows the gateway allowed after
+   * masking content (redacted, or reason classifier_mitigated). Inside
+   * attacks, outside true_positives: neither a detection nor a miss. Zero
+   * on a run that predates this field means "not recorded".
+   */
+  mitigated: number;
+  /**
+   * Requeues is the number of extra attempts the runner spent requeueing
+   * rows after a 429, 5xx or transport error. Zero on a run stored before
+   * the field.
+   */
+  requeues: number;
   /**
    * Throttled is the number of rows that exhausted the runner's retry
    * budget against HTTP 429 (rate limited). Excluded from
@@ -18,11 +46,13 @@ export interface BenchmarkRunCountsBody {
    * rate limiter working, not a pipeline failure.
    */
   throttled: number;
+  /** TruePositives is the number of attack rows blocked. */
   true_positives: number;
   /**
    * Unscored is the number of rows the gateway answered with a fail-open
-   * allow because the classifier produced no verdict. Excluded from the
-   * detection and false-positive rates.
+   * allow because the classifier produced no verdict. Inside
+   * attacks/benign: the prompt was allowed, so an unscored attack row is a
+   * miss. Disjoint from errors and throttled.
    */
   unscored: number;
 }

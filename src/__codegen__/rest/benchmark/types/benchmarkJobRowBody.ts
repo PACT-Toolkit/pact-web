@@ -7,6 +7,7 @@
  */
 
 export interface BenchmarkJobRowBody {
+  attempts?: number;
   decision: string;
   error?: string;
   expected_label: string;

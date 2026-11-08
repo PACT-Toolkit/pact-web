@@ -10,6 +10,7 @@ import {
 } from '@/src/app/benchmark/domain/benchmark_run_rows';
 import { useBenchmarkRunRows } from '@/src/app/benchmark/domain/use_benchmark_run_rows';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
+import { BenchmarkDegradedBadge } from '@/src/app/benchmark/ui/BenchmarkDegradedBadge';
 import { BenchmarkTablePagination } from '@/src/app/benchmark/ui/BenchmarkTablePagination';
 import { BenchmarkVerdictCell } from '@/src/app/benchmark/ui/BenchmarkVerdictCell';
 import { BenchmarkVerdictChip } from '@/src/app/benchmark/ui/BenchmarkVerdictChip';
@@ -88,16 +89,31 @@ export const BenchmarkRunRowsView = ({ runId }: BenchmarkRunRowsViewProps) => {
             {total > 0 ? `${from}-${to} of ${total}` : '0 rows'}
           </span>
         </div>
-        <p
-          className="truncate text-xs text-muted-foreground"
-          title={run?.engine}
-        >
-          {run
-            ? `${run.engine} · ${abbreviateHash(run.corpus_version)} · ${formatRunTimestamp(run.ran_at)} · ${run.row_count} rows · ${run.counts?.unscored ?? 0} unscored`
-            : isRunsLoading
+        {run ? (
+          <>
+            <p
+              className="break-words text-xs text-muted-foreground"
+              data-testid="benchmark-run-rows-identity"
+            >
+              {`${run.engine} · ${abbreviateHash(run.corpus_version)} · ${formatRunTimestamp(run.ran_at)}`}
+            </p>
+            <div
+              className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground"
+              data-testid="benchmark-run-rows-counts"
+            >
+              <span>
+                {`${run.row_count} rows · ${run.counts?.unscored ?? 0} unscored · ${run.counts?.mitigated ?? 0} mitigated`}
+              </span>
+              {run.degraded && <BenchmarkDegradedBadge />}
+            </div>
+          </>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            {isRunsLoading
               ? 'Loading run metadata…'
               : 'Run metadata unavailable'}
-        </p>
+          </p>
+        )}
       </CardHeader>
       <CardContent className="flex flex-col gap-0 p-0">
         <div className="flex flex-wrap items-end gap-4 border-b px-4 pb-3">

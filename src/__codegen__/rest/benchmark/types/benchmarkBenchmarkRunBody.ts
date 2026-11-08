@@ -16,6 +16,12 @@ export interface BenchmarkBenchmarkRunBody {
    * before the breakdown existed); never zero-filled.
    */
   counts?: BenchmarkRunCountsBody;
+  /**
+   * Degraded is true when (errors + unscored + throttled) / row_count
+   * exceeds the run's degradation threshold, so the headline rates are
+   * unreliable. False on a run stored before the field.
+   */
+  degraded: boolean;
   detection_rate: number;
   engine: string;
   fp_rate: number;

@@ -23,7 +23,26 @@ export const RUN_ROW_OUTCOMES: readonly { value: string; label: string }[] = [
   { value: 'false_positive', label: 'False positives' },
   { value: 'error', label: 'Errors' },
   { value: 'unscored', label: 'Unscored' },
+  { value: 'mitigated', label: 'Mitigated' },
 ];
+
+/** Reason the classifier reports when it mitigated a row without blocking it. */
+export const CLASSIFIER_MITIGATED_REASON = 'classifier_mitigated';
+
+/**
+ * Whether the gateway answered `allow` after masking content on this row: the
+ * redactor masked it (`redacted`) or the classifier mitigated it (reason
+ * `classifier_mitigated`). The wire `redacted` flag is the redactor verdict
+ * only, so a classifier-mitigated row can carry `redacted: false`. This is the
+ * one definition of a mitigated row; the benchmark service uses the same rule.
+ */
+export const isMitigatedRow = (row: {
+  decision?: string;
+  reason?: string;
+  redacted?: boolean;
+}): boolean =>
+  row.decision === 'allow' &&
+  (Boolean(row.redacted) || row.reason === CLASSIFIER_MITIGATED_REASON);
 
 /** What a row's decision cell must show. */
 export type RowVerdictKind = 'error' | 'throttled' | 'unscored' | 'verdict';
@@ -44,4 +63,30 @@ export const rowVerdictKind = (row: {
   if (row.unscored) return 'unscored';
 
   return 'verdict';
+};
+
+/** The muted marker shown next to a row's verdict when it needed retries. */
+export interface RowAttemptsMarker {
+  /** Short text, e.g. "×3". */
+  text: string;
+  /** Tooltip, e.g. "needed 3 requests (requeued 2 times)". */
+  title: string;
+}
+
+/**
+ * The marker for a row that needed more than one request. `attempts` is 0
+ * when the run did not record it and 1 for a row that went through first
+ * time, so only a value above 1 earns a marker.
+ */
+export const rowAttemptsMarker = (
+  attempts: number | undefined
+): RowAttemptsMarker | null => {
+  if (attempts === undefined || attempts <= 1) return null;
+
+  const requeues = attempts - 1;
+
+  return {
+    text: `×${attempts}`,
+    title: `needed ${attempts} requests (requeued ${requeues} ${requeues === 1 ? 'time' : 'times'})`,
+  };
 };

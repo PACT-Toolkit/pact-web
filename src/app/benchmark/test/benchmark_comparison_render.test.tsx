@@ -46,7 +46,7 @@ describe('BenchmarkComparison unscored flag', () => {
     );
 
     expect(
-      screen.queryByTestId('benchmark-comparison-unscored')
+      screen.queryByTestId('benchmark-comparison-not-quotable')
     ).not.toBeInTheDocument();
   });
 
@@ -60,8 +60,28 @@ describe('BenchmarkComparison unscored flag', () => {
     fireEvent.click(screen.getByTestId('benchmark-compare-candidate'));
     fireEvent.click(await screen.findByRole('option', { name: /2000 rows/ }));
 
-    const flag = await screen.findByTestId('benchmark-comparison-unscored');
+    const flag = await screen.findByTestId('benchmark-comparison-not-quotable');
     expect(flag).toHaveTextContent('Candidate: 15.0% of rows unscored');
+    expect(flag).toHaveTextContent('not quotable');
+  });
+});
+
+describe('BenchmarkComparison degraded run', () => {
+  it('marks the degraded run in the picker and flags it as not quotable', async () => {
+    renderComparison();
+    await waitFor(() =>
+      expect(screen.getByTestId('benchmark-compare-candidate')).toBeVisible()
+    );
+
+    // The seeded run-12 is degraded (30 of its 120 rows lost).
+    fireEvent.click(screen.getByTestId('benchmark-compare-candidate'));
+    const option = await screen.findByRole('option', {
+      name: /120 rows.*degraded/,
+    });
+    fireEvent.click(option);
+
+    const flag = await screen.findByTestId('benchmark-comparison-not-quotable');
+    expect(flag).toHaveTextContent('Candidate: run degraded');
     expect(flag).toHaveTextContent('not quotable');
   });
 });

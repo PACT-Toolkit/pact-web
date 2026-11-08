@@ -10,11 +10,12 @@ import {
   defaultComparisonPair,
   formatRate,
   runOptionLabel,
-  unscoredNotQuotableReasons,
+  notQuotableReasons,
   type DeltaDirection,
 } from '@/src/app/benchmark/domain/benchmark_comparison';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
 import { BenchmarkCategoryChart } from '@/src/app/benchmark/ui/BenchmarkCategoryChart';
+import { BenchmarkDegradedBadge } from '@/src/app/benchmark/ui/BenchmarkDegradedBadge';
 import { BenchmarkStageLatencyChart } from '@/src/app/benchmark/ui/BenchmarkStageLatencyChart';
 import { Alert, AlertDescription } from '@/src/components/ui/alert';
 import {
@@ -57,7 +58,7 @@ const RunSelect = ({
   id: string;
   label: string;
   value: string;
-  options: { id: string; label: string }[];
+  options: { id: string; label: string; degraded: boolean }[];
   onChange: (value: string) => void;
 }) => {
   const labelId = `${id}-label`;
@@ -78,7 +79,10 @@ const RunSelect = ({
         <SelectContent>
           {options.map((o) => (
             <SelectItem key={o.id} value={o.id}>
-              {o.label}
+              <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
+                {o.label}
+                {o.degraded && <BenchmarkDegradedBadge />}
+              </span>
             </SelectItem>
           ))}
         </SelectContent>
@@ -100,7 +104,12 @@ const BenchmarkComparisonPanel = () => {
   const [selCandidate, setSelCandidate] = useState<string | null>(null);
 
   const options = useMemo(
-    () => byNewest.map((r) => ({ id: r.id, label: runOptionLabel(r) })),
+    () =>
+      byNewest.map((r) => ({
+        id: r.id,
+        label: runOptionLabel(r),
+        degraded: r.degraded,
+      })),
     [byNewest]
   );
 
@@ -116,10 +125,8 @@ const BenchmarkComparisonPanel = () => {
   const deltaBars = useMemo(() => comparisonDeltaBars(metrics), [metrics]);
   const mismatchedCorpora =
     baseline && candidate ? corporaMismatched(baseline, candidate) : false;
-  const unscoredReasons =
-    baseline && candidate
-      ? unscoredNotQuotableReasons(baseline, candidate)
-      : [];
+  const notQuotable =
+    baseline && candidate ? notQuotableReasons(baseline, candidate) : [];
 
   // The category/stage charts below only need one run, not a baseline+candidate
   // pair, so they fall back to the newest run even when there aren't enough
@@ -176,14 +183,14 @@ const BenchmarkComparisonPanel = () => {
                 </Alert>
               )}
 
-              {unscoredReasons.length > 0 && (
+              {notQuotable.length > 0 && (
                 <Alert
                   variant="warning"
-                  data-testid="benchmark-comparison-unscored"
+                  data-testid="benchmark-comparison-not-quotable"
                 >
                   <TriangleAlert />
                   <AlertDescription>
-                    {unscoredReasons.map((reason) => (
+                    {notQuotable.map((reason) => (
                       <p key={reason}>{reason}</p>
                     ))}
                   </AlertDescription>

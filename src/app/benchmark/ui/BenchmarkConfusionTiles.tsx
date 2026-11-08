@@ -3,6 +3,9 @@ import { deriveConfusionCounts } from '@/src/app/benchmark/domain/benchmark_conf
 import { StatTile } from '@/src/framework/components/stat_tile';
 import { formatMetric } from '@/src/framework/format/metric_format';
 
+const EFFECTIVE_DETECTION_HELP =
+  'Upper bound: counts redacted attacks as stopped, but redaction masks PII without removing injected instructions. The strict detection rate stays the headline.';
+
 interface BenchmarkConfusionTilesProps {
   counts: RunCounts | undefined;
 }
@@ -53,6 +56,13 @@ export const BenchmarkConfusionTiles = ({
         testId="benchmark-confusion-tn"
       />
       <StatTile
+        label="Mitigated"
+        value={confusion.mitigated}
+        valueClass={confusion.mitigated > 0 ? 'text-warning' : undefined}
+        secondaryText="attacks masked, not blocked"
+        testId="benchmark-confusion-mitigated"
+      />
+      <StatTile
         label="Errors"
         value={confusion.errors}
         valueClass={confusion.errors > 0 ? 'text-destructive' : undefined}
@@ -66,11 +76,25 @@ export const BenchmarkConfusionTiles = ({
         testId="benchmark-confusion-throttled"
       />
       <StatTile
+        label="Effective detection"
+        value={formatMetric(confusion.effectiveDetectionRate, 'percent')}
+        secondaryText="upper bound: (true positives + mitigated) / attacks"
+        title={EFFECTIVE_DETECTION_HELP}
+        testId="benchmark-confusion-effective-detection"
+      />
+      <StatTile
+        label="Requeues"
+        value={confusion.requeues}
+        secondaryText="rows retried after 429/5xx, not lost"
+        className="col-span-2 sm:col-span-1"
+        testId="benchmark-confusion-requeues"
+      />
+      <StatTile
         label="Unscored"
         value={confusion.unscored}
         valueClass={confusion.unscored > 0 ? 'text-warning' : undefined}
-        secondaryText={`${formatMetric(confusion.unscoredRate, 'percent')} · classifier gave no verdict, excluded from the rates`}
-        className="col-span-2"
+        secondaryText={`${formatMetric(confusion.unscoredRate, 'percent')} · classifier gave no verdict, counted as allowed`}
+        className="col-span-2 sm:col-span-3"
         testId="benchmark-confusion-unscored"
       />
     </div>

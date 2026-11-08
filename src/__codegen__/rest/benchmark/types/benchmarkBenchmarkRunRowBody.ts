@@ -7,6 +7,7 @@
  */
 
 export interface BenchmarkBenchmarkRunRowBody {
+  attempts?: number;
   category?: string;
   classifier_label?: string;
   classifier_score?: number;
@@ -18,6 +19,7 @@ export interface BenchmarkBenchmarkRunRowBody {
   fingerprint?: string;
   latency_ms: number;
   reason?: string;
+  redacted?: boolean;
   row_id: string;
   seq?: number;
   throttled?: boolean;

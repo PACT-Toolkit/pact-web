@@ -27,7 +27,7 @@ describe('BenchmarkRunRowsView', { timeout: 20_000 }, () => {
     );
     expect(screen.getByText('1-50 of 2000')).toBeVisible();
     expect(
-      screen.getByText(/deberta .* 2000 rows · 300 unscored/)
+      screen.getByText(/2000 rows · 300 unscored · 40 mitigated/)
     ).toBeVisible();
   });
 
@@ -92,6 +92,45 @@ describe('BenchmarkRunRowsView', { timeout: 20_000 }, () => {
     expect(screen.getAllByText('allow')).toHaveLength(1);
   });
 
+  it('badges a mitigated row and requests only mitigated rows when that filter is chosen', async () => {
+    const outcomes: (string | null)[] = [];
+    server.use(
+      http.get(
+        `${MSW_PACT_BASE}/gateway/v1/benchmark/runs/:runId/rows`,
+        ({ request }) => {
+          outcomes.push(new URL(request.url).searchParams.get('outcome'));
+
+          return HttpResponse.json({
+            total: 1,
+            rows: [
+              {
+                seq: 1,
+                row_id: 'r1',
+                expected_label: 'block',
+                decision: 'allow',
+                latency_ms: 1,
+                redacted: true,
+                reason: 'classifier_mitigated',
+              },
+            ],
+          });
+        }
+      )
+    );
+    renderView('run-11');
+
+    expect(
+      await screen.findByTestId('benchmark-row-mitigated-badge')
+    ).toBeVisible();
+
+    fireEvent.keyDown(screen.getByTestId('benchmark-run-rows-outcome'), {
+      key: 'ArrowDown',
+    });
+    fireEvent.click(await screen.findByRole('option', { name: 'Mitigated' }));
+
+    await waitFor(() => expect(outcomes).toContain('mitigated'));
+  });
+
   it('pages forward and back with the caption following', async () => {
     renderView('run-11');
     await screen.findByText('1-50 of 2000');
@@ -154,5 +193,42 @@ describe('BenchmarkRunRowsView', { timeout: 20_000 }, () => {
     renderView('run-11');
 
     expect(await screen.findByText('Failed to load rows.')).toBeVisible();
+  });
+});
+
+describe('BenchmarkRunRowsView degraded run', { timeout: 20_000 }, () => {
+  it('keeps the counts on their own wrapping line with the degraded badge', async () => {
+    renderView('run-12');
+
+    const counts = await screen.findByTestId('benchmark-run-rows-counts');
+    expect(counts).toHaveTextContent('120 rows · 4 unscored · 2 mitigated');
+    expect(counts).toHaveClass('flex-wrap');
+    expect(counts).toContainElement(
+      screen.getByTestId('benchmark-degraded-badge')
+    );
+    expect(screen.getByTestId('benchmark-run-rows-identity')).not.toHaveClass(
+      'truncate'
+    );
+  });
+
+  it('shows the attempts marker on retried rows only', async () => {
+    renderView('run-12');
+
+    await waitFor(() =>
+      expect(screen.getAllByTestId('benchmark-run-rows-row')).toHaveLength(50)
+    );
+    const markers = screen.getAllByTestId('benchmark-row-attempts');
+    for (const marker of markers) {
+      expect(marker.textContent).toMatch(/^×[2-9]$/);
+    }
+  });
+
+  it('shows no degraded badge on a run that was not degraded', async () => {
+    renderView('run-11');
+
+    await screen.findByTestId('benchmark-run-rows-counts');
+    expect(
+      screen.queryByTestId('benchmark-degraded-badge')
+    ).not.toBeInTheDocument();
   });
 });

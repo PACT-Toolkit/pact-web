@@ -12,13 +12,16 @@ const makeResult = (overrides: Partial<JobResult> = {}): JobResult => ({
   p99_latency_ms: 120.1,
   rows: [],
   total_rows: 200,
+  degraded: false,
   run_id: 'run-7',
   counts: {
+    requeues: 0,
     attacks: 100,
     benign: 100,
     errors: 2,
     false_positives: 4,
     true_positives: 93,
+    mitigated: 0,
     throttled: 3,
     unscored: 5,
   },
@@ -89,11 +92,13 @@ describe('BenchmarkJobDoneSummary', () => {
         total_rows: 0,
         run_id: undefined,
         counts: {
+          requeues: 0,
           attacks: 0,
           benign: 0,
           errors: 0,
           false_positives: 0,
           true_positives: 0,
+          mitigated: 0,
           throttled: 0,
           unscored: 0,
         },
@@ -124,5 +129,26 @@ describe('BenchmarkJobDoneSummary', () => {
       screen.queryByTestId('benchmark-confusion-tiles')
     ).not.toBeInTheDocument();
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+});
+
+describe('BenchmarkJobDoneSummary degraded flag', () => {
+  it('shows the degraded badge with its tooltip on a degraded job', () => {
+    renderSummary(makeResult({ degraded: true }));
+
+    const badge = screen.getByTestId('benchmark-degraded-badge');
+    expect(badge).toHaveTextContent('degraded');
+    expect(badge).toHaveAttribute(
+      'title',
+      expect.stringContaining("over the run's threshold")
+    );
+  });
+
+  it('shows no badge on a job that was not degraded', () => {
+    renderSummary(makeResult({ degraded: false }));
+
+    expect(
+      screen.queryByTestId('benchmark-degraded-badge')
+    ).not.toBeInTheDocument();
   });
 });
