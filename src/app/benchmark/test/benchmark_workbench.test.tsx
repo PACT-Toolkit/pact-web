@@ -164,3 +164,105 @@ describe('BenchmarkWorkbench request bodies', () => {
     expect(bodies[0]).not.toHaveProperty('gateway_url');
   });
 });
+
+describe('BenchmarkWorkbench upload errors', () => {
+  it('shows the server validation reason on separate lines', async () => {
+    server.use(
+      http.post(`${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`, () =>
+        HttpResponse.json(
+          {
+            code: 'invalid_argument',
+            error:
+              "2 validation error(s) in corpus:\nline 3: row 'a' content exceeds 65536 bytes\nline 9: row 'b' content exceeds 65536 bytes",
+          },
+          { status: 400 }
+        )
+      )
+    );
+    renderWorkbench();
+    await uploadCorpusFile();
+
+    fireEvent.click(screen.getByTestId('benchmark-upload-submit'));
+
+    const banner = await screen.findByTestId('benchmark-submit-error');
+    expect(banner.textContent).toBe(
+      "2 validation error(s) in corpus:\nline 3: row 'a' content exceeds 65536 bytes\nline 9: row 'b' content exceeds 65536 bytes"
+    );
+    expect(banner.textContent).not.toContain('gateway reachable');
+    expect(banner.className).toContain('whitespace-pre-line');
+  });
+
+  it('shows the reachable message only for a network failure', async () => {
+    server.use(
+      http.post(`${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`, () =>
+        HttpResponse.error()
+      )
+    );
+    renderWorkbench();
+    await uploadCorpusFile();
+
+    fireEvent.click(screen.getByTestId('benchmark-upload-submit'));
+
+    expect(
+      await screen.findByTestId('benchmark-submit-error')
+    ).toHaveTextContent(
+      'Failed to submit benchmark job. Is the gateway reachable?'
+    );
+  });
+});
+
+describe('BenchmarkWorkbench oversized upload rows', () => {
+  const upload = (lines: string[]) => {
+    const file = new File([lines.join('\n') + '\n'], 'corpus.jsonl', {
+      type: 'application/x-ndjson',
+    });
+    fireEvent.change(screen.getByLabelText(/corpus file/i), {
+      target: { files: [file] },
+    });
+  };
+
+  const row = (id: string, bytes: number) =>
+    JSON.stringify({
+      id,
+      content: 'a'.repeat(bytes),
+      expected_label: 'allow',
+    });
+
+  it('disables Run when every row is oversized', async () => {
+    renderWorkbench();
+    upload([row('big-1', 65_537), row('big-2', 70_000)]);
+
+    expect(
+      await screen.findAllByTestId('benchmark-upload-preview-oversized-row')
+    ).toHaveLength(2);
+    expect(
+      screen.getByTestId('benchmark-upload-preview-skipped')
+    ).toHaveTextContent('2');
+    expect(screen.getByTestId('benchmark-upload-submit')).toBeDisabled();
+  });
+
+  it('submits only the rows within the cap', async () => {
+    const bodies: { corpus_jsonl: string }[] = [];
+    server.use(
+      http.post(
+        `${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`,
+        async ({ request }) => {
+          bodies.push((await request.json()) as { corpus_jsonl: string });
+
+          return HttpResponse.json({ job_id: 'job-1' }, { status: 202 });
+        }
+      )
+    );
+    renderWorkbench();
+    upload([row('ok-1', 10), row('big-1', 65_537)]);
+    await waitFor(() =>
+      expect(screen.getByTestId('benchmark-upload-submit')).toBeEnabled()
+    );
+
+    fireEvent.click(screen.getByTestId('benchmark-upload-submit'));
+
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0].corpus_jsonl).toContain('ok-1');
+    expect(bodies[0].corpus_jsonl).not.toContain('big-1');
+  });
+});

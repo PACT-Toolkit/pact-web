@@ -1,6 +1,7 @@
 import { http, HttpResponse, type RequestHandler } from 'msw';
 import { v4 as uuidv4 } from 'uuid';
 
+import { CONTENT_MAX_BYTES } from '@/src/app/benchmark/domain/benchmark_corpus_mapping';
 import { type BenchmarkJobState } from '@/src/app/benchmark/domain/benchmark_job';
 import { RUN_ROW_OUTCOMES } from '@/src/app/benchmark/domain/benchmark_run_rows';
 import {
@@ -11,6 +12,7 @@ import {
   MOCK_HUB_GATED_SLUG,
   MOCK_HUB_HTML_502_PAGE,
   MOCK_HUB_HTML_502_SLUG,
+  MOCK_INVALID_CORPUS_MARKER,
   MOCK_JOB_DURATION_MS,
   MOCK_JOB_RUN_ID,
   MOCK_RATE_LIMITED_JOB_MARKER,
@@ -44,6 +46,37 @@ interface MockJob extends BenchmarkJobState {
    * of running it to completion. */
   authExpired: boolean;
 }
+
+// Mirrors pact-benchmark's corpus validation: every JSONL row whose content is
+// over CONTENT_MAX_BYTES is reported (1-based line number, row id) in one
+// 400 body. Undefined when the corpus is fine or a line is not JSON.
+const oversizedCorpusMessage = (corpusJsonl: string): string | undefined => {
+  const problems: string[] = [];
+  const encoder = new TextEncoder();
+  corpusJsonl.split('\n').forEach((line, index) => {
+    if (!line.trim()) return;
+    try {
+      const row = JSON.parse(line) as { id?: unknown; content?: unknown };
+      if (
+        typeof row.content === 'string' &&
+        encoder.encode(row.content).length > CONTENT_MAX_BYTES
+      ) {
+        problems.push(
+          `line ${index + 1}: row '${String(row.id)}' content exceeds ${CONTENT_MAX_BYTES} bytes`
+        );
+      }
+    } catch {
+      // Not JSON: the mock does not model parse errors.
+    }
+  });
+
+  return problems.length > 0
+    ? `${problems.length} validation error(s) in corpus:\n${problems.join('\n')}`
+    : undefined;
+};
+
+const MOCK_INVALID_CORPUS_MESSAGE =
+  "2 validation error(s) in corpus:\nline 2: row 'marker-row' has an unrecognised label\nline 5: row 'another-row' has an unrecognised label";
 
 const jobs = new Map<string, MockJob>();
 
@@ -184,6 +217,16 @@ export const handlers: RequestHandler[] = [
     async ({ request }) => {
       await new Promise((r) => setTimeout(r, 200));
       const body = (await request.json()) as { corpus_jsonl?: string };
+      const corpus = body.corpus_jsonl ?? '';
+      const oversizedMessage = corpus.includes(MOCK_INVALID_CORPUS_MARKER)
+        ? MOCK_INVALID_CORPUS_MESSAGE
+        : oversizedCorpusMessage(corpus);
+      if (oversizedMessage) {
+        return HttpResponse.json(
+          { code: 'invalid_argument', error: oversizedMessage },
+          { status: 400 }
+        );
+      }
       const jobId = uuidv4();
       jobs.set(jobId, {
         status: 'queued',

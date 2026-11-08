@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import {
   MOCK_CORPUS_DATASETS,
+  MOCK_INVALID_CORPUS_MARKER,
   MOCK_JOB_DURATION_MS,
 } from '@/src/app/benchmark/mock/data/benchmark';
 
@@ -532,6 +533,69 @@ test.describe('Benchmark upload column mapping', () => {
 
     const results = await makeAxeBuilder(page).analyze();
     expect(results.violations).toEqual([]);
+  });
+});
+
+// Covers rows over the server's content cap: the preview lists them as
+// skipped (they never reach the submission), and a server rejection shows its
+// own reason instead of the unreachable-gateway message.
+test.describe('Benchmark upload oversized rows', () => {
+  const oversizedCsv = [
+    'id,text,label',
+    'ok-1,hello,0',
+    `big-1,${'a'.repeat(65_537)},1`,
+  ].join('\n');
+
+  test('lists oversized rows as skipped and submits the rest', async ({
+    page,
+  }) => {
+    await page.goto('/benchmark');
+    await expect(page.getByTestId('benchmark-workbench')).toBeVisible();
+
+    await page.setInputFiles('#corpus-file', {
+      name: 'oversized.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(oversizedCsv),
+    });
+
+    await expect(
+      page.getByTestId('benchmark-upload-preview-skipped')
+    ).toContainText('1');
+    await expect(
+      page.getByTestId('benchmark-upload-preview-oversized-row')
+    ).toContainText('big-1');
+
+    await page.getByRole('button', { name: 'Run benchmark' }).click();
+    await expect(page.getByTestId('benchmark-submit-error')).toHaveCount(0);
+    await expect(page.getByTestId('benchmark-confusion-tiles')).toBeVisible({
+      timeout: 15000,
+    });
+  });
+
+  test('shows the server reason when the gateway rejects the corpus', async ({
+    page,
+  }) => {
+    // The marker makes the mock answer HTTP 400 with a validation report.
+    const markedCsv = [
+      'id,text,label',
+      `marker-row,${MOCK_INVALID_CORPUS_MARKER},0`,
+    ].join('\n');
+    await page.goto('/benchmark');
+    await expect(page.getByTestId('benchmark-workbench')).toBeVisible();
+
+    await page.setInputFiles('#corpus-file', {
+      name: 'oversized.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from(markedCsv),
+    });
+    await page.getByRole('button', { name: 'Run benchmark' }).click();
+
+    const banner = page.getByTestId('benchmark-submit-error');
+    await expect(banner).toContainText('2 validation error(s) in corpus:');
+    await expect(banner).toContainText(
+      "row 'marker-row' has an unrecognised label"
+    );
+    await expect(banner).not.toContainText('gateway reachable');
   });
 });
 

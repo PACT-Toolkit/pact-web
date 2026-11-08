@@ -11,6 +11,7 @@ import {
   type HubImportRequestDraft,
 } from '@/src/app/benchmark/domain/benchmark_import';
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
+import { describeBenchmarkSubmitError } from '@/src/app/benchmark/domain/benchmark_submit_error';
 import { useBenchmarkJobState } from '@/src/app/benchmark/domain/use_benchmark_job_state';
 import { BenchmarkComparison } from '@/src/app/benchmark/ui/BenchmarkComparison';
 import { BenchmarkCorpusLibraryCard } from '@/src/app/benchmark/ui/BenchmarkCorpusLibraryCard';
@@ -48,7 +49,11 @@ export const BenchmarkWorkbench = () => {
         corpus_jsonl: corpusText,
       });
       if (response.status !== 202) {
-        throw new Error('unexpected status');
+        setSubmitError(
+          describeBenchmarkSubmitError(response.status, response.data)
+        );
+
+        return;
       }
       setJobId(response.data.job_id);
     } catch {
@@ -110,7 +115,11 @@ export const BenchmarkWorkbench = () => {
       />
 
       {submitError && (
-        <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+        <p
+          role="alert"
+          data-testid="benchmark-submit-error"
+          className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm break-words whitespace-pre-line text-destructive"
+        >
           {submitError}
         </p>
       )}

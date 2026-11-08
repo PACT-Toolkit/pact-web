@@ -114,6 +114,15 @@ const SOURCE_COLUMN_NAME = 'source';
 const MAX_DISTINCT_LABEL_VALUES = 20;
 const ID_PAD_WIDTH = 5;
 
+/**
+ * Largest UTF-8 size of one row's content. The server is the authority (it
+ * rejects the whole job when any row exceeds it); this mirrors the server's
+ * cap so the preview can warn about the offending rows before submit.
+ */
+export const CONTENT_MAX_BYTES = 65_536;
+
+const utf8Encoder = new TextEncoder();
+
 export type LabelDecision = 'block' | 'allow' | 'skip';
 
 /** The user's (or the alias tables') current text/label column selection. */
@@ -146,8 +155,16 @@ export interface CorpusTotals {
   skipped: number;
 }
 
+/** A row left out because its content is over CONTENT_MAX_BYTES. */
+export interface OversizedCorpusRow {
+  /** The row's id when the source has one, otherwise its 1-based row number. */
+  label: string;
+  bytes: number;
+}
+
 export interface NormalizedCorpus {
   rows: NormalizedCorpusRow[];
+  oversized: OversizedCorpusRow[];
   jsonl: string;
   totals: CorpusTotals;
 }
@@ -298,6 +315,8 @@ function optionalColumnValue(
  * expects: a generated id when the source has none, `kind` passed through
  * from a `kind` column (defaulting to "input"), `category` and `source`
  * passed through when present, and every other column dropped. Rows whose
+ * content is over CONTENT_MAX_BYTES UTF-8 bytes are excluded and reported in
+ * `oversized` (the server would reject the whole job). Rows whose
  * label value maps to "skip", and rows whose text cell is blank (absent,
  * null, empty, or whitespace-only), are excluded from the output - a blank
  * row cannot be scored and the gateway rejects the whole job if one is
@@ -317,6 +336,7 @@ export function normalizeCorpus(
   const sourceColumn = findColumn(parsed.columns, SOURCE_COLUMN_NAME);
 
   const rows: NormalizedCorpusRow[] = [];
+  const oversized: OversizedCorpusRow[] = [];
   let attacks = 0;
   let benign = 0;
   let skipped = 0;
@@ -336,10 +356,22 @@ export function normalizeCorpus(
       return;
     }
 
+    const rawId = idColumn ? stringifyLabelValue(sourceRow[idColumn]) : '';
+
+    const bytes = utf8Encoder.encode(content).length;
+    if (bytes > CONTENT_MAX_BYTES) {
+      skipped += 1;
+      oversized.push({
+        label: rawId.length > 0 ? rawId : `row ${index + 1}`,
+        bytes,
+      });
+
+      return;
+    }
+
     if (decision === 'block') attacks += 1;
     else benign += 1;
 
-    const rawId = idColumn ? stringifyLabelValue(sourceRow[idColumn]) : '';
     const id = rawId.length > 0 ? rawId : generatedRowId(index);
 
     const kind = kindColumn
@@ -362,6 +394,7 @@ export function normalizeCorpus(
 
   return {
     rows,
+    oversized,
     jsonl: jsonl.length > 0 ? `${jsonl}\n` : '',
     totals: { total: parsed.rows.length, attacks, benign, skipped },
   };
