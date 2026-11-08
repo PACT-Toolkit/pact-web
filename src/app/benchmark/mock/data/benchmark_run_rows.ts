@@ -224,10 +224,18 @@ export const buildMockRunRows = (
     attempts: baseAttempts,
   }));
 
-  // Hand each requeue to a random row, so the extra attempts across all rows
-  // add up to the run's `requeues` count.
-  const requeues = run.counts?.requeues ?? 0;
-  for (let n = 0; n < requeues && rows.length > 0; n += 1) {
+  // A throttled row was retried until the budget ran out, so throttled rows
+  // take their extra attempt first; the remaining requeues go to random rows.
+  // The extra attempts across all rows add up to the run's `requeues` count.
+  let requeues = run.counts?.requeues ?? 0;
+  for (const row of rows) {
+    if (requeues === 0) break;
+    if (row.throttled) {
+      row.attempts = (row.attempts ?? baseAttempts) + 1;
+      requeues -= 1;
+    }
+  }
+  for (; requeues > 0 && rows.length > 0; requeues -= 1) {
     const row = pick(rows, rng);
     row.attempts = (row.attempts ?? baseAttempts) + 1;
   }

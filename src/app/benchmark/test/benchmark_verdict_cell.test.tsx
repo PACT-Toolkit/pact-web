@@ -119,7 +119,7 @@ describe('BenchmarkVerdictCell attempts marker', () => {
     }
   });
 
-  it('keeps the marker off an errored, throttled or unscored row', () => {
+  it('shows the marker on an errored, throttled or unscored row too', () => {
     for (const row of [
       { error: 'boom', attempts: 4 },
       { throttled: true, attempts: 4 },
@@ -127,9 +127,9 @@ describe('BenchmarkVerdictCell attempts marker', () => {
     ]) {
       const { unmount } = render(<BenchmarkVerdictCell row={row} />);
 
-      expect(
-        screen.queryByTestId('benchmark-row-attempts')
-      ).not.toBeInTheDocument();
+      expect(screen.getByTestId('benchmark-row-attempts')).toHaveTextContent(
+        '×4'
+      );
       unmount();
     }
   });

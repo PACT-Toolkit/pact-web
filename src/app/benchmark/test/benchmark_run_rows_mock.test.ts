@@ -138,6 +138,14 @@ describe('mock run attempts', () => {
     expect(rows.some((row) => (row.attempts ?? 0) > 1)).toBe(true);
   });
 
+  it('retries every throttled row, however few requeues the run has', () => {
+    const run = MOCK_RUNS.find((r) => r.id === 'run-8')!;
+    const rows = mockRunRows(run.id)!.filter((row) => row.throttled);
+
+    expect(rows).toHaveLength(run.counts!.throttled);
+    expect(rows.every((row) => (row.attempts ?? 0) > 1)).toBe(true);
+  });
+
   it('records one attempt per row for a run without requeues and none without counts', () => {
     expect(mockRunRows('run-7')!.every((row) => row.attempts === 1)).toBe(true);
     expect(mockRunRows('run-1')!.every((row) => row.attempts === 0)).toBe(true);

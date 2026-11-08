@@ -47,6 +47,15 @@ describe('seeded benchmark runs', () => {
     }
   });
 
+  it.each(MOCK_RUNS.filter((run) => run.counts))(
+    '$id retried every throttled row at least once',
+    (run) => {
+      expect(run.counts!.requeues).toBeGreaterThanOrEqual(
+        run.counts!.throttled
+      );
+    }
+  );
+
   it.each(MOCK_RUNS.filter((run) => run.degraded && run.counts))(
     '$id is degraded only because rows were lost past the default threshold',
     (run) => {

@@ -1,9 +1,9 @@
 import {
   isMitigatedRow,
-  rowAttemptsMarker,
   rowVerdictKind,
 } from '@/src/app/benchmark/domain/benchmark_run_rows';
 import { BenchmarkMitigatedBadge } from '@/src/app/benchmark/ui/BenchmarkMitigatedBadge';
+import { BenchmarkRowAttempts } from '@/src/app/benchmark/ui/BenchmarkRowAttempts';
 import { BenchmarkVerdictChip } from '@/src/app/benchmark/ui/BenchmarkVerdictChip';
 
 interface BenchmarkVerdictCellProps {
@@ -24,9 +24,10 @@ interface BenchmarkVerdictCellProps {
  * fail-open allow, not something the classifier decided. A mitigated row keeps
  * its verdict and gains a badge: the gateway masked content instead of
  * blocking. A row that needed more than one request carries a muted "×N"
- * marker next to its verdict.
+ * marker, whatever its kind: a throttled or errored row is the one that spent
+ * the most retries.
  */
-export const BenchmarkVerdictCell = ({ row }: BenchmarkVerdictCellProps) => {
+const verdictCellBody = (row: BenchmarkVerdictCellProps['row']) => {
   switch (rowVerdictKind(row)) {
     case 'error':
       return <span className="text-xs text-destructive">error</span>;
@@ -48,26 +49,21 @@ export const BenchmarkVerdictCell = ({ row }: BenchmarkVerdictCellProps) => {
           unscored
         </span>
       );
-    case 'verdict': {
-      const attempts = rowAttemptsMarker(row.attempts);
-
+    case 'verdict':
       return (
-        <span className="inline-flex items-center gap-1.5">
+        <>
           <BenchmarkVerdictChip text={row.decision || '-'} />
           {isMitigatedRow(row) && (
             <BenchmarkMitigatedBadge redacted={Boolean(row.redacted)} />
           )}
-          {attempts && (
-            <span
-              data-testid="benchmark-row-attempts"
-              title={attempts.title}
-              className="font-mono text-xs text-muted-foreground"
-            >
-              {attempts.text}
-            </span>
-          )}
-        </span>
+        </>
       );
-    }
   }
 };
+
+export const BenchmarkVerdictCell = ({ row }: BenchmarkVerdictCellProps) => (
+  <span className="inline-flex items-center gap-1.5">
+    {verdictCellBody(row)}
+    <BenchmarkRowAttempts attempts={row.attempts} />
+  </span>
+);

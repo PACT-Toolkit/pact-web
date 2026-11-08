@@ -324,7 +324,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       mitigated: 3,
       throttled: 5,
       unscored: 0,
-      requeues: 3,
+      requeues: 6,
     },
     per_category: [
       {
