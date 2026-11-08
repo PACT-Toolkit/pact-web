@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { server } from '@/mocks/server';
 import { SWRTestProvider } from '@/mocks/swr_test_provider';
+import { MOCK_HUB_HTML_502_SLUG } from '@/src/app/benchmark/mock/data/benchmark';
 import { BenchmarkImportCard } from '@/src/app/benchmark/ui/BenchmarkImportCard';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
@@ -351,5 +352,42 @@ describe('BenchmarkImportCard', () => {
 
     consoleWarnSpy.mockRestore();
     consoleErrorSpy.mockRestore();
+  });
+
+  it('shows a status message, not the proxy page, when the preview is an HTML 502', async () => {
+    renderCard();
+    fireEvent.change(screen.getByTestId('benchmark-import-slug'), {
+      target: { value: MOCK_HUB_HTML_502_SLUG },
+    });
+    fireEvent.click(screen.getByTestId('benchmark-import-inspect'));
+
+    const error = await screen.findByTestId('benchmark-import-inspect-error');
+
+    expect(error).toHaveTextContent(
+      'The benchmark service failed to handle the request (HTTP 502). Try again.'
+    );
+    expect(error.textContent).not.toContain('<');
+  });
+
+  it('still shows a short text/plain body from the gateway', async () => {
+    server.use(
+      http.get(
+        PREVIEW_URL,
+        () =>
+          new Response('missing required permission', {
+            status: 401,
+            headers: { 'content-type': 'text/plain' },
+          })
+      )
+    );
+    renderCard();
+    fireEvent.change(screen.getByTestId('benchmark-import-slug'), {
+      target: { value: 'any/dataset' },
+    });
+    fireEvent.click(screen.getByTestId('benchmark-import-inspect'));
+
+    expect(
+      await screen.findByTestId('benchmark-import-inspect-error')
+    ).toHaveTextContent('missing required permission');
   });
 });

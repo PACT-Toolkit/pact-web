@@ -77,7 +77,7 @@ export const PolicyTokenIssuePanel = () => {
       } else {
         setSubmitError(
           extractServerErrorMessage(res.data) ??
-            'Failed to issue token. Please try again.'
+            `Failed to issue token (HTTP ${res.status}). Please try again.`
         );
       }
     } catch {
