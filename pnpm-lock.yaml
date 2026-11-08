@@ -95,8 +95,8 @@ importers:
         specifier: 3.6.0
         version: 3.6.0
       uuid:
-        specifier: 14.0.1
-        version: 14.0.1
+        specifier: 14.0.3
+        version: 14.0.3
       yup:
         specifier: 1.7.1
         version: 1.7.1
@@ -6935,6 +6935,10 @@ packages:
 
   uuid@14.0.1:
     resolution: {integrity: sha512-6ZxzVpzDXDa3bJWaHilVayA+BH/1zmxCJoVgvmqJnid/gPoKHxUrS/aC/T6LGQtNHT+XHG9fXPJB4d+IrU30Ew==}
+    hasBin: true
+
+  uuid@14.0.3:
+    resolution: {integrity: sha512-Sc5u1VVln93y1Xnz4R+CunOZc7R9LUcTmhj7Rc7Eg3HVcf7rVn2FOoa812fe0W8p3jD7xeoGSYbfqCGGH2B6xw==}
     hasBin: true
 
   vercel@65.2.0:
@@ -14188,6 +14192,8 @@ snapshots:
       react: 19.2.8
 
   uuid@14.0.1: {}
+
+  uuid@14.0.3: {}
 
   vercel@65.2.0(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.3):
     dependencies:
