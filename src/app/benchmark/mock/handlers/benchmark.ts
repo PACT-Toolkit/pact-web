@@ -67,24 +67,26 @@ const advanceJob = (job: MockJob) => {
       job.progress_pct = 100;
       job.result = {
         detection_rate: 0.93,
-        fp_rate: 0.04,
+        fp_rate: 0.041,
         p50_latency_ms: 18.4,
         p99_latency_ms: 112.7,
         total_rows: TOTAL_ROWS,
         rows: [],
         // A seeded run, so the "View rows" link lands on a page with rows.
         run_id: MOCK_JOB_RUN_ID,
-        // 100 attacks / 100 benign so true_positives/false_positives divide
-        // out to exactly the detection/fp rates above (the confusion
-        // tiles on the live job progress card). throttled: 3 exercises the
-        // Throttled tile on this same card - it's additive on
-        // top of attacks/benign/errors, not carved out of them.
+        // 100 attacks / 97 benign / 3 throttled = TOTAL_ROWS, so the counts
+        // keep the wire invariants: throttled is the only set outside
+        // attacks/benign, and the 3 unscored rows sit inside them. The 100
+        // attacks make true_positives divide out to exactly the detection
+        // rate above (the confusion tiles on the live job progress card);
+        // mitigated: 4 are attacks masked instead of blocked.
         counts: {
           attacks: 100,
-          benign: 100,
+          benign: 97,
           errors: 0,
           false_positives: 4,
           true_positives: 93,
+          mitigated: 4,
           throttled: 3,
           unscored: MOCK_UNSCORED_ROW_COUNT,
         },

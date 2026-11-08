@@ -9,6 +9,8 @@ interface StatTileProps {
   secondaryText?: string;
   /** 'lg' (default) for a headline stat, 'sm' for a dense grid of many tiles. */
   size?: 'sm' | 'lg';
+  /** Native tooltip on the whole tile, e.g. a caveat on how the value is derived. */
+  title?: string;
   className?: string;
   testId?: string;
 }
@@ -27,11 +29,13 @@ export const StatTile = ({
   valueClass,
   secondaryText,
   size = 'lg',
+  title,
   className,
   testId,
 }: StatTileProps) => (
   <div
     data-testid={testId}
+    title={title}
     className={cn('flex flex-col gap-1 rounded-lg border p-4', className)}
   >
     <span className="text-xs text-muted-foreground">{label}</span>

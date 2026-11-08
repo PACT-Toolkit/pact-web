@@ -6,11 +6,24 @@ export interface ConfusionCounts {
   falseNegatives: number;
   falsePositives: number;
   trueNegatives: number;
+  /**
+   * Attack rows the gateway allowed after masking content (redacted, or
+   * reason classifier_mitigated; see isMitigatedRow). Neither a detection nor a miss: they sit
+   * inside attacks, outside true positives and outside false negatives.
+   */
+  mitigated: number;
+  /**
+   * (true positives + mitigated) / attacks, 0-1. An upper bound on what the
+   * pipeline stopped: redaction masks PII but does not remove injected
+   * instructions. The strict rate (true positives / attacks) stays the
+   * headline. 0 when the run has no attack rows.
+   */
+  effectiveDetectionRate: number;
   errors: number;
   /**
    * Rows that exhausted the runner's retry budget against HTTP 429 - the
    * gateway's rate limiter working, not a pipeline failure. Already
-   * excluded from attacks/benign/errors on the wire, so it
+   * outside attacks/benign on the wire, so it
    * never changes the four confusion cells above; it's surfaced here
    * purely so the run-detail tiles can show it next to Errors.
    */
@@ -19,9 +32,9 @@ export interface ConfusionCounts {
   throttledRate: number;
   /**
    * Rows the gateway answered with a fail-open allow because the classifier
-   * produced no verdict. They are neither a detected nor a missed attack, so
-   * the wire keeps them out of attacks/benign and out of the detection and
-   * false-positive rates; they never change the four confusion cells above.
+   * produced no verdict. The wire counts them inside attacks/benign as
+   * allowed, so an unscored attack row is a miss; they are reported apart
+   * only so the run shows how much of it the classifier never judged.
    */
   unscored: number;
   /** Unscored as a fraction of every row the run touched (0-1). */
@@ -29,30 +42,53 @@ export interface ConfusionCounts {
 }
 
 /**
+ * Effective detection rate: (true positives + mitigated) / attacks, 0-1.
+ * Not on the wire, so it is derived here. Returns 0 when there are no attack
+ * rows (no denominator), matching how the strict rate renders on such a run.
+ */
+export function effectiveDetectionRate(
+  truePositives: number,
+  mitigated: number,
+  attacks: number
+): number {
+  return attacks > 0 ? (truePositives + mitigated) / attacks : 0;
+}
+
+/**
  * Derive the confusion matrix from a job's `counts` breakdown. False
- * negatives and true negatives aren't reported directly on the wire - they
- * are the complement of true positives within attacks and false positives
- * within benign respectively (every attack row is either detected or
- * missed; every benign row is either flagged or correctly passed).
+ * negatives and true negatives aren't reported directly on the wire - false
+ * negatives are the attacks neither detected nor mitigated, true negatives
+ * the complement of false positives within benign (every attack row is
+ * detected, mitigated or missed; every benign row is either flagged or
+ * correctly passed).
  *
  * `counts.throttled` is coalesced to 0 rather than trusted as always
  * present: the generated type marks it required, but a `counts` object
  * persisted before the gateway added the field won't actually
  * carry it on the wire - the same "don't assume presence" caveat
  * benchmark_breakdown.ts documents for the rest of this struct. The same
- * goes for `counts.unscored`, absent on runs persisted before it existed.
+ * goes for `counts.unscored` and `counts.mitigated`, absent on runs persisted
+ * before they existed.
  */
 export function deriveConfusionCounts(counts: RunCounts): ConfusionCounts {
   const throttled = counts.throttled ?? 0;
   const unscored = counts.unscored ?? 0;
-  const totalRows =
-    counts.attacks + counts.benign + counts.errors + throttled + unscored;
+  const mitigated = counts.mitigated ?? 0;
+  // Errored and unscored rows are subsets of attacks/benign on the wire (an
+  // allow nothing blocked); a throttled row is the only set outside them.
+  const totalRows = counts.attacks + counts.benign + throttled;
 
   return {
     truePositives: counts.true_positives,
-    falseNegatives: counts.attacks - counts.true_positives,
+    falseNegatives: counts.attacks - counts.true_positives - mitigated,
     falsePositives: counts.false_positives,
     trueNegatives: counts.benign - counts.false_positives,
+    mitigated,
+    effectiveDetectionRate: effectiveDetectionRate(
+      counts.true_positives,
+      mitigated,
+      counts.attacks
+    ),
     errors: counts.errors,
     throttled,
     throttledRate: totalRows > 0 ? throttled / totalRows : 0,

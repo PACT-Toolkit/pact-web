@@ -48,4 +48,47 @@ describe('BenchmarkVerdictCell', () => {
     expect(screen.getByText('throttled')).toBeVisible();
     expect(screen.queryByText('unscored')).not.toBeInTheDocument();
   });
+
+  it('badges a redactor-redacted row as mitigated with a content-redacted tooltip, keeping its verdict', () => {
+    render(
+      <BenchmarkVerdictCell row={{ decision: 'allow', redacted: true }} />
+    );
+
+    expect(screen.getByText('allow')).toBeVisible();
+    const badge = screen.getByTestId('benchmark-row-mitigated-badge');
+    expect(badge).toHaveTextContent('mitigated');
+    expect(badge).toHaveAttribute('title', 'content redacted');
+  });
+
+  it('badges a classifier-mitigated row that is not redacted with a classifier tooltip', () => {
+    render(
+      <BenchmarkVerdictCell
+        row={{
+          decision: 'allow',
+          redacted: false,
+          reason: 'classifier_mitigated',
+        }}
+      />
+    );
+
+    expect(screen.getByTestId('benchmark-row-mitigated-badge')).toHaveAttribute(
+      'title',
+      'classifier mitigation'
+    );
+  });
+
+  it('shows no badge on a blocked, plain-allow or blocked-but-redacted row', () => {
+    for (const row of [
+      { decision: 'block' },
+      { decision: 'allow' },
+      { decision: 'block', redacted: true },
+    ]) {
+      const { unmount } = render(<BenchmarkVerdictCell row={row} />);
+
+      expect(
+        screen.queryByTestId('benchmark-row-mitigated-badge')
+      ).not.toBeInTheDocument();
+      unmount();
+    }
+  });
 });

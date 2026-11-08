@@ -93,7 +93,7 @@ export const BenchmarkRunRowsView = ({ runId }: BenchmarkRunRowsViewProps) => {
           title={run?.engine}
         >
           {run
-            ? `${run.engine} · ${abbreviateHash(run.corpus_version)} · ${formatRunTimestamp(run.ran_at)} · ${run.row_count} rows · ${run.counts?.unscored ?? 0} unscored`
+            ? `${run.engine} · ${abbreviateHash(run.corpus_version)} · ${formatRunTimestamp(run.ran_at)} · ${run.row_count} rows · ${run.counts?.unscored ?? 0} unscored · ${run.counts?.mitigated ?? 0} mitigated`
             : isRunsLoading
               ? 'Loading run metadata…'
               : 'Run metadata unavailable'}
