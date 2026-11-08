@@ -35,13 +35,14 @@ describe('rowVerdictKind', () => {
 });
 
 describe('RUN_ROW_OUTCOMES', () => {
-  it('leads with the all option and lists the four API outcome classes', () => {
+  it('leads with the all option and lists the API outcome classes', () => {
     expect(RUN_ROW_OUTCOMES[0].value).toBe(RUN_ROW_OUTCOME_ALL);
     expect(RUN_ROW_OUTCOMES.slice(1).map((o) => o.value)).toEqual([
       'false_negative',
       'false_positive',
       'error',
       'unscored',
+      'mitigated',
     ]);
   });
 });

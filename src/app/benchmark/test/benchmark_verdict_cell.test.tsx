@@ -48,4 +48,23 @@ describe('BenchmarkVerdictCell', () => {
     expect(screen.getByText('throttled')).toBeVisible();
     expect(screen.queryByText('unscored')).not.toBeInTheDocument();
   });
+
+  it('badges a redacted row without hiding its verdict', () => {
+    render(
+      <BenchmarkVerdictCell row={{ decision: 'allow', redacted: true }} />
+    );
+
+    expect(screen.getByText('allow')).toBeVisible();
+    expect(
+      screen.getByTestId('benchmark-row-redacted-badge')
+    ).toHaveTextContent('redacted');
+  });
+
+  it('shows no badge on a row that was not redacted', () => {
+    render(<BenchmarkVerdictCell row={{ decision: 'block' }} />);
+
+    expect(
+      screen.queryByTestId('benchmark-row-redacted-badge')
+    ).not.toBeInTheDocument();
+  });
 });

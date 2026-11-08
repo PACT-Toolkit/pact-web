@@ -27,7 +27,7 @@ describe('BenchmarkRunRowsView', { timeout: 20_000 }, () => {
     );
     expect(screen.getByText('1-50 of 2000')).toBeVisible();
     expect(
-      screen.getByText(/deberta .* 2000 rows · 300 unscored/)
+      screen.getByText(/deberta .* 2000 rows · 300 unscored · 40 mitigated/)
     ).toBeVisible();
   });
 
@@ -90,6 +90,45 @@ describe('BenchmarkRunRowsView', { timeout: 20_000 }, () => {
     // The fail-open allow of the unscored and throttled rows is not shown as
     // a verdict; the only "allow" chip left is the errored row's expected label.
     expect(screen.getAllByText('allow')).toHaveLength(1);
+  });
+
+  it('badges a redacted row and requests only mitigated rows when that filter is chosen', async () => {
+    const outcomes: (string | null)[] = [];
+    server.use(
+      http.get(
+        `${MSW_PACT_BASE}/gateway/v1/benchmark/runs/:runId/rows`,
+        ({ request }) => {
+          outcomes.push(new URL(request.url).searchParams.get('outcome'));
+
+          return HttpResponse.json({
+            total: 1,
+            rows: [
+              {
+                seq: 1,
+                row_id: 'r1',
+                expected_label: 'block',
+                decision: 'allow',
+                latency_ms: 1,
+                redacted: true,
+                reason: 'classifier_mitigated',
+              },
+            ],
+          });
+        }
+      )
+    );
+    renderView('run-11');
+
+    expect(
+      await screen.findByTestId('benchmark-row-redacted-badge')
+    ).toBeVisible();
+
+    fireEvent.keyDown(screen.getByTestId('benchmark-run-rows-outcome'), {
+      key: 'ArrowDown',
+    });
+    fireEvent.click(await screen.findByRole('option', { name: 'Mitigated' }));
+
+    await waitFor(() => expect(outcomes).toContain('mitigated'));
   });
 
   it('pages forward and back with the caption following', async () => {

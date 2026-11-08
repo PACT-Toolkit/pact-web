@@ -75,4 +75,18 @@ describe('mock run rows', () => {
       expect(mockRunRows(run.id)).toHaveLength(run.row_count);
     }
   });
+
+  it('matches the mitigated count of the run with redacted allowed attacks', () => {
+    const mitigated = mockRunRows('run-11')!.filter((r) =>
+      rowMatchesOutcome(r, 'mitigated')
+    );
+
+    expect(mitigated).toHaveLength(run11.counts!.mitigated);
+    for (const row of mitigated) {
+      expect(row.expected_label).toBe('block');
+      expect(row.decision).toBe('allow');
+      expect(row.redacted).toBe(true);
+      expect(rowMatchesOutcome(row, 'false_negative')).toBe(false);
+    }
+  });
 });

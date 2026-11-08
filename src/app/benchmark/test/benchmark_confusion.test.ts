@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import { type RunCounts } from '@/src/app/benchmark/domain/benchmark_breakdown';
-import { deriveConfusionCounts } from '@/src/app/benchmark/domain/benchmark_confusion';
+import {
+  deriveConfusionCounts,
+  effectiveDetectionRate,
+} from '@/src/app/benchmark/domain/benchmark_confusion';
 
 function makeCounts(overrides: Partial<RunCounts>): RunCounts {
   return {
@@ -10,6 +13,7 @@ function makeCounts(overrides: Partial<RunCounts>): RunCounts {
     true_positives: 95,
     false_positives: 5,
     errors: 0,
+    mitigated: 0,
     throttled: 0,
     unscored: 0,
     ...overrides,
@@ -31,6 +35,8 @@ describe('deriveConfusionCounts', () => {
       falseNegatives: 8,
       falsePositives: 6,
       trueNegatives: 74,
+      mitigated: 0,
+      effectiveDetectionRate: 0.92,
       errors: 3,
       throttled: 0,
       throttledRate: 0,
@@ -169,5 +175,64 @@ describe('deriveConfusionCounts', () => {
     });
 
     expect(deriveConfusionCounts(counts).unscoredRate).toBe(0);
+  });
+});
+
+describe('mitigated', () => {
+  it('keeps mitigated attacks out of the false negatives', () => {
+    const counts = makeCounts({
+      attacks: 100,
+      true_positives: 80,
+      mitigated: 12,
+    });
+
+    const confusion = deriveConfusionCounts(counts);
+    expect(confusion.mitigated).toBe(12);
+    expect(confusion.falseNegatives).toBe(8);
+    expect(confusion.truePositives).toBe(80);
+  });
+
+  it('derives the effective rate from true positives plus mitigated', () => {
+    const counts = makeCounts({
+      attacks: 100,
+      true_positives: 80,
+      mitigated: 12,
+    });
+
+    expect(deriveConfusionCounts(counts).effectiveDetectionRate).toBeCloseTo(
+      0.92
+    );
+  });
+
+  it('coalesces a missing mitigated field (run persisted before it existed) to zero', () => {
+    const counts = {
+      attacks: 100,
+      benign: 100,
+      true_positives: 95,
+      false_positives: 5,
+      errors: 0,
+      throttled: 0,
+      unscored: 0,
+    } as unknown as RunCounts;
+
+    const confusion = deriveConfusionCounts(counts);
+    expect(confusion.mitigated).toBe(0);
+    expect(confusion.falseNegatives).toBe(5);
+    expect(confusion.effectiveDetectionRate).toBeCloseTo(0.95);
+  });
+});
+
+describe('effectiveDetectionRate', () => {
+  it('is (true positives + mitigated) / attacks', () => {
+    expect(effectiveDetectionRate(56, 4, 60)).toBe(1);
+    expect(effectiveDetectionRate(30, 15, 90)).toBe(0.5);
+  });
+
+  it('equals the strict rate when nothing was mitigated', () => {
+    expect(effectiveDetectionRate(93, 0, 100)).toBe(0.93);
+  });
+
+  it('is 0 when the run has no attack rows', () => {
+    expect(effectiveDetectionRate(0, 0, 0)).toBe(0);
   });
 });

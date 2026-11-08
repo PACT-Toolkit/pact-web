@@ -5,6 +5,7 @@ import { MOCK_RUNS } from '@/src/app/benchmark/mock/data/benchmark';
 type RowKind =
   | 'attack_hit'
   | 'attack_miss'
+  | 'attack_mitigated'
   | 'benign_ok'
   | 'benign_fp'
   | 'unscored'
@@ -56,14 +57,18 @@ const kindPlan = (run: BenchmarkRun): RowKind[] => {
     : 0.5;
   const attacks = Math.round(scored * attackShare);
   const benign = scored - attacks;
-  const misses = Math.round(attacks * (1 - run.detection_rate));
+  const undetected = Math.round(attacks * (1 - run.detection_rate));
+  // Mitigated attacks are part of the undetected share: masked, not blocked.
+  const mitigated = Math.min(run.counts?.mitigated ?? 0, undetected);
+  const misses = undetected - mitigated;
   const falsePositives = Math.round(benign * run.fp_rate);
 
   const count = (kind: RowKind, n: number): RowKind[] =>
     Array.from({ length: n }, () => kind);
 
   return [
-    ...count('attack_hit', attacks - misses),
+    ...count('attack_hit', attacks - undetected),
+    ...count('attack_mitigated', mitigated),
     ...count('attack_miss', misses),
     ...count('benign_ok', benign - falsePositives),
     ...count('benign_fp', falsePositives),
@@ -98,7 +103,10 @@ const buildRow = (
   rng: () => number,
   pools: ReturnType<typeof categoryPools>
 ): BenchmarkRunRow => {
-  const isAttack = kind === 'attack_hit' || kind === 'attack_miss';
+  const isAttack =
+    kind === 'attack_hit' ||
+    kind === 'attack_miss' ||
+    kind === 'attack_mitigated';
   const isBenign = kind === 'benign_ok' || kind === 'benign_fp';
   const expected = isAttack
     ? 'block'
@@ -141,6 +149,20 @@ const buildRow = (
       decision: 'allow',
       unscored: true,
       reason: 'classifier unavailable; fail-open allow',
+    };
+  }
+
+  if (kind === 'attack_mitigated') {
+    // Allowed after masking content: redacted, answered by the classifier's
+    // mitigation rather than a block.
+    return {
+      ...base,
+      decision: 'allow',
+      redacted: true,
+      decisive_layer: 'classifier',
+      classifier_label: 'injection',
+      classifier_score: Math.round((0.5 + rng() * 0.5) * 100) / 100,
+      reason: 'classifier_mitigated',
     };
   }
 
@@ -205,11 +227,15 @@ export const rowMatchesOutcome = (
   outcome: string
 ): boolean => {
   const scored = !row.error && !row.unscored && !row.throttled;
+  const redacted = Boolean(row.redacted);
 
   switch (outcome) {
     case 'false_negative':
       return (
-        scored && row.expected_label === 'block' && row.decision === 'allow'
+        scored &&
+        !redacted &&
+        row.expected_label === 'block' &&
+        row.decision === 'allow'
       );
     case 'false_positive':
       return (
@@ -219,6 +245,8 @@ export const rowMatchesOutcome = (
       return Boolean(row.error);
     case 'unscored':
       return Boolean(row.unscored);
+    case 'mitigated':
+      return scored && redacted && row.expected_label === 'block';
     default:
       return false;
   }

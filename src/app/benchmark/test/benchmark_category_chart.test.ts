@@ -40,6 +40,7 @@ describe('categoryChartData', () => {
           detected: 9,
           fp: 0,
           errors: 0,
+          mitigated: 0,
           throttled: 0,
           unscored: 0,
         },
@@ -51,6 +52,7 @@ describe('categoryChartData', () => {
           detected: 45,
           fp: 0,
           errors: 0,
+          mitigated: 0,
           throttled: 0,
           unscored: 0,
         },
@@ -73,6 +75,7 @@ describe('categoryChartData', () => {
           detected: 45,
           fp: 2,
           errors: 0,
+          mitigated: 0,
           throttled: 0,
           unscored: 0,
         },
@@ -100,6 +103,7 @@ describe('categoryChartData', () => {
           detected: 0,
           fp: 1,
           errors: 0,
+          mitigated: 0,
           throttled: 0,
           unscored: 0,
         },
@@ -123,6 +127,7 @@ describe('categoryChartData', () => {
           detected: 18,
           fp: 0,
           errors: 0,
+          mitigated: 0,
           throttled: 0,
           unscored: 0,
         },
@@ -146,6 +151,7 @@ describe('categoryChartData', () => {
           detected: 18,
           fp: 1,
           errors: 3,
+          mitigated: 0,
           throttled: 4,
           unscored: 0,
         },
@@ -192,6 +198,7 @@ describe('categoryChartData unscored', () => {
     detected: 18,
     fp: 1,
     errors: 0,
+    mitigated: 0,
     throttled: 0,
     unscored: 0,
     ...overrides,
@@ -225,6 +232,7 @@ describe('categoryChartData unscored', () => {
           category({
             category: 'both',
             attacks: 40,
+            mitigated: 0,
             throttled: 2,
             unscored: 5,
           }),
@@ -278,5 +286,53 @@ describe('categoryChartData unscored', () => {
 
     expect(benignOnly.detectionNote).toBe('');
     expect(benignOnly.fpNote).toBe('1 err · 7 unscored');
+  });
+});
+
+describe('categoryChartData mitigated', () => {
+  const category = (
+    overrides: Partial<CategoryBreakdown>
+  ): CategoryBreakdown => ({
+    category: 'prompt-hacking',
+    entries: 30,
+    attacks: 30,
+    benign: 0,
+    detected: 20,
+    fp: 0,
+    errors: 0,
+    mitigated: 0,
+    throttled: 0,
+    unscored: 0,
+    ...overrides,
+  });
+
+  it('carries the per-category mitigated count and keeps the strict rate', () => {
+    const [point] = categoryChartData(
+      makeRun({ per_category: [category({ mitigated: 6 })] })
+    );
+
+    expect(point.mitigated).toBe(6);
+    expect(point.detectionRate).toBeCloseTo(66.7, 1);
+  });
+
+  it('coalesces a category missing mitigated entirely to zero', () => {
+    const legacy = {
+      ...category({}),
+      mitigated: undefined,
+    } as unknown as CategoryBreakdown;
+
+    const [point] = categoryChartData(makeRun({ per_category: [legacy] }));
+
+    expect(point.mitigated).toBe(0);
+  });
+
+  it('annotates the detection bar with the mitigated count between throttled and unscored', () => {
+    const [point] = categoryChartData(
+      makeRun({
+        per_category: [category({ mitigated: 6, throttled: 2, unscored: 5 })],
+      })
+    );
+
+    expect(point.detectionNote).toBe('2 thr · 6 mitigated · 5 unscored');
   });
 });

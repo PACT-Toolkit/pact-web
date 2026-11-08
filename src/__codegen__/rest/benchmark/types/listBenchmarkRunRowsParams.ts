@@ -20,7 +20,7 @@ export type ListBenchmarkRunRowsParams = {
    */
   category?: string;
   /**
-   * Row class filter: false_negative, false_positive, error, unscored (omitted = all)
+   * Row class filter: false_negative, false_positive, error, unscored, mitigated (omitted = all)
    */
   outcome?: string;
 };

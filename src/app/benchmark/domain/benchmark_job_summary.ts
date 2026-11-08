@@ -12,8 +12,9 @@ export interface JobHeadlineStat {
 /**
  * The four headline figures of a finished job, in display order: the two
  * rates, then the two latency percentiles. The rates are the gateway's own
- * and already exclude unscored rows (see benchmark_confusion.ts), so they are
- * formatted as reported, never recomputed from the counts.
+ * strict rates (a mitigated attack is not a detection, see
+ * benchmark_confusion.ts), so they are formatted as reported, never
+ * recomputed from the counts.
  */
 export function jobHeadlineStats(result: JobResult): JobHeadlineStat[] {
   return [

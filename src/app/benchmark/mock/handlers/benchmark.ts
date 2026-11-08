@@ -85,6 +85,7 @@ const advanceJob = (job: MockJob) => {
           errors: 0,
           false_positives: 4,
           true_positives: 93,
+          mitigated: 4,
           throttled: 3,
           unscored: MOCK_UNSCORED_ROW_COUNT,
         },

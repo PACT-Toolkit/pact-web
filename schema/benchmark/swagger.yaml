@@ -275,6 +275,8 @@ definitions:
                 type: number
             reason:
                 type: string
+            redacted:
+                type: boolean
             row_id:
                 type: string
             seq:
@@ -292,18 +294,34 @@ definitions:
     benchmark.CategoryBreakdownBody:
         properties:
             attacks:
+                description: |-
+                    Attacks is the number of attack rows scored in this category: every
+                    attack row except throttled ones.
                 type: integer
             benign:
+                description: |-
+                    Benign is the number of benign rows scored in this category: every
+                    benign row except throttled ones.
                 type: integer
             category:
                 type: string
             detected:
+                description: Detected is the number of attack rows blocked.
                 type: integer
             entries:
                 type: integer
             errors:
+                description: |-
+                    Errors is the number of non-throttled rows whose request failed. Inside
+                    attacks/benign, scored as allowed.
                 type: integer
             fp:
+                description: FP is the number of benign rows blocked (false positives).
+                type: integer
+            mitigated:
+                description: |-
+                    Mitigated is the number of attack rows in this category the gateway
+                    allowed after masking content. Inside attacks, outside detected.
                 type: integer
             throttled:
                 description: |-
@@ -315,7 +333,7 @@ definitions:
                 description: |-
                     Unscored is the number of rows in this category the gateway answered
                     with a fail-open allow because the classifier produced no verdict.
-                    Excluded from the detection and false-positive rates.
+                    Inside attacks/benign, scored as allowed.
                 type: integer
         required:
             - attacks
@@ -325,6 +343,7 @@ definitions:
             - entries
             - errors
             - fp
+            - mitigated
             - throttled
             - unscored
         type: object
@@ -519,12 +538,31 @@ definitions:
     benchmark.RunCountsBody:
         properties:
             attacks:
+                description: |-
+                    Attacks is the number of attack rows scored: every attack row except
+                    throttled ones. Errored and unscored attack rows count as allowed, so
+                    they are misses.
                 type: integer
             benign:
+                description: |-
+                    Benign is the number of benign rows scored: every benign row except
+                    throttled ones. Errored and unscored benign rows count as allowed.
                 type: integer
             errors:
+                description: |-
+                    Errors is the number of non-throttled rows whose request failed. Inside
+                    attacks/benign: nothing blocked the prompt, so the row counts as
+                    allowed.
                 type: integer
             false_positives:
+                description: FalsePositives is the number of benign rows blocked.
+                type: integer
+            mitigated:
+                description: |-
+                    Mitigated is the number of attack rows the gateway allowed after
+                    masking content (redacted, or reason classifier_mitigated). Inside
+                    attacks, outside true_positives: neither a detection nor a miss. Zero
+                    on a run that predates this field means "not recorded".
                 type: integer
             throttled:
                 description: |-
@@ -534,18 +572,21 @@ definitions:
                     rate limiter working, not a pipeline failure.
                 type: integer
             true_positives:
+                description: TruePositives is the number of attack rows blocked.
                 type: integer
             unscored:
                 description: |-
                     Unscored is the number of rows the gateway answered with a fail-open
-                    allow because the classifier produced no verdict. Excluded from the
-                    detection and false-positive rates.
+                    allow because the classifier produced no verdict. Inside
+                    attacks/benign: the prompt was allowed, so an unscored attack row is a
+                    miss. Disjoint from errors and throttled.
                 type: integer
         required:
             - attacks
             - benign
             - errors
             - false_positives
+            - mitigated
             - throttled
             - true_positives
             - unscored
@@ -1031,7 +1072,7 @@ paths:
                   in: query
                   name: category
                   type: string
-                - description: 'Row class filter: false_negative, false_positive, error, unscored (omitted = all)'
+                - description: 'Row class filter: false_negative, false_positive, error, unscored, mitigated (omitted = all)'
                   in: query
                   name: outcome
                   type: string

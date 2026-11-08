@@ -379,11 +379,18 @@ test.describe('Benchmark confusion tiles on a completed job', () => {
     });
 
     // Mock job result: attacks=100, benign=100, true_positives=93,
-    // false_positives=4, errors=0 -> FN=7, TN=96.
+    // mitigated=4, false_positives=4, errors=0 -> FN=3, TN=96, and an
+    // effective detection of (93 + 4) / 100.
     await expect(page.getByTestId('benchmark-confusion-tp')).toContainText(
       '93'
     );
-    await expect(page.getByTestId('benchmark-confusion-fn')).toContainText('7');
+    await expect(page.getByTestId('benchmark-confusion-fn')).toContainText('3');
+    await expect(
+      page.getByTestId('benchmark-confusion-mitigated')
+    ).toContainText('4');
+    await expect(
+      page.getByTestId('benchmark-confusion-effective-detection')
+    ).toContainText('97.0%');
     await expect(page.getByTestId('benchmark-confusion-fp')).toContainText('4');
     await expect(page.getByTestId('benchmark-confusion-tn')).toContainText(
       '96'

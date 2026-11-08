@@ -23,6 +23,7 @@ export const RUN_ROW_OUTCOMES: readonly { value: string; label: string }[] = [
   { value: 'false_positive', label: 'False positives' },
   { value: 'error', label: 'Errors' },
   { value: 'unscored', label: 'Unscored' },
+  { value: 'mitigated', label: 'Mitigated' },
 ];
 
 /** What a row's decision cell must show. */

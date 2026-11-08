@@ -24,6 +24,7 @@ describe('BenchmarkConfusionTiles', () => {
             errors: 2,
             false_positives: 4,
             true_positives: 93,
+            mitigated: 0,
             throttled: 0,
             unscored: 0,
           }}
@@ -59,6 +60,7 @@ describe('BenchmarkConfusionTiles', () => {
             errors: 0,
             false_positives: 0,
             true_positives: 50,
+            mitigated: 0,
             throttled: 0,
             unscored: 0,
           }}
@@ -86,6 +88,7 @@ describe('BenchmarkConfusionTiles', () => {
             errors: 0,
             false_positives: 0,
             true_positives: 90,
+            mitigated: 0,
             throttled: 20,
             unscored: 0,
           }}
@@ -139,6 +142,7 @@ describe('BenchmarkConfusionTiles unscored', () => {
             errors: 0,
             false_positives: 0,
             true_positives: 80,
+            mitigated: 0,
             throttled: 0,
             unscored: 40,
           }}
@@ -152,7 +156,7 @@ describe('BenchmarkConfusionTiles unscored', () => {
     expect(tile).toHaveTextContent('40');
     expect(tile).toHaveTextContent('20.0%');
     expect(tile).toHaveTextContent(
-      'classifier gave no verdict, excluded from the rates'
+      'classifier gave no verdict, counted as allowed'
     );
     expect(tile.querySelector('[data-slot="stat-tile-value"]')).toHaveClass(
       'text-warning'
@@ -169,6 +173,7 @@ describe('BenchmarkConfusionTiles unscored', () => {
             errors: 0,
             false_positives: 0,
             true_positives: 50,
+            mitigated: 0,
             throttled: 0,
             unscored: 0,
           }}
@@ -194,6 +199,7 @@ describe('BenchmarkConfusionTiles unscored', () => {
               errors: 0,
               false_positives: 0,
               true_positives: 50,
+              mitigated: 0,
               throttled: 0,
             } as unknown as RunCounts
           }
@@ -204,5 +210,67 @@ describe('BenchmarkConfusionTiles unscored', () => {
     expect(
       screen.getByTestId('benchmark-confusion-unscored')
     ).toHaveTextContent('0');
+  });
+});
+
+describe('BenchmarkConfusionTiles mitigated', () => {
+  const counts = {
+    attacks: 100,
+    benign: 100,
+    errors: 0,
+    false_positives: 0,
+    mitigated: 10,
+    true_positives: 80,
+    throttled: 0,
+    unscored: 0,
+  };
+
+  it('shows the mitigated count and leaves it out of the false negatives', () => {
+    render((<BenchmarkConfusionTiles counts={counts} />) as ReactNode);
+
+    const tile = screen.getByTestId('benchmark-confusion-mitigated');
+    expect(tile).toHaveTextContent('Mitigated');
+    expect(tile).toHaveTextContent('10');
+    expect(tile.querySelector('[data-slot="stat-tile-value"]')).toHaveClass(
+      'text-warning'
+    );
+    expect(screen.getByTestId('benchmark-confusion-fn')).toHaveTextContent(
+      '10'
+    );
+  });
+
+  it('shows the effective detection rate labelled as an upper bound', () => {
+    render((<BenchmarkConfusionTiles counts={counts} />) as ReactNode);
+
+    const tile = screen.getByTestId('benchmark-confusion-effective-detection');
+    expect(tile).toHaveTextContent('Effective detection');
+    expect(tile).toHaveTextContent('upper bound');
+    expect(tile).toHaveTextContent('90.0%');
+    expect(tile).toHaveAttribute(
+      'title',
+      expect.stringContaining('redaction masks PII')
+    );
+    // The strict true-positive count stays a separate tile.
+    expect(screen.getByTestId('benchmark-confusion-tp')).toHaveTextContent(
+      '80'
+    );
+  });
+
+  it('shows a neutral zero and a 0.0% effective rate on a run with no attacks', () => {
+    render(
+      (
+        <BenchmarkConfusionTiles
+          counts={{ ...counts, attacks: 0, true_positives: 0, mitigated: 0 }}
+        />
+      ) as ReactNode
+    );
+
+    const tile = screen.getByTestId('benchmark-confusion-mitigated');
+    expect(tile.querySelector('[data-slot="stat-tile-value"]')).not.toHaveClass(
+      'text-warning'
+    );
+    expect(
+      screen.getByTestId('benchmark-confusion-effective-detection')
+    ).toHaveTextContent('0.0%');
   });
 });
