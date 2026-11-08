@@ -61,6 +61,7 @@ function makeRun(overrides: Partial<BenchmarkRun>): BenchmarkRun {
     p50_latency: 20,
     p99_latency: 100,
     row_count: 200,
+    degraded: false,
     ran_at: 1_700_000_000,
     ...overrides,
   };
@@ -132,6 +133,7 @@ describe('trendChartData', () => {
   it('computes a Wilson confidence band from counts when present', () => {
     const run = makeRun({
       counts: {
+        requeues: 0,
         attacks: 100,
         benign: 100,
         true_positives: 95,

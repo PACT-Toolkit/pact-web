@@ -19,6 +19,7 @@ describe('BenchmarkConfusionTiles', () => {
       (
         <BenchmarkConfusionTiles
           counts={{
+            requeues: 0,
             attacks: 100,
             benign: 100,
             errors: 2,
@@ -55,6 +56,7 @@ describe('BenchmarkConfusionTiles', () => {
       (
         <BenchmarkConfusionTiles
           counts={{
+            requeues: 0,
             attacks: 50,
             benign: 50,
             errors: 0,
@@ -83,6 +85,7 @@ describe('BenchmarkConfusionTiles', () => {
       (
         <BenchmarkConfusionTiles
           counts={{
+            requeues: 0,
             attacks: 90,
             benign: 90,
             errors: 0,
@@ -137,6 +140,7 @@ describe('BenchmarkConfusionTiles unscored', () => {
       (
         <BenchmarkConfusionTiles
           counts={{
+            requeues: 0,
             attacks: 80,
             benign: 80,
             errors: 0,
@@ -168,6 +172,7 @@ describe('BenchmarkConfusionTiles unscored', () => {
       (
         <BenchmarkConfusionTiles
           counts={{
+            requeues: 0,
             attacks: 50,
             benign: 50,
             errors: 0,
@@ -223,6 +228,7 @@ describe('BenchmarkConfusionTiles mitigated', () => {
     true_positives: 80,
     throttled: 0,
     unscored: 0,
+    requeues: 0,
   };
 
   it('shows the mitigated count and leaves it out of the false negatives', () => {
@@ -272,5 +278,63 @@ describe('BenchmarkConfusionTiles mitigated', () => {
     expect(
       screen.getByTestId('benchmark-confusion-effective-detection')
     ).toHaveTextContent('0.0%');
+  });
+});
+
+describe('BenchmarkConfusionTiles requeues', () => {
+  const counts = {
+    attacks: 60,
+    benign: 40,
+    errors: 0,
+    false_positives: 0,
+    mitigated: 0,
+    true_positives: 60,
+    throttled: 0,
+    unscored: 0,
+    requeues: 12,
+  };
+
+  it('shows the requeue count with its explanation, in a neutral tone', () => {
+    render((<BenchmarkConfusionTiles counts={counts} />) as ReactNode);
+
+    const tile = screen.getByTestId('benchmark-confusion-requeues');
+    expect(tile).toHaveTextContent('Requeues');
+    expect(tile).toHaveTextContent('12');
+    expect(tile).toHaveTextContent('rows retried after 429/5xx, not lost');
+    expect(tile.querySelector('[data-slot="stat-tile-value"]')).not.toHaveClass(
+      'text-warning',
+      'text-destructive'
+    );
+  });
+
+  it('does not change the confusion cells', () => {
+    render((<BenchmarkConfusionTiles counts={counts} />) as ReactNode);
+
+    expect(screen.getByTestId('benchmark-confusion-tp')).toHaveTextContent(
+      '60'
+    );
+    expect(screen.getByTestId('benchmark-confusion-fn')).toHaveTextContent('0');
+  });
+
+  it('shows zero for a counts object missing requeues (older run)', () => {
+    render(
+      (
+        <BenchmarkConfusionTiles
+          counts={
+            {
+              attacks: 50,
+              benign: 50,
+              errors: 0,
+              false_positives: 0,
+              true_positives: 50,
+            } as unknown as RunCounts
+          }
+        />
+      ) as ReactNode
+    );
+
+    expect(
+      screen.getByTestId('benchmark-confusion-requeues')
+    ).toHaveTextContent('0');
   });
 });

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
 import { benchmarkRunRowsHref } from '@/src/app/benchmark/domain/benchmark_run_rows';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
+import { BenchmarkDegradedBadge } from '@/src/app/benchmark/ui/BenchmarkDegradedBadge';
 import {
   Card,
   CardContent,
@@ -119,7 +120,10 @@ export const BenchmarkRunHistory = ({
                         {run.row_count}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">
-                        {formatPercent(run.detection_rate, { digits: 1 })}
+                        <span className="inline-flex items-center justify-end gap-1.5">
+                          {run.degraded && <BenchmarkDegradedBadge />}
+                          {formatPercent(run.detection_rate, { digits: 1 })}
+                        </span>
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">
                         {formatPercent(run.fp_rate, { digits: 1 })}

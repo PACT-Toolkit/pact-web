@@ -207,6 +207,12 @@ definitions:
                 description: |-
                     Counts is absent when the producer did not record it (runs persisted
                     before the breakdown existed); never zero-filled.
+            degraded:
+                description: |-
+                    Degraded is true when (errors + unscored + throttled) / row_count
+                    exceeds the run's degradation threshold, so the headline rates are
+                    unreliable. False on a run stored before the field.
+                type: boolean
             detection_rate:
                 type: number
             engine:
@@ -241,6 +247,7 @@ definitions:
                 type: integer
         required:
             - corpus_version
+            - degraded
             - detection_rate
             - engine
             - fp_rate
@@ -253,6 +260,8 @@ definitions:
         type: object
     benchmark.BenchmarkRunRowBody:
         properties:
+            attempts:
+                type: integer
             category:
                 type: string
             classifier_label:
@@ -421,6 +430,12 @@ definitions:
                 description: |-
                     Counts is absent when the producer did not record it (runs persisted
                     before the breakdown existed); never zero-filled.
+            degraded:
+                description: |-
+                    Degraded is true when (errors + unscored + throttled) / total_rows
+                    exceeds the run's degradation threshold, so the headline rates are
+                    unreliable. False on a run stored before the field.
+                type: boolean
             detection_rate:
                 type: number
             fp_rate:
@@ -456,6 +471,7 @@ definitions:
             total_rows:
                 type: integer
         required:
+            - degraded
             - detection_rate
             - fp_rate
             - p50_latency_ms
@@ -465,6 +481,8 @@ definitions:
         type: object
     benchmark.JobRowBody:
         properties:
+            attempts:
+                type: integer
             decision:
                 type: string
             error:
@@ -564,6 +582,12 @@ definitions:
                     attacks, outside true_positives: neither a detection nor a miss. Zero
                     on a run that predates this field means "not recorded".
                 type: integer
+            requeues:
+                description: |-
+                    Requeues is the number of extra attempts the runner spent requeueing
+                    rows after a 429, 5xx or transport error. Zero on a run stored before
+                    the field.
+                type: integer
             throttled:
                 description: |-
                     Throttled is the number of rows that exhausted the runner's retry
@@ -587,6 +611,7 @@ definitions:
             - errors
             - false_positives
             - mitigated
+            - requeues
             - throttled
             - true_positives
             - unscored

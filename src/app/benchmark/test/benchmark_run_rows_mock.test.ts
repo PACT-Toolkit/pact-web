@@ -122,3 +122,24 @@ describe('mock run rows', () => {
     }
   });
 });
+
+describe('mock run attempts', () => {
+  const degradedRun = MOCK_RUNS.find((r) => r.degraded)!;
+
+  it('spreads the run requeues over the rows, so the extra attempts add up to them', () => {
+    const rows = mockRunRows(degradedRun.id)!;
+    const extra = rows.reduce(
+      (total, row) => total + Math.max((row.attempts ?? 0) - 1, 0),
+      0
+    );
+
+    expect(degradedRun.counts!.requeues).toBeGreaterThan(0);
+    expect(extra).toBe(degradedRun.counts!.requeues);
+    expect(rows.some((row) => (row.attempts ?? 0) > 1)).toBe(true);
+  });
+
+  it('records one attempt per row for a run without requeues and none without counts', () => {
+    expect(mockRunRows('run-7')!.every((row) => row.attempts === 1)).toBe(true);
+    expect(mockRunRows('run-1')!.every((row) => row.attempts === 0)).toBe(true);
+  });
+});

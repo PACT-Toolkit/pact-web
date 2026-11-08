@@ -9,6 +9,7 @@ import {
   MOCK_CORPUS_LIBRARY_TOTAL_ROWS,
   MOCK_HUB_DATASETS,
   MOCK_HUB_GATED_SLUG,
+  MOCK_JOB_DURATION_MS,
   MOCK_JOB_RUN_ID,
   MOCK_RATE_LIMITED_JOB_MARKER,
   MOCK_RATE_LIMITED_JOB_POLLS,
@@ -62,7 +63,7 @@ const advanceJob = (job: MockJob) => {
 
       return;
     }
-    if (age > 8000) {
+    if (age > MOCK_JOB_DURATION_MS) {
       job.status = 'done';
       job.progress_pct = 100;
       job.result = {
@@ -74,6 +75,9 @@ const advanceJob = (job: MockJob) => {
         rows: [],
         // A seeded run, so the "View rows" link lands on a page with rows.
         run_id: MOCK_JOB_RUN_ID,
+        // 6 of 200 rows (3 %) were lost (3 unscored + 3 throttled), over the
+        // default 1 % threshold, so the job summary shows the degraded badge.
+        degraded: true,
         // 100 attacks / 97 benign / 3 throttled = TOTAL_ROWS, so the counts
         // keep the wire invariants: throttled is the only set outside
         // attacks/benign, and the 3 unscored rows sit inside them. The 100
@@ -89,6 +93,7 @@ const advanceJob = (job: MockJob) => {
           mitigated: 4,
           throttled: 3,
           unscored: MOCK_UNSCORED_ROW_COUNT,
+          requeues: 4,
         },
       };
     }

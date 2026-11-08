@@ -9,6 +9,7 @@ import { BenchmarkRunHistory } from '@/src/app/benchmark/ui/BenchmarkRunHistory'
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 const makeRun = (index: number): BenchmarkRun => ({
+  degraded: false,
   id: `history-${index}`,
   gateway_version: 'v0.0.0',
   engine: index % 2 === 0 ? 'stub' : 'deberta',
@@ -95,5 +96,24 @@ describe('BenchmarkRunHistory', () => {
     expect(
       await screen.findByText('Failed to load benchmark runs.')
     ).toBeVisible();
+  });
+});
+
+describe('BenchmarkRunHistory degraded runs', () => {
+  it('marks only the degraded run with the degraded badge', async () => {
+    serveRuns([makeRun(1), { ...makeRun(2), degraded: true }, makeRun(3)]);
+    renderHistory();
+
+    const rows = await screen.findAllByTestId('benchmark-run-history-row');
+    // Newest first: history-3, history-2 (degraded), history-1.
+    expect(
+      within(rows[1]).getByTestId('benchmark-degraded-badge')
+    ).toBeVisible();
+    expect(
+      within(rows[0]).queryByTestId('benchmark-degraded-badge')
+    ).not.toBeInTheDocument();
+    expect(
+      within(rows[2]).queryByTestId('benchmark-degraded-badge')
+    ).not.toBeInTheDocument();
   });
 });

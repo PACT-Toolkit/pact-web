@@ -16,6 +16,7 @@ function makeCounts(overrides: Partial<RunCounts>): RunCounts {
     mitigated: 0,
     throttled: 0,
     unscored: 0,
+    requeues: 0,
     ...overrides,
   };
 }
@@ -42,6 +43,7 @@ describe('deriveConfusionCounts', () => {
       throttledRate: 0,
       unscored: 0,
       unscoredRate: 0,
+      requeues: 0,
     });
   });
 
@@ -252,5 +254,22 @@ describe('effectiveDetectionRate', () => {
 
   it('is 0 when the run has no attack rows', () => {
     expect(effectiveDetectionRate(0, 0, 0)).toBe(0);
+  });
+});
+
+describe('deriveConfusionCounts requeues', () => {
+  it('carries the requeue count without touching the confusion cells', () => {
+    const withRequeues = deriveConfusionCounts(makeCounts({ requeues: 7 }));
+    const without = deriveConfusionCounts(makeCounts({ requeues: 0 }));
+
+    expect(withRequeues.requeues).toBe(7);
+    expect({ ...withRequeues, requeues: 0 }).toEqual(without);
+  });
+
+  it('reads a missing requeues field (older run) as zero', () => {
+    const counts = makeCounts({});
+    delete (counts as Partial<RunCounts>).requeues;
+
+    expect(deriveConfusionCounts(counts).requeues).toBe(0);
   });
 });

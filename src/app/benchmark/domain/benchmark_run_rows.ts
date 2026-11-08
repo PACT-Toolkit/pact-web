@@ -64,3 +64,29 @@ export const rowVerdictKind = (row: {
 
   return 'verdict';
 };
+
+/** The muted marker shown next to a row's verdict when it needed retries. */
+export interface RowAttemptsMarker {
+  /** Short text, e.g. "×3". */
+  text: string;
+  /** Tooltip, e.g. "needed 3 requests (requeued 2 times)". */
+  title: string;
+}
+
+/**
+ * The marker for a row that needed more than one request. `attempts` is 0
+ * when the run did not record it and 1 for a row that went through first
+ * time, so only a value above 1 earns a marker.
+ */
+export const rowAttemptsMarker = (
+  attempts: number | undefined
+): RowAttemptsMarker | null => {
+  if (attempts === undefined || attempts <= 1) return null;
+
+  const requeues = attempts - 1;
+
+  return {
+    text: `×${attempts}`,
+    title: `needed ${attempts} requests (requeued ${requeues} ${requeues === 1 ? 'time' : 'times'})`,
+  };
+};

@@ -4,8 +4,14 @@ import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
 
 export const TOTAL_ROWS = 200;
 
-/** The seeded run (see MOCK_RUNS) the finished mock job reports as persisted. */
-export const MOCK_JOB_RUN_ID = 'run-1';
+/** How long after creation a mock bulk-test job runs before it settles into `done`. */
+export const MOCK_JOB_DURATION_MS = 8000;
+
+/**
+ * The seeded run (see MOCK_RUNS) the finished mock job reports as persisted:
+ * the degraded one, so its rows carry retried attempts.
+ */
+export const MOCK_JOB_RUN_ID = 'run-12';
 
 // Rows the gateway answered with a fail-open allow because the classifier gave
 // no verdict. Spread across the first pages so the results table shows the
@@ -65,6 +71,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     p50_latency: 140,
     p99_latency: 430,
     row_count: 169,
+    degraded: false,
     ran_at: NOW - 85 * DAY,
   },
   {
@@ -77,6 +84,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     p50_latency: 150,
     p99_latency: 460,
     row_count: 169,
+    degraded: false,
     ran_at: NOW - 70 * DAY,
   },
   {
@@ -89,6 +97,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     p50_latency: 160,
     p99_latency: 480,
     row_count: 169,
+    degraded: false,
     ran_at: NOW - 55 * DAY,
   },
   {
@@ -101,6 +110,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     p50_latency: 165,
     p99_latency: 500,
     row_count: 169,
+    degraded: false,
     ran_at: NOW - 40 * DAY,
   },
   {
@@ -113,6 +123,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     p50_latency: 170,
     p99_latency: 510,
     row_count: 100,
+    degraded: false,
     ran_at: NOW - 25 * DAY,
   },
   {
@@ -125,6 +136,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     p50_latency: 175,
     p99_latency: 520,
     row_count: 100,
+    degraded: false,
     ran_at: NOW - 14 * DAY,
     counts: {
       attacks: 60,
@@ -135,6 +147,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       mitigated: 3,
       throttled: 0,
       unscored: 0,
+      requeues: 0,
     },
     per_category: [
       {
@@ -205,6 +218,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     p50_latency: 420,
     p99_latency: 1300,
     row_count: 100,
+    degraded: false,
     ran_at: NOW - 7 * DAY,
     counts: {
       attacks: 70,
@@ -215,6 +229,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       mitigated: 0,
       throttled: 0,
       unscored: 0,
+      requeues: 0,
     },
     per_category: [
       {
@@ -283,37 +298,44 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     gateway_version: 'v0.5.1',
     engine: 'deberta',
     corpus_version: 'seed-v2.jsonl',
-    detection_rate: 0.99,
+    detection_rate: 0.95,
     fp_rate: 0.005,
     p50_latency: 580,
     p99_latency: 1750,
     row_count: 105,
+    degraded: false,
     ran_at: NOW - 2 * DAY,
     // Deliberately the run with throttled rows: 2 in
     // prompt-hacking, 3 in mixed-injection, run-level throttled = 5 (their
     // sum). It's the newest run, so it's also the one the category chart and
     // stage-latency chart fall back to without any selection - the natural
     // place to exercise the throttled tile/bar-label/tooltip in dev:mock.
+    // It also carries mitigated attacks (2 in prompt-hacking, 1 in
+    // mixed-injection, 3 run-level) so the chart tooltip's "Mitigated" line
+    // shows without a selection. It reads as not degraded although 6 of 105
+    // rows were lost: the service flags a run against its own threshold, and
+    // this run's was set above that share.
     counts: {
       attacks: 75,
       benign: 25,
       errors: 1,
       false_positives: 0,
-      true_positives: 74,
-      mitigated: 0,
+      true_positives: 71,
+      mitigated: 3,
       throttled: 5,
       unscored: 0,
+      requeues: 3,
     },
     per_category: [
       {
         category: 'prompt-hacking',
         attacks: 35,
         benign: 0,
-        detected: 35,
+        detected: 33,
         entries: 37,
         errors: 0,
         fp: 0,
-        mitigated: 0,
+        mitigated: 2,
         throttled: 2,
         unscored: 0,
       },
@@ -333,11 +355,11 @@ export const MOCK_RUNS: BenchmarkRun[] = [
         category: 'mixed-injection',
         attacks: 15,
         benign: 10,
-        detected: 15,
+        detected: 14,
         entries: 28,
         errors: 0,
         fp: 0,
-        mitigated: 0,
+        mitigated: 1,
         throttled: 3,
         unscored: 0,
       },
@@ -362,6 +384,73 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       { layer: 'consensus', p50_ms: 5, p99_ms: 12, samples: 100 },
     ],
   },
+  // A degraded run: 30 of its 120 rows (25 %) were lost to errors, unscored
+  // verdicts or throttling, far over any sensible threshold, and the runner
+  // put 37 rows back after 429/5xx answers (requeues). Its rates are flagged
+  // not quotable in the comparison card. Same corpus as run-6/run-7/run-8, and
+  // older than run-8 so run-8 stays the newest run (the charts' default).
+  {
+    id: 'run-12',
+    gateway_version: 'v0.5.1',
+    engine: 'deberta',
+    corpus_version: 'seed-v2.jsonl',
+    detection_rate: 0.86,
+    fp_rate: 0.033,
+    p50_latency: 520,
+    p99_latency: 1500,
+    row_count: 120,
+    degraded: true,
+    ran_at: NOW - 3 * DAY,
+    counts: {
+      attacks: 70,
+      benign: 30,
+      errors: 6,
+      false_positives: 1,
+      true_positives: 60,
+      mitigated: 2,
+      throttled: 20,
+      unscored: 4,
+      requeues: 37,
+    },
+    per_category: [
+      {
+        category: 'prompt-hacking',
+        attacks: 40,
+        benign: 0,
+        detected: 34,
+        entries: 48,
+        errors: 3,
+        fp: 0,
+        mitigated: 1,
+        throttled: 8,
+        unscored: 2,
+      },
+      {
+        category: 'mixed-injection',
+        attacks: 30,
+        benign: 10,
+        detected: 26,
+        entries: 47,
+        errors: 3,
+        fp: 1,
+        mitigated: 1,
+        throttled: 7,
+        unscored: 2,
+      },
+      {
+        category: 'benign-chat',
+        attacks: 0,
+        benign: 20,
+        detected: 0,
+        entries: 25,
+        errors: 0,
+        fp: 0,
+        mitigated: 0,
+        throttled: 5,
+        unscored: 0,
+      },
+    ],
+  },
   // A run whose classifier gave no verdict on 15 % of its rows (300 of 2,000):
   // over the 10 % limit, so the comparison card flags its rates as not
   // quotable. Placed between run-7 and the older runs so run-8 stays the
@@ -377,6 +466,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     p50_latency: 440,
     p99_latency: 1350,
     row_count: 2000,
+    degraded: false,
     ran_at: NOW - 5 * DAY,
     counts: {
       attacks: 1000,
@@ -387,6 +477,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       mitigated: 40,
       throttled: 0,
       unscored: 300,
+      requeues: 0,
     },
     per_category: [
       {
@@ -452,6 +543,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     p50_latency: 410,
     p99_latency: 1280,
     row_count: 2508,
+    degraded: false,
     ran_at: NOW - 100 * DAY,
     counts: {
       attacks: 0,
@@ -462,6 +554,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       mitigated: 0,
       throttled: 0,
       unscored: 0,
+      requeues: 0,
     },
   },
   {
@@ -474,6 +567,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
     p50_latency: 395,
     p99_latency: 1150,
     row_count: 6,
+    degraded: false,
     ran_at: NOW - 95 * DAY,
     counts: {
       attacks: 5,
@@ -484,6 +578,7 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       mitigated: 0,
       throttled: 0,
       unscored: 0,
+      requeues: 0,
     },
   },
 ];

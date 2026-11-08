@@ -1,5 +1,6 @@
 import {
   isMitigatedRow,
+  rowAttemptsMarker,
   rowVerdictKind,
 } from '@/src/app/benchmark/domain/benchmark_run_rows';
 import { BenchmarkMitigatedBadge } from '@/src/app/benchmark/ui/BenchmarkMitigatedBadge';
@@ -13,6 +14,7 @@ interface BenchmarkVerdictCellProps {
     unscored?: boolean;
     reason?: string;
     redacted?: boolean;
+    attempts?: number;
   };
 }
 
@@ -21,7 +23,8 @@ interface BenchmarkVerdictCellProps {
  * never shows its decision as a verdict: it is empty or the gateway's
  * fail-open allow, not something the classifier decided. A mitigated row keeps
  * its verdict and gains a badge: the gateway masked content instead of
- * blocking.
+ * blocking. A row that needed more than one request carries a muted "×N"
+ * marker next to its verdict.
  */
 export const BenchmarkVerdictCell = ({ row }: BenchmarkVerdictCellProps) => {
   switch (rowVerdictKind(row)) {
@@ -45,14 +48,26 @@ export const BenchmarkVerdictCell = ({ row }: BenchmarkVerdictCellProps) => {
           unscored
         </span>
       );
-    case 'verdict':
+    case 'verdict': {
+      const attempts = rowAttemptsMarker(row.attempts);
+
       return (
         <span className="inline-flex items-center gap-1.5">
           <BenchmarkVerdictChip text={row.decision || '-'} />
           {isMitigatedRow(row) && (
             <BenchmarkMitigatedBadge redacted={Boolean(row.redacted)} />
           )}
+          {attempts && (
+            <span
+              data-testid="benchmark-row-attempts"
+              title={attempts.title}
+              className="font-mono text-xs text-muted-foreground"
+            >
+              {attempts.text}
+            </span>
+          )}
         </span>
       );
+    }
   }
 };

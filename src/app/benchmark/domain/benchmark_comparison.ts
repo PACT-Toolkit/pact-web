@@ -1,4 +1,5 @@
 import { deriveConfusionCounts } from '@/src/app/benchmark/domain/benchmark_confusion';
+import { DEGRADED_NOT_QUOTABLE_REASON } from '@/src/app/benchmark/domain/benchmark_degraded';
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
 import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
 import {
@@ -81,7 +82,8 @@ function classifyDelta(delta: number, goal: MetricGoal): DeltaDirection {
  * The largest share of a run's rows that may be unscored (the classifier gave
  * no verdict) before its rates stop being quotable - the same 10 % the
  * release promote gate applies. A share exactly at the limit is still
- * quotable.
+ * quotable. This is one of two rules; a run the service flags `degraded` is
+ * not quotable either (see ratesQuotable).
  */
 export const UNSCORED_SHARE_LIMIT = 0.1;
 
@@ -100,27 +102,36 @@ export function unscoredShareExceedsLimit(run: BenchmarkRun): boolean {
 }
 
 /**
+ * Whether a run's rates may be quoted at all. Two independent rules, both
+ * must hold: the benchmark service did not flag the run as degraded (too many
+ * rows lost to errors, unscored verdicts or throttling for the run's own
+ * threshold), and the unscored share is within UNSCORED_SHARE_LIMIT. The
+ * second rule stays because it also covers runs persisted before the
+ * `degraded` flag existed, which read as not degraded.
+ */
+export function ratesQuotable(run: BenchmarkRun): boolean {
+  return !run.degraded && !unscoredShareExceedsLimit(run);
+}
+
+/**
  * Whether a run's detection rate has a real denominator (attack rows > 0)
- * and is quotable (unscored share within the limit). A run persisted before
- * the count breakdown existed carries no `counts` at all - keep today's
- * behaviour for those and treat the rate as defined rather than guessing
- * from row_count.
+ * and is quotable (see ratesQuotable). A run persisted before the count
+ * breakdown existed carries no `counts` at all - keep today's behaviour for
+ * those and treat the rate as defined rather than guessing from row_count.
  */
 export function detectionRateDefined(run: BenchmarkRun): boolean {
   return (
-    (run.counts === undefined || run.counts.attacks > 0) &&
-    !unscoredShareExceedsLimit(run)
+    (run.counts === undefined || run.counts.attacks > 0) && ratesQuotable(run)
   );
 }
 
 /**
  * Whether a run's false-positive rate has a real denominator (benign rows >
- * 0) and is quotable (unscored share within the limit).
+ * 0) and is quotable (see ratesQuotable).
  */
 export function fpRateDefined(run: BenchmarkRun): boolean {
   return (
-    (run.counts === undefined || run.counts.benign > 0) &&
-    !unscoredShareExceedsLimit(run)
+    (run.counts === undefined || run.counts.benign > 0) && ratesQuotable(run)
   );
 }
 
@@ -157,11 +168,12 @@ export function corporaMismatched(
 }
 
 /**
- * One sentence per compared run whose unscored share is over the limit,
- * naming the run's role and share, so the comparison view can say why the
- * delta is not quotable. Empty when both runs are within the limit.
+ * One sentence per not-quotable reason of each compared run, naming the run's
+ * role, so the comparison view can say why the delta is not quotable: a
+ * degraded run, and a run whose unscored share is over the limit (a run can
+ * trip both). Empty when both runs are quotable.
  */
-export function unscoredNotQuotableReasons(
+export function notQuotableReasons(
   baseline: BenchmarkRun,
   candidate: BenchmarkRun
 ): string[] {
@@ -170,12 +182,19 @@ export function unscoredNotQuotableReasons(
       ['Baseline', baseline],
       ['Candidate', candidate],
     ] as const
-  )
-    .filter(([, run]) => unscoredShareExceedsLimit(run))
-    .map(
-      ([role, run]) =>
+  ).flatMap(([role, run]) => {
+    const reasons: string[] = [];
+    if (run.degraded) {
+      reasons.push(`${role}: ${DEGRADED_NOT_QUOTABLE_REASON}`);
+    }
+    if (unscoredShareExceedsLimit(run)) {
+      reasons.push(
         `${role}: ${formatMetric(unscoredShare(run), 'percent')} of rows unscored (limit ${formatMetric(UNSCORED_SHARE_LIMIT, 'percent')}) - detection and false-positive rates are not quotable.`
-    );
+      );
+    }
+
+    return reasons;
+  });
 }
 
 /** Build the per-metric comparison rows for a baseline → candidate pair. */
@@ -281,7 +300,11 @@ export function runRowCountLabel(run: BenchmarkRun): string {
   return `${run.row_count} rows · ${run.counts.attacks} attacks / ${run.counts.benign} benign`;
 }
 
-/** Human label for a run in a selector: engine · corpus · gateway · date and time · rows. */
+/**
+ * Human label for a run in a selector: engine · corpus · gateway · date and
+ * time · rows. A degraded run's marker is not part of the text: the picker
+ * renders it as a badge after the label.
+ */
 export function runOptionLabel(run: BenchmarkRun): string {
   return `${run.engine} · ${abbreviateHash(run.corpus_version)} · ${run.gateway_version} · ${formatRunTimestamp(run.ran_at)} · ${runRowCountLabel(run)}`;
 }

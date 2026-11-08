@@ -57,6 +57,7 @@ describe('BenchmarkJobProgress', () => {
       p99_latency_ms: 50,
       rows: [],
       total_rows: 10,
+      degraded: false,
     };
     const { rerender } = render(
       (
