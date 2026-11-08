@@ -4,6 +4,7 @@ import {
   RUN_ROW_OUTCOME_ALL,
   RUN_ROW_OUTCOMES,
   isMitigatedRow,
+  rowAttemptsMarker,
   rowVerdictKind,
 } from '@/src/app/benchmark/domain/benchmark_run_rows';
 
@@ -82,5 +83,24 @@ describe('isMitigatedRow', () => {
     expect(
       isMitigatedRow({ decision: 'block', reason: 'classifier_mitigated' })
     ).toBe(false);
+  });
+});
+
+describe('rowAttemptsMarker', () => {
+  it('shows nothing for a row that went through first time or has no record', () => {
+    expect(rowAttemptsMarker(undefined)).toBeNull();
+    expect(rowAttemptsMarker(0)).toBeNull();
+    expect(rowAttemptsMarker(1)).toBeNull();
+  });
+
+  it('names the extra requests of a retried row', () => {
+    expect(rowAttemptsMarker(2)).toEqual({
+      text: '×2',
+      title: 'needed 2 requests (requeued 1 time)',
+    });
+    expect(rowAttemptsMarker(5)).toEqual({
+      text: '×5',
+      title: 'needed 5 requests (requeued 4 times)',
+    });
   });
 });

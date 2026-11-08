@@ -10,6 +10,7 @@ const makeResult = (overrides: Partial<JobResult> = {}): JobResult => ({
   p99_latency_ms: 120.06,
   rows: [],
   total_rows: 200,
+  degraded: false,
   ...overrides,
 });
 

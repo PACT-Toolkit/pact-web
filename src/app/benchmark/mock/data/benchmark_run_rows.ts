@@ -24,6 +24,9 @@ const SEEDED_MIN_ROWS = 50;
 
 const FILTER_RULE_SHARE = 0.3;
 
+/** Attempts a row that went through first time needed. */
+const SINGLE_ATTEMPT = 1;
+
 /** Small deterministic PRNG (LCG) so a run's rows are identical on every request. */
 const makeRng = (seed: number) => {
   let state = seed >>> 0;
@@ -213,10 +216,31 @@ export const buildMockRunRows = (
 ): BenchmarkRunRow[] => {
   const rng = makeRng(seed);
   const pools = categoryPools(run);
+  // A run with a count breakdown records attempts (one per row that went
+  // through first time); an older run does not, so its rows carry none (0).
+  const baseAttempts = run.counts ? SINGLE_ATTEMPT : 0;
+  const rows = shuffle(kindPlan(run), rng).map((kind, i): BenchmarkRunRow => ({
+    ...buildRow(run, kind, i + 1, rng, pools),
+    attempts: baseAttempts,
+  }));
 
-  return shuffle(kindPlan(run), rng).map((kind, i) =>
-    buildRow(run, kind, i + 1, rng, pools)
-  );
+  // A throttled row was retried until the budget ran out, so throttled rows
+  // take their extra attempt first; the remaining requeues go to random rows.
+  // The extra attempts across all rows add up to the run's `requeues` count.
+  let requeues = run.counts?.requeues ?? 0;
+  for (const row of rows) {
+    if (requeues === 0) break;
+    if (row.throttled) {
+      row.attempts = (row.attempts ?? baseAttempts) + 1;
+      requeues -= 1;
+    }
+  }
+  for (; requeues > 0 && rows.length > 0; requeues -= 1) {
+    const row = pick(rows, rng);
+    row.attempts = (row.attempts ?? baseAttempts) + 1;
+  }
+
+  return rows;
 };
 
 const rowCache = new Map<string, BenchmarkRunRow[]>();

@@ -15,6 +15,7 @@ function makeRun(overrides: Partial<BenchmarkRun>): BenchmarkRun {
     p50_latency: 20,
     p99_latency: 100,
     row_count: 200,
+    degraded: false,
     ran_at: 1_700_000_000,
     ...overrides,
   };

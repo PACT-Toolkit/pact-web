@@ -34,6 +34,12 @@ export interface BenchmarkRunCountsBody {
    */
   mitigated: number;
   /**
+   * Requeues is the number of extra attempts the runner spent requeueing
+   * rows after a 429, 5xx or transport error. Zero on a run stored before
+   * the field.
+   */
+  requeues: number;
+  /**
    * Throttled is the number of rows that exhausted the runner's retry
    * budget against HTTP 429 (rate limited). Excluded from
    * attacks/benign and from errors: a shed request is the gateway's

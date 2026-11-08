@@ -92,3 +92,45 @@ describe('BenchmarkVerdictCell', () => {
     }
   });
 });
+
+describe('BenchmarkVerdictCell attempts marker', () => {
+  it('shows a muted marker with the request count for a retried row', () => {
+    render(<BenchmarkVerdictCell row={{ decision: 'block', attempts: 3 }} />);
+
+    const marker = screen.getByTestId('benchmark-row-attempts');
+    expect(marker).toHaveTextContent('×3');
+    expect(marker).toHaveAttribute(
+      'title',
+      'needed 3 requests (requeued 2 times)'
+    );
+    expect(marker).toHaveClass('text-muted-foreground');
+  });
+
+  it('shows no marker when the row needed one request or none was recorded', () => {
+    for (const attempts of [undefined, 0, 1]) {
+      const { unmount } = render(
+        <BenchmarkVerdictCell row={{ decision: 'block', attempts }} />
+      );
+
+      expect(
+        screen.queryByTestId('benchmark-row-attempts')
+      ).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+
+  it('shows the marker on an errored, throttled or unscored row too', () => {
+    for (const row of [
+      { error: 'boom', attempts: 4 },
+      { throttled: true, attempts: 4 },
+      { unscored: true, attempts: 4 },
+    ]) {
+      const { unmount } = render(<BenchmarkVerdictCell row={row} />);
+
+      expect(screen.getByTestId('benchmark-row-attempts')).toHaveTextContent(
+        '×4'
+      );
+      unmount();
+    }
+  });
+});

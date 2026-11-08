@@ -39,6 +39,12 @@ export interface ConfusionCounts {
   unscored: number;
   /** Unscored as a fraction of every row the run touched (0-1). */
   unscoredRate: number;
+  /**
+   * Times the runner put a row back after a 429/502/503/504 or a transport
+   * error. A retried row is not a lost row: it still ends up in the cells
+   * above, so this never changes them.
+   */
+  requeues: number;
 }
 
 /**
@@ -67,13 +73,14 @@ export function effectiveDetectionRate(
  * persisted before the gateway added the field won't actually
  * carry it on the wire - the same "don't assume presence" caveat
  * benchmark_breakdown.ts documents for the rest of this struct. The same
- * goes for `counts.unscored` and `counts.mitigated`, absent on runs persisted
- * before they existed.
+ * goes for `counts.unscored`, `counts.mitigated` and `counts.requeues`, absent
+ * on runs persisted before they existed.
  */
 export function deriveConfusionCounts(counts: RunCounts): ConfusionCounts {
   const throttled = counts.throttled ?? 0;
   const unscored = counts.unscored ?? 0;
   const mitigated = counts.mitigated ?? 0;
+  const requeues = counts.requeues ?? 0;
   // Errored and unscored rows are subsets of attacks/benign on the wire (an
   // allow nothing blocked); a throttled row is the only set outside them.
   const totalRows = counts.attacks + counts.benign + throttled;
@@ -94,5 +101,6 @@ export function deriveConfusionCounts(counts: RunCounts): ConfusionCounts {
     throttledRate: totalRows > 0 ? throttled / totalRows : 0,
     unscored,
     unscoredRate: totalRows > 0 ? unscored / totalRows : 0,
+    requeues,
   };
 }

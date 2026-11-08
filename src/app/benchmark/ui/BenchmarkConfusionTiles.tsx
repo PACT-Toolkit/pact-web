@@ -83,11 +83,18 @@ export const BenchmarkConfusionTiles = ({
         testId="benchmark-confusion-effective-detection"
       />
       <StatTile
+        label="Requeues"
+        value={confusion.requeues}
+        secondaryText="rows retried after 429/5xx, not lost"
+        className="col-span-2 sm:col-span-1"
+        testId="benchmark-confusion-requeues"
+      />
+      <StatTile
         label="Unscored"
         value={confusion.unscored}
         valueClass={confusion.unscored > 0 ? 'text-warning' : undefined}
         secondaryText={`${formatMetric(confusion.unscoredRate, 'percent')} · classifier gave no verdict, counted as allowed`}
-        className="col-span-2 sm:col-span-4"
+        className="col-span-2 sm:col-span-3"
         testId="benchmark-confusion-unscored"
       />
     </div>

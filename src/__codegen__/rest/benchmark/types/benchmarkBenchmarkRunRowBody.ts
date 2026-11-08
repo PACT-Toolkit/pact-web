@@ -7,6 +7,7 @@
  */
 
 export interface BenchmarkBenchmarkRunRowBody {
+  attempts?: number;
   category?: string;
   classifier_label?: string;
   classifier_score?: number;

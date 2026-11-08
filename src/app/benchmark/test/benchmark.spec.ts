@@ -1,6 +1,9 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { MOCK_CORPUS_DATASETS } from '@/src/app/benchmark/mock/data/benchmark';
+import {
+  MOCK_CORPUS_DATASETS,
+  MOCK_JOB_DURATION_MS,
+} from '@/src/app/benchmark/mock/data/benchmark';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
@@ -160,17 +163,34 @@ test.describe('Benchmark latency, corpus composition, and comparison charts', ()
     page,
   }) => {
     await expect(
-      page.getByTestId('benchmark-comparison-unscored')
+      page.getByTestId('benchmark-comparison-not-quotable')
     ).not.toBeVisible();
 
     await pickComparisonRun(page, 'Candidate', /2000 rows/);
 
     await expect(
-      page.getByTestId('benchmark-comparison-unscored')
+      page.getByTestId('benchmark-comparison-not-quotable')
     ).toContainText('Candidate: 15.0% of rows unscored');
     await expect(
       page.getByTestId('benchmark-comparison-corpus-mismatch')
     ).not.toBeVisible();
+
+    const detectionCells = page
+      .locator('tbody tr', { hasText: 'Detection rate' })
+      .locator('td');
+    await expect(detectionCells.nth(2)).toHaveText('n/a'); // candidate
+    await expect(detectionCells.nth(3)).toHaveText('n/a'); // delta
+  });
+
+  // run-12 is flagged degraded (30 of its 120 rows lost): the picker marks it,
+  // its rates are n/a with no delta, and the flag says why. Latency stays
+  // numeric.
+  test('flags a degraded candidate as not quotable', async ({ page }) => {
+    await pickComparisonRun(page, 'Candidate', /120 rows.* degraded$/);
+
+    await expect(
+      page.getByTestId('benchmark-comparison-not-quotable')
+    ).toContainText('Candidate: run degraded');
 
     const detectionCells = page
       .locator('tbody tr', { hasText: 'Detection rate' })
@@ -297,9 +317,12 @@ test.describe('Benchmark per-category, per-stage, and confidence-interval charts
     await expect(errorBars.first()).toBeVisible();
     expect(await errorBars.count()).toBeGreaterThan(0);
 
-    // run-8's prompt-hacking category has throttled: 2 -
-    // its bar label reads "2 thr", matching the existing "N err" label style.
-    await expect(chart.getByText('2 thr', { exact: true })).toBeVisible();
+    // run-8's prompt-hacking category has throttled: 2 and mitigated: 2 -
+    // its bar label reads "2 thr · 2 mitigated", matching the existing
+    // "N err" label style.
+    await expect(
+      chart.getByText('2 thr · 2 mitigated', { exact: true })
+    ).toBeVisible();
   });
 
   test('renders a shadcn legend with one painted swatch per series on the category chart', async ({
@@ -774,6 +797,9 @@ test.describe('Benchmark completed job rows link', () => {
   test('links the finished job summary to its run rows view', async ({
     page,
   }) => {
+    // The job alone takes MOCK_JOB_DURATION_MS; the default 30 s test budget
+    // leaves too little for a cold server once the wait below is sized to it.
+    test.setTimeout(MOCK_JOB_DURATION_MS * 8);
     await page.goto('/benchmark');
     await expect(page.getByTestId('benchmark-workbench')).toBeVisible();
 
@@ -786,14 +812,27 @@ test.describe('Benchmark completed job rows link', () => {
     });
     await page.getByRole('button', { name: 'Run benchmark' }).click();
 
-    // The mock handler advances queued -> running -> done over ~8s.
+    // The mock job settles into done MOCK_JOB_DURATION_MS after it was
+    // created, and the first poll that sees it done comes a poll interval
+    // later. Size the wait to the job (not a bare number) with room for a
+    // cold dev server compiling the routes the click reaches; the link only
+    // renders once the finished summary does, so this waits on job state.
     const link = page.getByRole('link', { name: 'View rows' });
-    await expect(link).toBeVisible({ timeout: 15000 });
-    await expect(link).toHaveAttribute('href', '/benchmark/runs/run-1');
+    await expect(link).toBeVisible({ timeout: MOCK_JOB_DURATION_MS * 3 });
+    await expect(link).toHaveAttribute('href', '/benchmark/runs/run-12');
+    // The mock job lost 3 % of its rows and retried 4 of them.
+    await expect(
+      page
+        .getByTestId('benchmark-job-done-summary')
+        .getByTestId('benchmark-degraded-badge')
+    ).toBeVisible();
+    await expect(
+      page.getByTestId('benchmark-confusion-requeues')
+    ).toContainText('4');
 
     await link.click();
 
-    await expect(page).toHaveURL(/\/benchmark\/runs\/run-1$/);
+    await expect(page).toHaveURL(/\/benchmark\/runs\/run-12$/);
     await expect(page.getByRole('heading', { name: 'Run rows' })).toBeVisible();
     await expect(page.getByTestId('benchmark-run-rows-row')).not.toHaveCount(0);
   });

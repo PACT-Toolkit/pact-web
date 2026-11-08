@@ -3,12 +3,24 @@ import { describe, expect, it } from 'vitest';
 import { type RunCounts } from '@/src/app/benchmark/domain/benchmark_breakdown';
 import { MOCK_RUNS } from '@/src/app/benchmark/mock/data/benchmark';
 
+// The default share of lost rows (errors + unscored + throttled) above which
+// the benchmark service flags a run degraded. A run may carry its own, higher
+// threshold, so only the flag implies the share is over this one.
+const DEFAULT_DEGRADED_THRESHOLD = 0.01;
+
 // The wire invariants the benchmark counts obey. Errored and unscored rows are
 // subsets of attacks/benign (an allow nothing blocked); a mitigated attack is
 // inside attacks and outside true_positives; a throttled row is the only set
 // outside attacks/benign, so attacks + benign + throttled is every row.
-const violations = (counts: RunCounts, rowCount: number): string[] => {
+// requeues is a retry tally, never negative and never a row count.
+const violations = (
+  counts: Omit<RunCounts, 'requeues'> & { requeues?: number },
+  rowCount: number
+): string[] => {
   const found: string[] = [];
+  if ((counts.requeues ?? 0) < 0) {
+    found.push('requeues < 0');
+  }
   if (counts.true_positives + counts.mitigated > counts.attacks) {
     found.push('true_positives + mitigated > attacks');
   }
@@ -26,6 +38,42 @@ const violations = (counts: RunCounts, rowCount: number): string[] => {
 };
 
 describe('seeded benchmark runs', () => {
+  it('seeds a degraded run with requeues and retried rows', () => {
+    const degraded = MOCK_RUNS.filter((run) => run.degraded);
+
+    expect(degraded.length).toBeGreaterThan(0);
+    for (const run of degraded) {
+      expect(run.counts!.requeues).toBeGreaterThan(0);
+    }
+  });
+
+  it.each(MOCK_RUNS.filter((run) => run.counts))(
+    '$id retried every throttled row at least once',
+    (run) => {
+      expect(run.counts!.requeues).toBeGreaterThanOrEqual(
+        run.counts!.throttled
+      );
+    }
+  );
+
+  it.each(MOCK_RUNS.filter((run) => run.degraded && run.counts))(
+    '$id is degraded only because rows were lost past the default threshold',
+    (run) => {
+      const { errors, unscored, throttled, attacks, benign } = run.counts!;
+      const lost = errors + unscored + throttled;
+
+      expect(lost / (attacks + benign + throttled)).toBeGreaterThan(
+        DEFAULT_DEGRADED_THRESHOLD
+      );
+    }
+  );
+
+  it('shows a mitigated count in the default (newest) run categories', () => {
+    const newest = [...MOCK_RUNS].sort((a, b) => b.ran_at - a.ran_at)[0];
+
+    expect(newest.per_category!.some((c) => c.mitigated > 0)).toBe(true);
+  });
+
   it.each(MOCK_RUNS.filter((run) => run.counts))(
     '$id keeps the run counts consistent',
     (run) => {
@@ -60,6 +108,8 @@ describe('seeded benchmark runs', () => {
         ).toEqual([]);
       }
       expect({
+        // A retry tally has no per-category split; it is the run's own.
+        requeues: counts.requeues,
         attacks: sum((c) => c.attacks),
         benign: sum((c) => c.benign),
         errors: sum((c) => c.errors),
