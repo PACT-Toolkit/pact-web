@@ -17,6 +17,8 @@ import {
   type CategoryChartPoint,
 } from '@/src/app/benchmark/domain/benchmark_category_chart';
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
+import { BenchmarkCategoryBarLabel } from '@/src/app/benchmark/ui/BenchmarkCategoryBarLabel';
+import { BenchmarkCategoryTooltipRow } from '@/src/app/benchmark/ui/BenchmarkCategoryTooltipRow';
 import {
   Card,
   CardContent,
@@ -30,14 +32,30 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/src/components/ui/chart';
-import { formatMetric } from '@/src/framework/format/metric_format';
+import { truncateWithEllipsis } from '@/src/framework/format/truncate_text';
+import { useIsMobile } from '@/src/framework/hooks/use-mobile';
 
 interface BenchmarkCategoryChartProps {
   run: BenchmarkRun | undefined;
   isLoading: boolean;
 }
 
-const Y_AXIS_WIDTH = 120;
+/** Width of the sliver drawn for a true 0% rate, so the bar survives recharts' zero-width filter. */
+const ZERO_RATE_SLIVER_PX = 2;
+
+/** `minPointSize` callback: recharts passes `null` for an undefined rate, which stays undrawn. */
+const zeroRateSliver = (value: number | null | undefined) =>
+  value === 0 ? ZERO_RATE_SLIVER_PX : 0;
+
+/** Longest category name shown on the y axis before an end ellipsis; the tooltip carries the full name. */
+const TICK_MAX_CHARS = 28;
+const TICK_MAX_CHARS_MOBILE = 14;
+
+/** Room right of the plot for the label after a 100% bar ("5/5 · 2 thr · 3 mitigated · 4 unscored"). */
+const RIGHT_MARGIN_PX = 200;
+
+/** Narrowest the chart is drawn; a narrower card scrolls sideways instead of squeezing the plot. */
+const MIN_CHART_WIDTH_PX = 560;
 
 /**
  * Per-category detection/FP breakdown for the run under inspection (the
@@ -57,6 +75,7 @@ export const BenchmarkCategoryChart = ({
   isLoading,
 }: BenchmarkCategoryChartProps) => {
   const chartData = useMemo(() => categoryChartData(run), [run]);
+  const isMobile = useIsMobile();
 
   return (
     <Card data-testid="benchmark-category-chart">
@@ -84,127 +103,122 @@ export const BenchmarkCategoryChart = ({
             </p>
           </div>
         ) : (
-          <ChartContainer
-            config={CATEGORY_SERIES}
-            className="w-full"
-            style={{ height: Math.max(160, chartData.length * 56) }}
-          >
-            <BarChart
-              data={chartData}
-              layout="vertical"
-              margin={{ left: 0, right: 96, top: 4, bottom: 0 }}
-              barGap={4}
+          <div className="overflow-x-auto">
+            <ChartContainer
+              config={CATEGORY_SERIES}
+              className="w-full"
+              style={{
+                height: Math.max(160, chartData.length * 64),
+                minWidth: MIN_CHART_WIDTH_PX,
+              }}
             >
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis
-                type="number"
-                domain={[0, 100]}
-                ticks={[0, 25, 50, 75, 100]}
-                tickFormatter={(v: number) => `${v}%`}
-                tickLine={false}
-                axisLine={false}
-                tickMargin={4}
-                tick={{ fontSize: 11 }}
-              />
-              <YAxis
-                type="category"
-                dataKey="category"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                tick={{ fontSize: 11 }}
-                width={Y_AXIS_WIDTH}
-              />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value, name, item) => {
-                      const p = item.payload as CategoryChartPoint | undefined;
-                      const seriesKey = name as keyof typeof CATEGORY_SERIES;
-                      const percent =
-                        typeof value === 'number' ? value : Number(value);
+              <BarChart
+                data={chartData}
+                layout="vertical"
+                margin={{
+                  left: 4,
+                  right: RIGHT_MARGIN_PX,
+                  top: 4,
+                  bottom: 0,
+                }}
+                barGap={2}
+                barCategoryGap="28%"
+              >
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis
+                  type="number"
+                  domain={[0, 100]}
+                  ticks={[0, 25, 50, 75, 100]}
+                  tickFormatter={(v: number) => `${v}%`}
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={4}
+                  tick={{ fontSize: 11 }}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="category"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tick={{ fontSize: 11 }}
+                  width="auto"
+                  tickFormatter={(v: string) =>
+                    truncateWithEllipsis(
+                      v,
+                      isMobile ? TICK_MAX_CHARS_MOBILE : TICK_MAX_CHARS
+                    )
+                  }
+                />
+                <ChartTooltip
+                  filterNull={false}
+                  content={
+                    <ChartTooltipContent
+                      formatter={(_value, name, item) => {
+                        const p = item.payload as
+                          CategoryChartPoint | undefined;
+                        if (!p) return null;
 
-                      return (
-                        <div className="flex w-full flex-col gap-0.5">
-                          <div className="flex items-center justify-between gap-4">
-                            <span className="text-muted-foreground">
-                              {CATEGORY_SERIES[seriesKey]?.label ?? name}
-                            </span>
-                            <span className="font-mono font-medium">
-                              {formatMetric(percent / 100, 'percent')}
-                            </span>
-                          </div>
-                          {p && (
-                            <div className="flex flex-col gap-0.5 text-[10px] text-muted-foreground">
-                              <span>Attacks: {p.attacks}</span>
-                              <span>Benign: {p.benign}</span>
-                              {p.errors > 0 && (
-                                <span className="text-destructive">
-                                  Errors: {p.errors}
-                                </span>
-                              )}
-                              {p.mitigated > 0 && (
-                                <span className="text-warning">
-                                  Mitigated: {p.mitigated}
-                                </span>
-                              )}
-                              {p.throttled > 0 && (
-                                <span className="text-warning">
-                                  Throttled: {p.throttled}
-                                </span>
-                              )}
-                              {p.unscored > 0 && (
-                                <span className="text-warning">
-                                  Unscored: {p.unscored}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    }}
+                        return (
+                          <BenchmarkCategoryTooltipRow
+                            seriesKey={name as keyof typeof CATEGORY_SERIES}
+                            point={p}
+                          />
+                        );
+                      }}
+                    />
+                  }
+                />
+                <Bar
+                  dataKey="detectionRate"
+                  fill="var(--color-detectionRate)"
+                  radius={[0, 4, 4, 0]}
+                  minPointSize={zeroRateSliver}
+                >
+                  <ErrorBar
+                    dataKey="detectionErrorOffset"
+                    direction="x"
+                    width={4}
+                    strokeWidth={1.5}
+                    stroke="var(--foreground)"
                   />
-                }
-              />
-              <Bar
-                dataKey="detectionRate"
-                fill="var(--color-detectionRate)"
-                radius={[0, 4, 4, 0]}
-              >
-                <ErrorBar
-                  dataKey="detectionErrorOffset"
-                  direction="x"
-                  width={4}
-                  strokeWidth={1.5}
-                  stroke="var(--color-detectionRate)"
-                />
-                <LabelList
-                  dataKey="detectionNote"
-                  position="right"
-                  className="fill-warning text-[10px]"
-                />
-              </Bar>
-              <Bar
-                dataKey="fpRate"
-                fill="var(--color-fpRate)"
-                radius={[0, 4, 4, 0]}
-              >
-                <ErrorBar
-                  dataKey="fpErrorOffset"
-                  direction="x"
-                  width={4}
-                  strokeWidth={1.5}
-                  stroke="var(--color-fpRate)"
-                />
-                <LabelList
-                  dataKey="fpNote"
-                  position="right"
-                  className="fill-muted-foreground text-[10px]"
-                />
-              </Bar>
-              <ChartLegend content={<ChartLegendContent />} />
-            </BarChart>
-          </ChartContainer>
+                  <LabelList
+                    dataKey="category"
+                    content={
+                      <BenchmarkCategoryBarLabel
+                        series="detection"
+                        points={chartData}
+                      />
+                    }
+                  />
+                </Bar>
+                <Bar
+                  dataKey="fpRate"
+                  fill="var(--color-fpRate)"
+                  radius={[0, 4, 4, 0]}
+                  minPointSize={zeroRateSliver}
+                >
+                  <ErrorBar
+                    dataKey="fpErrorOffset"
+                    direction="x"
+                    width={4}
+                    strokeWidth={1.5}
+                    stroke="var(--foreground)"
+                  />
+                  <LabelList
+                    dataKey="category"
+                    content={
+                      <BenchmarkCategoryBarLabel
+                        series="fp"
+                        points={chartData}
+                      />
+                    }
+                  />
+                </Bar>
+                <ChartLegend content={<ChartLegendContent />} />
+              </BarChart>
+            </ChartContainer>
+          </div>
         )}
       </CardContent>
     </Card>
