@@ -284,19 +284,17 @@ test.describe('Benchmark per-category, per-stage, and confidence-interval charts
     const chart = page.getByTestId('benchmark-category-chart');
     await expect(chart).toBeVisible();
 
-    // run-8 (the default candidate) seeds exactly these 4 categories - the
-    // y-axis category labels are the reliable per-entry count. Some of
-    // run-8's categories are attack-only or benign-only sources (mirrors the
-    // real corpus composition, e.g. an all-block dataset), so their FP or
-    // detection rate is legitimately 0 - recharts intentionally renders no
-    // <path> for a zero-dimension bar (see Bar.js's "filter out 0-dimension
-    // rectangles" comment), so a fixed total-bar-count assertion would be
-    // fighting the library rather than proving anything.
+    // run-8 (the default candidate) seeds these categories - the y-axis
+    // category labels are the reliable per-entry count. Some are attack-only
+    // or benign-only sources (mirrors the real corpus composition), so their
+    // FP or detection rate is undefined and that bar is not drawn at all.
     for (const category of [
       'prompt-hacking',
       'password-extraction',
       'mixed-injection',
       'benign-chat',
+      'support-faq',
+      'system-prompt-leak',
     ]) {
       await expect(chart.getByText(category, { exact: true })).toBeVisible();
     }
@@ -322,8 +320,116 @@ test.describe('Benchmark per-category, per-stage, and confidence-interval charts
     // its bar label reads "2 thr · 2 mitigated", matching the existing
     // "N err" label style.
     await expect(
-      chart.getByText('2 thr · 2 mitigated', { exact: true })
+      chart.getByTestId('benchmark-category-detection-label').filter({
+        hasText: '33/35 · 2 thr · 2 mitigated',
+      })
     ).toBeVisible();
+  });
+
+  test('draws a zero false-positive rate as a labelled 0/n bar with a whisker', async ({
+    page,
+  }) => {
+    const chart = page.getByTestId('benchmark-category-chart');
+    await expect(chart.locator('.recharts-errorBar').first()).toBeVisible();
+
+    // benign-chat is benign-only with 0 false positives out of 15 rows.
+    const label = chart
+      .getByTestId('benchmark-category-fp-label')
+      .filter({ hasText: /^0\/15$/ });
+    await expect(label).toBeVisible();
+
+    // 8 bars exist: one per defined rate (5 detection + 3 FP), and the 0%
+    // bar keeps a sliver so its whisker and label are drawn.
+    await expect(chart.locator('.recharts-rectangle')).toHaveCount(8);
+    await expect(chart.locator('.recharts-errorBar')).toHaveCount(8);
+  });
+
+  test('draws nothing for an undefined rate', async ({ page }) => {
+    const chart = page.getByTestId('benchmark-category-chart');
+    await expect(
+      chart.getByTestId('benchmark-category-fp-label').first()
+    ).toBeVisible();
+
+    // Attack-only categories have no benign rows: 5 attack categories carry a
+    // detection label, the 3 categories with benign rows carry an FP label,
+    // and no label exists for an undefined rate.
+    await expect(
+      chart.getByTestId('benchmark-category-detection-label')
+    ).toHaveCount(5);
+    await expect(chart.getByTestId('benchmark-category-fp-label')).toHaveCount(
+      3
+    );
+    await expect(chart.getByText('0/0')).toHaveCount(0);
+  });
+
+  test('keeps the start of a long category name visible on the y axis', async ({
+    page,
+  }) => {
+    const chart = page.getByTestId('benchmark-category-chart');
+    const tick = chart
+      .locator('.recharts-yAxis-tick-labels text')
+      .filter({ hasText: /^paraphrase-credential/ });
+
+    await expect(tick).toHaveCount(1);
+    await expect(tick).toHaveText(/^paraphrase-credential-exfil…$/);
+    const svgBox = await chart.locator('svg.recharts-surface').boundingBox();
+    const tickBox = await tick.boundingBox();
+    expect(tickBox!.x).toBeGreaterThanOrEqual(svgBox!.x);
+  });
+
+  test('places the counter label right of the upper whisker end', async ({
+    page,
+  }) => {
+    const chart = page.getByTestId('benchmark-category-chart');
+    const label = chart
+      .getByTestId('benchmark-category-detection-label')
+      .filter({ hasText: '2 mitigated' });
+    await expect(label).toBeVisible();
+    const labelBox = await label.boundingBox();
+
+    // The whisker of the same bar: the error bar whose vertical centre lines
+    // up with the label's.
+    const whiskers = await chart.locator('.recharts-errorBar').all();
+    let whiskerRight: number | undefined;
+    for (const whisker of whiskers) {
+      const box = await whisker.boundingBox();
+      if (
+        box &&
+        Math.abs(
+          box.y + box.height / 2 - (labelBox!.y + labelBox!.height / 2)
+        ) < 4
+      ) {
+        whiskerRight = box.x + box.width;
+      }
+    }
+
+    expect(whiskerRight).toBeDefined();
+    expect(labelBox!.x).toBeGreaterThanOrEqual(whiskerRight!);
+  });
+
+  test('shows the sample size and interval in the tooltip for a benign-only category', async ({
+    page,
+  }) => {
+    const chart = page.getByTestId('benchmark-category-chart');
+    const tick = chart
+      .locator('.recharts-yAxis-tick-labels text')
+      .filter({ hasText: /^support-faq$/ });
+    await tick.scrollIntoViewIfNeeded();
+    const tickBox = await tick.boundingBox();
+    const svgBox = await chart.locator('svg.recharts-surface').boundingBox();
+    await expect(chart.locator('.recharts-rectangle').first()).toBeVisible();
+    await page.mouse.move(
+      svgBox!.x + svgBox!.width / 2 - 100,
+      tickBox!.y + tickBox!.height / 2,
+      { steps: 5 }
+    );
+
+    const tooltip = chart.locator('.recharts-tooltip-wrapper');
+    await expect(tooltip).toContainText('no attack rows');
+    await expect(tooltip).toContainText('n/a');
+    await expect(tooltip).toContainText(
+      '2 of 12 benign rows · 95% CI 4.7-44.8%'
+    );
   });
 
   test('renders a shadcn legend with one painted swatch per series on the category chart', async ({
