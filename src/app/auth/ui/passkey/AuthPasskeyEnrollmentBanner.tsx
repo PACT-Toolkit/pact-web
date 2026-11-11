@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { usePasskeyPromptHidden } from '@/src/app/auth/domain/use_passkey_prompt_hidden';
 import { dismissPasskeyPrompt } from '@/src/app/auth/domain/webauthn';
 import { AuthPasskeyAddButton } from '@/src/app/auth/ui/passkey/AuthPasskeyAddButton';
+import { PAGE_CONTENT_MAX_WIDTH_CLASS } from '@/src/components/page-container';
 import { Button } from '@/src/components/ui/button';
+import { cn } from '@/src/lib/utils';
 
 type Props = {
   hasPasskeyOrWebauthnMfa?: boolean;
@@ -25,7 +27,12 @@ export const AuthPasskeyEnrollmentBanner = ({
       aria-label="Passkey enrollment"
       className="border-b bg-positive/10"
     >
-      <div className="mx-auto flex max-w-5xl items-start gap-3 px-6 py-3">
+      <div
+        className={cn(
+          'mx-auto flex items-start gap-3 px-6 py-3',
+          PAGE_CONTENT_MAX_WIDTH_CLASS
+        )}
+      >
         <ShieldCheck
           className="mt-0.5 h-5 w-5 shrink-0 text-positive"
           aria-hidden

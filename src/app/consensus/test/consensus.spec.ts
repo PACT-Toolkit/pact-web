@@ -29,7 +29,7 @@ test.describe('Consensus console', () => {
     await expect(firstCard).toBeVisible();
     await expect(firstCard).toContainText(/\d+% confidence/);
     await expect(firstCard).toContainText(/ms request latency/);
-    await expect(firstCard).toContainText('backend');
+    await expect(firstCard).toContainText(/\d+ of \d+ judges/);
   });
 
   test('flagged-only toggle narrows to SPLIT / NO QUORUM / FAIL-OPEN / LOW CONFIDENCE rows', async ({

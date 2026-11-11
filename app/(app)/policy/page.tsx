@@ -3,10 +3,11 @@ import {
   PolicyRuleEditor,
   PolicyTokenIssuePanel,
 } from '@/src/app/policy';
+import { PageContainer } from '@/src/components/page-container';
 
 const PolicyPage = () => {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 p-8">
+    <PageContainer className="gap-8">
       <section className="flex flex-col gap-6">
         <header className="flex flex-col gap-1">
           <h1 className="text-2xl font-semibold">Policy rules</h1>
@@ -39,7 +40,7 @@ const PolicyPage = () => {
         </header>
         <PolicyEventsFeed />
       </section>
-    </div>
+    </PageContainer>
   );
 };
 

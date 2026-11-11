@@ -245,7 +245,10 @@ export const FilterDecisionsWorkbench = () => {
               <CardContent className="flex flex-col gap-2">
                 {filterStats.top_rules.map(({ label, count }) => (
                   <div key={label} className="flex items-center gap-3 text-sm">
-                    <span className="w-32 shrink-0 font-mono text-xs text-muted-foreground">
+                    <span
+                      className="w-32 shrink-0 truncate font-mono text-xs text-muted-foreground"
+                      title={label}
+                    >
                       {label}
                     </span>
                     <div className="flex flex-1 items-center gap-2">

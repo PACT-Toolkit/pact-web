@@ -1,6 +1,7 @@
 import Link from 'next/link';
 
 import { BenchmarkRunRowsView } from '@/src/app/benchmark';
+import { PageContainer } from '@/src/components/page-container';
 
 interface BenchmarkRunPageProps {
   params: Promise<{ runId: string }>;
@@ -10,7 +11,7 @@ const BenchmarkRunPage = async ({ params }: BenchmarkRunPageProps) => {
   const { runId } = await params;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 p-8">
+    <PageContainer>
       <header className="flex flex-col gap-1">
         <Link
           href="/benchmark"
@@ -24,7 +25,7 @@ const BenchmarkRunPage = async ({ params }: BenchmarkRunPageProps) => {
         </p>
       </header>
       <BenchmarkRunRowsView runId={runId} />
-    </div>
+    </PageContainer>
   );
 };
 
