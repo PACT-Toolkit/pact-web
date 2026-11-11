@@ -1,7 +1,8 @@
 import { RedactorTestPanel, RedactorWorkbench } from '@/src/app/redactor';
+import { PageContainer } from '@/src/components/page-container';
 
 const RedactorPage = () => (
-  <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-8">
+  <PageContainer>
     <header className="flex flex-col gap-1">
       <h1 className="text-2xl font-semibold">Redactor</h1>
       <p className="text-sm text-muted-foreground">
@@ -11,7 +12,7 @@ const RedactorPage = () => (
     </header>
     <RedactorTestPanel />
     <RedactorWorkbench />
-  </div>
+  </PageContainer>
 );
 
 export default RedactorPage;

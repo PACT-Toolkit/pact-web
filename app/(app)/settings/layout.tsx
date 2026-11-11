@@ -1,8 +1,9 @@
+import { PageContainer } from '@/src/components/page-container';
 import { SettingsNav } from '@/src/framework/settings/settings_nav';
 
 const SettingsLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 p-8 lg:flex-row">
+    <PageContainer className="gap-8 lg:flex-row">
       <aside className="lg:w-64 lg:shrink-0">
         <header className="mb-4 flex flex-col gap-1">
           <h1 className="text-2xl font-semibold">Settings</h1>
@@ -13,7 +14,7 @@ const SettingsLayout = ({ children }: { children: React.ReactNode }) => {
         <SettingsNav />
       </aside>
       <section className="flex-1 min-w-0">{children}</section>
-    </div>
+    </PageContainer>
   );
 };
 

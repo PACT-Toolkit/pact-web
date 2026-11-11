@@ -1,8 +1,9 @@
 import { FilesWorkbench } from '@/src/app/files';
+import { PageContainer } from '@/src/components/page-container';
 
 const FilesPage = () => {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-8">
+    <PageContainer>
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold">Files</h1>
         <p className="text-sm text-muted-foreground">
@@ -12,7 +13,7 @@ const FilesPage = () => {
         </p>
       </header>
       <FilesWorkbench />
-    </div>
+    </PageContainer>
   );
 };
 

@@ -1,7 +1,8 @@
 import { FilterDecisionsWorkbench } from '@/src/app/filter';
+import { PageContainer } from '@/src/components/page-container';
 
 const FilterPage = () => (
-  <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 p-8">
+  <PageContainer>
     <header className="flex flex-col gap-1">
       <h1 className="text-2xl font-semibold">Filter decisions</h1>
       <p className="text-sm text-muted-foreground">
@@ -10,7 +11,7 @@ const FilterPage = () => (
       </p>
     </header>
     <FilterDecisionsWorkbench />
-  </div>
+  </PageContainer>
 );
 
 export default FilterPage;
