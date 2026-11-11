@@ -108,7 +108,7 @@ export const BenchmarkCategoryChart = ({
               config={CATEGORY_SERIES}
               className="w-full"
               style={{
-                height: Math.max(160, chartData.length * 56),
+                height: Math.max(160, chartData.length * 64),
                 minWidth: MIN_CHART_WIDTH_PX,
               }}
             >
@@ -121,7 +121,8 @@ export const BenchmarkCategoryChart = ({
                   top: 4,
                   bottom: 0,
                 }}
-                barGap={4}
+                barGap={2}
+                barCategoryGap="28%"
               >
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis
