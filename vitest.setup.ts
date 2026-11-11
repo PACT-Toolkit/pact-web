@@ -33,3 +33,20 @@ beforeAll(() => {
   window.HTMLElement.prototype.releasePointerCapture = vi.fn();
   window.HTMLElement.prototype.scrollIntoView = vi.fn();
 });
+
+// jsdom has no matchMedia, which useIsMobile (and so every component that
+// reads it) calls on render. A desktop-sized viewport (nothing matches) is the
+// shim default; a test that needs a narrow viewport overrides it.
+beforeAll(() => {
+  if (typeof window === 'undefined') return;
+  window.matchMedia = vi.fn((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(() => false),
+  })) as unknown as typeof window.matchMedia;
+});
