@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from '@/src/components/ui/button';
-import { Input } from '@/src/components/ui/input';
+import { DateRangeFilter } from '@/src/framework/components/date_range_filter';
 
 export const AuditComplianceWindowPicker = ({
   since,
@@ -17,28 +17,15 @@ export const AuditComplianceWindowPicker = ({
   onReset: () => void;
 }) => (
   <div className="flex flex-wrap items-end gap-2">
-    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-      Since
-      <Input
-        type="datetime-local"
-        value={since}
-        onChange={(event) => onSinceChange(event.target.value)}
-        className="w-56"
-        aria-label="Since"
-        data-testid="audit-compliance-since"
-      />
-    </label>
-    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-      Until
-      <Input
-        type="datetime-local"
-        value={until}
-        onChange={(event) => onUntilChange(event.target.value)}
-        className="w-56"
-        aria-label="Until"
-        data-testid="audit-compliance-until"
-      />
-    </label>
+    <DateRangeFilter
+      since={since}
+      until={until}
+      onSinceChange={onSinceChange}
+      onUntilChange={onUntilChange}
+      sinceTestId="audit-compliance-since"
+      untilTestId="audit-compliance-until"
+      className="w-auto"
+    />
     <Button
       type="button"
       variant="outline"
