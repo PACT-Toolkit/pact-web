@@ -26,6 +26,7 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { Input } from '@/src/components/ui/input';
+import { DateRangeFilter } from '@/src/framework/components/date_range_filter';
 import { KNOWN_CONTROL_FRAMEWORKS } from '@/src/framework/decisions/control_frameworks';
 import { type Pagination } from '@/src/lib/use_local_pagination';
 
@@ -178,7 +179,7 @@ export const AuditWorkbench = () => {
             onChange={(event) =>
               handleFilterChange(() => setTopic(event.target.value))
             }
-            className="h-9 rounded-md border bg-background px-3 text-sm"
+            className="h-9 w-full rounded-md border bg-background px-3 text-sm sm:w-44"
             data-testid="audit-topic-select"
           >
             {AUDIT_TOPIC_OPTIONS.map((opt) => (
@@ -187,7 +188,7 @@ export const AuditWorkbench = () => {
               </option>
             ))}
           </select>
-          <div className="relative">
+          <div className="relative w-full sm:w-auto sm:min-w-32 sm:flex-1">
             <Search
               className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
               aria-hidden
@@ -197,16 +198,16 @@ export const AuditWorkbench = () => {
               onChange={(event) =>
                 handleFilterChange(() => setRequestId(event.target.value))
               }
-              placeholder="Filter by request id"
-              className="w-56 pl-8"
+              placeholder="Request id"
+              className="pl-8"
               aria-label="Request id"
             />
           </div>
           <Input
             value={actor}
             onChange={(event) => setActor(event.target.value)}
-            placeholder="Filter by actor / user"
-            className="w-56"
+            placeholder="Actor or user"
+            className="w-full sm:w-auto sm:min-w-32 sm:flex-1"
             aria-label="Actor or user"
           />
           {showControlFilter && (
@@ -268,30 +269,12 @@ export const AuditWorkbench = () => {
               )}
             </div>
           )}
-          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-            Since
-            <Input
-              type="datetime-local"
-              value={since}
-              onChange={(event) =>
-                handleFilterChange(() => setSince(event.target.value))
-              }
-              className="w-56"
-              aria-label="Since"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-            Until
-            <Input
-              type="datetime-local"
-              value={until}
-              onChange={(event) =>
-                handleFilterChange(() => setUntil(event.target.value))
-              }
-              className="w-56"
-              aria-label="Until"
-            />
-          </label>
+          <DateRangeFilter
+            since={since}
+            until={until}
+            onSinceChange={(value) => handleFilterChange(() => setSince(value))}
+            onUntilChange={(value) => handleFilterChange(() => setUntil(value))}
+          />
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
