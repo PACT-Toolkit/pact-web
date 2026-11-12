@@ -23,6 +23,7 @@ import {
   type LayerState,
   type RunStatus,
 } from '@/src/app/test_lab/ui/types';
+import { checkResponseFromSaturation } from '@/src/framework/decisions/classifier_saturation';
 import { TRAFFIC_SOURCE_TEST_LAB } from '@/src/lib/decisions/traffic_source';
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -148,10 +149,17 @@ export function useTestLabRun() {
           _bypass_layers: bypassLayers,
         };
         const response = await checkContent(body);
-        if (response.status !== 200) {
+        const saturated = checkResponseFromSaturation(
+          response,
+          Date.now() - startedAt
+        );
+        if (saturated) {
+          data = saturated;
+        } else if (response.status !== 200) {
           throw new Error(`check failed (${response.status})`);
+        } else {
+          data = parseCheckResponse(response.data);
         }
-        data = parseCheckResponse(response.data);
       } catch (e) {
         setLayers((prev) =>
           prev.map((l) =>

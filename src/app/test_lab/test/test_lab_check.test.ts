@@ -197,6 +197,24 @@ describe('applyLiveLayers - reason-driven block attribution', () => {
     expect(out.redactor.decision).toBe('skip');
   });
 
+  it('classifier_saturated blocks the classifier layer with the retry wording; downstream stages skip', () => {
+    // classifierStage.blockSaturated halts before any verdict exists, so the
+    // reason alone attributes the block.
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({ decision: 'block', reason: 'classifier_saturated' }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('allow');
+    expect(out.classifier.decision).toBe('block');
+    expect(out.classifier.reason).toBe('Classifier at capacity - retry later');
+    expect(out.classifier.classifierLabel).toBeUndefined();
+    expect(out.consensus.decision).toBe('skip');
+    expect(out.redactor.decision).toBe('skip');
+  });
+
   it('classifier_tagged (shadow / deferred): classifier=allow with label, nothing downstream force-skipped', () => {
     const out = byId(
       applyLiveLayers(

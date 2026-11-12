@@ -246,6 +246,22 @@ export const CLASSIFIER_MAX_CONTENT_BYTES = 65_536;
 export const exceedsClassifierCeiling = (content: string): boolean =>
   new TextEncoder().encode(content).length > CLASSIFIER_MAX_CONTENT_BYTES;
 
+// Deterministic stand-in for a shed classifier: the real gateway refuses with
+// classifier_saturated when pact-classifier answers ResourceExhausted, which
+// content cannot cause. In dev:mock, content containing this phrase takes the
+// same path, so the 429 handling is reachable from Test Lab.
+export const CLASSIFIER_SATURATION_TRIGGER = 'simulate classifier saturation';
+
+export const triggersClassifierSaturation = (content: string): boolean =>
+  content.toLowerCase().includes(CLASSIFIER_SATURATION_TRIGGER);
+
+// Message and Retry-After of the gateway's retryable 429
+// (boundary.MsgClassifierSaturated; GATEWAY_CLASSIFIER_SATURATED_RETRY_AFTER_SECONDS
+// default 1), verified at pact-gateway 2bb720b.
+export const CLASSIFIER_SATURATED_MESSAGE =
+  'The PACT safety check is at capacity. Please retry shortly.';
+export const CLASSIFIER_SATURATED_RETRY_AFTER_SECONDS = 1;
+
 // runClassifier tags only -- like the real classifier stage, it never
 // decides allow/block itself ("the classifier tags; the gateway
 // owns the block"). Deterministic by design (no Math.random): a single

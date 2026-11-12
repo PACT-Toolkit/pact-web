@@ -205,6 +205,28 @@ describe('POST /v1/check mock handler - diagnostics parity with the seeded audit
     expect(res.data.reason).toBe('classifier_input_too_large');
   });
 
+  it('classifier saturation trigger: answers a retryable 429 and the audit row records the block', async () => {
+    const res = await checkContent({
+      content: 'Please SIMULATE classifier saturation for this request.',
+      kind: 'input',
+    });
+
+    expect(res.status).toBe(429);
+    expect(res.data).toEqual({
+      code: 'classifier_saturated',
+      error: 'The PACT safety check is at capacity. Please retry shortly.',
+    });
+    expect(res.headers.get('Retry-After')).toBe('1');
+
+    const row = db.decisions
+      .getAll()
+      .map((r) => JSON.parse(r.payloadJson ?? '') as Record<string, unknown>)
+      .find((p) => p.reason === 'classifier_saturated');
+    expect(row?.decision).toBe('block');
+    expect(row?.engine).toBe('classifier');
+    expect(row?.classifier).toBeUndefined();
+  });
+
   it('allow decision: no diagnostics on either the response or the seeded row', async () => {
     const content = "Summarise last quarter's earnings report.";
     const res = await checkContent({ content, kind: 'input' });

@@ -18,7 +18,10 @@ import {
   type LayerDecision,
   type LayerState,
 } from '@/src/app/test_lab/ui/types';
-import { CLASSIFIER_INPUT_TOO_LARGE_DESCRIPTION } from '@/src/framework/decisions/decision_outcome';
+import {
+  CLASSIFIER_INPUT_TOO_LARGE_DESCRIPTION,
+  CLASSIFIER_SATURATED_DESCRIPTION,
+} from '@/src/framework/decisions/decision_outcome';
 import { stageDurationMs } from '@/src/framework/decisions/stage_duration';
 
 // ─── API payload types ────────────────────────────────────────────────────────
@@ -423,6 +426,10 @@ const STAGE_LABEL: Partial<Record<StageId, string>> = {
 //   - classifier_input_too_large -> classifierStage.blockOversize: content
 //     above the classifier's input ceiling cannot be scanned, so it blocks
 //     (fail closed) in every mode before any verdict exists.
+//   - classifier_saturated -> classifierStage.blockSaturated: the classifier
+//     shed the RPC with ResourceExhausted, so the request blocks (retryable)
+//     in every mode before any verdict exists. The /v1/check handler answers
+//     it with a 429, not a decision body; see classifier_saturation.ts.
 //   - external_ref_hostile / external_ref_not_allowlisted /
 //     external_ref_unfetchable -> sandboxStage's fetch-and-rescan block.
 //   - consensus_enforced -> consensusStage's quorum-confirmed-malicious
@@ -439,6 +446,7 @@ const BLOCKING_STAGE_OF: Record<string, StageId> = {
   classifier_enforced: 'classifier',
   classifier_protocol_error: 'classifier',
   classifier_input_too_large: 'classifier',
+  classifier_saturated: 'classifier',
   external_ref_hostile: 'sandbox',
   external_ref_not_allowlisted: 'sandbox',
   external_ref_unfetchable: 'sandbox',
@@ -565,6 +573,8 @@ const classifierReason = (
       return 'Classifier returned an unrecognised label - fail closed';
     case 'classifier_input_too_large':
       return CLASSIFIER_INPUT_TOO_LARGE_DESCRIPTION;
+    case 'classifier_saturated':
+      return CLASSIFIER_SATURATED_DESCRIPTION;
     default:
       break;
   }

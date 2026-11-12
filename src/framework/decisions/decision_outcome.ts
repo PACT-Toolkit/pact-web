@@ -32,18 +32,23 @@ export const decisionLabel = (decision: string): string => {
 };
 
 // Plain-words explanation of the machine reasons that need one (the canceled
-// outcome and the classifier's oversize block); every other reason code is
-// shown verbatim next to the badge. A Map, not an object literal: reason is
-// wire data, and a plain-object lookup would also match inherited keys such
-// as "constructor".
+// outcome and the classifier's oversize and saturation blocks); every other
+// reason code is shown verbatim next to the badge. A Map, not an object
+// literal: reason is wire data, and a plain-object lookup would also match
+// inherited keys such as "constructor".
 const CLIENT_CANCELED_DESCRIPTION = 'Caller disconnected before a verdict';
 // Shared with the Test Lab's classifier layer so both views word the
 // gateway's oversize block identically.
 export const CLASSIFIER_INPUT_TOO_LARGE_DESCRIPTION =
   "Input exceeds the classifier's size limit - fail closed";
+// The gateway answers a shed classifier with a retryable 429 (Retry-After),
+// so the block is transient and the wording tells the operator to retry.
+export const CLASSIFIER_SATURATED_DESCRIPTION =
+  'Classifier at capacity - retry later';
 const REASON_DESCRIPTION = new Map<string, string>([
   ['client_canceled', CLIENT_CANCELED_DESCRIPTION],
   ['classifier_input_too_large', CLASSIFIER_INPUT_TOO_LARGE_DESCRIPTION],
+  ['classifier_saturated', CLASSIFIER_SATURATED_DESCRIPTION],
 ]);
 
 export const decisionReasonDescription = (
