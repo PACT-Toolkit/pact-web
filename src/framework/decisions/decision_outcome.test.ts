@@ -48,6 +48,15 @@ describe('decisionReasonDescription', () => {
     ).toBe("Input exceeds the classifier's size limit - fail closed");
   });
 
+  it('explains classifier_saturated as a retryable capacity block', () => {
+    expect(
+      decisionReasonDescription({
+        decision: 'block',
+        reason: 'classifier_saturated',
+      })
+    ).toBe('Classifier at capacity - retry later');
+  });
+
   it('has no description for ordinary reasons', () => {
     expect(
       decisionReasonDescription({ decision: 'block', reason: 'filter_hostile' })

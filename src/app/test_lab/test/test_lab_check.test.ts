@@ -4,6 +4,7 @@ import {
   applyLiveLayers,
   BLANK_LAYERS,
   type CheckResponse,
+  checkResponseFromSaturation,
   CheckResponseParseError,
   deriveLayerDefinitions,
   isClassifierUnknownReason,
@@ -194,6 +195,24 @@ describe('applyLiveLayers - reason-driven block attribution', () => {
     expect(out.classifier.classifierLabel).toBeUndefined();
     expect(out.consensus.decision).toBe('skip');
     expect(out.consensus.reason).toMatch(/classifier blocked/i);
+    expect(out.redactor.decision).toBe('skip');
+  });
+
+  it('classifier_saturated blocks the classifier layer with the retry wording; downstream stages skip', () => {
+    // classifierStage.blockSaturated halts before any verdict exists, so the
+    // reason alone attributes the block.
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({ decision: 'block', reason: 'classifier_saturated' }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('allow');
+    expect(out.classifier.decision).toBe('block');
+    expect(out.classifier.reason).toBe('Classifier at capacity - retry later');
+    expect(out.classifier.classifierLabel).toBeUndefined();
+    expect(out.consensus.decision).toBe('skip');
     expect(out.redactor.decision).toBe('skip');
   });
 
@@ -880,5 +899,36 @@ describe('toTestRun - persisted failed runs', () => {
   it('falls back to status=error when status is ok/unset but decision is missing (defensive, should not happen on real data)', () => {
     const run = toTestRun(baseRecord({ status: undefined, decision: '' }));
     expect(run.status).toBe('error');
+  });
+});
+
+describe('checkResponseFromSaturation - the gateway 429 lifted into a block', () => {
+  it('turns a classifier_saturated 429 into a classifier block decision', () => {
+    expect(
+      checkResponseFromSaturation(
+        {
+          status: 429,
+          data: { code: 'classifier_saturated', error: 'at capacity' },
+        },
+        42
+      )
+    ).toEqual({
+      request_id: '',
+      decision: 'block',
+      reason: 'classifier_saturated',
+      latency_ms: 42,
+    });
+  });
+
+  it.each([
+    { name: 'a 429 with another code', status: 429, data: { code: 'other' } },
+    { name: 'a 429 with a plain string body', status: 429, data: 'slow down' },
+    {
+      name: 'a non-429 carrying the code',
+      status: 503,
+      data: { code: 'classifier_saturated' },
+    },
+  ])('ignores $name', ({ status, data }) => {
+    expect(checkResponseFromSaturation({ status, data }, 1)).toBeUndefined();
   });
 });

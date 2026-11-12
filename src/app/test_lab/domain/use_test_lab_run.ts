@@ -11,6 +11,7 @@ import {
   applyLiveLayers,
   BLANK_LAYERS,
   type CheckInput,
+  checkResponseFromSaturation,
   type CheckResponse,
   LAYER_DEFINITIONS,
   parseCheckResponse,
@@ -148,10 +149,17 @@ export function useTestLabRun() {
           _bypass_layers: bypassLayers,
         };
         const response = await checkContent(body);
-        if (response.status !== 200) {
+        const saturated = checkResponseFromSaturation(
+          response,
+          Date.now() - startedAt
+        );
+        if (saturated) {
+          data = saturated;
+        } else if (response.status !== 200) {
           throw new Error(`check failed (${response.status})`);
+        } else {
+          data = parseCheckResponse(response.data);
         }
-        data = parseCheckResponse(response.data);
       } catch (e) {
         setLayers((prev) =>
           prev.map((l) =>

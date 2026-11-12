@@ -87,3 +87,24 @@ describe('useTestLabRun - persisted failed runs', () => {
     await waitFor(() => expect(result.current.historySaveError).toBe(true));
   });
 });
+
+// The gateway answers a shed classifier with a retryable 429 instead of a
+// decision body; Test Lab must still show it as a block at the classifier
+// stage, not as a failed check.
+describe('useTestLabRun - classifier_saturated', () => {
+  it('renders the 429 as a classifier block, not a check error', async () => {
+    const { result } = renderHook(() => useTestLabRun(), {
+      wrapper: SWRTestProvider,
+    });
+
+    await act(async () => {
+      await result.current.runCheck('simulate classifier saturation', 'custom');
+    });
+
+    expect(result.current.status).toBe('done');
+    expect(result.current.result?.reason).toBe('classifier_saturated');
+    const classifier = result.current.layers.find((l) => l.id === 'classifier');
+    expect(classifier?.decision).toBe('block');
+    expect(classifier?.reason).toBe('Classifier at capacity - retry later');
+  });
+});

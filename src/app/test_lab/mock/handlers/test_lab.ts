@@ -13,11 +13,14 @@ import {
   sandboxBlocked,
 } from '@/src/app/gateway/mock/data/gateway';
 import { runRedactor } from '@/src/app/redactor/mock/data/redactor';
+import { CLASSIFIER_SATURATED_REASON } from '@/src/app/test_lab/domain/test_lab_check';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 import {
   CEL_RULE_ID,
   CEL_RULE_NAME,
+  CLASSIFIER_SATURATED_MESSAGE,
+  CLASSIFIER_SATURATED_RETRY_AFTER_SECONDS,
   auditEngineOf,
   celMatchPattern,
   exceedsClassifierCeiling,
@@ -26,6 +29,7 @@ import {
   runClassifier,
   runConsensus,
   runFilter,
+  triggersClassifierSaturation,
 } from '../data/test_lab';
 
 const TEST_LAB_RUN_DECISION_VALUES = new Set(['allow', 'block']);
@@ -147,6 +151,10 @@ export const handlers: RequestHandler[] = [
     if (!blocked && exceedsClassifierCeiling(content)) {
       blocked = true;
       reason = 'classifier_input_too_large';
+    }
+    if (!blocked && triggersClassifierSaturation(content)) {
+      blocked = true;
+      reason = CLASSIFIER_SATURATED_REASON;
     }
     const classifierResult = !blocked ? runClassifier(content) : undefined;
     let consensusRan = false;
@@ -302,6 +310,20 @@ export const handlers: RequestHandler[] = [
         created_at: createdAt,
       }),
     });
+
+    // A shed classifier is answered with a retryable 429 and an error body,
+    // not a decision (the audit row above still records the block).
+    if (reason === CLASSIFIER_SATURATED_REASON) {
+      return HttpResponse.json(
+        { code: reason, error: CLASSIFIER_SATURATED_MESSAGE },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(CLASSIFIER_SATURATED_RETRY_AFTER_SECONDS),
+          },
+        }
+      );
+    }
 
     return HttpResponse.json({
       request_id: requestId,
