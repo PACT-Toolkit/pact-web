@@ -2,7 +2,6 @@ export { AuthForgotPasswordForm } from './ui/forgot-password/AuthForgotPasswordF
 export { AuthLoginForm } from './ui/login/AuthLoginForm';
 export { AuthLoginMfaChallengeForm } from './ui/login/AuthLoginMfaChallengeForm';
 export { AuthPasskeyAddButton } from './ui/passkey/AuthPasskeyAddButton';
-export { AuthPasskeyDashboardCTA } from './ui/passkey/AuthPasskeyDashboardCTA';
 export { AuthPasskeyEnrollmentBanner } from './ui/passkey/AuthPasskeyEnrollmentBanner';
 export { AuthRegisterForm } from './ui/register/AuthRegisterForm';
 export { AuthResetPasswordForm } from './ui/reset-password/AuthResetPasswordForm';

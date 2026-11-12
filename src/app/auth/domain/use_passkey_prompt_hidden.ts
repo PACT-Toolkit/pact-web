@@ -10,15 +10,12 @@ import {
 } from './webauthn';
 
 // Single source of truth for "is the passkey enrollment prompt
-// hidden on this device?", shared by every UI surface that wants to
-// nudge the user toward passkeys (the top-of-app banner and the
-// dashboard CTA today). Centralizing here means:
-//
-//  - Dismiss in one component → all others re-render with hidden=true,
-//    no remount required (was a bug previously, where dismissing the
-//    dashboard CTA left the banner visible until next nav).
-//  - Each component is a thin "if (hidden) return null" wrapper instead
-//    of duplicating its own mounted-state + useState + onEnrolled wiring.
+// hidden on this device?" - the one visibility rule for the passkey
+// nudge. The top-of-app banner is the only surface that renders it, so
+// the prompt shows once per page on every route. Keeping the rule here
+// means a dismissal (or enrollment) re-renders subscribers with
+// hidden=true without a remount, and any future surface reuses the same
+// rule instead of growing its own mounted-state + useState wiring.
 //
 // SSR snapshot is pessimistic (hidden=true) so the server never paints
 // the prompt - the post-hydration commit reveals it only if the
