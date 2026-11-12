@@ -433,7 +433,7 @@ const STAGE_LABEL: Partial<Record<StageId, string>> = {
 // virtual stage has a chip, so a block via either reason is never force-
 // attributed to a visualised stage -- see cutoffFor's 'before-filter' case
 // and the "no cutoff" default respectively.
-const BLOCKING_STAGE_OF: Record<string, StageId> = {
+export const BLOCKING_STAGE_OF: Record<string, StageId> = {
   filter_hostile: 'filter',
   filter_suspicious_enforced: 'filter',
   classifier_enforced: 'classifier',

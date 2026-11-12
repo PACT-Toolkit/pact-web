@@ -173,7 +173,21 @@ export interface FilterResult {
 // enforcement-mode call (vectorEnforceMode for 'suspicious'; 'hostile'
 // always blocks), decided by the /v1/check handler alongside the real
 // pact-filter contract (internal/pipeline/stages.go's filterStage).
-export function runFilter(content: string): FilterResult {
+//
+// Order mirrors pact-filter (origin/master cd26aba): the regex rule packs run
+// first and the supplementary heuristics detector after them, and the worst
+// verdict wins with the first detector taking a tie, so a hostile rule beats
+// the heuristic and a suspicious regex rule keeps its own rule id. The
+// heuristics detector (internal/engine/heuristics/detector.go) flags input
+// whose rune count exceeds the limit as suspicious with rule
+// `heuristic-max-len`, and skips LLM output (kind output).
+// HEURISTIC_MAX_INPUT_LEN defaults to 4096 in internal/app/config.go. The
+// real detector counts runes after light normalisation; the mock counts the
+// raw code points.
+export const HEURISTIC_MAX_INPUT_LEN = 4096;
+export const HEURISTIC_MAX_LEN_RULE_ID = 'heuristic-max-len';
+
+export function runFilter(content: string, kind?: string): FilterResult {
   for (const [pattern, ruleId] of [
     ...INJECTION_RULES,
     ...ROLE_RULES,
@@ -187,6 +201,9 @@ export function runFilter(content: string): FilterResult {
     if (pattern.test(content)) {
       return { verdict: 'suspicious', ruleId };
     }
+  }
+  if (kind !== 'output' && [...content].length > HEURISTIC_MAX_INPUT_LEN) {
+    return { verdict: 'suspicious', ruleId: HEURISTIC_MAX_LEN_RULE_ID };
   }
 
   return { verdict: 'safe' };

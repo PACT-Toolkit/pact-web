@@ -126,8 +126,12 @@ const TestLabRunRow = ({ run }: { run: TestRun }) => {
   );
 };
 
+// `[contain:inline-size]` keeps a row's single-line content preview (a saved
+// run can hold tens of KB of text) out of the card's intrinsic width. Without
+// it the truncated text still counts toward the min-content width of the app
+// shell's flex column and pushes the whole page past the viewport.
 export const TestLabRunHistory = ({ history }: { history: TestRun[] }) => (
-  <Card data-testid="test-lab-run-history">
+  <Card data-testid="test-lab-run-history" className="[contain:inline-size]">
     <CardHeader className="pb-3">
       <CardTitle className="text-base">Test Run History</CardTitle>
       <CardDescription>
