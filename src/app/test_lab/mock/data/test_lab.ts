@@ -303,3 +303,38 @@ export function celMatchPattern(content: string): RegExp | undefined {
     ? CEL_TOOL_BUDGET_PATTERN
     : undefined;
 }
+
+// auditEngineOf mirrors pact-gateway's engine attribution for the audit
+// event (internal/decisionevent/decisionevent.go PopulateSubObjects, read at
+// origin/master 2bb720b). It is an ordered switch, so the order is part of
+// the contract: a canceled decision is the gateway's own; `external_ref_`
+// precedes the classifier case because a sandbox block still carries a
+// benign classifier label; any classifier label attributes the engine to
+// the classifier even on an allow; a redacted verdict outranks `policy_` and
+// `cel_`. The engine strings and reason prefixes are the pact-contracts
+// decisions constants (decisions/constants.go at origin/master 3a484c3).
+const ENGINE_BY_REASON_PREFIX: [prefix: string, engine: string][] = [
+  ['external_ref_', 'sandbox'],
+  ['filter_', 'filter'],
+  ['consensus_', 'consensus'],
+];
+
+export function auditEngineOf(input: {
+  decision: string;
+  reason?: string;
+  classifierLabel?: string;
+  redactorVerdict?: string;
+}): string | undefined {
+  const { decision, reason = '', classifierLabel, redactorVerdict } = input;
+
+  if (decision === 'canceled') return 'gateway';
+  for (const [prefix, engine] of ENGINE_BY_REASON_PREFIX) {
+    if (reason.startsWith(prefix)) return engine;
+  }
+  if (reason.startsWith('classifier_') || classifierLabel) return 'classifier';
+  if (redactorVerdict === 'redacted') return 'redactor';
+  if (reason.startsWith('policy_')) return 'policy';
+  if (reason.startsWith('cel_')) return 'cel';
+
+  return undefined;
+}

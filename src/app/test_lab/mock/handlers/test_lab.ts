@@ -13,12 +13,12 @@ import {
   sandboxBlocked,
 } from '@/src/app/gateway/mock/data/gateway';
 import { runRedactor } from '@/src/app/redactor/mock/data/redactor';
-import { BLOCKING_STAGE_OF } from '@/src/app/test_lab/domain/test_lab_check';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 import {
   CEL_RULE_ID,
   CEL_RULE_NAME,
+  auditEngineOf,
   celMatchPattern,
   exceedsClassifierCeiling,
   filterMatchPattern,
@@ -207,13 +207,14 @@ export const handlers: RequestHandler[] = [
     }
 
     const decision = blocked ? 'block' : 'allow';
-    // The audit event's `engine` names the halting stage, like the real
-    // gateway: the visualised stages come from BLOCKING_STAGE_OF (the one
-    // reason -> stage map) and the CEL rule engine is the only other halter.
-    const engine = reason
-      ? (BLOCKING_STAGE_OF[reason] ??
-        (reason === 'cel_rule_fired' ? 'cel' : undefined))
-      : undefined;
+    // The audit event's `engine` follows the gateway's own attribution
+    // order, so an allow that ran the classifier carries `classifier` too.
+    const engine = auditEngineOf({
+      decision,
+      reason,
+      classifierLabel: classifierResult?.label,
+      redactorVerdict: redactorResult?.verdict,
+    });
 
     // Diagnostics: the causal-diagnostic harness only ever
     // replays a block decision, and only when the gateway build has it

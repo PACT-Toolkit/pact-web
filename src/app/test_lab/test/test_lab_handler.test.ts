@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { db } from '@/mocks/data/dbFactory';
 import { checkContent } from '@/src/__codegen__/rest/check';
+import { auditEngineOf } from '@/src/app/test_lab/mock/data/test_lab';
 
 // The mock /v1/check handler previously computed diagnostics for
 // the response body but never copied them into the seeded db.decisions row,
@@ -223,6 +224,7 @@ describe('POST /v1/check mock handler - diagnostics parity with the seeded audit
 
     expect(seededPayload).toBeDefined();
     expect(seededPayload?.diagnostics).toBeUndefined();
+    expect(seededPayload?.engine).toBe('classifier');
   });
 });
 
@@ -241,5 +243,86 @@ describe('createFilterMockData - deterministic req-c1d2e3 fixture', () => {
     expect(seededPayload).toBeDefined();
     const filter = seededPayload?.filter as { rule_id?: string } | undefined;
     expect(filter?.rule_id).toBe('inject-003');
+  });
+});
+
+// auditEngineOf mirrors the gateway's ordered engine attribution, so each row
+// below pins one branch and the ordering between neighbouring branches.
+describe('auditEngineOf - gateway engine attribution order', () => {
+  it.each([
+    { name: 'canceled', input: { decision: 'canceled' }, engine: 'gateway' },
+    {
+      name: 'external_ref_ beats a benign classifier label',
+      input: {
+        decision: 'block',
+        reason: 'external_ref_hostile',
+        classifierLabel: 'benign',
+      },
+      engine: 'sandbox',
+    },
+    {
+      name: 'filter_ prefix',
+      input: { decision: 'block', reason: 'filter_hostile' },
+      engine: 'filter',
+    },
+    {
+      name: 'consensus_ prefix beats the classifier label',
+      input: {
+        decision: 'block',
+        reason: 'consensus_enforced',
+        classifierLabel: 'sensitive',
+      },
+      engine: 'consensus',
+    },
+    {
+      name: 'classifier_ prefix without a label',
+      input: { decision: 'block', reason: 'classifier_input_too_large' },
+      engine: 'classifier',
+    },
+    {
+      name: 'allow that ran the classifier',
+      input: { decision: 'allow', classifierLabel: 'benign' },
+      engine: 'classifier',
+    },
+    {
+      name: 'redacted verdict without a classifier label',
+      input: { decision: 'allow', redactorVerdict: 'redacted' },
+      engine: 'redactor',
+    },
+    {
+      name: 'classifier label beats a redacted verdict',
+      input: {
+        decision: 'allow',
+        classifierLabel: 'benign',
+        redactorVerdict: 'redacted',
+      },
+      engine: 'classifier',
+    },
+    {
+      name: 'redacted verdict beats cel_',
+      input: {
+        decision: 'block',
+        reason: 'cel_rule_fired',
+        redactorVerdict: 'redacted',
+      },
+      engine: 'redactor',
+    },
+    {
+      name: 'policy_ prefix',
+      input: { decision: 'block', reason: 'policy_denied' },
+      engine: 'policy',
+    },
+    {
+      name: 'cel_ prefix',
+      input: { decision: 'block', reason: 'cel_rule_fired' },
+      engine: 'cel',
+    },
+    {
+      name: 'plain allow with no stage signal',
+      input: { decision: 'allow' },
+      engine: undefined,
+    },
+  ])('$name', ({ input, engine }) => {
+    expect(auditEngineOf(input)).toBe(engine);
   });
 });
