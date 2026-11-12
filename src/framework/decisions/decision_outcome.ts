@@ -33,9 +33,9 @@ export const decisionLabel = (decision: string): string => {
 
 // Plain-words explanation of the machine reasons that need one (the canceled
 // outcome and the classifier's oversize and saturation blocks); every other
-// reason code is shown verbatim next to the badge. A Map, not an object literal: reason is
-// wire data, and a plain-object lookup would also match inherited keys such
-// as "constructor".
+// reason code is shown verbatim next to the badge. A Map, not an object
+// literal: reason is wire data, and a plain-object lookup would also match
+// inherited keys such as "constructor".
 const CLIENT_CANCELED_DESCRIPTION = 'Caller disconnected before a verdict';
 // Shared with the Test Lab's classifier layer so both views word the
 // gateway's oversize block identically.

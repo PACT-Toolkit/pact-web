@@ -20,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { checkResponseFromSaturation } from '@/src/framework/decisions/classifier_saturation';
 import { isMock, isProduction } from '@/src/framework/helpers/environment';
 import { TRAFFIC_SOURCE_TEST_LAB } from '@/src/lib/decisions/traffic_source';
 
@@ -54,6 +55,7 @@ export const DashboardQuickProbe = ({
     setResult(null);
     resetSaveState();
 
+    const startedAt = Date.now();
     try {
       // Attribution, not authorization: probes are synthetic
       // traffic fired from the console, so they declare the same source the
@@ -63,10 +65,14 @@ export const DashboardQuickProbe = ({
         kind: 'input',
         traffic_source: TRAFFIC_SOURCE_TEST_LAB,
       });
-      if (response.status !== 200) {
+      const saturated = checkResponseFromSaturation(
+        response,
+        Date.now() - startedAt
+      );
+      if (!saturated && response.status !== 200) {
         throw new Error(`probe failed (${response.status})`);
       }
-      setResult(parseCheckResponse(response.data));
+      setResult(saturated ?? parseCheckResponse(response.data));
       setStatus('done');
       onProbeComplete?.();
     } catch {

@@ -148,35 +148,6 @@ const assertArrayField = (value: unknown, field: string): unknown[] => {
   return value;
 };
 
-// The gateway's classifier_saturated block is the one decision it answers with
-// a retryable 429 and an error body ({code, error}) instead of a 200 decision
-// (internal/features/check/handler.go). Test Lab still shows it as a block at
-// the classifier stage, so the 429 is lifted into the decision shape here
-// rather than surfacing as a generic failed check. Returns undefined for any
-// other response.
-export const CLASSIFIER_SATURATED_REASON = 'classifier_saturated';
-
-export const checkResponseFromSaturation = (
-  response: { status: number; data: unknown },
-  latencyMs: number
-): CheckResponse | undefined => {
-  if (
-    response.status !== 429 ||
-    !isRecord(response.data) ||
-    response.data.code !== CLASSIFIER_SATURATED_REASON
-  ) {
-    return undefined;
-  }
-
-  return {
-    // The 429 body carries no request id; the audit event holds the real one.
-    request_id: '',
-    decision: CheckCheckResponseDecision.block,
-    reason: CLASSIFIER_SATURATED_REASON,
-    latency_ms: latencyMs,
-  };
-};
-
 // parseCheckResponse validates the /v1/check response body against the
 // closed sets its generated wire type now expresses, throwing
 // CheckResponseParseError on structural drift instead of letting an
@@ -458,7 +429,7 @@ const STAGE_LABEL: Partial<Record<StageId, string>> = {
 //   - classifier_saturated -> classifierStage.blockSaturated: the classifier
 //     shed the RPC with ResourceExhausted, so the request blocks (retryable)
 //     in every mode before any verdict exists. The /v1/check handler answers
-//     it with a 429, not a decision body; see checkResponseFromSaturation.
+//     it with a 429, not a decision body; see classifier_saturation.ts.
 //   - external_ref_hostile / external_ref_not_allowlisted /
 //     external_ref_unfetchable -> sandboxStage's fetch-and-rescan block.
 //   - consensus_enforced -> consensusStage's quorum-confirmed-malicious

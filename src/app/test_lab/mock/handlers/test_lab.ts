@@ -13,7 +13,7 @@ import {
   sandboxBlocked,
 } from '@/src/app/gateway/mock/data/gateway';
 import { runRedactor } from '@/src/app/redactor/mock/data/redactor';
-import { CLASSIFIER_SATURATED_REASON } from '@/src/app/test_lab/domain/test_lab_check';
+import { CLASSIFIER_SATURATED_REASON } from '@/src/framework/decisions/classifier_saturation';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 import {

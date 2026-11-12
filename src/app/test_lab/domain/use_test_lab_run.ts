@@ -11,7 +11,6 @@ import {
   applyLiveLayers,
   BLANK_LAYERS,
   type CheckInput,
-  checkResponseFromSaturation,
   type CheckResponse,
   LAYER_DEFINITIONS,
   parseCheckResponse,
@@ -24,6 +23,7 @@ import {
   type LayerState,
   type RunStatus,
 } from '@/src/app/test_lab/ui/types';
+import { checkResponseFromSaturation } from '@/src/framework/decisions/classifier_saturation';
 import { TRAFFIC_SOURCE_TEST_LAB } from '@/src/lib/decisions/traffic_source';
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
