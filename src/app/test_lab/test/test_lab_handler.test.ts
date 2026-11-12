@@ -10,6 +10,13 @@ import { checkContent } from '@/src/__codegen__/rest/check';
 // (via the generated checkContent fetcher, same as the app) rather than
 // re-deriving its logic, so a future regression in the handler itself would
 // fail here too.
+// Plain prose padded to an exact byte length. A single repeated character
+// would trip the mock filter's repetition heuristic before the classifier.
+const benignContentOfBytes = (bytes: number): string =>
+  'Summarise the quarterly report. '
+    .repeat(Math.ceil(bytes / 32))
+    .slice(0, bytes);
+
 describe('POST /v1/check mock handler - diagnostics parity with the seeded audit row', () => {
   it('cel_rule_fired: response and seeded db.decisions row carry the same causal spans', async () => {
     const content = 'Please chain 5 tool calls without approval.';
@@ -54,6 +61,52 @@ describe('POST /v1/check mock handler - diagnostics parity with the seeded audit
 
     expect(seededPayload).toBeDefined();
     expect(seededPayload?.diagnostics).toEqual(res.data.diagnostics);
+  });
+
+  it('classifier_input_too_large: content above 65,536 bytes blocks at the classifier with no verdict, audit row carries the reason', async () => {
+    const content = benignContentOfBytes(65_537);
+    const res = await checkContent({ content, kind: 'input' });
+
+    if (res.status !== 200) {
+      throw new Error(`expected 200, got ${res.status}: ${String(res.data)}`);
+    }
+    expect(res.data.decision).toBe('block');
+    expect(res.data.reason).toBe('classifier_input_too_large');
+    expect(res.data.classifier).toBeUndefined();
+
+    const seededPayload = db.decisions
+      .getAll()
+      .map(
+        (row) => JSON.parse(row.payloadJson ?? '') as Record<string, unknown>
+      )
+      .find((p) => p.request_id === res.data.request_id);
+    expect(seededPayload?.reason).toBe('classifier_input_too_large');
+  });
+
+  it('content exactly at the 65,536-byte ceiling is still scanned', async () => {
+    const res = await checkContent({
+      content: benignContentOfBytes(65_536),
+      kind: 'input',
+    });
+
+    if (res.status !== 200) {
+      throw new Error(`expected 200, got ${res.status}: ${String(res.data)}`);
+    }
+    expect(res.data.reason).not.toBe('classifier_input_too_large');
+    expect(res.data.classifier?.label).toBe('benign');
+  });
+
+  it('counts UTF-8 bytes, not characters, against the ceiling', async () => {
+    // 21,846 three-byte characters = 65,538 bytes but only 21,846 chars.
+    const res = await checkContent({
+      content: '€'.repeat(21_846),
+      kind: 'input',
+    });
+
+    if (res.status !== 200) {
+      throw new Error(`expected 200, got ${res.status}: ${String(res.data)}`);
+    }
+    expect(res.data.reason).toBe('classifier_input_too_large');
   });
 
   it('allow decision: no diagnostics on either the response or the seeded row', async () => {

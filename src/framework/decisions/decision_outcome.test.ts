@@ -39,6 +39,15 @@ describe('decisionReasonDescription', () => {
     ).toBe('Caller disconnected before a verdict');
   });
 
+  it('explains classifier_input_too_large in plain words', () => {
+    expect(
+      decisionReasonDescription({
+        decision: 'block',
+        reason: 'classifier_input_too_large',
+      })
+    ).toBe("Input exceeds the classifier's size limit - fail closed");
+  });
+
   it('has no description for ordinary reasons', () => {
     expect(
       decisionReasonDescription({ decision: 'block', reason: 'filter_hostile' })

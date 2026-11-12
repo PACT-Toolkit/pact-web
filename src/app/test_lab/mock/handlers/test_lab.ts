@@ -19,6 +19,7 @@ import {
   CEL_RULE_ID,
   CEL_RULE_NAME,
   celMatchPattern,
+  exceedsClassifierCeiling,
   filterMatchPattern,
   runCelRules,
   runClassifier,
@@ -133,7 +134,13 @@ export const handlers: RequestHandler[] = [
       reason = 'filter_suspicious_enforced';
     }
 
-    // Stage 2: classifier -- tags only, never decides block itself.
+    // Stage 2: classifier -- tags only, never decides block itself, except
+    // that content above its input ceiling cannot be scanned: the gateway
+    // blocks it (fail closed, no verdict) in every mode.
+    if (!blocked && exceedsClassifierCeiling(content)) {
+      blocked = true;
+      reason = 'classifier_input_too_large';
+    }
     const classifierResult = !blocked ? runClassifier(content) : undefined;
     let consensusRan = false;
     if (!blocked && classifierResult?.label === 'sensitive') {

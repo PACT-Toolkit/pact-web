@@ -221,6 +221,14 @@ export interface ClassifierResult {
   score: number;
 }
 
+// pact-classifier's default max_content_bytes (config.py). Content above it
+// is rejected as oversize and the gateway blocks it with
+// classifier_input_too_large.
+export const CLASSIFIER_MAX_CONTENT_BYTES = 65_536;
+
+export const exceedsClassifierCeiling = (content: string): boolean =>
+  new TextEncoder().encode(content).length > CLASSIFIER_MAX_CONTENT_BYTES;
+
 // runClassifier tags only -- like the real classifier stage, it never
 // decides allow/block itself ("the classifier tags; the gateway
 // owns the block"). Deterministic by design (no Math.random): a single
