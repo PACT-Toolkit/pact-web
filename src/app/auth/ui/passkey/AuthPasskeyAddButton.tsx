@@ -71,7 +71,7 @@ export const AuthPasskeyAddButton = ({
 
   // Dismissing the recovery-codes card is what actually "returns" the
   // caller to its normal view (settings refreshes its passkey list; the
-  // banner/dashboard CTA just fall back to the plain "Passkey added"
+  // banner just falls back to the plain "Passkey added"
   // state) - onEnrolled fires here instead of immediately in onClick so a
   // caller that refreshes its data (and could unmount this component) never
   // races the one chance the user has to see the codes.
