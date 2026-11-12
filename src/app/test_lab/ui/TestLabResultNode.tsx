@@ -1,4 +1,5 @@
 import { Database } from 'lucide-react';
+import { Fragment } from 'react';
 
 import { type SaveState } from '@/src/app/test_lab/ui/types';
 import { CausalSpanList } from '@/src/framework/decisions/causal_span_list';
@@ -47,8 +48,19 @@ export const TestLabResultNode = ({
       </span>
     )}
     {reason && (
-      <span className="break-all font-mono text-xs text-muted-foreground">
-        {reason}
+      <span className="break-words font-mono text-xs text-muted-foreground">
+        {/* Break only after an underscore so a reason code wraps between
+            whole segments (classifier_ / input_ / too_ / large). */}
+        {reason.split('_').map((segment, index, segments) => (
+          <Fragment key={index}>
+            {segment}
+            {index < segments.length - 1 && (
+              <>
+                _<wbr />
+              </>
+            )}
+          </Fragment>
+        ))}
       </span>
     )}
     {latency !== undefined && (

@@ -173,7 +173,21 @@ export interface FilterResult {
 // enforcement-mode call (vectorEnforceMode for 'suspicious'; 'hostile'
 // always blocks), decided by the /v1/check handler alongside the real
 // pact-filter contract (internal/pipeline/stages.go's filterStage).
-export function runFilter(content: string): FilterResult {
+//
+// Order mirrors pact-filter (origin/master cd26aba): the regex rule packs run
+// first and the supplementary heuristics detector after them, and the worst
+// verdict wins with the first detector taking a tie, so a hostile rule beats
+// the heuristic and a suspicious regex rule keeps its own rule id. The
+// heuristics detector (internal/engine/heuristics/detector.go) flags input
+// whose rune count exceeds the limit as suspicious with rule
+// `heuristic-max-len`, and skips LLM output (kind output).
+// HEURISTIC_MAX_INPUT_LEN defaults to 4096 in internal/app/config.go. The
+// real detector counts runes after light normalisation; the mock counts the
+// raw code points.
+export const HEURISTIC_MAX_INPUT_LEN = 4096;
+export const HEURISTIC_MAX_LEN_RULE_ID = 'heuristic-max-len';
+
+export function runFilter(content: string, kind?: string): FilterResult {
   for (const [pattern, ruleId] of [
     ...INJECTION_RULES,
     ...ROLE_RULES,
@@ -187,6 +201,9 @@ export function runFilter(content: string): FilterResult {
     if (pattern.test(content)) {
       return { verdict: 'suspicious', ruleId };
     }
+  }
+  if (kind !== 'output' && [...content].length > HEURISTIC_MAX_INPUT_LEN) {
+    return { verdict: 'suspicious', ruleId: HEURISTIC_MAX_LEN_RULE_ID };
   }
 
   return { verdict: 'safe' };
@@ -220,6 +237,14 @@ export interface ClassifierResult {
   label: 'benign' | 'sensitive';
   score: number;
 }
+
+// pact-classifier's default max_content_bytes (config.py). Content above it
+// is rejected as oversize and the gateway blocks it with
+// classifier_input_too_large.
+export const CLASSIFIER_MAX_CONTENT_BYTES = 65_536;
+
+export const exceedsClassifierCeiling = (content: string): boolean =>
+  new TextEncoder().encode(content).length > CLASSIFIER_MAX_CONTENT_BYTES;
 
 // runClassifier tags only -- like the real classifier stage, it never
 // decides allow/block itself ("the classifier tags; the gateway
@@ -277,4 +302,39 @@ export function celMatchPattern(content: string): RegExp | undefined {
   return CEL_TOOL_BUDGET_PATTERN.test(content)
     ? CEL_TOOL_BUDGET_PATTERN
     : undefined;
+}
+
+// auditEngineOf mirrors pact-gateway's engine attribution for the audit
+// event (internal/decisionevent/decisionevent.go PopulateSubObjects, read at
+// origin/master 2bb720b). It is an ordered switch, so the order is part of
+// the contract: a canceled decision is the gateway's own; `external_ref_`
+// precedes the classifier case because a sandbox block still carries a
+// benign classifier label; any classifier label attributes the engine to
+// the classifier even on an allow; a redacted verdict outranks `policy_` and
+// `cel_`. The engine strings and reason prefixes are the pact-contracts
+// decisions constants (decisions/constants.go at origin/master 3a484c3).
+const ENGINE_BY_REASON_PREFIX: [prefix: string, engine: string][] = [
+  ['external_ref_', 'sandbox'],
+  ['filter_', 'filter'],
+  ['consensus_', 'consensus'],
+];
+
+export function auditEngineOf(input: {
+  decision: string;
+  reason?: string;
+  classifierLabel?: string;
+  redactorVerdict?: string;
+}): string | undefined {
+  const { decision, reason = '', classifierLabel, redactorVerdict } = input;
+
+  if (decision === 'canceled') return 'gateway';
+  for (const [prefix, engine] of ENGINE_BY_REASON_PREFIX) {
+    if (reason.startsWith(prefix)) return engine;
+  }
+  if (reason.startsWith('classifier_') || classifierLabel) return 'classifier';
+  if (redactorVerdict === 'redacted') return 'redactor';
+  if (reason.startsWith('policy_')) return 'policy';
+  if (reason.startsWith('cel_')) return 'cel';
+
+  return undefined;
 }

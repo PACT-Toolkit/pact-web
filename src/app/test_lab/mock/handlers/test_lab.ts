@@ -18,7 +18,9 @@ import { MSW_PACT_BASE } from '@/src/framework/msw';
 import {
   CEL_RULE_ID,
   CEL_RULE_NAME,
+  auditEngineOf,
   celMatchPattern,
+  exceedsClassifierCeiling,
   filterMatchPattern,
   runCelRules,
   runClassifier,
@@ -124,7 +126,13 @@ export const handlers: RequestHandler[] = [
     // Stage 1: filter. `_bypass_layers` is a mock-only escape hatch (Test
     // Lab's "pass through" re-run) -- the real gateway ignores it entirely.
     const filterBypassed = bypass.includes('filter');
-    const filterResult = filterBypassed ? undefined : runFilter(content);
+    const filterResult = filterBypassed
+      ? undefined
+      : runFilter(content, body.kind);
+    // A suspicious verdict that vector enforcement does not promote to a
+    // block is a shadow match: the real response flags it `shadow`.
+    const filterShadow =
+      filterResult?.verdict === 'suspicious' && !vectorEnforcing;
     if (filterResult?.verdict === 'hostile') {
       blocked = true;
       reason = 'filter_hostile';
@@ -133,7 +141,13 @@ export const handlers: RequestHandler[] = [
       reason = 'filter_suspicious_enforced';
     }
 
-    // Stage 2: classifier -- tags only, never decides block itself.
+    // Stage 2: classifier -- tags only, never decides block itself, except
+    // that content above its input ceiling cannot be scanned: the gateway
+    // blocks it (fail closed, no verdict) in every mode.
+    if (!blocked && exceedsClassifierCeiling(content)) {
+      blocked = true;
+      reason = 'classifier_input_too_large';
+    }
     const classifierResult = !blocked ? runClassifier(content) : undefined;
     let consensusRan = false;
     if (!blocked && classifierResult?.label === 'sensitive') {
@@ -193,6 +207,14 @@ export const handlers: RequestHandler[] = [
     }
 
     const decision = blocked ? 'block' : 'allow';
+    // The audit event's `engine` follows the gateway's own attribution
+    // order, so an allow that ran the classifier carries `classifier` too.
+    const engine = auditEngineOf({
+      decision,
+      reason,
+      classifierLabel: classifierResult?.label,
+      redactorVerdict: redactorResult?.verdict,
+    });
 
     // Diagnostics: the causal-diagnostic harness only ever
     // replays a block decision, and only when the gateway build has it
@@ -239,6 +261,7 @@ export const handlers: RequestHandler[] = [
         request_id: requestId,
         decision,
         reason,
+        engine,
         ...(trafficSource ? { traffic_source: trafficSource } : {}),
         filter:
           filterResult &&
@@ -246,7 +269,7 @@ export const handlers: RequestHandler[] = [
             ? {
                 verdict: filterResult.verdict,
                 rule_id: filterResult.ruleId,
-                shadow: false,
+                shadow: filterShadow,
               }
             : undefined,
         classifier: classifierResult
@@ -298,7 +321,7 @@ export const handlers: RequestHandler[] = [
           ? {
               verdict: filterResult.verdict,
               rule_id: filterResult.ruleId,
-              shadow: false,
+              shadow: filterShadow,
               duration_ms: 1 + Math.random() * 4,
             }
           : undefined,

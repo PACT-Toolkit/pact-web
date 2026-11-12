@@ -18,6 +18,7 @@ import {
   type LayerDecision,
   type LayerState,
 } from '@/src/app/test_lab/ui/types';
+import { CLASSIFIER_INPUT_TOO_LARGE_DESCRIPTION } from '@/src/framework/decisions/decision_outcome';
 import { stageDurationMs } from '@/src/framework/decisions/stage_duration';
 
 // ─── API payload types ────────────────────────────────────────────────────────
@@ -405,7 +406,7 @@ const STAGE_LABEL: Partial<Record<StageId, string>> = {
 // BLOCKING_STAGE_OF is the closed set of gateway block reasons that this UI
 // attributes to one of the five visualised stages, mirroring pact-gateway's
 // internal/pipeline/stages.go byte-for-byte (verified against gateway HEAD
-// 7352bcf):
+// 2bb720b):
 //
 //   - filter_hostile / filter_suspicious_enforced -> filterStage's two block
 //     branches (hostile verdict; suspicious verdict promoted by vector
@@ -419,6 +420,9 @@ const STAGE_LABEL: Partial<Record<StageId, string>> = {
 //     authority for this closed set) sets Verdict=Block for it, so it is
 //     mapped here as a classifier block -- otherwise a real block would
 //     render with no stage claiming it.
+//   - classifier_input_too_large -> classifierStage.blockOversize: content
+//     above the classifier's input ceiling cannot be scanned, so it blocks
+//     (fail closed) in every mode before any verdict exists.
 //   - external_ref_hostile / external_ref_not_allowlisted /
 //     external_ref_unfetchable -> sandboxStage's fetch-and-rescan block.
 //   - consensus_enforced -> consensusStage's quorum-confirmed-malicious
@@ -434,6 +438,7 @@ const BLOCKING_STAGE_OF: Record<string, StageId> = {
   filter_suspicious_enforced: 'filter',
   classifier_enforced: 'classifier',
   classifier_protocol_error: 'classifier',
+  classifier_input_too_large: 'classifier',
   external_ref_hostile: 'sandbox',
   external_ref_not_allowlisted: 'sandbox',
   external_ref_unfetchable: 'sandbox',
@@ -558,6 +563,8 @@ const classifierReason = (
       return 'Classifier unreachable - fail open';
     case 'classifier_protocol_error':
       return 'Classifier returned an unrecognised label - fail closed';
+    case 'classifier_input_too_large':
+      return CLASSIFIER_INPUT_TOO_LARGE_DESCRIPTION;
     default:
       break;
   }

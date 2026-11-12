@@ -172,6 +172,31 @@ describe('applyLiveLayers - reason-driven block attribution', () => {
     expect(out.consensus.decision).toBe('skip');
   });
 
+  it('classifier_input_too_large blocks the classifier layer (fail-closed, no verdict); downstream stages skip', () => {
+    // pact-gateway's classifierStage.blockOversize halts with a block before
+    // the classifier produces any label, so there is no classifier
+    // sub-object to read: the reason alone attributes the block.
+    const out = byId(
+      applyLiveLayers(
+        startingLayers(),
+        baseResponse({
+          decision: 'block',
+          reason: 'classifier_input_too_large',
+        }),
+        []
+      )
+    );
+    expect(out.filter.decision).toBe('allow');
+    expect(out.classifier.decision).toBe('block');
+    expect(out.classifier.reason).toBe(
+      "Input exceeds the classifier's size limit - fail closed"
+    );
+    expect(out.classifier.classifierLabel).toBeUndefined();
+    expect(out.consensus.decision).toBe('skip');
+    expect(out.consensus.reason).toMatch(/classifier blocked/i);
+    expect(out.redactor.decision).toBe('skip');
+  });
+
   it('classifier_tagged (shadow / deferred): classifier=allow with label, nothing downstream force-skipped', () => {
     const out = byId(
       applyLiveLayers(
