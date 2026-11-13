@@ -6,6 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './benchmarkAdaptiveCampaignAttemptBody';
+export * from './benchmarkAdaptiveCampaignBody';
+export * from './benchmarkAdaptiveCampaignGoalBody';
+export * from './benchmarkAdaptiveCampaignGoalSummaryBody';
+export * from './benchmarkAdaptiveCampaignResultBody';
 export * from './benchmarkBenchmarkHubImportSummary';
 export * from './benchmarkBenchmarkImportPreviewResponse';
 export * from './benchmarkBenchmarkImportPreviewResponseSuggestedLabelValues';
@@ -21,6 +26,7 @@ export * from './benchmarkJobResultBody';
 export * from './benchmarkJobRowBody';
 export * from './benchmarkLayerBreakdownBody';
 export * from './benchmarkLayerTimingCompletenessBody';
+export * from './benchmarkListAdaptiveCampaignsResponse';
 export * from './benchmarkListRunRowsResponse';
 export * from './benchmarkListRunsResponse';
 export * from './benchmarkListTestLabRunsResponse';
@@ -29,6 +35,8 @@ export * from './benchmarkSaveCorpusRequest';
 export * from './benchmarkSaveCorpusResponse';
 export * from './benchmarkSaveTestLabRunRequest';
 export * from './benchmarkSaveTestLabRunResponse';
+export * from './benchmarkStartAdaptiveCampaignRequest';
+export * from './benchmarkStartAdaptiveCampaignResponse';
 export * from './benchmarkSubmitJobRequest';
 export * from './benchmarkSubmitJobResponse';
 export * from './benchmarkTestLabRunBody';
@@ -36,6 +44,7 @@ export * from './benchmarkTimingCompletenessBody';
 export * from './boundaryErrorResponse';
 export * from './getBenchmarkJobParams';
 export * from './inspectBenchmarkImportParams';
+export * from './listAdaptiveCampaignsParams';
 export * from './listBenchmarkRunRowsParams';
 export * from './listBenchmarkRunsParams';
 export * from './listBenchmarkTestLabRunsParams';

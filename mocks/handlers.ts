@@ -4,6 +4,7 @@ import { handlers as accountHandlers } from '@/src/app/account/mock/handlers/acc
 import { handlers as auditHandlers } from '@/src/app/audit/mock/handlers/audit';
 import { handlers as authHandlers } from '@/src/app/auth/mock/handlers/auth';
 import { handlers as benchmarkHandlers } from '@/src/app/benchmark/mock/handlers/benchmark';
+import { handlers as benchmarkAdaptiveHandlers } from '@/src/app/benchmark/mock/handlers/benchmark_adaptive';
 import { handlers as classifierHandlers } from '@/src/app/classifier/mock/handlers/classifier';
 import { handlers as consensusHandlers } from '@/src/app/consensus/mock/handlers/consensus';
 import { handlers as filesHandlers } from '@/src/app/files/mock/handlers/files';
@@ -26,4 +27,5 @@ export const handlers: RequestHandler[] = [
   ...auditHandlers,
   ...consensusHandlers,
   ...benchmarkHandlers,
+  ...benchmarkAdaptiveHandlers,
 ];

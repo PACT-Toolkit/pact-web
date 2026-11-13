@@ -13,6 +13,7 @@ import {
 import { type TrendDateRange } from '@/src/app/benchmark/domain/benchmark_run';
 import { describeBenchmarkSubmitError } from '@/src/app/benchmark/domain/benchmark_submit_error';
 import { useBenchmarkJobState } from '@/src/app/benchmark/domain/use_benchmark_job_state';
+import { BenchmarkAdaptiveAttackCard } from '@/src/app/benchmark/ui/BenchmarkAdaptiveAttackCard';
 import { BenchmarkComparison } from '@/src/app/benchmark/ui/BenchmarkComparison';
 import { BenchmarkCorpusLibraryCard } from '@/src/app/benchmark/ui/BenchmarkCorpusLibraryCard';
 import { BenchmarkImportCard } from '@/src/app/benchmark/ui/BenchmarkImportCard';
@@ -109,6 +110,8 @@ export const BenchmarkWorkbench = () => {
       <BenchmarkComparison />
 
       <BenchmarkRunHistory dateRange={dateRange} />
+
+      <BenchmarkAdaptiveAttackCard />
 
       <BenchmarkCorpusLibraryCard />
 
