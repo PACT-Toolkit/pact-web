@@ -17,6 +17,7 @@ import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs'
 import { BenchmarkCategoryChart } from '@/src/app/benchmark/ui/BenchmarkCategoryChart';
 import { BenchmarkDegradedBadge } from '@/src/app/benchmark/ui/BenchmarkDegradedBadge';
 import { BenchmarkStageLatencyChart } from '@/src/app/benchmark/ui/BenchmarkStageLatencyChart';
+import { BenchmarkTimingCompleteness } from '@/src/app/benchmark/ui/BenchmarkTimingCompleteness';
 import { Alert, AlertDescription } from '@/src/components/ui/alert';
 import {
   Card,
@@ -318,6 +319,7 @@ const BenchmarkComparisonPanel = () => {
           run={runUnderInspection}
           isLoading={isLoading}
         />
+        <BenchmarkTimingCompleteness run={runUnderInspection} />
       </div>
     </div>
   );
