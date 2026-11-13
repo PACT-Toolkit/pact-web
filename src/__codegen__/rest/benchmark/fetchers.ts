@@ -9,10 +9,13 @@
 import type { Key } from 'swr';
 
 import type {
+  BenchmarkAdaptiveCampaignBody,
+  BenchmarkAdaptiveCampaignGoalBody,
   BenchmarkBenchmarkImportPreviewResponse,
   BenchmarkBenchmarkImportRequest,
   BenchmarkCorpusLibrarySummaryResponse,
   BenchmarkGetJobResponse,
+  BenchmarkListAdaptiveCampaignsResponse,
   BenchmarkListRunRowsResponse,
   BenchmarkListRunsResponse,
   BenchmarkListTestLabRunsResponse,
@@ -20,11 +23,14 @@ import type {
   BenchmarkSaveCorpusResponse,
   BenchmarkSaveTestLabRunRequest,
   BenchmarkSaveTestLabRunResponse,
+  BenchmarkStartAdaptiveCampaignRequest,
+  BenchmarkStartAdaptiveCampaignResponse,
   BenchmarkSubmitJobRequest,
   BenchmarkSubmitJobResponse,
   BoundaryErrorResponse,
   GetBenchmarkJobParams,
   InspectBenchmarkImportParams,
+  ListAdaptiveCampaignsParams,
   ListBenchmarkRunRowsParams,
   ListBenchmarkRunsParams,
   ListBenchmarkTestLabRunsParams,
@@ -33,6 +39,312 @@ import type {
 import { customFetch } from '../custom_fetch';
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+export type listAdaptiveCampaignsResponse200 = {
+  data: BenchmarkListAdaptiveCampaignsResponse;
+  status: 200;
+};
+
+export type listAdaptiveCampaignsResponse400 = {
+  data: BoundaryErrorResponse;
+  status: 400;
+};
+
+export type listAdaptiveCampaignsResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type listAdaptiveCampaignsResponse502 = {
+  data: BoundaryErrorResponse;
+  status: 502;
+};
+
+export type listAdaptiveCampaignsResponseSuccess =
+  listAdaptiveCampaignsResponse200 & {
+    headers: Headers;
+  };
+
+export type listAdaptiveCampaignsResponseError = (
+  | listAdaptiveCampaignsResponse400
+  | listAdaptiveCampaignsResponse401
+  | listAdaptiveCampaignsResponse502
+) & {
+  headers: Headers;
+};
+
+export type listAdaptiveCampaignsResponse =
+  listAdaptiveCampaignsResponseSuccess | listAdaptiveCampaignsResponseError;
+
+export const getListAdaptiveCampaignsUrl = (
+  params?: ListAdaptiveCampaignsParams
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/pact/gateway/v1/benchmark/adaptive-attack/campaigns?${stringifiedParams}`
+    : `/api/pact/gateway/v1/benchmark/adaptive-attack/campaigns`;
+};
+
+/**
+ * Returns campaigns newest first, without per-goal summaries.
+ * @summary List adaptive attack campaigns
+ */
+export const listAdaptiveCampaigns = async (
+  params?: ListAdaptiveCampaignsParams,
+  options?: Parameters<typeof customFetch>[1]
+): Promise<listAdaptiveCampaignsResponse> => {
+  return customFetch<listAdaptiveCampaignsResponse>(
+    getListAdaptiveCampaignsUrl(params),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
+};
+
+export const getListAdaptiveCampaignsKey = (
+  params?: ListAdaptiveCampaignsParams
+) =>
+  [
+    `/api/pact/gateway/v1/benchmark/adaptive-attack/campaigns`,
+    ...(params ? [params] : []),
+  ] as const;
+
+export type startAdaptiveCampaignResponse202 = {
+  data: BenchmarkStartAdaptiveCampaignResponse;
+  status: 202;
+};
+
+export type startAdaptiveCampaignResponse400 = {
+  data: BoundaryErrorResponse;
+  status: 400;
+};
+
+export type startAdaptiveCampaignResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type startAdaptiveCampaignResponse409 = {
+  data: BoundaryErrorResponse;
+  status: 409;
+};
+
+export type startAdaptiveCampaignResponse502 = {
+  data: BoundaryErrorResponse;
+  status: 502;
+};
+
+export type startAdaptiveCampaignResponseSuccess =
+  startAdaptiveCampaignResponse202 & {
+    headers: Headers;
+  };
+
+export type startAdaptiveCampaignResponseError = (
+  | startAdaptiveCampaignResponse400
+  | startAdaptiveCampaignResponse401
+  | startAdaptiveCampaignResponse409
+  | startAdaptiveCampaignResponse502
+) & {
+  headers: Headers;
+};
+
+export type startAdaptiveCampaignResponse =
+  startAdaptiveCampaignResponseSuccess | startAdaptiveCampaignResponseError;
+
+export const getStartAdaptiveCampaignUrl = () => {
+  return `/api/pact/gateway/v1/benchmark/adaptive-attack/campaigns`;
+};
+
+/**
+ * Starts the adaptive attacker loop (acceptance test FAT-11)
+ * over a bundled campaign corpus as a server-side job and
+ * returns its id immediately; poll it with
+ * GET /v1/benchmark/adaptive-attack/campaigns/{id}. Only one
+ * campaign runs at a time per deployment (409 while one runs).
+ * @summary Start an adaptive attack campaign
+ */
+export const startAdaptiveCampaign = async (
+  benchmarkStartAdaptiveCampaignRequest: BenchmarkStartAdaptiveCampaignRequest,
+  options?: Parameters<typeof customFetch>[1]
+): Promise<startAdaptiveCampaignResponse> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit['headers']>
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Array.isArray(h)) return Object.fromEntries(h);
+    return h;
+  };
+  return customFetch<startAdaptiveCampaignResponse>(
+    getStartAdaptiveCampaignUrl(),
+    {
+      ...options,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getHeaders(options?.headers),
+      },
+      body: JSON.stringify(benchmarkStartAdaptiveCampaignRequest),
+    }
+  );
+};
+
+export const getStartAdaptiveCampaignMutationFetcher = (
+  options?: SecondParameter<typeof customFetch>
+) => {
+  return (_: Key, { arg }: { arg: BenchmarkStartAdaptiveCampaignRequest }) => {
+    return startAdaptiveCampaign(arg, options);
+  };
+};
+
+export const getStartAdaptiveCampaignMutationKey = () =>
+  [`/api/pact/gateway/v1/benchmark/adaptive-attack/campaigns`] as const;
+
+export type getAdaptiveCampaignResponse200 = {
+  data: BenchmarkAdaptiveCampaignBody;
+  status: 200;
+};
+
+export type getAdaptiveCampaignResponse400 = {
+  data: BoundaryErrorResponse;
+  status: 400;
+};
+
+export type getAdaptiveCampaignResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type getAdaptiveCampaignResponse404 = {
+  data: BoundaryErrorResponse;
+  status: 404;
+};
+
+export type getAdaptiveCampaignResponse502 = {
+  data: BoundaryErrorResponse;
+  status: 502;
+};
+
+export type getAdaptiveCampaignResponseSuccess =
+  getAdaptiveCampaignResponse200 & {
+    headers: Headers;
+  };
+
+export type getAdaptiveCampaignResponseError = (
+  | getAdaptiveCampaignResponse400
+  | getAdaptiveCampaignResponse401
+  | getAdaptiveCampaignResponse404
+  | getAdaptiveCampaignResponse502
+) & {
+  headers: Headers;
+};
+
+export type getAdaptiveCampaignResponse =
+  getAdaptiveCampaignResponseSuccess | getAdaptiveCampaignResponseError;
+
+export const getGetAdaptiveCampaignUrl = (id: string) => {
+  return `/api/pact/gateway/v1/benchmark/adaptive-attack/campaigns/${id}`;
+};
+
+/**
+ * Returns one campaign with a summary per finished goal but no
+ * attempt transcripts; fetch a transcript with
+ * GET /v1/benchmark/adaptive-attack/campaigns/{id}/goals/{goal_id}.
+ * @summary Poll an adaptive attack campaign
+ */
+export const getAdaptiveCampaign = async (
+  id: string,
+  options?: Parameters<typeof customFetch>[1]
+): Promise<getAdaptiveCampaignResponse> => {
+  return customFetch<getAdaptiveCampaignResponse>(
+    getGetAdaptiveCampaignUrl(id),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
+};
+
+export const getGetAdaptiveCampaignKey = (id: string) =>
+  [`/api/pact/gateway/v1/benchmark/adaptive-attack/campaigns/${id}`] as const;
+
+export type getAdaptiveCampaignGoalResponse200 = {
+  data: BenchmarkAdaptiveCampaignGoalBody;
+  status: 200;
+};
+
+export type getAdaptiveCampaignGoalResponse400 = {
+  data: BoundaryErrorResponse;
+  status: 400;
+};
+
+export type getAdaptiveCampaignGoalResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type getAdaptiveCampaignGoalResponse404 = {
+  data: BoundaryErrorResponse;
+  status: 404;
+};
+
+export type getAdaptiveCampaignGoalResponse502 = {
+  data: BoundaryErrorResponse;
+  status: 502;
+};
+
+export type getAdaptiveCampaignGoalResponseSuccess =
+  getAdaptiveCampaignGoalResponse200 & {
+    headers: Headers;
+  };
+
+export type getAdaptiveCampaignGoalResponseError = (
+  | getAdaptiveCampaignGoalResponse400
+  | getAdaptiveCampaignGoalResponse401
+  | getAdaptiveCampaignGoalResponse404
+  | getAdaptiveCampaignGoalResponse502
+) & {
+  headers: Headers;
+};
+
+export type getAdaptiveCampaignGoalResponse =
+  getAdaptiveCampaignGoalResponseSuccess | getAdaptiveCampaignGoalResponseError;
+
+export const getGetAdaptiveCampaignGoalUrl = (id: string, goalId: string) => {
+  return `/api/pact/gateway/v1/benchmark/adaptive-attack/campaigns/${id}/goals/${goalId}`;
+};
+
+/**
+ * @summary Get one adaptive attack goal with its attempt transcript
+ */
+export const getAdaptiveCampaignGoal = async (
+  id: string,
+  goalId: string,
+  options?: Parameters<typeof customFetch>[1]
+): Promise<getAdaptiveCampaignGoalResponse> => {
+  return customFetch<getAdaptiveCampaignGoalResponse>(
+    getGetAdaptiveCampaignGoalUrl(id, goalId),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
+};
+
+export const getGetAdaptiveCampaignGoalKey = (id: string, goalId: string) =>
+  [
+    `/api/pact/gateway/v1/benchmark/adaptive-attack/campaigns/${id}/goals/${goalId}`,
+  ] as const;
 
 export type saveBenchmarkCorpusEntryResponse201 = {
   data: BenchmarkSaveCorpusResponse;

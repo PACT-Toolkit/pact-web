@@ -12,6 +12,7 @@ import {
   type AuthOAuthIdentityResponse,
   type AuthPasskeyResponse,
 } from '@/src/__codegen__/rest/auth';
+import { type BenchmarkAdaptiveCampaignBody } from '@/src/__codegen__/rest/benchmark';
 import { type ConfigConfigResponse } from '@/src/__codegen__/rest/config';
 import { type FilesFileResponse } from '@/src/__codegen__/rest/files';
 import {
@@ -35,6 +36,10 @@ import {
   mockAuthPasskey,
   mockAuthRecoveryCodesState,
 } from '@/src/app/auth/mock/data/auth';
+import {
+  createAdaptiveCampaignMockData,
+  mockAdaptiveCampaign,
+} from '@/src/app/benchmark/mock/data/benchmark_adaptive';
 import { createClassifierMockData } from '@/src/app/classifier/mock/data/classifier';
 import { createConsensusMockData } from '@/src/app/consensus/mock/data/consensus';
 import {
@@ -75,6 +80,9 @@ export const db = {
     mockPreferences
   ),
   accountConsents: new MockRepository<AccountConsentResponse>(mockConsent),
+  adaptiveCampaigns: new MockRepository<BenchmarkAdaptiveCampaignBody>(
+    mockAdaptiveCampaign
+  ),
   attackExamples: new MockRepository<AttackExample>(mockAttackExample),
   auditAnnotations: new MockRepository<AuditDecisionAnnotationResponse>(
     mockDecisionAnnotation
@@ -103,6 +111,7 @@ export const db = {
 export type DB = typeof db;
 
 createAccountMockData(db);
+createAdaptiveCampaignMockData(db);
 createAuditMockData(db);
 createAuthMockData(db);
 // No ordering dependency on the decisions-producing seeders below --

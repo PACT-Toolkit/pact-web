@@ -1,5 +1,249 @@
 basePath: /
 definitions:
+    benchmark.AdaptiveCampaignAttemptBody:
+        properties:
+            attempt:
+                type: integer
+            blocking_stage:
+                description: |-
+                    BlockingStage names the stage whose verdict blocked the candidate;
+                    empty when none did.
+                type: string
+            candidate:
+                type: string
+            classifier_label:
+                type: string
+            classifier_score:
+                description: |-
+                    ClassifierScore is omitted when the classifier did not answer, so a
+                    score of 0 stays distinct from no score.
+                type: number
+            decision:
+                type: string
+            error:
+                description: Error is non-empty when the check request failed.
+                type: string
+            filter_verdict:
+                type: string
+            latency_ms:
+                type: number
+            redactor_verdict:
+                type: string
+            rejection_reason:
+                description: |-
+                    RejectionReason is "refusal", "empty" or "identical" on a
+                    "rewrite_rejected" row and the last attacker LLM error on a
+                    "provider_error" row; empty otherwise.
+                type: string
+            timestamp:
+                description: Timestamp is Unix seconds (UTC).
+                type: integer
+        required:
+            - attempt
+            - blocking_stage
+            - candidate
+            - classifier_label
+            - decision
+            - error
+            - filter_verdict
+            - latency_ms
+            - redactor_verdict
+            - rejection_reason
+            - timestamp
+        type: object
+    benchmark.AdaptiveCampaignBody:
+        properties:
+            attacker_model:
+                type: string
+            budget:
+                type: integer
+            corpus_name:
+                type: string
+            error:
+                description: Error is the failure reason; empty unless status is "aborted" or "error".
+                type: string
+            finished_at:
+                type: integer
+            goal_limit:
+                type: integer
+            goals:
+                description: Goals has one summary per finished goal; always empty on the list route.
+                items:
+                    $ref: '#/definitions/benchmark.AdaptiveCampaignGoalSummaryBody'
+                type: array
+            goals_done:
+                type: integer
+            goals_total:
+                type: integer
+            id:
+                type: string
+            result:
+                allOf:
+                    - $ref: '#/definitions/benchmark.AdaptiveCampaignResultBody'
+                description: Result is absent while no goal has finished.
+            started_at:
+                type: integer
+            status:
+                type: string
+        required:
+            - attacker_model
+            - budget
+            - corpus_name
+            - error
+            - finished_at
+            - goal_limit
+            - goals
+            - goals_done
+            - goals_total
+            - id
+            - started_at
+            - status
+        type: object
+    benchmark.AdaptiveCampaignGoalBody:
+        properties:
+            attempts:
+                items:
+                    $ref: '#/definitions/benchmark.AdaptiveCampaignAttemptBody'
+                type: array
+            category:
+                type: string
+            error:
+                type: string
+            final_candidate:
+                description: |-
+                    FinalCandidate is the last candidate text the goal ended on: the
+                    gateway-allowed text for a successful goal.
+                type: string
+            goal_id:
+                type: string
+            outcome:
+                type: string
+            queries_used:
+                type: integer
+            success:
+                type: boolean
+        required:
+            - attempts
+            - category
+            - error
+            - final_candidate
+            - goal_id
+            - outcome
+            - queries_used
+            - success
+        type: object
+    benchmark.AdaptiveCampaignGoalSummaryBody:
+        properties:
+            category:
+                type: string
+            error:
+                description: Error is set only for a "provider_error" goal.
+                type: string
+            goal_id:
+                type: string
+            outcome:
+                type: string
+            queries_used:
+                type: integer
+            success:
+                type: boolean
+        required:
+            - category
+            - error
+            - goal_id
+            - outcome
+            - queries_used
+            - success
+        type: object
+    benchmark.AdaptiveCampaignResultBody:
+        properties:
+            asr:
+                description: ASR is goals_succeeded over all goals, with its Wilson 95% interval.
+                type: number
+            asr_attackable:
+                description: |-
+                    ASRAttackable is successes over attackable_goals, with its Wilson 95%
+                    interval.
+                type: number
+            asr_attackable_ci_lower:
+                type: number
+            asr_attackable_ci_upper:
+                type: number
+            asr_ci_lower:
+                type: number
+            asr_ci_upper:
+                type: number
+            attackable_goals:
+                description: |-
+                    AttackableGoals is the number of goals whose outcome is not
+                    attacker_refused, attacker_stalled, input_rejected, provider_error or
+                    gateway_error.
+                type: integer
+            attacker_refused:
+                type: integer
+            attacker_stalled:
+                type: integer
+            budget:
+                type: integer
+            budget_exhausted_blocked:
+                type: integer
+            gateway_error:
+                type: integer
+            goals_succeeded:
+                type: integer
+            goals_total:
+                type: integer
+            input_rejected:
+                type: integer
+            model:
+                type: string
+            provider:
+                type: string
+            provider_error:
+                type: integer
+            queries_to_success:
+                description: QueriesToSuccess lists the queries used by each succeeded goal.
+                items:
+                    type: integer
+                type: array
+            seed:
+                type: integer
+            seed_allowed:
+                description: The goal counts per outcome.
+                type: integer
+            succeeded_after_rewrite:
+                type: integer
+            temperature:
+                type: number
+            timestamp:
+                description: Timestamp is Unix seconds (UTC).
+                type: integer
+        required:
+            - asr
+            - asr_attackable
+            - asr_attackable_ci_lower
+            - asr_attackable_ci_upper
+            - asr_ci_lower
+            - asr_ci_upper
+            - attackable_goals
+            - attacker_refused
+            - attacker_stalled
+            - budget
+            - budget_exhausted_blocked
+            - gateway_error
+            - goals_succeeded
+            - goals_total
+            - input_rejected
+            - model
+            - provider
+            - provider_error
+            - queries_to_success
+            - seed
+            - seed_allowed
+            - succeeded_after_rewrite
+            - temperature
+            - timestamp
+        type: object
     benchmark.BenchmarkHubImportSummary:
         properties:
             attack_rows:
@@ -551,6 +795,15 @@ definitions:
             - rows_missing_duration
             - rows_with_signal
         type: object
+    benchmark.ListAdaptiveCampaignsResponse:
+        properties:
+            campaigns:
+                items:
+                    $ref: '#/definitions/benchmark.AdaptiveCampaignBody'
+                type: array
+        required:
+            - campaigns
+        type: object
     benchmark.ListRunRowsResponse:
         properties:
             rows:
@@ -711,6 +964,45 @@ definitions:
         required:
             - id
         type: object
+    benchmark.StartAdaptiveCampaignRequest:
+        properties:
+            attacker_model:
+                description: |-
+                    AttackerModel names the attacker LLM. Omitted = the deployment-configured
+                    model.
+                maxLength: 128
+                type: string
+            budget:
+                description: |-
+                    Budget is the number of attempts per goal. 0 or omitted = the server
+                    default.
+                maximum: 2147483647
+                minimum: 0
+                type: integer
+            corpus_name:
+                description: |-
+                    CorpusName is the file name of a bundled campaign corpus; pact-benchmark
+                    validates it against its campaign directory.
+                maxLength: 255
+                minLength: 1
+                type: string
+            goal_limit:
+                description: |-
+                    GoalLimit runs only the first N goals of the corpus. 0 or omitted = all
+                    goals.
+                maximum: 2147483647
+                minimum: 0
+                type: integer
+        required:
+            - corpus_name
+        type: object
+    benchmark.StartAdaptiveCampaignResponse:
+        properties:
+            campaign_id:
+                type: string
+        required:
+            - campaign_id
+        type: object
     benchmark.SubmitJobRequest:
         properties:
             corpus_jsonl:
@@ -806,6 +1098,167 @@ info:
     title: pact-gateway
     version: 0.1.0
 paths:
+    /v1/benchmark/adaptive-attack/campaigns:
+        get:
+            description: Returns campaigns newest first, without per-goal summaries.
+            operationId: listAdaptiveCampaigns
+            parameters:
+                - description: Max campaigns to return (0 or omitted = the server default)
+                  in: query
+                  name: limit
+                  type: integer
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/benchmark.ListAdaptiveCampaignsResponse'
+                "400":
+                    description: invalid query parameter
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "502":
+                    description: upstream error
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+            security:
+                - Bearer: []
+            summary: List adaptive attack campaigns
+            tags:
+                - benchmark
+        post:
+            consumes:
+                - application/json
+            description: |-
+                Starts the adaptive attacker loop (acceptance test FAT-11)
+                over a bundled campaign corpus as a server-side job and
+                returns its id immediately; poll it with
+                GET /v1/benchmark/adaptive-attack/campaigns/{id}. Only one
+                campaign runs at a time per deployment (409 while one runs).
+            operationId: startAdaptiveCampaign
+            parameters:
+                - description: Bundled corpus and run limits
+                  in: body
+                  name: body
+                  required: true
+                  schema:
+                    $ref: '#/definitions/benchmark.StartAdaptiveCampaignRequest'
+            produces:
+                - application/json
+            responses:
+                "202":
+                    description: Accepted
+                    schema:
+                        $ref: '#/definitions/benchmark.StartAdaptiveCampaignResponse'
+                "400":
+                    description: invalid request body or no attacker configured
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "409":
+                    description: a campaign is already running
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "502":
+                    description: upstream error
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+            security:
+                - Bearer: []
+            summary: Start an adaptive attack campaign
+            tags:
+                - benchmark
+    /v1/benchmark/adaptive-attack/campaigns/{id}:
+        get:
+            description: |-
+                Returns one campaign with a summary per finished goal but no
+                attempt transcripts; fetch a transcript with
+                GET /v1/benchmark/adaptive-attack/campaigns/{id}/goals/{goal_id}.
+            operationId: getAdaptiveCampaign
+            parameters:
+                - description: Campaign ID (StartAdaptiveCampaignResponse.campaign_id)
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/benchmark.AdaptiveCampaignBody'
+                "400":
+                    description: invalid request
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "404":
+                    description: campaign not found
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "502":
+                    description: upstream error
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+            security:
+                - Bearer: []
+            summary: Poll an adaptive attack campaign
+            tags:
+                - benchmark
+    /v1/benchmark/adaptive-attack/campaigns/{id}/goals/{goal_id}:
+        get:
+            operationId: getAdaptiveCampaignGoal
+            parameters:
+                - description: Campaign ID
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+                - description: Goal ID (AdaptiveCampaignGoalSummaryBody.goal_id)
+                  in: path
+                  name: goal_id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/benchmark.AdaptiveCampaignGoalBody'
+                "400":
+                    description: invalid request
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "404":
+                    description: campaign or goal not found
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "502":
+                    description: upstream error
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+            security:
+                - Bearer: []
+            summary: Get one adaptive attack goal with its attempt transcript
+            tags:
+                - benchmark
     /v1/benchmark/corpus:
         post:
             consumes:

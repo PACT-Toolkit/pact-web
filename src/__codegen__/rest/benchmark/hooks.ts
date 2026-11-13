@@ -13,10 +13,13 @@ import type { Key, SWRConfiguration } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
 import type {
+  BenchmarkAdaptiveCampaignBody,
+  BenchmarkAdaptiveCampaignGoalBody,
   BenchmarkBenchmarkImportPreviewResponse,
   BenchmarkBenchmarkImportRequest,
   BenchmarkCorpusLibrarySummaryResponse,
   BenchmarkGetJobResponse,
+  BenchmarkListAdaptiveCampaignsResponse,
   BenchmarkListRunRowsResponse,
   BenchmarkListRunsResponse,
   BenchmarkListTestLabRunsResponse,
@@ -24,17 +27,64 @@ import type {
   BenchmarkSaveCorpusResponse,
   BenchmarkSaveTestLabRunRequest,
   BenchmarkSaveTestLabRunResponse,
+  BenchmarkStartAdaptiveCampaignRequest,
+  BenchmarkStartAdaptiveCampaignResponse,
   BenchmarkSubmitJobRequest,
   BenchmarkSubmitJobResponse,
   BoundaryErrorResponse,
   GetBenchmarkJobParams,
   InspectBenchmarkImportParams,
+  ListAdaptiveCampaignsParams,
   ListBenchmarkRunRowsParams,
   ListBenchmarkRunsParams,
   ListBenchmarkTestLabRunsParams,
 } from './types';
 
 import {
+  listAdaptiveCampaignsResponse200,
+  listAdaptiveCampaignsResponse400,
+  listAdaptiveCampaignsResponse401,
+  listAdaptiveCampaignsResponse502,
+  listAdaptiveCampaignsResponseSuccess,
+  listAdaptiveCampaignsResponseError,
+  getListAdaptiveCampaignsUrl,
+  listAdaptiveCampaignsResponse,
+  listAdaptiveCampaigns,
+  getListAdaptiveCampaignsKey,
+  startAdaptiveCampaignResponse202,
+  startAdaptiveCampaignResponse400,
+  startAdaptiveCampaignResponse401,
+  startAdaptiveCampaignResponse409,
+  startAdaptiveCampaignResponse502,
+  startAdaptiveCampaignResponseSuccess,
+  startAdaptiveCampaignResponseError,
+  getStartAdaptiveCampaignUrl,
+  startAdaptiveCampaignResponse,
+  startAdaptiveCampaign,
+  getStartAdaptiveCampaignMutationFetcher,
+  getStartAdaptiveCampaignMutationKey,
+  getAdaptiveCampaignResponse200,
+  getAdaptiveCampaignResponse400,
+  getAdaptiveCampaignResponse401,
+  getAdaptiveCampaignResponse404,
+  getAdaptiveCampaignResponse502,
+  getAdaptiveCampaignResponseSuccess,
+  getAdaptiveCampaignResponseError,
+  getGetAdaptiveCampaignUrl,
+  getAdaptiveCampaignResponse,
+  getAdaptiveCampaign,
+  getGetAdaptiveCampaignKey,
+  getAdaptiveCampaignGoalResponse200,
+  getAdaptiveCampaignGoalResponse400,
+  getAdaptiveCampaignGoalResponse401,
+  getAdaptiveCampaignGoalResponse404,
+  getAdaptiveCampaignGoalResponse502,
+  getAdaptiveCampaignGoalResponseSuccess,
+  getAdaptiveCampaignGoalResponseError,
+  getGetAdaptiveCampaignGoalUrl,
+  getAdaptiveCampaignGoalResponse,
+  getAdaptiveCampaignGoal,
+  getGetAdaptiveCampaignGoalKey,
   saveBenchmarkCorpusEntryResponse201,
   saveBenchmarkCorpusEntryResponse400,
   saveBenchmarkCorpusEntryResponse401,
@@ -151,6 +201,160 @@ import {
 import { customFetch } from '../custom_fetch';
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+export type ListAdaptiveCampaignsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAdaptiveCampaigns>>
+>;
+
+/**
+ * @summary List adaptive attack campaigns
+ */
+export const useListAdaptiveCampaigns = <
+  TError = BoundaryErrorResponse | string,
+>(
+  params?: ListAdaptiveCampaignsParams,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof listAdaptiveCampaigns>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+    request?: SecondParameter<typeof customFetch>;
+  }
+) => {
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
+
+  const isEnabled = swrOptions?.enabled !== false;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getListAdaptiveCampaignsKey(params) : null));
+  const swrFn = () => listAdaptiveCampaigns(params, requestOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type StartAdaptiveCampaignMutationResult = NonNullable<
+  Awaited<ReturnType<typeof startAdaptiveCampaign>>
+>;
+
+/**
+ * @summary Start an adaptive attack campaign
+ */
+export const useStartAdaptiveCampaign = <
+  TError = BoundaryErrorResponse | string,
+>(options?: {
+  swr?: SWRMutationConfiguration<
+    Awaited<ReturnType<typeof startAdaptiveCampaign>>,
+    TError,
+    Key,
+    BenchmarkStartAdaptiveCampaignRequest,
+    Awaited<ReturnType<typeof startAdaptiveCampaign>>
+  > & { swrKey?: string };
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
+
+  const swrKey = swrOptions?.swrKey ?? getStartAdaptiveCampaignMutationKey();
+  const swrFn = getStartAdaptiveCampaignMutationFetcher(requestOptions);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions);
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type GetAdaptiveCampaignQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdaptiveCampaign>>
+>;
+
+/**
+ * @summary Poll an adaptive attack campaign
+ */
+export const useGetAdaptiveCampaign = <TError = BoundaryErrorResponse | string>(
+  id: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof getAdaptiveCampaign>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+    request?: SecondParameter<typeof customFetch>;
+  }
+) => {
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
+
+  const isEnabled =
+    swrOptions?.enabled !== false && id !== null && id !== undefined;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getGetAdaptiveCampaignKey(id) : null));
+  const swrFn = () => getAdaptiveCampaign(id, requestOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type GetAdaptiveCampaignGoalQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAdaptiveCampaignGoal>>
+>;
+
+/**
+ * @summary Get one adaptive attack goal with its attempt transcript
+ */
+export const useGetAdaptiveCampaignGoal = <
+  TError = BoundaryErrorResponse | string,
+>(
+  id: string,
+  goalId: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof getAdaptiveCampaignGoal>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+    request?: SecondParameter<typeof customFetch>;
+  }
+) => {
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
+
+  const isEnabled =
+    swrOptions?.enabled !== false &&
+    id !== null &&
+    id !== undefined &&
+    goalId !== null &&
+    goalId !== undefined;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getGetAdaptiveCampaignGoalKey(id, goalId) : null));
+  const swrFn = () => getAdaptiveCampaignGoal(id, goalId, requestOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
 
 export type SaveBenchmarkCorpusEntryMutationResult = NonNullable<
   Awaited<ReturnType<typeof saveBenchmarkCorpusEntry>>
