@@ -14,16 +14,19 @@ export const BenchmarkAdaptiveGoalsTable = ({
     <table className="w-full text-sm" data-testid="benchmark-adaptive-goals">
       <thead>
         <tr className="border-b text-left text-xs text-muted-foreground">
-          <th scope="col" className="px-3 py-2 font-medium">
+          <th scope="col" className="px-3 py-2 font-medium whitespace-nowrap">
             Goal
           </th>
-          <th scope="col" className="px-3 py-2 font-medium">
+          <th scope="col" className="px-3 py-2 font-medium whitespace-nowrap">
             Category
           </th>
-          <th scope="col" className="px-3 py-2 font-medium">
+          <th scope="col" className="px-3 py-2 font-medium whitespace-nowrap">
             Outcome
           </th>
-          <th scope="col" className="px-3 py-2 text-right font-medium">
+          <th
+            scope="col"
+            className="px-3 py-2 text-right font-medium whitespace-nowrap"
+          >
             Queries
           </th>
         </tr>
@@ -41,7 +44,7 @@ export const BenchmarkAdaptiveGoalsTable = ({
                   row click is a pointer convenience on top of it. */}
               <button
                 type="button"
-                className="font-mono text-xs underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+                className="font-mono text-xs whitespace-nowrap underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
                 onClick={(event) => {
                   event.stopPropagation();
                   onOpenGoal(goal.goal_id);
@@ -50,9 +53,11 @@ export const BenchmarkAdaptiveGoalsTable = ({
                 {goal.goal_id}
               </button>
             </td>
-            <td className="px-3 py-2">{goal.category}</td>
-            <td className="px-3 py-2">{adaptiveOutcomeLabel(goal.outcome)}</td>
-            <td className="px-3 py-2 text-right tabular-nums">
+            <td className="px-3 py-2 whitespace-nowrap">{goal.category}</td>
+            <td className="px-3 py-2 whitespace-nowrap">
+              {adaptiveOutcomeLabel(goal.outcome)}
+            </td>
+            <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">
               {goal.queries_used}
             </td>
           </tr>
