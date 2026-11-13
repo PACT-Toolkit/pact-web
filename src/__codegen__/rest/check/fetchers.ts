@@ -66,6 +66,7 @@ export const getCheckContentUrl = () => {
 };
 
 /**
+ * Content over the classifier's token ceiling cannot be fully scanned and is answered with HTTP 200 and decision block, reason classifier_input_too_large, not a 400.
  * @summary Evaluate content against the safety pipeline
  */
 export const checkContent = async (

@@ -292,6 +292,30 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       { layer: 'redactor', p50_ms: 10, p99_ms: 25, samples: 100 },
       { layer: 'consensus', p50_ms: 4, p99_ms: 10, samples: 100 },
     ],
+    // Recorded summary where every layer reports a duration on every row it
+    // answered: the all-pass state of the stage card. consensus has no signal
+    // (the inline stage never ran), which reads as 0, not as missing. Runs
+    // without this key (run-6 and the older ones) show "not recorded".
+    timing_completeness: {
+      rows_total: 100,
+      rows_missing_stages: 0,
+      layers: [
+        { layer: 'filter', rows_with_signal: 7, rows_missing_duration: 0 },
+        {
+          layer: 'classifier',
+          rows_with_signal: 100,
+          rows_missing_duration: 0,
+        },
+        { layer: 'consensus', rows_with_signal: 0, rows_missing_duration: 0 },
+        { layer: 'redactor', rows_with_signal: 100, rows_missing_duration: 0 },
+        { layer: 'policy', rows_with_signal: 100, rows_missing_duration: 0 },
+        {
+          layer: 'external_refs',
+          rows_with_signal: 100,
+          rows_missing_duration: 0,
+        },
+      ],
+    },
   },
   {
     id: 'run-8',
@@ -423,6 +447,30 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       { layer: 'redactor', p50_ms: 12, p99_ms: 30, samples: 100 },
       { layer: 'consensus', p50_ms: 5, p99_ms: 12, samples: 100 },
     ],
+    // Recorded summary with one failing layer: the redactor stored no
+    // duration_ms on 2 of its 124 answered rows (under 1 ms), so the stage
+    // card flags it. 2 of the 126 rows errored, so rows_total is 124. Being
+    // the newest run, this is the state the stage card shows by default.
+    timing_completeness: {
+      rows_total: 124,
+      rows_missing_stages: 0,
+      layers: [
+        { layer: 'filter', rows_with_signal: 9, rows_missing_duration: 0 },
+        {
+          layer: 'classifier',
+          rows_with_signal: 124,
+          rows_missing_duration: 0,
+        },
+        { layer: 'consensus', rows_with_signal: 0, rows_missing_duration: 0 },
+        { layer: 'redactor', rows_with_signal: 124, rows_missing_duration: 2 },
+        { layer: 'policy', rows_with_signal: 124, rows_missing_duration: 0 },
+        {
+          layer: 'external_refs',
+          rows_with_signal: 124,
+          rows_missing_duration: 0,
+        },
+      ],
+    },
   },
   // A degraded run: 30 of its 120 rows (25 %) were lost to errors, unscored
   // verdicts or throttling, far over any sensible threshold, and the runner

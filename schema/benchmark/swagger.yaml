@@ -245,6 +245,12 @@ definitions:
                 type: integer
             row_count:
                 type: integer
+            timing_completeness:
+                allOf:
+                    - $ref: '#/definitions/benchmark.TimingCompletenessBody'
+                description: |-
+                    TimingCompleteness is absent when the producer did not record it (runs
+                    persisted before the summary existed); never zero-filled.
         required:
             - corpus_version
             - degraded
@@ -468,6 +474,12 @@ definitions:
                     GET /v1/benchmark/runs/{id}/rows. Absent until the run is persisted and
                     stays absent when persistence is disabled or failed.
                 type: string
+            timing_completeness:
+                allOf:
+                    - $ref: '#/definitions/benchmark.TimingCompletenessBody'
+                description: |-
+                    TimingCompleteness is absent when the producer did not record it (runs
+                    persisted before the summary existed); never zero-filled.
             total_rows:
                 type: integer
         required:
@@ -516,6 +528,28 @@ definitions:
             - p50_ms
             - p99_ms
             - samples
+        type: object
+    benchmark.LayerTimingCompletenessBody:
+        properties:
+            layer:
+                description: |-
+                    Layer is the response object name: filter, classifier, consensus,
+                    redactor, policy, external_refs.
+                type: string
+            rows_missing_duration:
+                description: |-
+                    RowsMissingDuration is the number of those rows whose object had no
+                    duration_ms. Never above rows_with_signal.
+                type: integer
+            rows_with_signal:
+                description: |-
+                    RowsWithSignal is the number of rows whose response carried this layer's
+                    object.
+                type: integer
+        required:
+            - layer
+            - rows_missing_duration
+            - rows_with_signal
         type: object
     benchmark.ListRunRowsResponse:
         properties:
@@ -735,6 +769,28 @@ definitions:
             - created_at
             - id
             - latency_ms
+        type: object
+    benchmark.TimingCompletenessBody:
+        properties:
+            layers:
+                description: |-
+                    Layers has one entry per layer in a fixed order, including layers no row
+                    reported (rows_with_signal 0).
+                items:
+                    $ref: '#/definitions/benchmark.LayerTimingCompletenessBody'
+                type: array
+            rows_missing_stages:
+                description: |-
+                    RowsMissingStages is the number of those rows whose response carried no
+                    stages list or an empty one.
+                type: integer
+            rows_total:
+                description: RowsTotal is the number of rows that got a gateway response.
+                type: integer
+        required:
+            - layers
+            - rows_missing_stages
+            - rows_total
         type: object
     boundary.ErrorResponse:
         properties:

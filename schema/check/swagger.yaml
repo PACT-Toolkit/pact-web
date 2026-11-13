@@ -90,6 +90,8 @@ definitions:
                 type: string
             latency_ms:
                 type: integer
+            policy:
+                $ref: '#/definitions/check.PolicyInfo'
             reason:
                 type: string
             redactor:
@@ -98,6 +100,14 @@ definitions:
                 type: string
             spotlight:
                 $ref: '#/definitions/check.SpotlightInfo'
+            stages:
+                description: |-
+                    Stages is the executed-stage list of the decision, in execution order:
+                    the same value the pact.decisions event stores (pipeline.Decision.Stages).
+                    Omitted when no stage ran.
+                items:
+                    type: string
+                type: array
         required:
             - decision
             - latency_ms
@@ -188,6 +198,12 @@ definitions:
         properties:
             blocked:
                 type: integer
+            duration_ms:
+                description: |-
+                    DurationMs is the wall-clock time of the whole sandbox scan in
+                    fractional milliseconds; present whenever this sub-object is. nil is
+                    never emitted as 0.
+                type: number
             mitigated:
                 type: integer
             refs:
@@ -215,6 +231,21 @@ definitions:
                     - safe
                     - suspicious
                     - hostile
+                    - unknown
+                type: string
+        type: object
+    check.PolicyInfo:
+        properties:
+            duration_ms:
+                description: |-
+                    DurationMs is the policy stage's wall-clock RPC time in fractional
+                    milliseconds (the token validation plus the tool-policy lookup when one
+                    is made); present whenever this sub-object is. nil is never emitted as 0.
+                type: number
+            verdict:
+                enum:
+                    - allowed
+                    - denied
                     - unknown
                 type: string
         type: object
@@ -306,6 +337,7 @@ paths:
         post:
             consumes:
                 - application/json
+            description: Content over the classifier's token ceiling cannot be fully scanned and is answered with HTTP 200 and decision block, reason classifier_input_too_large, not a 400.
             operationId: checkContent
             parameters:
                 - description: Content and kind (input|output); optional conversation_id, traffic_source, tool_id, scope

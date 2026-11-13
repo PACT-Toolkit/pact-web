@@ -20,6 +20,8 @@ export * from './checkExternalRefInfoVerdict';
 export * from './checkExternalRefsInfo';
 export * from './checkFilterInfo';
 export * from './checkFilterInfoVerdict';
+export * from './checkPolicyInfo';
+export * from './checkPolicyInfoVerdict';
 export * from './checkRedactedSpan';
 export * from './checkRedactorInfo';
 export * from './checkRedactorInfoVerdict';

@@ -11,6 +11,7 @@ import type { CheckConsensusInfo } from './checkConsensusInfo';
 import type { CheckDiagnosticsInfo } from './checkDiagnosticsInfo';
 import type { CheckExternalRefsInfo } from './checkExternalRefsInfo';
 import type { CheckFilterInfo } from './checkFilterInfo';
+import type { CheckPolicyInfo } from './checkPolicyInfo';
 import type { CheckRedactorInfo } from './checkRedactorInfo';
 import type { CheckSpotlightInfo } from './checkSpotlightInfo';
 
@@ -23,8 +24,15 @@ export interface CheckCheckResponse {
   filter?: CheckFilterInfo;
   filter_rule_id?: string;
   latency_ms: number;
+  policy?: CheckPolicyInfo;
   reason?: string;
   redactor?: CheckRedactorInfo;
   request_id: string;
   spotlight?: CheckSpotlightInfo;
+  /**
+   * Stages is the executed-stage list of the decision, in execution order:
+   * the same value the pact.decisions event stores (pipeline.Decision.Stages).
+   * Omitted when no stage ran.
+   */
+  stages?: string[];
 }
