@@ -9,6 +9,12 @@ import type { CheckExternalRefInfo } from './checkExternalRefInfo';
 
 export interface CheckExternalRefsInfo {
   blocked?: number;
+  /**
+   * DurationMs is the wall-clock time of the whole sandbox scan in
+   * fractional milliseconds; present whenever this sub-object is. nil is
+   * never emitted as 0.
+   */
+  duration_ms?: number;
   mitigated?: number;
   refs?: CheckExternalRefInfo[];
   scanned?: number;

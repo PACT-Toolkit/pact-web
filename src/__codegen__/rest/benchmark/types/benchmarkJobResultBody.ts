@@ -9,6 +9,7 @@ import type { BenchmarkCategoryBreakdownBody } from './benchmarkCategoryBreakdow
 import type { BenchmarkJobRowBody } from './benchmarkJobRowBody';
 import type { BenchmarkLayerBreakdownBody } from './benchmarkLayerBreakdownBody';
 import type { BenchmarkRunCountsBody } from './benchmarkRunCountsBody';
+import type { BenchmarkTimingCompletenessBody } from './benchmarkTimingCompletenessBody';
 
 export interface BenchmarkJobResultBody {
   /**
@@ -43,5 +44,10 @@ export interface BenchmarkJobResultBody {
    * stays absent when persistence is disabled or failed.
    */
   run_id?: string;
+  /**
+   * TimingCompleteness is absent when the producer did not record it (runs
+   * persisted before the summary existed); never zero-filled.
+   */
+  timing_completeness?: BenchmarkTimingCompletenessBody;
   total_rows: number;
 }

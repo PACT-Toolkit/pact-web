@@ -8,6 +8,7 @@
 import type { BenchmarkCategoryBreakdownBody } from './benchmarkCategoryBreakdownBody';
 import type { BenchmarkLayerBreakdownBody } from './benchmarkLayerBreakdownBody';
 import type { BenchmarkRunCountsBody } from './benchmarkRunCountsBody';
+import type { BenchmarkTimingCompletenessBody } from './benchmarkTimingCompletenessBody';
 
 export interface BenchmarkBenchmarkRunBody {
   corpus_version: string;
@@ -41,4 +42,9 @@ export interface BenchmarkBenchmarkRunBody {
   per_layer?: BenchmarkLayerBreakdownBody[];
   ran_at: number;
   row_count: number;
+  /**
+   * TimingCompleteness is absent when the producer did not record it (runs
+   * persisted before the summary existed); never zero-filled.
+   */
+  timing_completeness?: BenchmarkTimingCompletenessBody;
 }
