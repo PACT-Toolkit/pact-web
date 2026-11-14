@@ -107,7 +107,9 @@ export const FilesRow = ({
           {' • '}
           <span>{file.contentType}</span>
           {' • '}
-          <span>{humanSize(file.sizeBytes ?? 0)}</span>
+          <span className="whitespace-nowrap">
+            {humanSize(file.sizeBytes ?? 0)}
+          </span>
           {errorLabel && (
             <span className="ml-2 text-destructive">{errorLabel}</span>
           )}
