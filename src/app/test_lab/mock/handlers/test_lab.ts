@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { db } from '@/mocks/data/dbFactory';
 import {
+  type BoundaryInputTooLargeResponse,
   type CheckExternalRef,
   type CheckSpotlightChunk,
 } from '@/src/__codegen__/rest/check';
@@ -14,6 +15,7 @@ import {
 } from '@/src/app/gateway/mock/data/gateway';
 import { runRedactor } from '@/src/app/redactor/mock/data/redactor';
 import { CLASSIFIER_SATURATED_REASON } from '@/src/framework/decisions/classifier_saturation';
+import { INPUT_TOO_LARGE_REASON } from '@/src/framework/decisions/input_too_large';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
 import {
@@ -21,9 +23,11 @@ import {
   CEL_RULE_NAME,
   CLASSIFIER_SATURATED_MESSAGE,
   CLASSIFIER_SATURATED_RETRY_AFTER_SECONDS,
+  GATEWAY_MAX_INPUT_BYTES,
   auditEngineOf,
   celMatchPattern,
   exceedsClassifierCeiling,
+  exceedsGatewayInputCeiling,
   filterMatchPattern,
   runCelRules,
   runClassifier,
@@ -104,6 +108,36 @@ export const handlers: RequestHandler[] = [
     }
 
     await new Promise((r) => setTimeout(r, 120 + Math.random() * 80));
+
+    // The gateway's single input ceiling: over it, the request is refused
+    // with a 413 before any stage runs and audited as a block (the audit row
+    // below is the only trace of the content). Body is the generated
+    // BoundaryInputTooLargeResponse.
+    if (exceedsGatewayInputCeiling(content)) {
+      const requestId = `req-test-${uuidv4().slice(0, 6)}`;
+      const createdAt = new Date().toISOString();
+      db.decisions.create({
+        requestId,
+        createdAt,
+        payloadJson: JSON.stringify({
+          request_id: requestId,
+          decision: 'block',
+          reason: INPUT_TOO_LARGE_REASON,
+          ...(trafficSource ? { traffic_source: trafficSource } : {}),
+          latency_ms: 0,
+          created_at: createdAt,
+        }),
+      });
+
+      return HttpResponse.json(
+        {
+          code: INPUT_TOO_LARGE_REASON,
+          error: 'input exceeds the gateway size limit',
+          max_input_bytes: GATEWAY_MAX_INPUT_BYTES,
+        } satisfies BoundaryInputTooLargeResponse,
+        { status: 413 }
+      );
+    }
 
     // Reads the single stateful db.gatewayConfig row (made stateful so PATCH /v1/config/enforcement has something to mutate) --
     // sandboxEnabled/diagnosticsEnabled/spotlightFormat aren't PATCH-writable

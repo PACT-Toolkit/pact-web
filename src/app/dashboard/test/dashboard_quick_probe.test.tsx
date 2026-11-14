@@ -43,3 +43,17 @@ describe('DashboardQuickProbe - classifier_saturated', () => {
     expect(screen.queryByText('BLOCK')).not.toBeInTheDocument();
   });
 });
+
+describe('DashboardQuickProbe - input_too_large', () => {
+  it('shows the size message for a 413, not a generic failure', async () => {
+    runProbe('a'.repeat(50_000));
+
+    expect(
+      await screen.findByText(
+        'Input too large: 50,000 bytes, limit 40,573 bytes'
+      )
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Request failed/)).not.toBeInTheDocument();
+    expect(screen.queryByText('BLOCK')).not.toBeInTheDocument();
+  });
+});

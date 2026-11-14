@@ -95,6 +95,35 @@ test.describe('Test Lab', () => {
     await expect(failedRow.getByText('ALLOW')).toHaveCount(0);
   });
 
+  test('an input over the gateway ceiling shows a size block and no stage ran', async ({
+    page,
+  }) => {
+    const overCeiling = 'Summarise the quarterly report. '.repeat(1_400);
+
+    await page.getByTestId('test-lab-attack-input').fill(overCeiling);
+    await page.getByRole('button', { name: 'Run Test' }).click();
+
+    await expect(page.getByTestId('test-lab-input-too-large')).toHaveText(
+      'Input too large: 44,800 bytes, limit 40,573 bytes'
+    );
+    await expect(page.getByTestId('test-lab-result')).toHaveAttribute(
+      'data-decision',
+      'block'
+    );
+    await expect(page.getByTestId('test-lab-result-decision')).toHaveText(
+      'BLOCK'
+    );
+    // Every stage renders as not run; only the Result node blocks.
+    await expect(page.getByText('SKIP', { exact: true })).toHaveCount(4);
+    // The refusal is a block, not a failed check: the seeded FAILED row is
+    // still the only one.
+    await expect(
+      page
+        .getByTestId('test-lab-run-row')
+        .filter({ has: page.getByText('FAILED') })
+    ).toHaveCount(1);
+  });
+
   test('has no accessibility violations', async ({ page }) => {
     const results = await makeAxeBuilder(page).analyze();
     expect(results.violations).toEqual([]);

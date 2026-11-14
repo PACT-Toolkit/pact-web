@@ -18,6 +18,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { checkRequestFailed } from '@/src/framework/decisions/check_request_failed';
 
 // causal-span replay renders the submitted content with each replayed span
 // highlighted, so an operator can see exactly which substring the
@@ -70,8 +71,7 @@ export const GatewayDiagnosticsPanel = () => {
   const { trigger: runCheck, data, error, isMutating } = useCheckContent();
 
   const result = data?.status === 200 ? data.data : undefined;
-  const requestFailed =
-    Boolean(error) || (data !== undefined && data.status !== 200);
+  const requestFailed = checkRequestFailed(error, data);
 
   const diagnosticsEnabled = Boolean(config?.diagnosticsEnabled);
   const spans = result?.diagnostics?.causal_spans;

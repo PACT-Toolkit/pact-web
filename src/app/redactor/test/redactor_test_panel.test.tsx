@@ -211,3 +211,15 @@ describe('RedactorTestPanel', () => {
     expect(screen.getByTestId('redactor-test-input')).toHaveValue(newText);
   });
 });
+
+describe('RedactorTestPanel - input_too_large', () => {
+  it('shows the size message for a 413, not a generic failure', async () => {
+    renderPanel();
+    runTest('a'.repeat(50_000));
+
+    expect(
+      await screen.findByTestId('redactor-test-input-too-large')
+    ).toHaveTextContent('Input too large: 50,000 bytes, limit 40,573 bytes');
+    expect(screen.queryByTestId('redactor-test-error')).not.toBeInTheDocument();
+  });
+});

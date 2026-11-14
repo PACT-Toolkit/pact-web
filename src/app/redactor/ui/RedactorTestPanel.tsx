@@ -15,6 +15,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { checkRequestFailed } from '@/src/framework/decisions/check_request_failed';
+import { describeInputTooLarge } from '@/src/framework/decisions/input_too_large';
+import { InputTooLargeNotice } from '@/src/framework/decisions/input_too_large_notice';
 
 // Ad-hoc redaction test panel: paste text, run it through the
 // real pipeline via /v1/check with kind "output" (the direction the
@@ -43,8 +46,11 @@ export const RedactorTestPanel = () => {
   const { trigger, data, error, isMutating } = useCheckContent();
 
   const result = data?.status === 200 ? data.data : undefined;
-  const requestFailed =
-    Boolean(error) || (data !== undefined && data.status !== 200);
+  const inputTooLarge =
+    data && submittedContent !== null
+      ? describeInputTooLarge(data, submittedContent)
+      : undefined;
+  const requestFailed = checkRequestFailed(error, data, inputTooLarge);
   // True once the textarea has been edited past the text that produced
   // `result` -- the result is still shown (it's genuine output for real
   // input), but labelled as stale rather than silently re-targeted.
@@ -100,6 +106,12 @@ export const RedactorTestPanel = () => {
             {isMutating ? 'Running…' : 'Run test'}
           </Button>
           <span className="text-xs text-muted-foreground">⌘/Ctrl + Enter</span>
+          {inputTooLarge && (
+            <InputTooLargeNotice
+              message={inputTooLarge.message}
+              testId="redactor-test-input-too-large"
+            />
+          )}
           {requestFailed && (
             <span
               className="text-xs text-destructive"

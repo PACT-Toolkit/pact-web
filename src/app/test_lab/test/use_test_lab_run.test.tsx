@@ -108,3 +108,52 @@ describe('useTestLabRun - classifier_saturated', () => {
     expect(classifier?.reason).toBe('Classifier at capacity - retry later');
   });
 });
+
+// The gateway answers content over its input ceiling with a 413, audited as a
+// block that never reached a stage. Test Lab must show that block with the
+// size and limit, every stage not run, not a generic check failure.
+describe('useTestLabRun - input_too_large', () => {
+  const overCeiling = 'Summarise the quarterly report. '.repeat(1_400);
+
+  it('renders the 413 as a block before the first stage with the size message', async () => {
+    const { result } = renderHook(() => useTestLabRun(), {
+      wrapper: SWRTestProvider,
+    });
+
+    await act(async () => {
+      await result.current.runCheck(overCeiling, 'custom');
+    });
+
+    expect(result.current.status).toBe('done');
+    expect(result.current.result?.decision).toBe('block');
+    expect(result.current.result?.reason).toBe('input_too_large');
+    expect(result.current.inputTooLargeMessage).toBe(
+      `Input too large: ${new TextEncoder()
+        .encode(overCeiling)
+        .length.toLocaleString('en-US')} bytes, limit 40,573 bytes`
+    );
+    expect(result.current.layers.map((l) => l.decision)).toEqual([
+      'skip',
+      'skip',
+      'skip',
+      'skip',
+    ]);
+  });
+
+  it('clears the size message on the next run', async () => {
+    const { result } = renderHook(() => useTestLabRun(), {
+      wrapper: SWRTestProvider,
+    });
+
+    await act(async () => {
+      await result.current.runCheck(overCeiling, 'custom');
+    });
+    expect(result.current.inputTooLargeMessage).not.toBeNull();
+
+    await act(async () => {
+      await result.current.runCheck('Please summarise the report.', 'custom');
+    });
+    expect(result.current.status).toBe('done');
+    expect(result.current.inputTooLargeMessage).toBeNull();
+  });
+});

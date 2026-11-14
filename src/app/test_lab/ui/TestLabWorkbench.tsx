@@ -24,6 +24,7 @@ export const TestLabWorkbench = () => {
     layers,
     activeIdx,
     result,
+    inputTooLargeMessage,
     history,
     historySaveError,
     runCheck,
@@ -57,6 +58,7 @@ export const TestLabWorkbench = () => {
           if (example) setInputText(example);
         }}
         status={status}
+        inputTooLargeMessage={status === 'done' ? inputTooLargeMessage : null}
         onRun={handleRun}
         onFileSelect={(text, type) => {
           setInputText(text);

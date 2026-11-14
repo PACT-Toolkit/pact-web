@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { checkRequestFailed } from '@/src/framework/decisions/check_request_failed';
 
 // Ad-hoc sandbox / indirect-injection probe (external_refs re-scan).
 // Sourced live from POST /v1/check's external_refs response, not
@@ -27,8 +28,7 @@ export const GatewaySandboxPanel = () => {
   const { trigger: runCheck, data, error, isMutating } = useCheckContent();
 
   const result = data?.status === 200 ? data.data : undefined;
-  const requestFailed =
-    Boolean(error) || (data !== undefined && data.status !== 200);
+  const requestFailed = checkRequestFailed(error, data);
   const info = result?.external_refs;
 
   const sandboxEnabled = Boolean(config?.sandboxEnabled);

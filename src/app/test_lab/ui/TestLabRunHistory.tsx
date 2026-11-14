@@ -35,11 +35,11 @@ const TestLabRunRow = ({ run }: { run: TestRun }) => {
 
   return (
     <div className="flex flex-col text-xs" data-testid="test-lab-run-row">
-      <div className="flex items-center gap-3 px-4 py-2.5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 sm:flex-nowrap">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+          className="flex min-w-0 basis-full flex-wrap items-center gap-x-3 gap-y-1 text-left sm:flex-1 sm:basis-auto sm:flex-nowrap"
           aria-expanded={open}
           aria-label={open ? 'Collapse prompt' : 'Expand prompt'}
         >
@@ -78,7 +78,7 @@ const TestLabRunRow = ({ run }: { run: TestRun }) => {
           {!open && (
             <span
               data-testid="test-lab-run-row-input"
-              className="min-w-0 flex-1 truncate font-mono text-muted-foreground"
+              className="hidden min-w-0 flex-1 truncate font-mono text-muted-foreground sm:block"
             >
               {run.input}
             </span>

@@ -238,10 +238,19 @@ export interface ClassifierResult {
   score: number;
 }
 
-// pact-classifier's default max_content_bytes (config.py). Content above it
-// is rejected as oversize and the gateway blocks it with
-// classifier_input_too_large.
-export const CLASSIFIER_MAX_CONTENT_BYTES = 65_536;
+// The gateway's single input ceiling (MAX_INPUT_BYTES): content above it
+// never reaches a stage and is answered with HTTP 413 (input_too_large).
+export const GATEWAY_MAX_INPUT_BYTES = 40_573;
+
+export const exceedsGatewayInputCeiling = (content: string): boolean =>
+  new TextEncoder().encode(content).length > GATEWAY_MAX_INPUT_BYTES;
+
+// The classifier scores a bounded token budget, which binds below the byte
+// ceiling (about 26 KB for English prose, per the gateway's /v1/check
+// contract). Content above it cannot be fully scanned and the gateway blocks
+// it with classifier_input_too_large (HTTP 200). The mock approximates the
+// token budget with a byte count.
+export const CLASSIFIER_MAX_CONTENT_BYTES = 26_000;
 
 export const exceedsClassifierCeiling = (content: string): boolean =>
   new TextEncoder().encode(content).length > CLASSIFIER_MAX_CONTENT_BYTES;

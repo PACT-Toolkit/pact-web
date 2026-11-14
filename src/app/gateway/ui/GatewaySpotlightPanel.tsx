@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { checkRequestFailed } from '@/src/framework/decisions/check_request_failed';
 
 // Ad-hoc spotlighting probe: shows how fetched/RAG/tool
 // content gets marker-wrapped before LLM injection. Sourced live from POST
@@ -29,8 +30,7 @@ export const GatewaySpotlightPanel = () => {
   const { trigger: runCheck, data, error, isMutating } = useCheckContent();
 
   const result = data?.status === 200 ? data.data : undefined;
-  const requestFailed =
-    Boolean(error) || (data !== undefined && data.status !== 200);
+  const requestFailed = checkRequestFailed(error, data);
   const spotlight = result?.spotlight;
 
   const runProbe = () => {
