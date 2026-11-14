@@ -13,6 +13,7 @@ import { useBenchmarkRunAblation } from '@/src/app/benchmark/domain/use_benchmar
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
@@ -42,23 +43,18 @@ export const BenchmarkAblationCard = ({
 }: BenchmarkAblationCardProps) => {
   const state = useBenchmarkRunAblation(runId);
 
-  if (state.kind === 'hidden') return null;
-
-  if (state.kind === 'loading') {
-    return (
-      <p
-        className="text-xs text-muted-foreground"
-        data-testid="benchmark-ablation-loading"
-      >
-        Checking for an ablation result…
-      </p>
-    );
-  }
+  // Loading renders nothing, like hidden: most runs are not ablation runs,
+  // so a placeholder line would shift the layout on nearly every run page.
+  if (state.kind === 'hidden' || state.kind === 'loading') return null;
 
   return (
     <Card data-testid="benchmark-ablation">
       <CardHeader className="flex flex-col gap-1 pb-2">
         <CardTitle className="text-base">Ablation</CardTitle>
+        <CardDescription>
+          Seven defense configurations derived from one evidence-mode pass over
+          every row.
+        </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 p-0">
         {state.kind === 'unavailable' ? (

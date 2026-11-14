@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
 import { describe, expect, it } from 'vitest';
 
@@ -18,12 +24,29 @@ const renderCard = (runId: string) =>
     </SWRTestProvider>
   );
 
-const answer = (status: number, body: unknown) =>
+let answered = false;
+
+const answer = (status: number, body: unknown) => {
+  answered = false;
   server.use(
-    http.get(`${MSW_PACT_BASE}/gateway/v1/benchmark/runs/:runId/ablation`, () =>
-      HttpResponse.json(body as never, { status })
+    http.get(
+      `${MSW_PACT_BASE}/gateway/v1/benchmark/runs/:runId/ablation`,
+      () => {
+        answered = true;
+
+        return HttpResponse.json(body as never, { status });
+      }
     )
   );
+};
+
+// Waits for the stubbed answer to be served, then lets the hook consume it.
+const settled = async () => {
+  await waitFor(() => expect(answered).toBe(true));
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+};
 
 describe('BenchmarkAblationCard', () => {
   it('lists the seven configurations in server order with readable labels', async () => {
@@ -110,18 +133,15 @@ describe('BenchmarkAblationCard', () => {
     answer(409, { code: 'run_not_ablation', error: 'not an ablation run' });
     const { container } = renderCard('run-8');
 
-    await waitFor(() =>
-      expect(screen.queryByTestId('benchmark-ablation-loading')).toBeNull()
-    );
+    await settled();
     expect(container).toBeEmptyDOMElement();
   });
 
   it('renders nothing for an unknown run (404)', async () => {
+    answer(404, { code: 'not_found' });
     const { container } = renderCard('run-missing');
 
-    await waitFor(() =>
-      expect(screen.queryByTestId('benchmark-ablation-loading')).toBeNull()
-    );
+    await settled();
     expect(container).toBeEmptyDOMElement();
   });
 
@@ -135,9 +155,9 @@ describe('BenchmarkAblationCard', () => {
     expect(screen.queryByTestId('benchmark-ablation-row')).toBeNull();
   });
 
-  it('shows a muted line while the answer is pending', () => {
-    renderCard(MOCK_ABLATION_RUN_ID);
+  it('renders nothing while the answer is pending', () => {
+    const { container } = renderCard(MOCK_ABLATION_RUN_ID);
 
-    expect(screen.getByTestId('benchmark-ablation-loading')).toBeVisible();
+    expect(container).toBeEmptyDOMElement();
   });
 });

@@ -1201,6 +1201,5 @@ test.describe('Benchmark ablation', () => {
     await expect(page.getByTestId('benchmark-run-rows-row')).toHaveCount(50);
 
     await expect(page.getByTestId('benchmark-ablation')).toHaveCount(0);
-    await expect(page.getByTestId('benchmark-ablation-loading')).toHaveCount(0);
   });
 });
