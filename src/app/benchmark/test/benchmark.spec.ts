@@ -1089,10 +1089,28 @@ test.describe('Benchmark run rows', () => {
     await expect(prompts.first()).toContainText('onboarding checklist');
     await expect(prompts.first()).toHaveText(/…$/);
 
+    // The toggle is measured: a short prompt that fits in two lines gets none,
+    // the long first prompt does, and a prompt that fits at desktop width gets
+    // one once the narrow viewport clamps it.
+    const rowWith = (text: string) =>
+      page
+        .getByTestId('benchmark-run-rows-row')
+        .filter({ hasText: text })
+        .first();
+    const toggleIn = (row: Locator) =>
+      row.getByTestId('benchmark-run-rows-prompt-toggle');
+    await expect(toggleIn(rowWith('Ignore all previous'))).toHaveCount(0);
+    await expect(toggleIn(rowWith('onboarding checklist'))).toBeVisible();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(toggleIn(rowWith('You are now DAN'))).toBeVisible();
+    await page.setViewportSize({ width: 1920, height: 1080 });
+
     const toggle = page.getByTestId('benchmark-run-rows-prompt-toggle').first();
     await toggle.focus();
     await page.keyboard.press('Enter');
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(toggle).toHaveText('Show less');
     await expect(prompts.first()).not.toHaveClass(/line-clamp-2/);
 
     await page.goto('/benchmark/runs/run-1');

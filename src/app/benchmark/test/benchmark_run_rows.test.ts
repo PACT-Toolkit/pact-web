@@ -4,7 +4,6 @@ import {
   RUN_ROW_OUTCOME_ALL,
   RUN_ROW_OUTCOMES,
   PROMPT_NOT_STORED_EXPLANATION,
-  PROMPT_PREVIEW_EXPAND_THRESHOLD,
   isMitigatedRow,
   rowAttemptsMarker,
   rowPromptDisplay,
@@ -22,19 +21,11 @@ describe('rowPromptDisplay', () => {
     }
   });
 
-  it('keeps a short preview as is and not expandable', () => {
+  it('keeps a stored preview as is', () => {
     expect(rowPromptDisplay('What is a mutex?')).toEqual({
       kind: 'stored',
       text: 'What is a mutex?',
-      expandable: false,
     });
-  });
-
-  it('makes a preview over the threshold expandable, at the boundary', () => {
-    const atLimit = 'a'.repeat(PROMPT_PREVIEW_EXPAND_THRESHOLD);
-
-    expect(rowPromptDisplay(atLimit)).toMatchObject({ expandable: false });
-    expect(rowPromptDisplay(`${atLimit}b`)).toMatchObject({ expandable: true });
   });
 
   it('does not alter markup-looking text', () => {

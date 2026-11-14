@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { server } from '@/mocks/server';
 import { SWRTestProvider } from '@/mocks/swr_test_provider';
@@ -223,47 +223,105 @@ describe('BenchmarkRunRowsView degraded run', { timeout: 20_000 }, () => {
     }
   });
 
-  it('renders the stored prompt previews as plain text, and a cut preview expands on demand', async () => {
-    server.use(
-      http.get(`${MSW_PACT_BASE}/gateway/v1/benchmark/runs/:runId/rows`, () =>
-        HttpResponse.json({
-          total: 2,
-          rows: [
-            {
-              seq: 1,
-              row_id: 'p1',
-              expected_label: 'allow',
-              decision: 'allow',
-              latency_ms: 1,
-              content_preview: '<b>hello</b> world',
-            },
-            {
-              seq: 2,
-              row_id: 'p2',
-              expected_label: 'block',
-              decision: 'block',
-              latency_ms: 2,
-              content_preview: `${'long prompt text '.repeat(16)}…`,
-            },
-          ],
-        })
-      )
-    );
-    renderView('run-11');
+  describe('prompt preview toggle', () => {
+    const restore: (() => void)[] = [];
 
-    const prompts = await screen.findAllByTestId('benchmark-run-rows-prompt');
-    expect(prompts[0]).toHaveTextContent('<b>hello</b> world');
-    expect(prompts[0].querySelector('b')).toBeNull();
-    expect(prompts[1].textContent!.endsWith('…')).toBe(true);
-    expect(prompts[1]).toHaveAttribute('title', prompts[1].textContent!);
-    expect(prompts[1]).toHaveClass('line-clamp-2');
+    // jsdom has no layout: report a clamped (scrollHeight > clientHeight) or a
+    // fitting paragraph for the prompt cells.
+    const stubLayout = (clamped: boolean) => {
+      const scroll = Object.getOwnPropertyDescriptor(
+        HTMLElement.prototype,
+        'scrollHeight'
+      );
+      const client = Object.getOwnPropertyDescriptor(
+        HTMLElement.prototype,
+        'clientHeight'
+      );
+      Object.defineProperty(HTMLElement.prototype, 'scrollHeight', {
+        configurable: true,
+        get: () => (clamped ? 60 : 32),
+      });
+      Object.defineProperty(HTMLElement.prototype, 'clientHeight', {
+        configurable: true,
+        get: () => 32,
+      });
+      restore.push(() => {
+        if (scroll) {
+          Object.defineProperty(HTMLElement.prototype, 'scrollHeight', scroll);
+        } else {
+          Reflect.deleteProperty(HTMLElement.prototype, 'scrollHeight');
+        }
+        if (client) {
+          Object.defineProperty(HTMLElement.prototype, 'clientHeight', client);
+        } else {
+          Reflect.deleteProperty(HTMLElement.prototype, 'clientHeight');
+        }
+      });
+    };
 
-    // Only the long preview offers the toggle.
-    const toggle = screen.getByTestId('benchmark-run-rows-prompt-toggle');
-    expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    fireEvent.click(toggle);
-    expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    expect(prompts[1]).not.toHaveClass('line-clamp-2');
+    afterEach(() => {
+      for (const undo of restore.splice(0)) undo();
+    });
+
+    const useRowsWithPreview = (preview: string) =>
+      server.use(
+        http.get(`${MSW_PACT_BASE}/gateway/v1/benchmark/runs/:runId/rows`, () =>
+          HttpResponse.json({
+            total: 1,
+            rows: [
+              {
+                seq: 1,
+                row_id: 'p1',
+                expected_label: 'allow',
+                decision: 'allow',
+                latency_ms: 1,
+                content_preview: preview,
+              },
+            ],
+          })
+        )
+      );
+
+    it('renders the preview as plain text with the full text in the title', async () => {
+      useRowsWithPreview('<b>hello</b> world');
+      renderView('run-11');
+
+      const prompt = await screen.findByTestId('benchmark-run-rows-prompt');
+      expect(prompt).toHaveTextContent('<b>hello</b> world');
+      expect(prompt.querySelector('b')).toBeNull();
+      expect(prompt).toHaveAttribute('title', '<b>hello</b> world');
+      expect(prompt).toHaveClass('line-clamp-2');
+    });
+
+    it('offers the toggle for a clamped preview and expands it on demand', async () => {
+      stubLayout(true);
+      useRowsWithPreview(`${'long prompt text '.repeat(16)}…`);
+      renderView('run-11');
+
+      const prompt = await screen.findByTestId('benchmark-run-rows-prompt');
+      const toggle = await screen.findByTestId(
+        'benchmark-run-rows-prompt-toggle'
+      );
+      expect(toggle).toHaveTextContent('Show full preview');
+      expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+      fireEvent.click(toggle);
+
+      expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      expect(toggle).toHaveTextContent('Show less');
+      expect(prompt).not.toHaveClass('line-clamp-2');
+    });
+
+    it('offers no toggle for a preview that fits', async () => {
+      stubLayout(false);
+      useRowsWithPreview('What is a mutex?');
+      renderView('run-11');
+
+      await screen.findByTestId('benchmark-run-rows-prompt');
+      expect(
+        screen.queryByTestId('benchmark-run-rows-prompt-toggle')
+      ).not.toBeInTheDocument();
+    });
   });
 
   it('shows a muted not-stored placeholder with an explanation for a legacy row', async () => {

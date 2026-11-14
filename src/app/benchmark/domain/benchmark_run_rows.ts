@@ -91,9 +91,6 @@ export const rowAttemptsMarker = (
   };
 };
 
-/** Preview length above which the prompt cell offers an expand toggle. */
-export const PROMPT_PREVIEW_EXPAND_THRESHOLD = 90;
-
 /** Why a row carries no prompt text (runs stored before previews existed). */
 export const PROMPT_NOT_STORED_LABEL = 'not stored';
 export const PROMPT_NOT_STORED_EXPLANATION =
@@ -101,7 +98,7 @@ export const PROMPT_NOT_STORED_EXPLANATION =
 
 /** What a row's prompt cell must show. */
 export type RowPromptDisplay =
-  | { kind: 'stored'; text: string; expandable: boolean }
+  | { kind: 'stored'; text: string }
   | { kind: 'missing'; label: string; explanation: string };
 
 /**
@@ -121,9 +118,5 @@ export const rowPromptDisplay = (
     };
   }
 
-  return {
-    kind: 'stored',
-    text: contentPreview,
-    expandable: contentPreview.length > PROMPT_PREVIEW_EXPAND_THRESHOLD,
-  };
+  return { kind: 'stored', text: contentPreview };
 };
