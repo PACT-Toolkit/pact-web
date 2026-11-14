@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { type RunCounts } from '@/src/app/benchmark/domain/benchmark_breakdown';
 import { MOCK_RUNS } from '@/src/app/benchmark/mock/data/benchmark';
+import {
+  MOCK_ABLATION_CONFIGURATIONS,
+  MOCK_ABLATION_RUN_ID,
+} from '@/src/app/benchmark/mock/data/benchmark_ablation';
 
 // The default share of lost rows (errors + unscored + throttled) above which
 // the benchmark service flags a run degraded. A run may carry its own, higher
@@ -121,4 +125,87 @@ describe('seeded benchmark runs', () => {
       }).toEqual(counts);
     }
   );
+});
+
+describe('seeded ablation run', () => {
+  const configurations = MOCK_ABLATION_CONFIGURATIONS;
+  const run = MOCK_RUNS.find((r) => r.id === MOCK_ABLATION_RUN_ID);
+  const byName = (name: string) => configurations.find((c) => c.name === name)!;
+
+  it('appears in the run history', () => {
+    expect(run).toBeDefined();
+  });
+
+  it('lists the seven configurations in the server order', () => {
+    expect(configurations.map((c) => c.name)).toEqual([
+      'none',
+      'rules',
+      'rules-similarity',
+      'classifier',
+      'rules-classifier',
+      'rules-similarity-classifier',
+      'full-chain',
+    ]);
+  });
+
+  it.each(configurations)(
+    '$name keeps its rates equal to hits over known rows and its intervals around them',
+    (c) => {
+      expect(c.detection_rate).toBeCloseTo(c.true_positives / c.attacks, 12);
+      expect(c.fp_rate).toBeCloseTo(c.false_positives / c.benign, 12);
+      for (const [rate, ci] of [
+        [c.detection_rate, c.detection_ci],
+        [c.fp_rate, c.fp_ci],
+      ] as const) {
+        expect(ci.lower).toBeGreaterThanOrEqual(0);
+        expect(ci.upper).toBeLessThanOrEqual(1);
+        expect(ci.lower).toBeLessThanOrEqual(rate);
+        expect(ci.upper).toBeGreaterThanOrEqual(rate);
+      }
+    }
+  );
+
+  it.each(configurations)(
+    '$name counts every submitted row once, known or unknown',
+    (c) => {
+      expect(c.attacks + c.unknown_attacks).toBe(run!.counts!.attacks);
+      expect(c.benign + c.unknown_benign).toBe(run!.counts!.benign);
+      expect(c.true_positives).toBeLessThanOrEqual(c.attacks);
+      expect(c.false_positives).toBeLessThanOrEqual(c.benign);
+      expect(c.errors).toBeLessThanOrEqual(c.attacks + c.benign);
+      expect(c.estimated_p50_ms).toBeLessThanOrEqual(c.estimated_p99_ms);
+    }
+  );
+
+  it('detects and flags nothing with no defense', () => {
+    const none = byName('none');
+
+    expect(none.detection_rate).toBe(0);
+    expect(none.fp_rate).toBe(0);
+  });
+
+  it('detects the most with the full chain', () => {
+    const best = Math.max(...configurations.map((c) => c.detection_rate));
+
+    expect(byName('full-chain').detection_rate).toBe(best);
+  });
+
+  it('seeds a configuration with unknown rows and two reasons', () => {
+    expect(
+      configurations.some(
+        (c) =>
+          c.unknown_attacks + c.unknown_benign > 0 &&
+          c.unknown_reasons.length >= 2
+      )
+    ).toBe(true);
+  });
+
+  it('reports the full chain as the run totals', () => {
+    const full = byName('full-chain');
+
+    expect(run!.detection_rate).toBeCloseTo(full.detection_rate, 12);
+    expect(run!.fp_rate).toBeCloseTo(full.fp_rate, 12);
+    expect(run!.counts!.true_positives).toBe(full.true_positives);
+    expect(run!.counts!.false_positives).toBe(full.false_positives);
+  });
 });

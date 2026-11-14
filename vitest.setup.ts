@@ -50,3 +50,14 @@ beforeAll(() => {
     dispatchEvent: vi.fn(() => false),
   })) as unknown as typeof window.matchMedia;
 });
+
+// jsdom has no ResizeObserver, which Radix Switch and Tooltip use to measure
+// themselves. A no-op shim is enough: nothing in jsdom has a size to observe.
+beforeAll(() => {
+  if (typeof window === 'undefined') return;
+  window.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+});

@@ -13,6 +13,16 @@ describe('describeJobError', () => {
     expect(result.code).toBe('auth_token_expired');
   });
 
+  it('maps a refused evidence mode to copy that names the allowlist variable', () => {
+    const result = describeJobError(
+      "the gateway refused evidence mode (HTTP 403 evidence_forbidden): add the submitting user's id to the gateway's PACT_CHECK_EVIDENCE_USER_IDS"
+    );
+
+    expect(result.title).toBe('This account cannot run ablation jobs.');
+    expect(result.detail).toContain('PACT_CHECK_EVIDENCE_USER_IDS');
+    expect(result.code).toBe('evidence_forbidden');
+  });
+
   it('falls back to the raw string for an unknown code, with no separate code', () => {
     const result = describeJobError('corpus row 12 failed to parse');
 

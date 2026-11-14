@@ -1,6 +1,9 @@
 import Link from 'next/link';
 
-import { BenchmarkRunRowsView } from '@/src/app/benchmark';
+import {
+  BenchmarkAblationCard,
+  BenchmarkRunRowsView,
+} from '@/src/app/benchmark';
 import { PageContainer } from '@/src/components/page-container';
 
 interface BenchmarkRunPageProps {
@@ -24,6 +27,7 @@ const BenchmarkRunPage = async ({ params }: BenchmarkRunPageProps) => {
           Per-row verdicts of run <span className="font-mono">{runId}</span>.
         </p>
       </header>
+      <BenchmarkAblationCard runId={runId} />
       <BenchmarkRunRowsView runId={runId} />
     </PageContainer>
   );

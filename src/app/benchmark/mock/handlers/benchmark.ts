@@ -25,6 +25,10 @@ import {
   TOTAL_ROWS,
 } from '@/src/app/benchmark/mock/data/benchmark';
 import {
+  MOCK_ABLATION_RESULT,
+  MOCK_ABLATION_RUN_ID,
+} from '@/src/app/benchmark/mock/data/benchmark_ablation';
+import {
   mockRunRows,
   rowMatchesOutcome,
 } from '@/src/app/benchmark/mock/data/benchmark_run_rows';
@@ -45,6 +49,9 @@ interface MockJob extends BenchmarkJobState {
    * advanceJob settles this job into `error` / `auth_token_expired` instead
    * of running it to completion. */
   authExpired: boolean;
+  /** True when the job was submitted with `ablation: true` - its finished
+   * result reports the seeded ablation run, so the run page shows the card. */
+  ablation: boolean;
 }
 
 // Mirrors pact-benchmark's corpus validation: every JSONL row whose content is
@@ -109,7 +116,7 @@ const advanceJob = (job: MockJob) => {
         total_rows: TOTAL_ROWS,
         rows: [],
         // A seeded run, so the "View rows" link lands on a page with rows.
-        run_id: MOCK_JOB_RUN_ID,
+        run_id: job.ablation ? MOCK_ABLATION_RUN_ID : MOCK_JOB_RUN_ID,
         // 6 of 200 rows (3 %) were lost (3 unscored + 3 throttled), over the
         // default 1 % threshold, so the job summary shows the degraded badge.
         degraded: true,
@@ -212,11 +219,39 @@ export const handlers: RequestHandler[] = [
     }
   ),
 
+  // The ablation run answers its configurations, any other seeded run 409
+  // (not started with ablation), and an unknown id 404. A job still in
+  // progress has no run yet, so its own id is unknown here until it finishes
+  // and reports the run id.
+  http.get(
+    `${MSW_PACT_BASE}/gateway/v1/benchmark/runs/:runId/ablation`,
+    ({ params }) => {
+      const runId = params.runId as string;
+      if (runId === MOCK_ABLATION_RUN_ID) {
+        return HttpResponse.json(MOCK_ABLATION_RESULT);
+      }
+      if (MOCK_RUNS.some((run) => run.id === runId)) {
+        return HttpResponse.json(
+          { code: 'run_not_ablation', error: 'run was not an ablation run' },
+          { status: 409 }
+        );
+      }
+
+      return HttpResponse.json(
+        { code: 'not_found', error: 'run not found' },
+        { status: 404 }
+      );
+    }
+  ),
+
   http.post(
     `${MSW_PACT_BASE}/gateway/v1/benchmark/jobs`,
     async ({ request }) => {
       await new Promise((r) => setTimeout(r, 200));
-      const body = (await request.json()) as { corpus_jsonl?: string };
+      const body = (await request.json()) as {
+        corpus_jsonl?: string;
+        ablation?: boolean;
+      };
       const corpus = body.corpus_jsonl ?? '';
       const oversizedMessage = corpus.includes(MOCK_INVALID_CORPUS_MARKER)
         ? MOCK_INVALID_CORPUS_MESSAGE
@@ -241,6 +276,7 @@ export const handlers: RequestHandler[] = [
         authExpired: Boolean(
           body.corpus_jsonl?.includes(MOCK_AUTH_EXPIRED_JOB_MARKER)
         ),
+        ablation: body.ablation === true,
       });
 
       return HttpResponse.json({ job_id: jobId }, { status: 202 });
@@ -272,6 +308,7 @@ export const handlers: RequestHandler[] = [
         pollCount: _omit2,
         rateLimitedOnPolls: _omit3,
         authExpired: _omit4,
+        ablation: _omit5,
         ...state
       } = job;
 
@@ -422,6 +459,7 @@ export const handlers: RequestHandler[] = [
         pollCount: 0,
         rateLimitedOnPolls: [],
         authExpired: false,
+        ablation: false,
         hub_import: {
           slug,
           split: body.split || 'train',
