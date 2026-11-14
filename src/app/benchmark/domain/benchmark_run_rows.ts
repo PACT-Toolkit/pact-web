@@ -90,3 +90,33 @@ export const rowAttemptsMarker = (
     title: `needed ${attempts} requests (requeued ${requeues} ${requeues === 1 ? 'time' : 'times'})`,
   };
 };
+
+/** Why a row carries no prompt text (runs stored before previews existed). */
+export const PROMPT_NOT_STORED_LABEL = 'not stored';
+export const PROMPT_NOT_STORED_EXPLANATION =
+  'Prompt text not stored for runs before previews existed';
+
+/** What a row's prompt cell must show. */
+export type RowPromptDisplay =
+  | { kind: 'stored'; text: string }
+  | { kind: 'missing'; label: string; explanation: string };
+
+/**
+ * The prompt cell content for a row. The gateway sends `""` for a row stored
+ * before previews existed (and the field is absent from older payloads), which
+ * is a missing prompt, never an empty one. The text is plain text: the caller
+ * renders it through React, never as markup.
+ */
+export const rowPromptDisplay = (
+  contentPreview: string | undefined
+): RowPromptDisplay => {
+  if (!contentPreview) {
+    return {
+      kind: 'missing',
+      label: PROMPT_NOT_STORED_LABEL,
+      explanation: PROMPT_NOT_STORED_EXPLANATION,
+    };
+  }
+
+  return { kind: 'stored', text: contentPreview };
+};

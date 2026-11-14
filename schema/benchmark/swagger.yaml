@@ -518,6 +518,12 @@ definitions:
                 type: string
             classifier_score:
                 type: number
+            content_preview:
+                description: |-
+                    ContentPreview is the first 280 Unicode code points of the row content
+                    (NUL removed), with a single trailing "…" only when the content was
+                    longer. Always present; "" means a row stored before previews existed.
+                type: string
             decision:
                 type: string
             decisive_layer:
