@@ -3,10 +3,46 @@ import { describe, expect, it } from 'vitest';
 import {
   RUN_ROW_OUTCOME_ALL,
   RUN_ROW_OUTCOMES,
+  PROMPT_NOT_STORED_EXPLANATION,
+  PROMPT_PREVIEW_EXPAND_THRESHOLD,
   isMitigatedRow,
   rowAttemptsMarker,
+  rowPromptDisplay,
   rowVerdictKind,
 } from '@/src/app/benchmark/domain/benchmark_run_rows';
+
+describe('rowPromptDisplay', () => {
+  it('reports a missing prompt for the empty legacy marker and an absent field', () => {
+    for (const preview of ['', undefined]) {
+      expect(rowPromptDisplay(preview)).toEqual({
+        kind: 'missing',
+        label: 'not stored',
+        explanation: PROMPT_NOT_STORED_EXPLANATION,
+      });
+    }
+  });
+
+  it('keeps a short preview as is and not expandable', () => {
+    expect(rowPromptDisplay('What is a mutex?')).toEqual({
+      kind: 'stored',
+      text: 'What is a mutex?',
+      expandable: false,
+    });
+  });
+
+  it('makes a preview over the threshold expandable, at the boundary', () => {
+    const atLimit = 'a'.repeat(PROMPT_PREVIEW_EXPAND_THRESHOLD);
+
+    expect(rowPromptDisplay(atLimit)).toMatchObject({ expandable: false });
+    expect(rowPromptDisplay(`${atLimit}b`)).toMatchObject({ expandable: true });
+  });
+
+  it('does not alter markup-looking text', () => {
+    const text = '<b>hi</b> **bold**';
+
+    expect(rowPromptDisplay(text)).toMatchObject({ kind: 'stored', text });
+  });
+});
 
 describe('rowVerdictKind', () => {
   it('treats a plain row as a verdict', () => {

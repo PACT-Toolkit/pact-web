@@ -150,4 +150,20 @@ describe('mock run attempts', () => {
     expect(mockRunRows('run-7')!.every((row) => row.attempts === 1)).toBe(true);
     expect(mockRunRows('run-1')!.every((row) => row.attempts === 0)).toBe(true);
   });
+
+  it('gives rows of a run with counts a stored preview, one cut at 280 code points with an ellipsis, and one with an emoji', () => {
+    const previews = mockRunRows('run-7')!.map((r) => r.content_preview ?? '');
+
+    expect(previews.every((p) => p !== '')).toBe(true);
+    const cut = previews.filter((p) => p.endsWith('…'));
+    expect(cut).toHaveLength(1);
+    expect(Array.from(cut[0])).toHaveLength(281);
+    expect(previews.some((p) => p.includes('🚀'))).toBe(true);
+  });
+
+  it('marks every row of a run without counts as stored before previews existed', () => {
+    expect(mockRunRows('run-1')!.every((r) => r.content_preview === '')).toBe(
+      true
+    );
+  });
 });

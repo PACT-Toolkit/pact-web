@@ -223,6 +223,81 @@ describe('BenchmarkRunRowsView degraded run', { timeout: 20_000 }, () => {
     }
   });
 
+  it('renders the stored prompt previews as plain text, and a cut preview expands on demand', async () => {
+    server.use(
+      http.get(`${MSW_PACT_BASE}/gateway/v1/benchmark/runs/:runId/rows`, () =>
+        HttpResponse.json({
+          total: 2,
+          rows: [
+            {
+              seq: 1,
+              row_id: 'p1',
+              expected_label: 'allow',
+              decision: 'allow',
+              latency_ms: 1,
+              content_preview: '<b>hello</b> world',
+            },
+            {
+              seq: 2,
+              row_id: 'p2',
+              expected_label: 'block',
+              decision: 'block',
+              latency_ms: 2,
+              content_preview: `${'long prompt text '.repeat(16)}…`,
+            },
+          ],
+        })
+      )
+    );
+    renderView('run-11');
+
+    const prompts = await screen.findAllByTestId('benchmark-run-rows-prompt');
+    expect(prompts[0]).toHaveTextContent('<b>hello</b> world');
+    expect(prompts[0].querySelector('b')).toBeNull();
+    expect(prompts[1].textContent!.endsWith('…')).toBe(true);
+    expect(prompts[1]).toHaveAttribute('title', prompts[1].textContent!);
+    expect(prompts[1]).toHaveClass('line-clamp-2');
+
+    // Only the long preview offers the toggle.
+    const toggle = screen.getByTestId('benchmark-run-rows-prompt-toggle');
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(prompts[1]).not.toHaveClass('line-clamp-2');
+  });
+
+  it('shows a muted not-stored placeholder with an explanation for a legacy row', async () => {
+    server.use(
+      http.get(`${MSW_PACT_BASE}/gateway/v1/benchmark/runs/:runId/rows`, () =>
+        HttpResponse.json({
+          total: 1,
+          rows: [
+            {
+              seq: 1,
+              row_id: 'old',
+              expected_label: 'allow',
+              decision: 'allow',
+              latency_ms: 1,
+              content_preview: '',
+            },
+          ],
+        })
+      )
+    );
+    renderView('run-1');
+
+    const placeholder = await screen.findByTestId(
+      'benchmark-run-rows-prompt-missing'
+    );
+    expect(placeholder).toHaveTextContent('not stored');
+    expect(placeholder).toHaveTextContent(
+      'Prompt text not stored for runs before previews existed'
+    );
+    expect(
+      screen.queryByTestId('benchmark-run-rows-prompt')
+    ).not.toBeInTheDocument();
+  });
+
   it('shows no degraded badge on a run that was not degraded', async () => {
     renderView('run-11');
 

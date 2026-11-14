@@ -11,6 +11,12 @@ export interface BenchmarkBenchmarkRunRowBody {
   category?: string;
   classifier_label?: string;
   classifier_score?: number;
+  /**
+   * ContentPreview is the first 280 Unicode code points of the row content
+   * (NUL removed), with a single trailing "…" only when the content was
+   * longer. Always present; "" means a row stored before previews existed.
+   */
+  content_preview?: string;
   decision: string;
   decisive_layer?: string;
   error?: string;

@@ -1081,6 +1081,31 @@ test.describe('Benchmark run rows', () => {
     );
   });
 
+  test('shows each row prompt preview, expandable by keyboard, and a placeholder for a run without previews', async ({
+    page,
+  }) => {
+    await page.goto('/benchmark/runs/run-7');
+    const prompts = page.getByTestId('benchmark-run-rows-prompt');
+    await expect(prompts.first()).toContainText('onboarding checklist');
+    await expect(prompts.first()).toHaveText(/…$/);
+
+    const toggle = page.getByTestId('benchmark-run-rows-prompt-toggle').first();
+    await toggle.focus();
+    await page.keyboard.press('Enter');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(prompts.first()).not.toHaveClass(/line-clamp-2/);
+
+    await page.goto('/benchmark/runs/run-1');
+    const placeholder = page
+      .getByTestId('benchmark-run-rows-prompt-missing')
+      .first();
+    await expect(placeholder).toContainText('not stored');
+    await expect(placeholder).toHaveAttribute(
+      'title',
+      'Prompt text not stored for runs before previews existed'
+    );
+  });
+
   test('passes an accessibility check on the run rows page', async ({
     page,
   }) => {

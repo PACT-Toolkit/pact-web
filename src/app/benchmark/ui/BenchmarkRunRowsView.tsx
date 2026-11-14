@@ -11,6 +11,7 @@ import {
 import { useBenchmarkRunRows } from '@/src/app/benchmark/domain/use_benchmark_run_rows';
 import { useBenchmarkRuns } from '@/src/app/benchmark/domain/use_benchmark_runs';
 import { BenchmarkDegradedBadge } from '@/src/app/benchmark/ui/BenchmarkDegradedBadge';
+import { BenchmarkRunRowPrompt } from '@/src/app/benchmark/ui/BenchmarkRunRowPrompt';
 import { BenchmarkTablePagination } from '@/src/app/benchmark/ui/BenchmarkTablePagination';
 import { BenchmarkVerdictCell } from '@/src/app/benchmark/ui/BenchmarkVerdictCell';
 import { BenchmarkVerdictChip } from '@/src/app/benchmark/ui/BenchmarkVerdictChip';
@@ -32,7 +33,7 @@ import { abbreviateHash } from '@/src/framework/format/abbreviate_hash';
 import { formatRunTimestamp } from '@/src/framework/format/run_timestamp';
 import { cn } from '@/src/lib/utils';
 
-const COLUMN_COUNT = 8;
+const COLUMN_COUNT = 9;
 
 interface BenchmarkRunRowsViewProps {
   runId: string;
@@ -186,6 +187,9 @@ export const BenchmarkRunRowsView = ({ runId }: BenchmarkRunRowsViewProps) => {
                 <th scope="col" className="px-4 py-2 font-medium">
                   Classifier
                 </th>
+                <th scope="col" className="min-w-64 px-4 py-2 font-medium">
+                  Prompt
+                </th>
                 <th scope="col" className="px-4 py-2 text-right font-medium">
                   Latency (ms)
                 </th>
@@ -273,6 +277,9 @@ const BenchmarkRunRowLine = ({ row }: { row: BenchmarkRunRow }) => (
     <td className="px-4 py-2 text-xs">{row.decisive_layer || '-'}</td>
     <td className="px-4 py-2 font-mono text-xs">{row.filter_rule_id || '-'}</td>
     <td className="px-4 py-2 text-xs tabular-nums">{classifierText(row)}</td>
+    <td className="min-w-64 max-w-sm px-4 py-2 align-top">
+      <BenchmarkRunRowPrompt contentPreview={row.content_preview} />
+    </td>
     <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">
       {row.latency_ms.toFixed(1)}
     </td>
