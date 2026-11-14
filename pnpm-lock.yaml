@@ -187,7 +187,7 @@ importers:
         version: 2.14.6(@types/node@24.12.4)(typescript@6.0.3)
       orval:
         specifier: 8.28.1
-        version: 8.28.1(@faker-js/faker@10.6.0)(prettier@3.9.6)(typescript@6.0.3)
+        version: 8.28.1(@faker-js/faker@10.6.0)(prettier@3.9.10)(typescript@6.0.3)
       otpauth:
         specifier: 9.5.1
         version: 9.5.1
@@ -195,8 +195,8 @@ importers:
         specifier: 8.20.0
         version: 8.20.0
       prettier:
-        specifier: 3.9.6
-        version: 3.9.6
+        specifier: 3.9.10
+        version: 3.9.10
       swagger2openapi:
         specifier: 7.0.8
         version: 7.0.8
@@ -6102,6 +6102,11 @@ packages:
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
+
+  prettier@3.9.10:
+    resolution: {integrity: sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA==}
+    engines: {node: '>=14'}
+    hasBin: true
 
   prettier@3.9.6:
     resolution: {integrity: sha512-OpN0zzVdiaiAhxpuuj5efpIS4sY9j7bY6uR5mnj5yPzGkdkjNKSJeUThPb60Jw29QuAZgA4o+/iB49kFiaBX6g==}
@@ -12957,7 +12962,7 @@ snapshots:
       type-check: 0.4.0
       word-wrap: 1.2.5
 
-  orval@8.28.1(@faker-js/faker@10.6.0)(prettier@3.9.6)(typescript@6.0.3):
+  orval@8.28.1(@faker-js/faker@10.6.0)(prettier@3.9.10)(typescript@6.0.3):
     dependencies:
       '@commander-js/extra-typings': 15.0.0(commander@15.0.0)
       '@orval/angular': 8.28.1(@faker-js/faker@10.6.0)(typescript@6.0.3)
@@ -12989,7 +12994,7 @@ snapshots:
       typedoc-plugin-coverage: 4.0.3(typedoc@0.28.19(typescript@6.0.3))
       typedoc-plugin-markdown: 4.12.0(typedoc@0.28.19(typescript@6.0.3))
     optionalDependencies:
-      prettier: 3.9.6
+      prettier: 3.9.10
     transitivePeerDependencies:
       - '@faker-js/faker'
       - supports-color
@@ -13201,6 +13206,8 @@ snapshots:
       xtend: 4.0.2
 
   prelude-ls@1.2.1: {}
+
+  prettier@3.9.10: {}
 
   prettier@3.9.6: {}
 
