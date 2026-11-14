@@ -51,6 +51,7 @@ export interface PactDecisions {
   rejection?: RejectionDecision;
   diagnostics?: DecisionDiagnostics;
   content_delivery?: ContentDelivery;
+  file_scan?: FileScanRef;
   latency_ms: number;
   created_at: string;
   /**
@@ -461,4 +462,20 @@ export interface ContentDelivery {
    */
   content_sha256: string;
   sink_kind: "webhook" | "s3";
+}
+/**
+ * Identifies the file piece a decision was made on, for decisions pact-gateway makes while scanning an uploaded file for pact-files (traffic_source file_scan). Identifiers and offsets only, never file content.
+ */
+export interface FileScanRef {
+  file_id: string;
+  piece_index: number;
+  /**
+   * Byte offset of the piece in the file's extracted text.
+   */
+  byte_offset: number;
+  /**
+   * Hex-encoded SHA-256 of the whole extracted text the piece was cut from.
+   */
+  content_sha256?: string;
+  scan_version?: string;
 }

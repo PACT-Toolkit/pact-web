@@ -13,9 +13,9 @@ export interface PactFiles {
    */
   event_id: string;
   /**
-   * Semantic event name - closed set. Every buildOutboxPayload call site in pact-files uses one of these three; a terminal lifecycle transition emits exactly one such event.
+   * Semantic event name - closed set. A terminal lifecycle transition emits exactly one of file_ready, file_rejected or file_deleted; file_scanned announces a finished content scan and is not a lifecycle transition (the file stays ready, so it carries status ready).
    */
-  event_type: "file_ready" | "file_rejected" | "file_deleted";
+  event_type: "file_ready" | "file_rejected" | "file_deleted" | "file_scanned";
   user_id?: string;
   file_id: string;
   filename?: string;
@@ -32,7 +32,7 @@ export interface PactFiles {
   storage_key?: string;
   thumbnail_key?: string;
   /**
-   * Event-specific metadata that does not warrant its own wire field. Open set by design - known keys today: "reason" (file_rejected, e.g. mime_mismatch/virus/size_exceeded), "actor" (file_deleted, "user" | "ttl"), "mime" (file_ready, detected MIME type).
+   * Event-specific metadata that does not warrant its own wire field. Open set by design - known keys today: "reason" (file_rejected, e.g. mime_mismatch/virus/size_exceeded), "actor" (file_deleted, "user" | "ttl"), "mime" (file_ready, detected MIME type), "scan_verdict" (file_scanned: allowed | blocked | failed | skipped), "scan_stage", "scan_reason", "scan_hash" (sha256 hex of the scanned text) and "scan_version" (file_scanned).
    */
   extras?: {
     [k: string]: string;

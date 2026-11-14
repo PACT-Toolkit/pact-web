@@ -33,6 +33,16 @@ export const PIPELINE_STAGE_LABEL: Record<PipelineStageId, string> = {
   redactor: 'Redactor',
 };
 
+// Label lookup for a stage id that arrives as wire data (an open set): a Map
+// so inherited keys such as "constructor" never match, undefined for a stage
+// this build does not know.
+const STAGE_LABEL_BY_ID = new Map<string, string>(
+  Object.entries(PIPELINE_STAGE_LABEL)
+);
+
+export const pipelineStageLabel = (id: string): string | undefined =>
+  STAGE_LABEL_BY_ID.get(id);
+
 // One icon per pipeline stage (consensus/redactor/sandbox
 // alongside the original filter/classifier pair). Shared between the Test
 // Lab's TestLabLayerNode and the audit console's StageStrip --

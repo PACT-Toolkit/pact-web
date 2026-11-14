@@ -1,5 +1,14 @@
 basePath: /
 definitions:
+    boundary.InputTooLargeResponse:
+        properties:
+            code:
+                type: string
+            error:
+                type: string
+            max_input_bytes:
+                type: integer
+        type: object
     check.CausalSpanInfo:
         properties:
             end:
@@ -337,7 +346,7 @@ paths:
         post:
             consumes:
                 - application/json
-            description: Content over the classifier's token ceiling cannot be fully scanned and is answered with HTTP 200 and decision block, reason classifier_input_too_large, not a 400.
+            description: 'Two limits apply to the scanned text. The hard byte ceiling is 40,573 bytes of UTF-8 text by default (setting MAX_INPUT_BYTES): larger content never reaches a stage and is answered with HTTP 413, code input_too_large and max_input_bytes, and is audited as a block. Below it, the classifier scores at most 6,242 tokens, which is the binding limit for typical text: English prose is fully scored up to about 26 KB (roughly 4,600 words), and code or non-English text up to fewer bytes. Content over the token budget but under the byte ceiling cannot be fully scanned and is answered with HTTP 200 and decision block, reason classifier_input_too_large, not a 400.'
             operationId: checkContent
             parameters:
                 - description: Content and kind (input|output); optional conversation_id, traffic_source, tool_id, scope
@@ -369,6 +378,10 @@ paths:
                     description: missing or invalid bearer token
                     schema:
                         type: string
+                "413":
+                    description: 'scanned content exceeds the input ceiling: code input_too_large, max_input_bytes carries the ceiling in bytes'
+                    schema:
+                        $ref: '#/definitions/boundary.InputTooLargeResponse'
                 "429":
                     description: 'per-IP rate limit exceeded, benchmark replay traffic throttled, or the safety classifier is saturated: retryable, with Retry-After and code classifier_saturated'
                     schema:

@@ -7,11 +7,7 @@ import {
   type FilesFileResponse,
   useGetFiles,
 } from '@/src/__codegen__/rest/files';
-import { DEFAULT_FILE_STATUS } from '@/src/app/files/domain/file_status';
-import {
-  isTerminal,
-  POLL_INTERVAL_MS,
-} from '@/src/app/files/domain/files_upload';
+import { listRefreshInterval } from '@/src/app/files/domain/files_upload';
 import {
   type UploadFileFailure,
   uploadFile,
@@ -63,14 +59,10 @@ export const FilesWorkbench = () => {
     { limit: 100, offset: 0 },
     {
       swr: {
-        refreshInterval: (latestData) => {
-          const files =
-            latestData?.status === 200 ? (latestData.data.files ?? []) : [];
-
-          return files.some((f) => !isTerminal(f.status ?? DEFAULT_FILE_STATUS))
-            ? POLL_INTERVAL_MS
-            : 0;
-        },
+        refreshInterval: (latestData) =>
+          listRefreshInterval(
+            latestData?.status === 200 ? (latestData.data.files ?? []) : []
+          ),
       },
     }
   );
@@ -160,7 +152,7 @@ export const FilesWorkbench = () => {
             <CardDescription>
               {serverTotal === 0
                 ? 'No uploads yet.'
-                : `${serverTotal} file${serverTotal === 1 ? '' : 's'} on the server. Status refreshes every ${POLL_INTERVAL_MS / 1000}s while anything is still processing.`}
+                : `${serverTotal} file${serverTotal === 1 ? '' : 's'} on the server. Status refreshes automatically while anything is still processing or being scanned.`}
             </CardDescription>
           </div>
           <Button

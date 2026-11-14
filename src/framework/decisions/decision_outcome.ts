@@ -51,9 +51,16 @@ const REASON_DESCRIPTION = new Map<string, string>([
   ['classifier_saturated', CLASSIFIER_SATURATED_DESCRIPTION],
 ]);
 
+// Plain-words text for a bare reason code, for callers that hold a reason
+// without a whole DecisionPayload (the files list's scan verdict).
+// undefined means the code has no friendly wording: show it verbatim.
+export const reasonCodeDescription = (
+  reason: string | undefined
+): string | undefined => REASON_DESCRIPTION.get(reason ?? '');
+
 export const decisionReasonDescription = (
   payload: DecisionPayload
 ): string | undefined =>
   payload.decision === 'canceled'
     ? CLIENT_CANCELED_DESCRIPTION
-    : REASON_DESCRIPTION.get(payload.reason ?? '');
+    : reasonCodeDescription(payload.reason);

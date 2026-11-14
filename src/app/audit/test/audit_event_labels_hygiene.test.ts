@@ -51,7 +51,12 @@ const CANONICAL_ACCOUNT_EVENTS = [
   'preferences_updated',
 ];
 
-const CANONICAL_FILES_EVENTS = ['file_ready', 'file_rejected', 'file_deleted'];
+const CANONICAL_FILES_EVENTS = [
+  'file_ready',
+  'file_rejected',
+  'file_deleted',
+  'file_scanned',
+];
 
 describe('audit event-label drift guard', () => {
   it('AUTH_EVENT_LABELS covers exactly the canonical pact-auth event set', () => {

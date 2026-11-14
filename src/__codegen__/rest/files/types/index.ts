@@ -8,6 +8,7 @@
 
 export * from './boundaryErrorResponse';
 export * from './filesFileResponse';
+export * from './filesFileResponseScanStatus';
 export * from './filesGetFileResponse';
 export * from './filesListFilesResponse';
 export * from './filesRequestUploadBody';

@@ -94,6 +94,9 @@
     "content_delivery": {
       "$ref": "#/$defs/contentDelivery"
     },
+    "file_scan": {
+      "$ref": "#/$defs/fileScanRef"
+    },
     "latency_ms": {
       "type": "integer"
     },
@@ -108,6 +111,33 @@
     }
   },
   "$defs": {
+    "fileScanRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file_id", "piece_index", "byte_offset"],
+      "description": "Identifies the file piece a decision was made on, for decisions pact-gateway makes while scanning an uploaded file for pact-files (traffic_source file_scan). Identifiers and offsets only, never file content.",
+      "properties": {
+        "file_id": {
+          "type": "string"
+        },
+        "piece_index": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "byte_offset": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Byte offset of the piece in the file's extracted text."
+        },
+        "content_sha256": {
+          "type": "string",
+          "description": "Hex-encoded SHA-256 of the whole extracted text the piece was cut from."
+        },
+        "scan_version": {
+          "type": "string"
+        }
+      }
+    },
     "contentRef": {
       "type": "object",
       "additionalProperties": false,

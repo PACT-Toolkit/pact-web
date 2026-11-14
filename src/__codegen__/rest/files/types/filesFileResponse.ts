@@ -5,6 +5,7 @@
  * Public REST entrypoint for the PACT safety pipeline.
  * OpenAPI spec version: 0.1.0
  */
+import type { FilesFileResponseScanStatus } from './filesFileResponseScanStatus';
 
 export interface FilesFileResponse {
   contentType?: string;
@@ -12,6 +13,24 @@ export interface FilesFileResponse {
   filename?: string;
   id?: string;
   purpose?: string;
+  /**
+   * ScanReason is a machine-readable reason code for a blocked or failed
+   * verdict, for example "filter_hostile" or "scan_unavailable". Open set:
+   * clients map codes to display text and must not render it raw.
+   */
+  scanReason?: string;
+  /**
+   * ScanStage names the gateway pipeline stage that blocked the file, for
+   * example "filter". Empty unless scanStatus is "blocked". Open set.
+   */
+  scanStage?: string;
+  /**
+   * ScanStatus is the content-scan verdict. "unknown" means the files
+   * service did not report a verdict and must not be shown as cleared.
+   */
+  scanStatus?: FilesFileResponseScanStatus;
+  /** ScannedAt is when the last scan finished; absent if never scanned. */
+  scannedAt?: string;
   sizeBytes?: number;
   status?: string;
   storageKey?: string;

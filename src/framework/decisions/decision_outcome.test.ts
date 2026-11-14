@@ -4,6 +4,7 @@ import {
   decisionLabel,
   decisionReasonDescription,
   decisionTone,
+  reasonCodeDescription,
 } from '@/src/framework/decisions/decision_outcome';
 
 describe('decisionTone', () => {
@@ -67,5 +68,16 @@ describe('decisionReasonDescription', () => {
     expect(
       decisionReasonDescription({ decision: 'block', reason: 'constructor' })
     ).toBeUndefined();
+  });
+});
+
+describe('reasonCodeDescription', () => {
+  it('words known codes without a payload and leaves the rest undefined', () => {
+    expect(reasonCodeDescription('classifier_saturated')).toBe(
+      'Classifier at capacity - retry later'
+    );
+    expect(reasonCodeDescription('filter_hostile')).toBeUndefined();
+    expect(reasonCodeDescription('constructor')).toBeUndefined();
+    expect(reasonCodeDescription(undefined)).toBeUndefined();
   });
 });
