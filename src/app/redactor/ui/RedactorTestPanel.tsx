@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { checkRequestFailed } from '@/src/framework/decisions/check_request_failed';
 import { describeInputTooLarge } from '@/src/framework/decisions/input_too_large';
 import { InputTooLargeNotice } from '@/src/framework/decisions/input_too_large_notice';
 
@@ -49,9 +50,7 @@ export const RedactorTestPanel = () => {
     data && submittedContent !== null
       ? describeInputTooLarge(data, submittedContent)
       : undefined;
-  const requestFailed =
-    !inputTooLarge &&
-    (Boolean(error) || (data !== undefined && data.status !== 200));
+  const requestFailed = checkRequestFailed(error, data, inputTooLarge);
   // True once the textarea has been edited past the text that produced
   // `result` -- the result is still shown (it's genuine output for real
   // input), but labelled as stale rather than silently re-targeted.

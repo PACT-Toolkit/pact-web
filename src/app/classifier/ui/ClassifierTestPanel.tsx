@@ -20,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { checkRequestFailed } from '@/src/framework/decisions/check_request_failed';
 import { describeInputTooLarge } from '@/src/framework/decisions/input_too_large';
 import { InputTooLargeNotice } from '@/src/framework/decisions/input_too_large_notice';
 import { formatPercent } from '@/src/framework/format/format_percent';
@@ -68,9 +69,7 @@ export const ClassifierTestPanel = () => {
   const inputTooLarge = data
     ? describeInputTooLarge(data, submittedContent)
     : undefined;
-  const requestFailed =
-    !inputTooLarge &&
-    (Boolean(error) || (data !== undefined && data.status !== 200));
+  const requestFailed = checkRequestFailed(error, data, inputTooLarge);
   const classifier = result?.classifier;
 
   const runTest = () => {
