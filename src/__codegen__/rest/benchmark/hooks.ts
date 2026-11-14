@@ -23,6 +23,7 @@ import type {
   BenchmarkListRunRowsResponse,
   BenchmarkListRunsResponse,
   BenchmarkListTestLabRunsResponse,
+  BenchmarkRunAblationResponse,
   BenchmarkSaveCorpusRequest,
   BenchmarkSaveCorpusResponse,
   BenchmarkSaveTestLabRunRequest,
@@ -164,6 +165,19 @@ import {
   listBenchmarkRunsResponse,
   listBenchmarkRuns,
   getListBenchmarkRunsKey,
+  getBenchmarkRunAblationResponse200,
+  getBenchmarkRunAblationResponse400,
+  getBenchmarkRunAblationResponse401,
+  getBenchmarkRunAblationResponse404,
+  getBenchmarkRunAblationResponse409,
+  getBenchmarkRunAblationResponse502,
+  getBenchmarkRunAblationResponse503,
+  getBenchmarkRunAblationResponseSuccess,
+  getBenchmarkRunAblationResponseError,
+  getGetBenchmarkRunAblationUrl,
+  getBenchmarkRunAblationResponse,
+  getBenchmarkRunAblation,
+  getGetBenchmarkRunAblationKey,
   listBenchmarkRunRowsResponse200,
   listBenchmarkRunRowsResponse400,
   listBenchmarkRunRowsResponse401,
@@ -590,6 +604,46 @@ export const useListBenchmarkRuns = <TError = string | BoundaryErrorResponse>(
     swrOptions?.swrKey ??
     (() => (isEnabled ? getListBenchmarkRunsKey(params) : null));
   const swrFn = () => listBenchmarkRuns(params, requestOptions);
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
+    swrKey,
+    swrFn,
+    swrOptions
+  );
+
+  return {
+    swrKey,
+    ...query,
+  };
+};
+
+export type GetBenchmarkRunAblationQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getBenchmarkRunAblation>>
+>;
+
+/**
+ * @summary Read the derived defense configurations of an ablation run
+ */
+export const useGetBenchmarkRunAblation = <
+  TError = string | BoundaryErrorResponse,
+>(
+  id: string,
+  options?: {
+    swr?: SWRConfiguration<
+      Awaited<ReturnType<typeof getBenchmarkRunAblation>>,
+      TError
+    > & { swrKey?: Key; enabled?: boolean };
+    request?: SecondParameter<typeof customFetch>;
+  }
+) => {
+  const { swr: swrOptions, request: requestOptions } = options ?? {};
+
+  const isEnabled =
+    swrOptions?.enabled !== false && id !== null && id !== undefined;
+  const swrKey =
+    swrOptions?.swrKey ??
+    (() => (isEnabled ? getGetBenchmarkRunAblationKey(id) : null));
+  const swrFn = () => getBenchmarkRunAblation(id, requestOptions);
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(
     swrKey,

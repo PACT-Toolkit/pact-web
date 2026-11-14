@@ -19,6 +19,15 @@ export interface CheckCheckRequest {
    */
   conversation_id?: string;
   /**
+   * Evidence opts this call into evidence mode: the response gains an
+   * evidence object reporting, per defense layer, whether that layer alone
+   * would have blocked the input and how long it took. The returned decision
+   * is the real posture's decision, unchanged. Restricted to authorized
+   * callers: anyone else gets 403 with code evidence_forbidden. Optional;
+   * absent or false leaves the response byte-identical to a normal call.
+   */
+  evidence?: boolean;
+  /**
    * ExternalRefs is an optional list of third-party references (URLs) the
    * gateway fetches in an isolated worker and re-scans for indirect prompt
    * injection. When present and the sandbox is enabled, the request

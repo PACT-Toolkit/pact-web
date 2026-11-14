@@ -1,6 +1,7 @@
 import { type BenchmarkCorpusDataset } from '@/src/app/benchmark/domain/benchmark_corpus_library';
 import { type RowResult } from '@/src/app/benchmark/domain/benchmark_job';
 import { type BenchmarkRun } from '@/src/app/benchmark/domain/benchmark_run';
+import { buildMockAblationRun } from '@/src/app/benchmark/mock/data/benchmark_ablation';
 
 export const TOTAL_ROWS = 200;
 
@@ -669,6 +670,10 @@ export const MOCK_RUNS: BenchmarkRun[] = [
       requeues: 0,
     },
   },
+  // Started with ablation: its derived configurations are served by
+  // MOCK_ABLATION_RESULT. Four days old, so the newest-run defaults of the
+  // charts and comparison keep landing on run-8.
+  buildMockAblationRun(NOW),
 ];
 
 // Mirrors the real pact-benchmark corpus_library table as verified end-to-end

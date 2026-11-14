@@ -1,5 +1,66 @@
 basePath: /
 definitions:
+    benchmark.AblationConfigurationBody:
+        properties:
+            attacks:
+                type: integer
+            benign:
+                type: integer
+            detection_ci:
+                $ref: '#/definitions/benchmark.WilsonIntervalBody'
+            detection_rate:
+                type: number
+            errors:
+                type: integer
+            estimated_p50_ms:
+                type: number
+            estimated_p99_ms:
+                type: number
+            false_positives:
+                type: integer
+            fp_ci:
+                $ref: '#/definitions/benchmark.WilsonIntervalBody'
+            fp_rate:
+                type: number
+            name:
+                type: string
+            true_positives:
+                type: integer
+            unknown_attacks:
+                type: integer
+            unknown_benign:
+                type: integer
+            unknown_reasons:
+                items:
+                    $ref: '#/definitions/benchmark.AblationUnknownReasonBody'
+                type: array
+        required:
+            - attacks
+            - benign
+            - detection_ci
+            - detection_rate
+            - errors
+            - estimated_p50_ms
+            - estimated_p99_ms
+            - false_positives
+            - fp_ci
+            - fp_rate
+            - name
+            - true_positives
+            - unknown_attacks
+            - unknown_benign
+            - unknown_reasons
+        type: object
+    benchmark.AblationUnknownReasonBody:
+        properties:
+            layers:
+                type: integer
+            reason:
+                type: string
+        required:
+            - layers
+            - reason
+        type: object
     benchmark.AdaptiveCampaignAttemptBody:
         properties:
             attempt:
@@ -846,6 +907,23 @@ definitions:
             - runs
             - total
         type: object
+    benchmark.RunAblationResponse:
+        properties:
+            configurations:
+                items:
+                    $ref: '#/definitions/benchmark.AblationConfigurationBody'
+                type: array
+            notes:
+                items:
+                    type: string
+                type: array
+            run_id:
+                type: string
+        required:
+            - configurations
+            - notes
+            - run_id
+        type: object
     benchmark.RunCountsBody:
         properties:
             attacks:
@@ -1011,6 +1089,12 @@ definitions:
         type: object
     benchmark.SubmitJobRequest:
         properties:
+            ablation:
+                description: |-
+                    Ablation runs every row in gateway evidence mode so the persisted run
+                    can be read back as the derived defense configurations with GET
+                    /v1/benchmark/runs/{id}/ablation. Omitted means false.
+                type: boolean
             corpus_jsonl:
                 type: string
             engine:
@@ -1089,6 +1173,16 @@ definitions:
             - layers
             - rows_missing_stages
             - rows_total
+        type: object
+    benchmark.WilsonIntervalBody:
+        properties:
+            lower:
+                type: number
+            upper:
+                type: number
+        required:
+            - lower
+            - upper
         type: object
     boundary.ErrorResponse:
         properties:
@@ -1589,6 +1683,51 @@ paths:
             security:
                 - Bearer: []
             summary: List persisted benchmark run history
+            tags:
+                - benchmark
+    /v1/benchmark/runs/{id}/ablation:
+        get:
+            operationId: getBenchmarkRunAblation
+            parameters:
+                - description: Run ID (BenchmarkRun.id) of a run started with ablation=true
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+            produces:
+                - application/json
+            responses:
+                "200":
+                    description: OK
+                    schema:
+                        $ref: '#/definitions/benchmark.RunAblationResponse'
+                "400":
+                    description: missing run id
+                    schema:
+                        type: string
+                "401":
+                    description: missing or invalid bearer token
+                    schema:
+                        type: string
+                "404":
+                    description: run not found
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "409":
+                    description: run was not an ablation run (code run_not_ablation)
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "502":
+                    description: upstream error
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "503":
+                    description: pact-benchmark unavailable
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+            security:
+                - Bearer: []
+            summary: Read the derived defense configurations of an ablation run
             tags:
                 - benchmark
     /v1/benchmark/runs/{id}/rows:

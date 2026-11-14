@@ -46,7 +46,10 @@ export const BenchmarkWorkbench = () => {
     rateLimitRetries,
   } = useBenchmarkJobState(jobId);
 
-  const handleSubmit = async (corpusText: string) => {
+  const handleSubmit = async (
+    corpusText: string,
+    { ablation }: { ablation: boolean }
+  ) => {
     setIsUploadSubmitting(true);
     setSubmitError(null);
     setJobId(null);
@@ -54,6 +57,8 @@ export const BenchmarkWorkbench = () => {
     try {
       const response = await submitBenchmarkJob({
         corpus_jsonl: corpusText,
+        // Omitted, not false, when off: the gateway reads absence as false.
+        ...(ablation ? { ablation: true } : {}),
       });
       if (response.status !== 202) {
         setSubmitError({

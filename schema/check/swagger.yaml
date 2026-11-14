@@ -1,5 +1,12 @@
 basePath: /
 definitions:
+    boundary.ErrorResponse:
+        properties:
+            code:
+                type: string
+            error:
+                type: string
+        type: object
     boundary.InputTooLargeResponse:
         properties:
             code:
@@ -28,6 +35,15 @@ definitions:
                     via the X-Pact-Conversation-Id header; the body value wins when both are
                     present. Opaque to the gateway - never parsed or validated.
                 type: string
+            evidence:
+                description: |-
+                    Evidence opts this call into evidence mode: the response gains an
+                    evidence object reporting, per defense layer, whether that layer alone
+                    would have blocked the input and how long it took. The returned decision
+                    is the real posture's decision, unchanged. Restricted to authorized
+                    callers: anyone else gets 403 with code evidence_forbidden. Optional;
+                    absent or false leaves the response byte-identical to a normal call.
+                type: boolean
             external_refs:
                 description: |-
                     ExternalRefs is an optional list of third-party references (URLs) the
@@ -91,6 +107,10 @@ definitions:
                 type: string
             diagnostics:
                 $ref: '#/definitions/check.DiagnosticsInfo'
+            evidence:
+                allOf:
+                    - $ref: '#/definitions/check.EvidenceInfo'
+                description: Evidence is present only on an evidence-mode request.
             external_refs:
                 $ref: '#/definitions/check.ExternalRefsInfo'
             filter:
@@ -177,6 +197,51 @@ definitions:
                 items:
                     $ref: '#/definitions/check.CausalSpanInfo'
                 type: array
+        type: object
+    check.EvidenceInfo:
+        properties:
+            classifier:
+                $ref: '#/definitions/check.EvidenceLayerInfo'
+            classifier_consensus:
+                $ref: '#/definitions/check.EvidenceLayerInfo'
+            filter_rules:
+                $ref: '#/definitions/check.EvidenceLayerInfo'
+            filter_rules_similarity:
+                $ref: '#/definitions/check.EvidenceLayerInfo'
+            other_stages:
+                $ref: '#/definitions/check.EvidenceLayerInfo'
+        type: object
+    check.EvidenceLayerInfo:
+        properties:
+            duration_ms:
+                description: |-
+                    DurationMs is the wall-clock time of the call(s) behind the verdict in
+                    fractional milliseconds; present only when evaluated is true.
+                type: number
+            evaluated:
+                description: Evaluated is false when the layer produced no verdict.
+                type: boolean
+            reason:
+                description: |-
+                    Reason explains an unevaluated layer, or annotates an evaluated one
+                    (input_too_large: content over the classifier's ceiling, which blocks).
+                enum:
+                    - filter_unavailable
+                    - tier_not_reported
+                    - classifier_unavailable
+                    - classifier_saturated
+                    - input_too_large
+                    - classifier_mitigation_failed
+                    - consensus_not_configured
+                    - consensus_unavailable
+                    - stage_error
+                    - deadline_exceeded
+                type: string
+            would_block:
+                description: |-
+                    WouldBlock is whether this layer alone would have blocked the input.
+                    Meaningful only when evaluated is true.
+                type: boolean
         type: object
     check.ExternalRef:
         properties:
@@ -346,7 +411,7 @@ paths:
         post:
             consumes:
                 - application/json
-            description: 'Two limits apply to the scanned text. The hard byte ceiling is 40,573 bytes of UTF-8 text by default (setting MAX_INPUT_BYTES): larger content never reaches a stage and is answered with HTTP 413, code input_too_large and max_input_bytes, and is audited as a block. Below it, the classifier scores at most 6,242 tokens, which is the binding limit for typical text: English prose is fully scored up to about 26 KB (roughly 4,600 words), and code or non-English text up to fewer bytes. Content over the token budget but under the byte ceiling cannot be fully scanned and is answered with HTTP 200 and decision block, reason classifier_input_too_large, not a 400.'
+            description: 'Evidence mode (body field evidence=true, authorized callers only) adds an evidence object to the response: per defense layer, whether that layer alone would have blocked the input. The decision is unchanged. Two limits apply to the scanned text. The hard byte ceiling is 40,573 bytes of UTF-8 text by default (setting MAX_INPUT_BYTES): larger content never reaches a stage and is answered with HTTP 413, code input_too_large and max_input_bytes, and is audited as a block. Below it, the classifier scores at most 6,242 tokens, which is the binding limit for typical text: English prose is fully scored up to about 26 KB (roughly 4,600 words), and code or non-English text up to fewer bytes. Content over the token budget but under the byte ceiling cannot be fully scanned and is answered with HTTP 200 and decision block, reason classifier_input_too_large, not a 400.'
             operationId: checkContent
             parameters:
                 - description: Content and kind (input|output); optional conversation_id, traffic_source, tool_id, scope
@@ -378,6 +443,10 @@ paths:
                     description: missing or invalid bearer token
                     schema:
                         type: string
+                "403":
+                    description: 'evidence mode requested by a caller that is not authorized for it: code evidence_forbidden'
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "413":
                     description: 'scanned content exceeds the input ceiling: code input_too_large, max_input_bytes carries the ceiling in bytes'
                     schema:

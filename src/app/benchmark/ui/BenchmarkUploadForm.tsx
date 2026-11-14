@@ -21,9 +21,14 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { Label } from '@/src/components/ui/label';
+import { Switch } from '@/src/components/ui/switch';
 
 interface BenchmarkUploadFormProps {
-  onSubmit: (corpusText: string) => Promise<void>;
+  /** `ablation` is true only when the operator switched the option on. */
+  onSubmit: (
+    corpusText: string,
+    options: { ablation: boolean }
+  ) => Promise<void>;
   /** True only while this form's own submission is in flight - drives the
    * "Submitting..." button copy. Kept separate from `disabled` so a
    * concurrent submission from a sibling form never makes this button claim
@@ -50,6 +55,7 @@ export const BenchmarkUploadForm = ({
   const [labelColumnOverride, setLabelColumnOverride] = useState<string | null>(
     null
   );
+  const [ablation, setAblation] = useState(false);
   const [valueDecisionOverrides, setValueDecisionOverrides] = useState<
     Record<string, LabelDecision>
   >({});
@@ -156,7 +162,7 @@ export const BenchmarkUploadForm = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!normalized || normalized.rows.length === 0) return;
-    await onSubmit(normalized.jsonl);
+    await onSubmit(normalized.jsonl, { ablation });
   };
 
   const canSubmit = normalized !== null && normalized.rows.length > 0;
@@ -221,6 +227,26 @@ export const BenchmarkUploadForm = ({
               totals={normalized.totals}
             />
           )}
+
+          <div className="flex items-start gap-3">
+            <Switch
+              id="benchmark-ablation"
+              checked={ablation}
+              onCheckedChange={setAblation}
+              aria-describedby="benchmark-ablation-help"
+              data-testid="benchmark-upload-ablation"
+            />
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="benchmark-ablation">Ablation</Label>
+              <p
+                id="benchmark-ablation-help"
+                className="text-xs text-muted-foreground"
+              >
+                Runs every row once in evidence mode and derives the seven
+                defense configurations. Latencies are estimated.
+              </p>
+            </div>
+          </div>
 
           <Button
             type="submit"

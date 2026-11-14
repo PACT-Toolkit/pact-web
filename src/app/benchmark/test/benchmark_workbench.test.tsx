@@ -152,6 +152,29 @@ describe('BenchmarkWorkbench request bodies', () => {
     expect(bodies[0]).not.toHaveProperty('gateway_url');
   });
 
+  it('omits ablation from the upload job when the option is off', async () => {
+    const bodies = captureJsonBodies('jobs');
+    renderWorkbench();
+    await uploadCorpusFile();
+
+    fireEvent.click(screen.getByTestId('benchmark-upload-submit'));
+
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]).not.toHaveProperty('ablation');
+  });
+
+  it('submits the upload job with ablation true when the option is on', async () => {
+    const bodies = captureJsonBodies('jobs');
+    renderWorkbench();
+    await uploadCorpusFile();
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Ablation' }));
+    fireEvent.click(screen.getByTestId('benchmark-upload-submit'));
+
+    await waitFor(() => expect(bodies).toHaveLength(1));
+    expect(bodies[0]).toHaveProperty('ablation', true);
+  });
+
   it('submits the dataset import without gateway_url', async () => {
     const bodies = captureJsonBodies('imports');
     renderWorkbench();
