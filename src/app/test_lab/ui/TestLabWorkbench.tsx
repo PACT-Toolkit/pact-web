@@ -13,7 +13,6 @@ import { TestLabAttackInput } from '@/src/app/test_lab/ui/TestLabAttackInput';
 import { TestLabPipelineCard } from '@/src/app/test_lab/ui/TestLabPipelineCard';
 import { TestLabRunHistory } from '@/src/app/test_lab/ui/TestLabRunHistory';
 import { type AttackChip } from '@/src/app/test_lab/ui/types';
-import { InputTooLargeNotice } from '@/src/framework/decisions/input_too_large_notice';
 
 export const TestLabWorkbench = () => {
   const [inputText, setInputText] = useState('');
@@ -59,19 +58,13 @@ export const TestLabWorkbench = () => {
           if (example) setInputText(example);
         }}
         status={status}
+        inputTooLargeMessage={status === 'done' ? inputTooLargeMessage : null}
         onRun={handleRun}
         onFileSelect={(text, type) => {
           setInputText(text);
           setAttackType(type);
         }}
       />
-
-      {inputTooLargeMessage && status === 'done' && (
-        <InputTooLargeNotice
-          message={inputTooLargeMessage}
-          testId="test-lab-input-too-large"
-        />
-      )}
 
       {status !== 'idle' && (
         <TestLabPipelineCard

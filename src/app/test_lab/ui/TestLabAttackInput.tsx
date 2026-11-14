@@ -11,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { InputTooLargeNotice } from '@/src/framework/decisions/input_too_large_notice';
 import { isMock, isProduction } from '@/src/framework/helpers/environment';
 
 import { type AttackChip, type RunStatus } from './types';
@@ -25,6 +26,7 @@ export const TestLabAttackInput = ({
   status,
   onRun,
   onFileSelect,
+  inputTooLargeMessage = null,
 }: {
   inputText: string;
   onInputChange: (text: string) => void;
@@ -35,6 +37,9 @@ export const TestLabAttackInput = ({
   status: RunStatus;
   onRun: () => void;
   onFileSelect: (text: string, type: string) => void;
+  // Size message for a run the gateway refused with a 413, shown next to
+  // the Run Test button like the other check consoles.
+  inputTooLargeMessage?: string | null;
 }) => {
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -86,7 +91,7 @@ export const TestLabAttackInput = ({
           className="w-full resize-none rounded-md border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <input
             ref={fileRef}
             type="file"
@@ -119,6 +124,12 @@ export const TestLabAttackInput = ({
             >
               {isMock() ? 'MOCK' : 'LIVE'}
             </span>
+          )}
+          {inputTooLargeMessage && (
+            <InputTooLargeNotice
+              message={inputTooLargeMessage}
+              testId="test-lab-input-too-large"
+            />
           )}
           {status === 'error' && (
             <span className="text-xs text-destructive">
