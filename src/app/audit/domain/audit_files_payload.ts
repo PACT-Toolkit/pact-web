@@ -28,6 +28,7 @@ export const FILES_EVENT_LABELS: Record<PactFiles['event_type'], string> = {
   file_ready: 'File ready',
   file_rejected: 'File rejected',
   file_deleted: 'File deleted',
+  file_scanned: 'File scanned',
 };
 
 export const decodeFilesPayload = (raw: string): FilesPayload | null => {

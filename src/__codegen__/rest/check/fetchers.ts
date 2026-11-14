@@ -8,7 +8,11 @@
 
 import type { Key } from 'swr';
 
-import type { CheckCheckRequest, CheckCheckResponse } from './types';
+import type {
+  BoundaryInputTooLargeResponse,
+  CheckCheckRequest,
+  CheckCheckResponse,
+} from './types';
 
 import { customFetch } from '../custom_fetch';
 
@@ -27,6 +31,11 @@ export type checkContentResponse400 = {
 export type checkContentResponse401 = {
   data: string;
   status: 401;
+};
+
+export type checkContentResponse413 = {
+  data: BoundaryInputTooLargeResponse;
+  status: 413;
 };
 
 export type checkContentResponse429 = {
@@ -51,6 +60,7 @@ export type checkContentResponseSuccess = checkContentResponse200 & {
 export type checkContentResponseError = (
   | checkContentResponse400
   | checkContentResponse401
+  | checkContentResponse413
   | checkContentResponse429
   | checkContentResponse503
   | checkContentResponse504
@@ -66,7 +76,7 @@ export const getCheckContentUrl = () => {
 };
 
 /**
- * Content over the classifier's token ceiling cannot be fully scanned and is answered with HTTP 200 and decision block, reason classifier_input_too_large, not a 400.
+ * Two limits apply to the scanned text. The hard byte ceiling is 40,573 bytes of UTF-8 text by default (setting MAX_INPUT_BYTES): larger content never reaches a stage and is answered with HTTP 413, code input_too_large and max_input_bytes, and is audited as a block. Below it, the classifier scores at most 6,242 tokens, which is the binding limit for typical text: English prose is fully scored up to about 26 KB (roughly 4,600 words), and code or non-English text up to fewer bytes. Content over the token budget but under the byte ceiling cannot be fully scanned and is answered with HTTP 200 and decision block, reason classifier_input_too_large, not a 400.
  * @summary Evaluate content against the safety pipeline
  */
 export const checkContent = async (

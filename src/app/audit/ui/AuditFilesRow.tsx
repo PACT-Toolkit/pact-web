@@ -25,8 +25,13 @@ export const AuditFilesRow = ({
 }) => {
   const eventType = payload.event_type;
   const label = eventType ? (FILES_EVENT_LABELS[eventType] ?? eventType) : null;
+  // A scan event is a bad outcome only when the verdict says so; a passed,
+  // failed or skipped scan keeps the default styling.
   const isRejectedOrDeleted =
-    eventType === 'file_rejected' || eventType === 'file_deleted';
+    eventType === 'file_rejected' ||
+    eventType === 'file_deleted' ||
+    (eventType === 'file_scanned' &&
+      payload.extras?.scan_verdict === 'blocked');
 
   return (
     <AuditRowShell

@@ -256,6 +256,17 @@ export const createAuditMockData = (db: DB): void => {
     purpose: 'export',
     status: 'deleted',
   });
+  seedFiles(3 * hour + 5 * min, 'req-files-d4', {
+    event_id: uuidv4(),
+    event_type: 'file_scanned',
+    user_id: MOCK_USER_ID,
+    file_id: uuidv4(),
+    filename: 'oversize-prompt.txt',
+    content_type: 'text/plain',
+    purpose: 'attachment',
+    status: 'ready',
+    extras: { scan_verdict: 'blocked', scan_stage: 'classifier' },
+  });
 };
 
 // The decision-annotations flag needs to survive a real page reload

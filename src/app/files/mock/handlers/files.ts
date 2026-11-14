@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { db } from '@/mocks/data/dbFactory';
 import { type FilesFileResponse } from '@/src/__codegen__/rest/files';
+import { isScanBlocked } from '@/src/app/files/domain/file_scan_status';
 import { MINT_FAILURE_FILE_ID } from '@/src/app/files/mock/data/files';
 
 // How long a "processing" row stays processing before the mock pipeline
@@ -11,26 +12,63 @@ import { MINT_FAILURE_FILE_ID } from '@/src/app/files/mock/data/files';
 // polling (POLL_INTERVAL_MS) to have something to observe.
 const PROCESSING_DURATION_MS = 3_000;
 
-// Settles a "processing" row into "ready" once PROCESSING_DURATION_MS has
-// elapsed since it started processing, computed lazily at read time
-// (list/get) rather than via a real timer - avoids leaking timers across
-// Vitest runs (same reasoning as benchmark.ts's advanceJob, which uses the
-// same read-time-advance pattern for job polling).
-const settle = (file: FilesFileResponse): FilesFileResponse => {
-  if (file.status !== 'processing') return file;
-  const age = Date.now() - Date.parse(file.updatedAt ?? '');
-  if (age < PROCESSING_DURATION_MS) return file;
+// How long a "scanning" row stays scanning, measured from the first time the
+// mock serves it, before it settles to "allowed". The real scan takes minutes;
+// this is long enough to watch the row change without a reload.
+const SCANNING_DURATION_MS = 12_000;
 
-  return (
-    db.files.update(
-      (f) => f.id === file.id,
-      (f) => ({
-        ...f,
-        status: 'ready',
-        updatedAt: new Date().toISOString(),
-      })
-    ) ?? file
-  );
+// Content types the real pipeline scans (text, markdown, CSV, TSV, JSON).
+const isScannableType = (contentType: string | undefined): boolean =>
+  contentType !== undefined &&
+  (contentType.startsWith('text/') || contentType === 'application/json');
+
+// First time each scanning row was served. A Map, not a field on the row: it
+// is mock-only bookkeeping that must not leak into the response.
+const scanningSince = new Map<string, number>();
+
+// Advances a row's lifecycle at read time (list/get) rather than via a real
+// timer - avoids leaking timers across Vitest runs (same reasoning as
+// benchmark.ts's advanceJob, which uses the same read-time-advance pattern for
+// job polling). "processing" becomes "ready" after PROCESSING_DURATION_MS,
+// entering the scan ("scanning" for scannable types, "skipped" otherwise);
+// "scanning" becomes "allowed" after SCANNING_DURATION_MS.
+const settle = (file: FilesFileResponse): FilesFileResponse => {
+  if (file.status === 'processing') {
+    const age = Date.now() - Date.parse(file.updatedAt ?? '');
+    if (age < PROCESSING_DURATION_MS) return file;
+
+    return (
+      db.files.update(
+        (f) => f.id === file.id,
+        (f) => ({
+          ...f,
+          status: 'ready',
+          scanStatus: isScannableType(f.contentType) ? 'scanning' : 'skipped',
+          updatedAt: new Date().toISOString(),
+        })
+      ) ?? file
+    );
+  }
+
+  if (file.scanStatus === 'scanning') {
+    const id = file.id ?? '';
+    const since = scanningSince.get(id) ?? Date.now();
+    scanningSince.set(id, since);
+    if (Date.now() - since < SCANNING_DURATION_MS) return file;
+
+    return (
+      db.files.update(
+        (f) => f.id === file.id,
+        (f) => ({
+          ...f,
+          scanStatus: 'allowed',
+          scannedAt: new Date().toISOString(),
+        })
+      ) ?? file
+    );
+  }
+
+  return file;
 };
 
 export const handlers: RequestHandler[] = [
@@ -124,7 +162,9 @@ export const handlers: RequestHandler[] = [
       return HttpResponse.json({ error: 'file not found' }, { status: 404 });
     }
     const settled = settle(file);
-    if (settled.status !== 'ready') {
+    // Like the real gateway: no download URL until the file is ready, and
+    // none for a file the scan blocked (deliberate, not an error).
+    if (settled.status !== 'ready' || isScanBlocked(settled.scanStatus)) {
       return HttpResponse.json({ file: settled });
     }
 

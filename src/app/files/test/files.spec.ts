@@ -36,6 +36,35 @@ test.describe('Files workbench', () => {
     });
   });
 
+  test('a blocked file shows its verdict and withholds the download', async ({
+    page,
+  }) => {
+    const row = page
+      .getByTestId('files-row')
+      .filter({ hasText: 'oversize-prompt.txt' });
+
+    await expect(row.getByTestId('files-row-scan')).toHaveText(/Blocked/);
+    await expect(row.getByTestId('files-row-scan-detail')).toHaveText(
+      "Classifier: Input exceeds the classifier's size limit - fail closed"
+    );
+    await expect(row.getByTestId('files-row-download-withheld')).toBeVisible();
+    await expect(row.getByRole('link', { name: 'Download' })).toHaveCount(0);
+    await expect(row.getByText(/lookup failed|network error/)).toHaveCount(0);
+  });
+
+  test('a scanning file turns into passed without a reload', async ({
+    page,
+  }) => {
+    const row = page
+      .getByTestId('files-row')
+      .filter({ hasText: 'research-draft.md' });
+
+    await expect(row.getByTestId('files-row-scan')).toHaveText(/Scanning/);
+    await expect(row.getByTestId('files-row-scan')).toHaveText(/Scan passed/, {
+      timeout: 40_000,
+    });
+  });
+
   test('has no accessibility violations', async ({ page }) => {
     const results = await makeAxeBuilder(page).analyze();
     expect(results.violations).toEqual([]);
