@@ -20,6 +20,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/src/components/ui/card';
+import { describeInputTooLarge } from '@/src/framework/decisions/input_too_large';
+import { InputTooLargeNotice } from '@/src/framework/decisions/input_too_large_notice';
 import { formatPercent } from '@/src/framework/format/format_percent';
 
 // Ad-hoc classifier test-and-label panel: paste text, run
@@ -45,6 +47,9 @@ import { formatPercent } from '@/src/framework/format/format_percent';
 // api/swagger/classifier.yaml for this PR).
 export const ClassifierTestPanel = () => {
   const [content, setContent] = useState('');
+  // Snapshot of the text that produced the last response, so an over-ceiling
+  // answer reports the size of what was run, not of what is typed since.
+  const [submittedContent, setSubmittedContent] = useState('');
   const { trigger: runCheck, data, error, isMutating } = useCheckContent();
   const { trigger: submitLabel, isMutating: isLabeling } = useLabelVerdict();
   const [labeledAction, setLabeledAction] =
@@ -60,8 +65,12 @@ export const ClassifierTestPanel = () => {
   );
 
   const result = data?.status === 200 ? data.data : undefined;
+  const inputTooLarge = data
+    ? describeInputTooLarge(data, submittedContent)
+    : undefined;
   const requestFailed =
-    Boolean(error) || (data !== undefined && data.status !== 200);
+    !inputTooLarge &&
+    (Boolean(error) || (data !== undefined && data.status !== 200));
   const classifier = result?.classifier;
 
   const runTest = () => {
@@ -69,6 +78,7 @@ export const ClassifierTestPanel = () => {
     setLabeledAction(null);
     setLabelErrorMessage(null);
     setCorrectionLabel('');
+    setSubmittedContent(content);
     void runCheck({ content, kind: 'input' });
   };
 
@@ -146,6 +156,12 @@ export const ClassifierTestPanel = () => {
             {isMutating ? 'Running…' : 'Run test'}
           </Button>
           <span className="text-xs text-muted-foreground">⌘/Ctrl + Enter</span>
+          {inputTooLarge && (
+            <InputTooLargeNotice
+              message={inputTooLarge.message}
+              testId="classifier-test-input-too-large"
+            />
+          )}
           {requestFailed && (
             <span
               className="text-xs text-destructive"

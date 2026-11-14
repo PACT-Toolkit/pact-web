@@ -101,10 +101,10 @@ describe('POST /v1/check mock handler - diagnostics parity with the seeded audit
     expect(seededPayloadOf(res.data.request_id)?.engine).toBe('filter');
   });
 
-  it('a 70 KB input in enforce posture stops at the filter, not the classifier', async () => {
+  it('a 30 KB input in enforce posture stops at the filter, not the classifier', async () => {
     setVectorEnforceMode('enforce');
     const res = await checkContent({
-      content: benignContentOfBytes(70_000),
+      content: benignContentOfBytes(30_000),
       kind: 'input',
     });
 
@@ -156,10 +156,10 @@ describe('POST /v1/check mock handler - diagnostics parity with the seeded audit
     expect(res.data.reason).not.toBe('filter_suspicious_enforced');
   });
 
-  it('shadow posture, 4,097 runes up to 65,536 bytes: the filter match is a shadow, the classifier runs normally', async () => {
+  it('shadow posture, 4,097 runes up to 26,000 bytes: the filter match is a shadow, the classifier runs normally', async () => {
     setVectorEnforceMode('shadow');
     const res = await checkContent({
-      content: benignContentOfBytes(65_536),
+      content: benignContentOfBytes(26_000),
       kind: 'input',
     });
 
@@ -172,10 +172,10 @@ describe('POST /v1/check mock handler - diagnostics parity with the seeded audit
     expect(res.data.classifier?.label).toBe('benign');
   });
 
-  it('shadow posture, above 65,536 bytes: classifier_input_too_large blocks at the classifier with no verdict, audit row carries reason and engine', async () => {
+  it('shadow posture, above 26,000 bytes: classifier_input_too_large blocks at the classifier with no verdict, audit row carries reason and engine', async () => {
     setVectorEnforceMode('shadow');
     const res = await checkContent({
-      content: benignContentOfBytes(65_537),
+      content: benignContentOfBytes(26_001),
       kind: 'input',
     });
 
@@ -193,9 +193,9 @@ describe('POST /v1/check mock handler - diagnostics parity with the seeded audit
 
   it('shadow posture counts UTF-8 bytes, not characters, against the classifier ceiling', async () => {
     setVectorEnforceMode('shadow');
-    // 21,846 three-byte characters = 65,538 bytes but only 21,846 chars.
+    // 8,667 three-byte characters = 26,001 bytes but only 8,667 chars.
     const res = await checkContent({
-      content: '€'.repeat(21_846),
+      content: '€'.repeat(8_667),
       kind: 'input',
     });
 
@@ -346,5 +346,51 @@ describe('auditEngineOf - gateway engine attribution order', () => {
     },
   ])('$name', ({ input, engine }) => {
     expect(auditEngineOf(input)).toBe(engine);
+  });
+});
+
+// The gateway's single input ceiling answers 413 with the generated
+// BoundaryInputTooLargeResponse body before any stage runs, and audits the
+// request as a block.
+describe('POST /v1/check mock handler - input ceiling', () => {
+  it('answers 413 input_too_large with max_input_bytes above 40,573 bytes and records the block', async () => {
+    const res = await checkContent({
+      content: benignContentOfBytes(40_574),
+      kind: 'input',
+    });
+
+    expect(res.status).toBe(413);
+    if (res.status !== 413) return;
+    expect(res.data).toMatchObject({
+      code: 'input_too_large',
+      max_input_bytes: 40_573,
+    });
+
+    const blocked = db.decisions
+      .getAll()
+      .map(
+        (row) => JSON.parse(row.payloadJson ?? '') as Record<string, unknown>
+      )
+      .find((p) => p.reason === 'input_too_large');
+    expect(blocked?.decision).toBe('block');
+  });
+
+  it('counts UTF-8 bytes, not characters, against the ceiling', async () => {
+    // 13,525 three-byte characters = 40,575 bytes but only 13,525 chars.
+    const res = await checkContent({
+      content: '€'.repeat(13_525),
+      kind: 'input',
+    });
+
+    expect(res.status).toBe(413);
+  });
+
+  it('answers a decision, not a 413, at exactly 40,573 bytes', async () => {
+    const res = await checkContent({
+      content: benignContentOfBytes(40_573),
+      kind: 'input',
+    });
+
+    expect(res.status).toBe(200);
   });
 });

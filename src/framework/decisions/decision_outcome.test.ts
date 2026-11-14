@@ -49,6 +49,17 @@ describe('decisionReasonDescription', () => {
     ).toBe("Input exceeds the classifier's size limit - fail closed");
   });
 
+  it('explains input_too_large as a rejection before any stage', () => {
+    expect(
+      decisionReasonDescription({
+        decision: 'block',
+        reason: 'input_too_large',
+      })
+    ).toBe(
+      'Input exceeds the gateway size limit - rejected before any stage ran'
+    );
+  });
+
   it('explains classifier_saturated as a retryable capacity block', () => {
     expect(
       decisionReasonDescription({

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyLiveLayers,
+  checkResponseFromInputTooLarge,
   BLANK_LAYERS,
   type CheckResponse,
   CheckResponseParseError,
@@ -280,6 +281,17 @@ describe('applyLiveLayers - reason-driven block attribution', () => {
         baseResponse({ decision: 'block', reason: 'policy_token_denied' }),
         []
       )
+    );
+    expect(out.filter.decision).toBe('skip');
+    expect(out.classifier.decision).toBe('skip');
+    expect(out.consensus.decision).toBe('skip');
+    expect(out.redactor.decision).toBe('skip');
+    expect(out.filter.reason).toMatch(/before the pipeline ran/i);
+  });
+
+  it('input_too_large: the 413 block halts before the first stage -- every stage skips', () => {
+    const out = byId(
+      applyLiveLayers(startingLayers(), checkResponseFromInputTooLarge(7), [])
     );
     expect(out.filter.decision).toBe('skip');
     expect(out.classifier.decision).toBe('skip');

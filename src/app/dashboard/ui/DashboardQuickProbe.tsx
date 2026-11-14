@@ -21,6 +21,8 @@ import {
   CardTitle,
 } from '@/src/components/ui/card';
 import { checkResponseFromSaturation } from '@/src/framework/decisions/classifier_saturation';
+import { describeInputTooLarge } from '@/src/framework/decisions/input_too_large';
+import { InputTooLargeNotice } from '@/src/framework/decisions/input_too_large_notice';
 import { isMock, isProduction } from '@/src/framework/helpers/environment';
 import { TRAFFIC_SOURCE_TEST_LAB } from '@/src/lib/decisions/traffic_source';
 
@@ -43,6 +45,9 @@ export const DashboardQuickProbe = ({
   const [inputText, setInputText] = useState('');
   const [status, setStatus] = useState<ProbeStatus>('idle');
   const [result, setResult] = useState<CheckResponse | null>(null);
+  const [inputTooLargeMessage, setInputTooLargeMessage] = useState<
+    string | null
+  >(null);
   const {
     saveState: saveStatus,
     saveToCorpus: saveResultToCorpus,
@@ -53,6 +58,7 @@ export const DashboardQuickProbe = ({
     if (!inputText.trim()) return;
     setStatus('running');
     setResult(null);
+    setInputTooLargeMessage(null);
     resetSaveState();
 
     const startedAt = Date.now();
@@ -69,6 +75,13 @@ export const DashboardQuickProbe = ({
         response,
         Date.now() - startedAt
       );
+      const tooLarge = describeInputTooLarge(response, inputText);
+      if (tooLarge) {
+        setInputTooLargeMessage(tooLarge.message);
+        setStatus('error');
+
+        return;
+      }
       if (!saturated && response.status !== 200) {
         throw new Error(`probe failed (${response.status})`);
       }
@@ -140,11 +153,17 @@ export const DashboardQuickProbe = ({
             {status === 'running' ? 'Running…' : 'Run probe'}
           </Button>
           <span className="text-xs text-muted-foreground">⌘/Ctrl + Enter</span>
-          {status === 'error' && (
-            <span className="text-xs text-destructive">
-              Request failed. Is pact-gateway running?
-            </span>
-          )}
+          {status === 'error' &&
+            (inputTooLargeMessage ? (
+              <InputTooLargeNotice
+                message={inputTooLargeMessage}
+                testId="dashboard-probe-input-too-large"
+              />
+            ) : (
+              <span className="text-xs text-destructive">
+                Request failed. Is pact-gateway running?
+              </span>
+            ))}
         </div>
 
         {result && (

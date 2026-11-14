@@ -22,6 +22,7 @@ import {
   CLASSIFIER_INPUT_TOO_LARGE_DESCRIPTION,
   CLASSIFIER_SATURATED_DESCRIPTION,
 } from '@/src/framework/decisions/decision_outcome';
+import { INPUT_TOO_LARGE_REASON } from '@/src/framework/decisions/input_too_large';
 import { stageDurationMs } from '@/src/framework/decisions/stage_duration';
 
 // ─── API payload types ────────────────────────────────────────────────────────
@@ -480,7 +481,8 @@ const blockingStageId = (data: CheckResponse): StageId | undefined => {
 // whether the halt was itself a block: `classifier_unreachable` halts the
 // pipeline (stages.go: "the transport fail-open HALTS the pipeline... there
 // is nothing for consensus or the redactor to annotate") while still
-// resolving to an ALLOW decision. `policy_token_denied` halts before the
+// resolving to an ALLOW decision. `policy_token_denied` and `input_too_large`
+// (the gateway's 413, see checkResponseFromInputTooLarge) halt before the
 // filter stage runs at all -- every visualised stage was skipped. Every
 // other reason either maps to a visualised stage via blockingStageId (cutoff
 // sits right after that stage) or is a downstream/unattributed reason
@@ -491,7 +493,12 @@ const cutoffFor = (
   data: CheckResponse,
   order: StageId[]
 ): { afterIndex: number } | undefined => {
-  if (data.reason === 'policy_token_denied') return { afterIndex: -1 };
+  if (
+    data.reason === 'policy_token_denied' ||
+    data.reason === INPUT_TOO_LARGE_REASON
+  ) {
+    return { afterIndex: -1 };
+  }
   if (data.reason === 'classifier_unreachable') {
     const idx = order.indexOf('classifier');
 
@@ -801,3 +808,17 @@ export const applyLiveLayers = (
     return { ...def, ...deriveStageState(id, data, blockingStage) };
   });
 };
+
+// The gateway answers content over its input ceiling with a 413 and no
+// decision body, and audits it as a block that never reached a stage. Test
+// Lab lifts it into the block decision shape so the pipeline renders every
+// stage as not run (cutoffFor) instead of failing the check.
+export const checkResponseFromInputTooLarge = (
+  latencyMs: number
+): CheckResponse => ({
+  // The 413 body carries no request id; the audit event holds the real one.
+  request_id: '',
+  decision: CheckCheckResponseDecision.block,
+  reason: INPUT_TOO_LARGE_REASON,
+  latency_ms: latencyMs,
+});

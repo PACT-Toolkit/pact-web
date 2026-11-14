@@ -11,6 +11,7 @@ import {
   applyLiveLayers,
   BLANK_LAYERS,
   type CheckInput,
+  checkResponseFromInputTooLarge,
   type CheckResponse,
   LAYER_DEFINITIONS,
   parseCheckResponse,
@@ -24,6 +25,7 @@ import {
   type RunStatus,
 } from '@/src/app/test_lab/ui/types';
 import { checkResponseFromSaturation } from '@/src/framework/decisions/classifier_saturation';
+import { describeInputTooLarge } from '@/src/framework/decisions/input_too_large';
 import { TRAFFIC_SOURCE_TEST_LAB } from '@/src/lib/decisions/traffic_source';
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -60,6 +62,11 @@ export function useTestLabRun() {
   const [layers, setLayers] = useState<LayerState[]>(BLANK_LAYERS);
   const [activeIdx, setActiveIdx] = useState(-1);
   const [result, setResult] = useState<CheckResponse | null>(null);
+  // Size message for a run the gateway refused with a 413; null for any
+  // other outcome. The block itself renders through `result`/`layers`.
+  const [inputTooLargeMessage, setInputTooLargeMessage] = useState<
+    string | null
+  >(null);
   const [historySaveError, setHistorySaveError] = useState(false);
 
   const { data: historyResponse, mutate: mutateHistory } =
@@ -107,6 +114,7 @@ export function useTestLabRun() {
     ) => {
       if (!inputText.trim()) return;
       setStatus('running');
+      setInputTooLargeMessage(null);
 
       if (bypassLayers.length === 0) {
         setResult(null);
@@ -149,12 +157,14 @@ export function useTestLabRun() {
           _bypass_layers: bypassLayers,
         };
         const response = await checkContent(body);
-        const saturated = checkResponseFromSaturation(
-          response,
-          Date.now() - startedAt
-        );
+        const latencyMs = Date.now() - startedAt;
+        const saturated = checkResponseFromSaturation(response, latencyMs);
+        const tooLarge = describeInputTooLarge(response, inputText);
         if (saturated) {
           data = saturated;
+        } else if (tooLarge) {
+          setInputTooLargeMessage(tooLarge.message);
+          data = checkResponseFromInputTooLarge(latencyMs);
         } else if (response.status !== 200) {
           throw new Error(`check failed (${response.status})`);
         } else {
@@ -247,6 +257,7 @@ export function useTestLabRun() {
     layers,
     activeIdx,
     result,
+    inputTooLargeMessage,
     history,
     historySaveError,
     runCheck,

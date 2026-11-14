@@ -1,3 +1,4 @@
+import { INPUT_TOO_LARGE_REASON } from '@/src/framework/decisions/input_too_large';
 import { type DecisionPayload } from '@/src/lib/decisions/decision_payload';
 
 // How a decision outcome is presented. The wire enum is closed (allow, block,
@@ -45,7 +46,12 @@ export const CLASSIFIER_INPUT_TOO_LARGE_DESCRIPTION =
 // so the block is transient and the wording tells the operator to retry.
 export const CLASSIFIER_SATURATED_DESCRIPTION =
   'Classifier at capacity - retry later';
+// The gateway's single input ceiling answers HTTP 413 before any stage runs;
+// the audit log still records that request as a block.
+const INPUT_TOO_LARGE_DESCRIPTION =
+  'Input exceeds the gateway size limit - rejected before any stage ran';
 const REASON_DESCRIPTION = new Map<string, string>([
+  [INPUT_TOO_LARGE_REASON, INPUT_TOO_LARGE_DESCRIPTION],
   ['client_canceled', CLIENT_CANCELED_DESCRIPTION],
   ['classifier_input_too_large', CLASSIFIER_INPUT_TOO_LARGE_DESCRIPTION],
   ['classifier_saturated', CLASSIFIER_SATURATED_DESCRIPTION],
