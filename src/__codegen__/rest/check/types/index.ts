@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './boundaryErrorResponse';
 export * from './boundaryInputTooLargeResponse';
 export * from './checkCausalSpanInfo';
 export * from './checkCheckRequest';
@@ -15,6 +16,9 @@ export * from './checkClassifierInfo';
 export * from './checkConsensusInfo';
 export * from './checkConsensusInfoLabel';
 export * from './checkDiagnosticsInfo';
+export * from './checkEvidenceInfo';
+export * from './checkEvidenceLayerInfo';
+export * from './checkEvidenceLayerInfoReason';
 export * from './checkExternalRef';
 export * from './checkExternalRefInfo';
 export * from './checkExternalRefInfoVerdict';

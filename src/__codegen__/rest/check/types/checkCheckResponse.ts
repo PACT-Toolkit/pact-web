@@ -9,6 +9,7 @@ import type { CheckCheckResponseDecision } from './checkCheckResponseDecision';
 import type { CheckClassifierInfo } from './checkClassifierInfo';
 import type { CheckConsensusInfo } from './checkConsensusInfo';
 import type { CheckDiagnosticsInfo } from './checkDiagnosticsInfo';
+import type { CheckEvidenceInfo } from './checkEvidenceInfo';
 import type { CheckExternalRefsInfo } from './checkExternalRefsInfo';
 import type { CheckFilterInfo } from './checkFilterInfo';
 import type { CheckPolicyInfo } from './checkPolicyInfo';
@@ -20,6 +21,8 @@ export interface CheckCheckResponse {
   consensus?: CheckConsensusInfo;
   decision: CheckCheckResponseDecision;
   diagnostics?: CheckDiagnosticsInfo;
+  /** Evidence is present only on an evidence-mode request. */
+  evidence?: CheckEvidenceInfo;
   external_refs?: CheckExternalRefsInfo;
   filter?: CheckFilterInfo;
   filter_rule_id?: string;

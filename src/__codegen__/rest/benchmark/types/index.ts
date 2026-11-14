@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './benchmarkAblationConfigurationBody';
+export * from './benchmarkAblationUnknownReasonBody';
 export * from './benchmarkAdaptiveCampaignAttemptBody';
 export * from './benchmarkAdaptiveCampaignBody';
 export * from './benchmarkAdaptiveCampaignGoalBody';
@@ -30,6 +32,7 @@ export * from './benchmarkListAdaptiveCampaignsResponse';
 export * from './benchmarkListRunRowsResponse';
 export * from './benchmarkListRunsResponse';
 export * from './benchmarkListTestLabRunsResponse';
+export * from './benchmarkRunAblationResponse';
 export * from './benchmarkRunCountsBody';
 export * from './benchmarkSaveCorpusRequest';
 export * from './benchmarkSaveCorpusResponse';
@@ -41,6 +44,7 @@ export * from './benchmarkSubmitJobRequest';
 export * from './benchmarkSubmitJobResponse';
 export * from './benchmarkTestLabRunBody';
 export * from './benchmarkTimingCompletenessBody';
+export * from './benchmarkWilsonIntervalBody';
 export * from './boundaryErrorResponse';
 export * from './getBenchmarkJobParams';
 export * from './inspectBenchmarkImportParams';

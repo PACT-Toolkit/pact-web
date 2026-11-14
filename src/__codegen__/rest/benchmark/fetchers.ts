@@ -19,6 +19,7 @@ import type {
   BenchmarkListRunRowsResponse,
   BenchmarkListRunsResponse,
   BenchmarkListTestLabRunsResponse,
+  BenchmarkRunAblationResponse,
   BenchmarkSaveCorpusRequest,
   BenchmarkSaveCorpusResponse,
   BenchmarkSaveTestLabRunRequest,
@@ -920,6 +921,83 @@ export const listBenchmarkRuns = async (
 
 export const getListBenchmarkRunsKey = (params?: ListBenchmarkRunsParams) =>
   [`/api/pact/gateway/v1/benchmark/runs`, ...(params ? [params] : [])] as const;
+
+export type getBenchmarkRunAblationResponse200 = {
+  data: BenchmarkRunAblationResponse;
+  status: 200;
+};
+
+export type getBenchmarkRunAblationResponse400 = {
+  data: string;
+  status: 400;
+};
+
+export type getBenchmarkRunAblationResponse401 = {
+  data: string;
+  status: 401;
+};
+
+export type getBenchmarkRunAblationResponse404 = {
+  data: BoundaryErrorResponse;
+  status: 404;
+};
+
+export type getBenchmarkRunAblationResponse409 = {
+  data: BoundaryErrorResponse;
+  status: 409;
+};
+
+export type getBenchmarkRunAblationResponse502 = {
+  data: BoundaryErrorResponse;
+  status: 502;
+};
+
+export type getBenchmarkRunAblationResponse503 = {
+  data: BoundaryErrorResponse;
+  status: 503;
+};
+
+export type getBenchmarkRunAblationResponseSuccess =
+  getBenchmarkRunAblationResponse200 & {
+    headers: Headers;
+  };
+
+export type getBenchmarkRunAblationResponseError = (
+  | getBenchmarkRunAblationResponse400
+  | getBenchmarkRunAblationResponse401
+  | getBenchmarkRunAblationResponse404
+  | getBenchmarkRunAblationResponse409
+  | getBenchmarkRunAblationResponse502
+  | getBenchmarkRunAblationResponse503
+) & {
+  headers: Headers;
+};
+
+export type getBenchmarkRunAblationResponse =
+  getBenchmarkRunAblationResponseSuccess | getBenchmarkRunAblationResponseError;
+
+export const getGetBenchmarkRunAblationUrl = (id: string) => {
+  return `/api/pact/gateway/v1/benchmark/runs/${id}/ablation`;
+};
+
+/**
+ * @summary Read the derived defense configurations of an ablation run
+ */
+export const getBenchmarkRunAblation = async (
+  id: string,
+  options?: Parameters<typeof customFetch>[1]
+): Promise<getBenchmarkRunAblationResponse> => {
+  return customFetch<getBenchmarkRunAblationResponse>(
+    getGetBenchmarkRunAblationUrl(id),
+    {
+      ...options,
+      method: 'GET',
+    }
+  );
+};
+
+export const getGetBenchmarkRunAblationKey = (id: string) =>
+  [`/api/pact/gateway/v1/benchmark/runs/${id}/ablation`] as const;
 
 export type listBenchmarkRunRowsResponse200 = {
   data: BenchmarkListRunRowsResponse;

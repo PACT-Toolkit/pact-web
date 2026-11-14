@@ -7,6 +7,12 @@
  */
 
 export interface BenchmarkSubmitJobRequest {
+  /**
+   * Ablation runs every row in gateway evidence mode so the persisted run
+   * can be read back as the derived defense configurations with GET
+   * /v1/benchmark/runs/{id}/ablation. Omitted means false.
+   */
+  ablation?: boolean;
   corpus_jsonl: string;
   engine?: string;
   /**

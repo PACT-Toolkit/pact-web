@@ -12,6 +12,7 @@ import type { Key } from 'swr';
 import type { SWRMutationConfiguration } from 'swr/mutation';
 
 import type {
+  BoundaryErrorResponse,
   BoundaryInputTooLargeResponse,
   CheckCheckRequest,
   CheckCheckResponse,
@@ -21,6 +22,7 @@ import {
   checkContentResponse200,
   checkContentResponse400,
   checkContentResponse401,
+  checkContentResponse403,
   checkContentResponse413,
   checkContentResponse429,
   checkContentResponse503,
@@ -46,7 +48,7 @@ export type CheckContentMutationResult = NonNullable<
  * @summary Evaluate content against the safety pipeline
  */
 export const useCheckContent = <
-  TError = string | BoundaryInputTooLargeResponse,
+  TError = string | BoundaryErrorResponse | BoundaryInputTooLargeResponse,
 >(options?: {
   swr?: SWRMutationConfiguration<
     Awaited<ReturnType<typeof checkContent>>,
