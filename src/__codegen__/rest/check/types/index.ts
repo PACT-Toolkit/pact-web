@@ -23,6 +23,7 @@ export * from './checkExternalRef';
 export * from './checkExternalRefInfo';
 export * from './checkExternalRefInfoVerdict';
 export * from './checkExternalRefsInfo';
+export * from './checkFileInfo';
 export * from './checkFilterInfo';
 export * from './checkFilterInfoVerdict';
 export * from './checkPolicyInfo';

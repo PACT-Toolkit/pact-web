@@ -52,6 +52,10 @@ export interface PactDecisions {
   diagnostics?: DecisionDiagnostics;
   content_delivery?: ContentDelivery;
   file_scan?: FileScanRef;
+  /**
+   * The scanned files a request used in place of pasted text. Omitted when the request referenced no file.
+   */
+  file_refs?: FileRef[];
   latency_ms: number;
   created_at: string;
   /**
@@ -477,5 +481,19 @@ export interface FileScanRef {
    * Hex-encoded SHA-256 of the whole extracted text the piece was cut from.
    */
   content_sha256?: string;
+  scan_version?: string;
+}
+/**
+ * Names one scanned file a request referenced. Identifiers and a hash only, never file content.
+ */
+export interface FileRef {
+  file_id: string;
+  /**
+   * Hex-encoded SHA-256 of the scanned text the request used.
+   */
+  content_sha256: string;
+  /**
+   * Scan version the verdict was recorded under.
+   */
   scan_version?: string;
 }

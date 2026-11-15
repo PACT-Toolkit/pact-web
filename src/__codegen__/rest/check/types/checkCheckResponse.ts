@@ -11,6 +11,7 @@ import type { CheckConsensusInfo } from './checkConsensusInfo';
 import type { CheckDiagnosticsInfo } from './checkDiagnosticsInfo';
 import type { CheckEvidenceInfo } from './checkEvidenceInfo';
 import type { CheckExternalRefsInfo } from './checkExternalRefsInfo';
+import type { CheckFileInfo } from './checkFileInfo';
 import type { CheckFilterInfo } from './checkFilterInfo';
 import type { CheckPolicyInfo } from './checkPolicyInfo';
 import type { CheckRedactorInfo } from './checkRedactorInfo';
@@ -24,6 +25,11 @@ export interface CheckCheckResponse {
   /** Evidence is present only on an evidence-mode request. */
   evidence?: CheckEvidenceInfo;
   external_refs?: CheckExternalRefsInfo;
+  /**
+   * File is present only on a request that carried file_id and reached a
+   * verdict.
+   */
+  file?: CheckFileInfo;
   filter?: CheckFilterInfo;
   filter_rule_id?: string;
   latency_ms: number;

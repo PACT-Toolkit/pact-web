@@ -9,7 +9,11 @@ import type { CheckExternalRef } from './checkExternalRef';
 import type { CheckSpotlightChunk } from './checkSpotlightChunk';
 
 export interface CheckCheckRequest {
-  content: string;
+  /**
+   * Content is the text to check. Required unless file_id is set; the two
+   * are mutually exclusive.
+   */
+  content?: string;
   /**
    * ConversationID is an optional client-supplied chat/thread correlation id.
    * Mirrored verbatim onto the pact.decisions audit event so a decision can
@@ -36,6 +40,20 @@ export interface CheckCheckRequest {
    * inline; the gateway fetches it.
    */
   external_refs?: CheckExternalRef[];
+  /**
+   * FileID names an uploaded file (a UUID) whose already scanned text this
+   * request is about, in place of content. The gateway does not scan the file
+   * text again: it gates on the verdict pact-files recorded when the file
+   * was scanned, and the response says which text that verdict covers
+   * (file.content_sha256). Because the file text is never scanned together
+   * with other text, an instruction split across a prompt and a file is not
+   * judged as a whole; each is judged on its own. Requires kind=input and
+   * the caller must own the file. Cannot be combined with content,
+   * external_refs, evidence, tool_id, scope or an X-Pact-Capability-Token:
+   * those answer 400 with code invalid_file_ref. An unknown file and
+   * another user's file are indistinguishable (404 file_not_found).
+   */
+  file_id?: string;
   /** "input" | "output" */
   kind: string;
   /**
