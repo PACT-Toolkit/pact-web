@@ -26,6 +26,9 @@ definitions:
     check.CheckRequest:
         properties:
             content:
+                description: |-
+                    Content is the text to check. Required unless file_id is set; the two
+                    are mutually exclusive.
                 type: string
             conversation_id:
                 description: |-
@@ -55,6 +58,20 @@ definitions:
                 items:
                     $ref: '#/definitions/check.ExternalRef'
                 type: array
+            file_id:
+                description: |-
+                    FileID names an uploaded file (a UUID) whose already scanned text this
+                    request is about, in place of content. The gateway does not scan the file
+                    text again: it gates on the verdict pact-files recorded when the file
+                    was scanned, and the response says which text that verdict covers
+                    (file.content_sha256). Because the file text is never scanned together
+                    with other text, an instruction split across a prompt and a file is not
+                    judged as a whole; each is judged on its own. Requires kind=input and
+                    the caller must own the file. Cannot be combined with content,
+                    external_refs, evidence, tool_id, scope or an X-Pact-Capability-Token:
+                    those answer 400 with code invalid_file_ref. An unknown file and
+                    another user's file are indistinguishable (404 file_not_found).
+                type: string
             kind:
                 description: '"input" | "output"'
                 type: string
@@ -91,7 +108,6 @@ definitions:
                     decisions schema enforces on the audit event.
                 type: string
         required:
-            - content
             - kind
         type: object
     check.CheckResponse:
@@ -113,6 +129,12 @@ definitions:
                 description: Evidence is present only on an evidence-mode request.
             external_refs:
                 $ref: '#/definitions/check.ExternalRefsInfo'
+            file:
+                allOf:
+                    - $ref: '#/definitions/check.FileInfo'
+                description: |-
+                    File is present only on a request that carried file_id and reached a
+                    verdict.
             filter:
                 $ref: '#/definitions/check.FilterInfo'
             filter_rule_id:
@@ -287,6 +309,23 @@ definitions:
             scanned:
                 type: integer
         type: object
+    check.FileInfo:
+        properties:
+            content_sha256:
+                description: |-
+                    ContentSHA256 is the sha256 hex of the scanned text the verdict covers.
+                    Absent when the file was blocked or refused before a text was named.
+                type: string
+            file_id:
+                type: string
+            scan_reason:
+                type: string
+            scan_stage:
+                description: |-
+                    ScanStage and ScanReason echo the pipeline stage and reason that blocked
+                    the file. Present only when reason is file_scan_blocked.
+                type: string
+        type: object
     check.FilterInfo:
         properties:
             duration_ms:
@@ -411,10 +450,12 @@ paths:
         post:
             consumes:
                 - application/json
-            description: 'Evidence mode (body field evidence=true, authorized callers only) adds an evidence object to the response: per defense layer, whether that layer alone would have blocked the input. The decision is unchanged. Two limits apply to the scanned text. The hard byte ceiling is 40,573 bytes of UTF-8 text by default (setting MAX_INPUT_BYTES): larger content never reaches a stage and is answered with HTTP 413, code input_too_large and max_input_bytes, and is audited as a block. Below it, the classifier scores at most 6,242 tokens, which is the binding limit for typical text: English prose is fully scored up to about 26 KB (roughly 4,600 words), and code or non-English text up to fewer bytes. Content over the token budget but under the byte ceiling cannot be fully scanned and is answered with HTTP 200 and decision block, reason classifier_input_too_large, not a 400.'
+            description: |-
+                File references: instead of content, body field file_id (a UUID, with kind=input) checks an uploaded file by the verdict pact-files recorded when it scanned the file. The file text is not scanned again, and it is never scanned together with other text: an instruction split across a prompt and a file is not judged as a whole. A file_id request returns decision allow with stages [file_scan] and a file object naming the scanned text (file_id, content_sha256), or decision block with reason file_scan_blocked and the file's scan_stage and scan_reason; every other state is an error response with a stable code. file_id cannot be combined with content, external_refs, evidence, tool_id, scope or a capability token (400 invalid_file_ref).
+                Evidence mode (body field evidence=true, authorized callers only) adds an evidence object to the response: per defense layer, whether that layer alone would have blocked the input. The decision is unchanged. Two limits apply to the scanned text. The hard byte ceiling is 40,573 bytes of UTF-8 text by default (setting MAX_INPUT_BYTES): larger content never reaches a stage and is answered with HTTP 413, code input_too_large and max_input_bytes, and is audited as a block. Below it, the classifier scores at most 6,242 tokens, which is the binding limit for typical text: English prose is fully scored up to about 26 KB (roughly 4,600 words), and code or non-English text up to fewer bytes. Content over the token budget but under the byte ceiling cannot be fully scanned and is answered with HTTP 200 and decision block, reason classifier_input_too_large, not a 400.
             operationId: checkContent
             parameters:
-                - description: Content and kind (input|output); optional conversation_id, traffic_source, tool_id, scope
+                - description: Content (or file_id) and kind (input|output); optional conversation_id, traffic_source, tool_id, scope
                   in: body
                   name: body
                   required: true
@@ -436,7 +477,7 @@ paths:
                     schema:
                         $ref: '#/definitions/check.CheckResponse'
                 "400":
-                    description: malformed request
+                    description: malformed request; a malformed file_id request is a boundary.ErrorResponse with code invalid_file_ref
                     schema:
                         type: string
                 "401":
@@ -447,16 +488,28 @@ paths:
                     description: 'evidence mode requested by a caller that is not authorized for it: code evidence_forbidden'
                     schema:
                         $ref: '#/definitions/boundary.ErrorResponse'
+                "404":
+                    description: 'file_id request: the file does not exist or is not the caller''s (the two are indistinguishable): code file_not_found'
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
+                "409":
+                    description: 'file_id request: the file is not usable yet or its stored text cannot be trusted: code file_not_ready, file_scan_pending (with Retry-After), file_text_unavailable or file_hash_mismatch'
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "413":
-                    description: 'scanned content exceeds the input ceiling: code input_too_large, max_input_bytes carries the ceiling in bytes'
+                    description: 'scanned content exceeds the input ceiling: code input_too_large, max_input_bytes carries the ceiling in bytes; a file_id request over the size limit answers code file_too_large with a boundary.ErrorResponse body'
                     schema:
                         $ref: '#/definitions/boundary.InputTooLargeResponse'
+                "422":
+                    description: 'file_id request: the file was rejected at upload or its scan failed or was skipped: code file_rejected, file_scan_failed or file_scan_skipped'
+                    schema:
+                        $ref: '#/definitions/boundary.ErrorResponse'
                 "429":
                     description: 'per-IP rate limit exceeded, benchmark replay traffic throttled, or the safety classifier is saturated: retryable, with Retry-After and code classifier_saturated'
                     schema:
                         type: string
                 "503":
-                    description: auth dependency unavailable
+                    description: auth dependency unavailable, or for a file_id request the file service is unavailable (code file_unavailable, with Retry-After)
                     schema:
                         type: string
                 "504":

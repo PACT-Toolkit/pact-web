@@ -97,6 +97,13 @@
     "file_scan": {
       "$ref": "#/$defs/fileScanRef"
     },
+    "file_refs": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/fileRef"
+      },
+      "description": "The scanned files a request used in place of pasted text. Omitted when the request referenced no file."
+    },
     "latency_ms": {
       "type": "integer"
     },
@@ -111,6 +118,25 @@
     }
   },
   "$defs": {
+    "fileRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file_id", "content_sha256"],
+      "description": "Names one scanned file a request referenced. Identifiers and a hash only, never file content.",
+      "properties": {
+        "file_id": {
+          "type": "string"
+        },
+        "content_sha256": {
+          "type": "string",
+          "description": "Hex-encoded SHA-256 of the scanned text the request used."
+        },
+        "scan_version": {
+          "type": "string",
+          "description": "Scan version the verdict was recorded under."
+        }
+      }
+    },
     "fileScanRef": {
       "type": "object",
       "additionalProperties": false,

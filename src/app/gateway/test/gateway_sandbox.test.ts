@@ -12,7 +12,7 @@ describe('buildSandboxProbeRequest', () => {
 
     expect(request.kind).toBe('input');
     expect(request.external_refs).toEqual(SANDBOX_PROBE_REFS);
-    expect(request.content.length).toBeGreaterThan(0);
+    expect(request.content?.length).toBeGreaterThan(0);
   });
 
   it('includes at least one hostile-looking reference', () => {

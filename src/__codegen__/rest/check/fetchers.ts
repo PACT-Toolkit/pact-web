@@ -39,9 +39,24 @@ export type checkContentResponse403 = {
   status: 403;
 };
 
+export type checkContentResponse404 = {
+  data: BoundaryErrorResponse;
+  status: 404;
+};
+
+export type checkContentResponse409 = {
+  data: BoundaryErrorResponse;
+  status: 409;
+};
+
 export type checkContentResponse413 = {
   data: BoundaryInputTooLargeResponse;
   status: 413;
+};
+
+export type checkContentResponse422 = {
+  data: BoundaryErrorResponse;
+  status: 422;
 };
 
 export type checkContentResponse429 = {
@@ -67,7 +82,10 @@ export type checkContentResponseError = (
   | checkContentResponse400
   | checkContentResponse401
   | checkContentResponse403
+  | checkContentResponse404
+  | checkContentResponse409
   | checkContentResponse413
+  | checkContentResponse422
   | checkContentResponse429
   | checkContentResponse503
   | checkContentResponse504
@@ -83,6 +101,7 @@ export const getCheckContentUrl = () => {
 };
 
 /**
+ * File references: instead of content, body field file_id (a UUID, with kind=input) checks an uploaded file by the verdict pact-files recorded when it scanned the file. The file text is not scanned again, and it is never scanned together with other text: an instruction split across a prompt and a file is not judged as a whole. A file_id request returns decision allow with stages [file_scan] and a file object naming the scanned text (file_id, content_sha256), or decision block with reason file_scan_blocked and the file's scan_stage and scan_reason; every other state is an error response with a stable code. file_id cannot be combined with content, external_refs, evidence, tool_id, scope or a capability token (400 invalid_file_ref).
  * Evidence mode (body field evidence=true, authorized callers only) adds an evidence object to the response: per defense layer, whether that layer alone would have blocked the input. The decision is unchanged. Two limits apply to the scanned text. The hard byte ceiling is 40,573 bytes of UTF-8 text by default (setting MAX_INPUT_BYTES): larger content never reaches a stage and is answered with HTTP 413, code input_too_large and max_input_bytes, and is audited as a block. Below it, the classifier scores at most 6,242 tokens, which is the binding limit for typical text: English prose is fully scored up to about 26 KB (roughly 4,600 words), and code or non-English text up to fewer bytes. Content over the token budget but under the byte ceiling cannot be fully scanned and is answered with HTTP 200 and decision block, reason classifier_input_too_large, not a 400.
  * @summary Evaluate content against the safety pipeline
  */
