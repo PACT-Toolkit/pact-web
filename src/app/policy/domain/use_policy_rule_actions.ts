@@ -11,8 +11,10 @@ import {
   type CreateRuleInput,
   type PolicyRule,
   RuleActionError,
+  RuleCreateError,
   ruleActionErrorCodeForStatus,
 } from '@/src/app/policy/domain/policy_rule';
+import { describeHttpFailure } from '@/src/framework/http/extract_error_message';
 
 // replaceRuleInCache returns a copy of the cached list response with the rule
 // matching `updated.id` swapped for `updated`. It reads from whatever cache it
@@ -69,7 +71,10 @@ export function usePolicyRuleActions() {
   ): Promise<PolicyRule> => {
     const res = await createRule(input);
     if (res.status !== 201) {
-      throw new Error(`create rule failed (${res.status})`);
+      throw new RuleCreateError(
+        res.status,
+        describeHttpFailure(res.status, res.data)
+      );
     }
     await globalMutate(getListRulesKey());
 

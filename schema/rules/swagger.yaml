@@ -115,7 +115,7 @@ paths:
                     schema:
                         $ref: '#/definitions/rules.RuleResponse'
                 "400":
-                    description: missing name/packYaml or invalid body
+                    description: missing name/packYaml, invalid body, or a pack pact-policy rejected (error names the reason)
                     schema:
                         $ref: '#/definitions/boundary.ErrorResponse'
                 "401":
@@ -156,7 +156,7 @@ paths:
                     schema:
                         $ref: '#/definitions/rules.RuleResponse'
                 "400":
-                    description: missing name/packYaml or invalid body
+                    description: missing name/packYaml, invalid body, or a pack pact-policy rejected (error names the reason)
                     schema:
                         $ref: '#/definitions/boundary.ErrorResponse'
                 "401":

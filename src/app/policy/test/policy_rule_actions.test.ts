@@ -1,6 +1,7 @@
 import { setupServer } from 'msw/node';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
+import { EXAMPLE_PACK_YAML } from '@/src/app/policy/domain/policy_rule';
 import { handlers } from '@/src/app/policy/mock/handlers/policy';
 import { MSW_PACT_BASE } from '@/src/framework/msw';
 
@@ -19,11 +20,48 @@ const seedRule = async (name: string): Promise<{ id: string }> => {
   const res = await fetch(`${BASE}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, packYaml: 'pack: v1\nrules: []' }),
+    body: JSON.stringify({ name, packYaml: EXAMPLE_PACK_YAML }),
   });
 
   return res.json() as Promise<{ id: string }>;
 };
+
+const postRule = (packYaml: string): Promise<Response> =>
+  fetch(BASE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'pack-check', packYaml }),
+  });
+
+describe('mock handler: create rule', () => {
+  it('accepts the editor example pack', async () => {
+    const res = await postRule(EXAMPLE_PACK_YAML);
+
+    expect(res.status).toBe(201);
+  });
+
+  it('rejects a pack with no rules with the forwarded pact-policy reason', async () => {
+    const res = await postRule('rules: []');
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      code: 'invalid_argument',
+      error: 'pack_yaml: no_rules: rules must list at least one rule',
+    });
+  });
+
+  it('rejects an unknown verdict and names the rule', async () => {
+    const res = await postRule(
+      EXAMPLE_PACK_YAML.replace('verdict: hostile', 'verdict: bogus')
+    );
+
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toBe(
+      'pack_yaml: rule block-credential-exfil: invalid_verdict: verdict "bogus" is invalid (must be hostile or suspicious)'
+    );
+  });
+});
 
 describe('mock handler: publish rule', () => {
   it('transitions draft -> published and returns the updated rule', async () => {

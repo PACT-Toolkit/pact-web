@@ -33,6 +33,26 @@ const REVOKE_TRANSITIONS: Record<string, string> = { published: 'revoked' };
 const GATEWAY_NOT_FOUND = 'not found';
 const GATEWAY_INVALID_REQUEST = 'invalid request';
 
+// Verdicts pact-policy accepts on a regex pack rule.
+const VALID_VERDICTS = new Set(['hostile', 'suspicious']);
+
+// mockPackYamlError mirrors the two pact-policy authoring checks the console
+// demo relies on, with the gateway's forwarded wording: an empty rule list and
+// an unknown verdict. It is a line scan, not a YAML parser, so it only covers
+// the shapes the mock flows send.
+const mockPackYamlError = (packYaml: string): string | undefined => {
+  if (!/^\s*-\s*id:/m.test(packYaml)) {
+    return 'pack_yaml: no_rules: rules must list at least one rule';
+  }
+  const ruleId = /^\s*-\s*id:\s*(\S+)/m.exec(packYaml)?.[1] ?? '';
+  const verdict = /^\s*verdict:\s*(\S+)/m.exec(packYaml)?.[1];
+  if (verdict !== undefined && !VALID_VERDICTS.has(verdict)) {
+    return `pack_yaml: rule ${ruleId}: invalid_verdict: verdict "${verdict}" is invalid (must be hostile or suspicious)`;
+  }
+
+  return undefined;
+};
+
 export const handlers: RequestHandler[] = [
   http.get('*/v1/audit/policy-events', () => {
     const events = db.policyEvents.getAll();
@@ -52,7 +72,14 @@ export const handlers: RequestHandler[] = [
     const body = (await request.json()) as CreateRuleBody;
     if (!body.name || !body.packYaml) {
       return HttpResponse.json(
-        { error: 'name and packYaml are required' },
+        { code: 'invalid_argument', error: 'name and packYaml are required' },
+        { status: 400 }
+      );
+    }
+    const packError = mockPackYamlError(body.packYaml);
+    if (packError) {
+      return HttpResponse.json(
+        { code: 'invalid_argument', error: packError },
         { status: 400 }
       );
     }
