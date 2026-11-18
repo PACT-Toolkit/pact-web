@@ -39,6 +39,31 @@ export class RuleActionError extends Error {
   }
 }
 
+// RuleCreateError is thrown when the gateway answers a create with a non-201.
+// Its message is already display-ready: the gateway forwards pact-policy's
+// authoring reason on a 400 (for example
+// "pack_yaml: rule acc-lottery: invalid_verdict: ..."), so the author sees why
+// the pack was rejected instead of a generic failure.
+export class RuleCreateError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = 'RuleCreateError';
+    this.status = status;
+  }
+}
+
+// EXAMPLE_PACK_YAML is a minimal pack pact-policy accepts, shown as the
+// editor's placeholder so a copied example never fails validation.
+export const EXAMPLE_PACK_YAML = [
+  'rules:',
+  '  - id: block-credential-exfil',
+  "    pattern: '(?i)send .* password'",
+  '    verdict: hostile',
+  '    confidence: 0.9',
+].join('\n');
+
 // ruleActionErrorCodeForStatus maps a gateway HTTP status onto the closed set
 // of action error codes.
 export function ruleActionErrorCodeForStatus(

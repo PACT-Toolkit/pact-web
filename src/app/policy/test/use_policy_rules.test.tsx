@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { server } from '@/mocks/server';
 import { SWRTestProvider } from '@/mocks/swr_test_provider';
 import {
+  EXAMPLE_PACK_YAML,
   type PolicyRule,
   RuleActionError,
 } from '@/src/app/policy/domain/policy_rule';
@@ -21,7 +22,7 @@ const seedRule = async (name: string): Promise<PolicyRule> => {
   const res = await fetch(BASE, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, packYaml: 'pack: v1\nrules: []' }),
+    body: JSON.stringify({ name, packYaml: EXAMPLE_PACK_YAML }),
   });
 
   return res.json() as Promise<PolicyRule>;

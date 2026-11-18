@@ -3,8 +3,10 @@
 import { type FormEvent, useState } from 'react';
 
 import {
+  EXAMPLE_PACK_YAML,
   type PolicyRule,
   RuleActionError,
+  RuleCreateError,
   type RuleStatus,
   parseScopes,
 } from '@/src/app/policy/domain/policy_rule';
@@ -220,8 +222,14 @@ export const PolicyRuleEditor = () => {
       setName('');
       setPackYaml('');
       setScopes('');
-    } catch {
-      setSubmitError('Failed to create rule. Is the gateway reachable?');
+    } catch (err) {
+      // A RuleCreateError means the gateway answered, so its reason is shown;
+      // anything else is a transport failure that never reached the gateway.
+      setSubmitError(
+        err instanceof RuleCreateError
+          ? `Rule not created: ${err.message}`
+          : 'Failed to create rule. Is the gateway reachable?'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -286,7 +294,7 @@ export const PolicyRuleEditor = () => {
                 id="rule-pack"
                 value={packYaml}
                 onChange={(e) => setPackYaml(e.target.value)}
-                placeholder={'pack: v1\nrules: []'}
+                placeholder={EXAMPLE_PACK_YAML}
                 rows={6}
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 font-mono text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               />

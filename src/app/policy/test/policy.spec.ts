@@ -2,6 +2,15 @@ import { expect, test } from '@playwright/test';
 
 import { makeAxeBuilder } from '../../../../playwright/axe-fixture';
 
+// A pack pact-policy accepts (the NAT-7 acceptance rule).
+const VALID_PACK_YAML = [
+  'rules:',
+  '  - id: acc-lottery',
+  "    pattern: 'lottery winner claim'",
+  '    verdict: hostile',
+  '    confidence: 0.99',
+].join('\n');
+
 // Coverage: /policy as a full policy console.
 //
 // - PolicyRuleEditor already shipped rule authoring plus
@@ -49,7 +58,7 @@ test.describe('Policy console', () => {
   }) => {
     const ruleName = `console-check-${Date.now()}`;
     await page.locator('#rule-name').fill(ruleName);
-    await page.locator('#rule-pack').fill('pack: v1\nrules: []');
+    await page.locator('#rule-pack').fill(VALID_PACK_YAML);
     await page.getByRole('button', { name: 'Create rule' }).click();
 
     const ruleRow = page
@@ -64,6 +73,23 @@ test.describe('Policy console', () => {
     await ruleRow.getByRole('button', { name: 'Revoke' }).click();
     await ruleRow.getByRole('button', { name: 'Confirm revoke' }).click();
     await expect(ruleRow).toContainText('REVOKED');
+  });
+
+  test('rule editor shows why pact-policy rejected a malformed pack', async ({
+    page,
+  }) => {
+    await page.locator('#rule-name').fill(`malformed-${Date.now()}`);
+    await page
+      .locator('#rule-pack')
+      .fill(VALID_PACK_YAML.replace('verdict: hostile', 'verdict: bogus'));
+    await page.getByRole('button', { name: 'Create rule' }).click();
+
+    await expect(
+      page.getByText(
+        'Rule not created: pack_yaml: rule acc-lottery: invalid_verdict: verdict "bogus" is invalid (must be hostile or suspicious)'
+      )
+    ).toBeVisible();
+    await expect(page.getByText('Is the gateway reachable?')).toHaveCount(0);
   });
 
   test('token issuance panel mints a capability token', async ({ page }) => {
