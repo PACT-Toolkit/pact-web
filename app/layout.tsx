@@ -43,7 +43,7 @@ const spaceGrotesk = localFont({
 
 export const metadata: Metadata = {
   title: 'PACT',
-  description: 'Privacy and Compliance Toolkit',
+  description: 'Prompt-Attack Countermeasure Toolkit',
   icons: {
     icon: [
       {
