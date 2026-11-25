@@ -107,7 +107,7 @@ export const BenchmarkTrendChart = ({
                 domain={[0, 100]}
                 ticks={[0, 25, 50, 75, 100]}
                 padding={{ top: 12, bottom: 12 }}
-                width={36}
+                width="auto"
               />
               <ChartTooltip
                 content={
