@@ -15,6 +15,10 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // An IANA zone, not the legacy 'CET' alias: recent tzdata builds on Linux
+    // runners no longer ship the alias, ICU then falls back to UTC, and every
+    // zone-dependent formatter test is off by an hour. Europe/Berlin has the
+    // same offsets and DST rules as CET/CEST.
     // Pinned here (not a shell prefix) so `pnpm test` is shell-agnostic
     // across cmd.exe, PowerShell, and Git Bash. `test.env` is
     // applied to each worker's process.env before setupFiles or test files
@@ -22,7 +26,7 @@ export default defineConfig({
     // during setupFiles' own import graph -- a setupFiles-body assignment
     // runs too late for those (ES import hoisting evaluates the setup
     // file's imports before its own top-level statements).
-    env: { TZ: 'CET' },
+    env: { TZ: 'Europe/Berlin' },
     setupFiles: ['./vitest.setup.ts'],
     // Most files render real components in jsdom, and the full run spreads
     // them over every core. A render that takes 1 s alone takes 5-8 s when
