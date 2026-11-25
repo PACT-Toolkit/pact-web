@@ -15,7 +15,7 @@ export const SidebarBrand = () => {
         <SidebarMenuButton
           asChild
           size="lg"
-          className="cursor-default hover:bg-transparent hover:text-sidebar-foreground"
+          className="cursor-default py-0 hover:bg-transparent hover:text-sidebar-foreground"
         >
           <div>
             <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
@@ -23,8 +23,8 @@ export const SidebarBrand = () => {
             </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
               <span className="truncate font-medium">PACT</span>
-              <span className="truncate text-xs text-muted-foreground">
-                Privacy and Compliance Toolkit
+              <span className="text-xs text-muted-foreground">
+                Prompt-Attack Countermeasure Toolkit
               </span>
             </div>
           </div>
