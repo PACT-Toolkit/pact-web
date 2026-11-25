@@ -63,6 +63,7 @@ const RunSelect = ({
   onChange: (value: string) => void;
 }) => {
   const labelId = `${id}-label`;
+  const selectedLabel = options.find((o) => o.id === value)?.label;
 
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -73,9 +74,15 @@ const RunSelect = ({
         <SelectTrigger
           data-testid={id}
           aria-labelledby={labelId}
-          className="w-full min-w-0 *:data-[slot=select-value]:block *:data-[slot=select-value]:truncate"
+          className="w-full min-w-0"
         >
-          <SelectValue />
+          {/* The slot is a flex container, where text-overflow does not
+              apply, so the ellipsis lives on an inner span. */}
+          <SelectValue>
+            <span className="min-w-0 truncate" title={selectedLabel}>
+              {selectedLabel}
+            </span>
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {options.map((o) => (

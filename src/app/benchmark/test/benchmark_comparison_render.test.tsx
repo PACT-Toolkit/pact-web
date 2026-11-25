@@ -36,6 +36,18 @@ describe('BenchmarkComparison run pickers', () => {
     expect(candidate).toHaveTextContent('deberta');
     expect(baseline).toHaveTextContent('stub');
   });
+
+  it('truncates the selected label with an ellipsis and keeps the full label in a title', async () => {
+    renderComparison();
+    const candidate = await screen.findByRole('combobox', {
+      name: 'Candidate',
+    });
+
+    const label = candidate.querySelector('[title]');
+    expect(label).toHaveClass('truncate');
+    expect(label?.getAttribute('title')).toBe(label?.textContent);
+    expect(label?.getAttribute('title')).toContain('deberta');
+  });
 });
 
 describe('BenchmarkComparison unscored flag', () => {
